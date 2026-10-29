@@ -12,7 +12,7 @@
 <bs-grid>
     <div bsRow class="mb-3">
         <div [sm]="6">
-            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox()" [identifier]="1">
+            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox()" aria-label="Dish">
                 <option [ngValue]="null" selected>Choose a dish</option>
                 @for (dish of dishes; track dish.id) {
                     <option [ngValue]="dish">{{ dish.name }}</option>
@@ -20,7 +20,7 @@
             </bs-select>
         </div>
         <div [sm]="6">
-            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox()" [identifier]="2">
+            <bs-select [(ngModel)]="selectedDishBootstrapSelect" [disabled]="disableSelectBox()" aria-label="Dish (same model)">
                 <option [ngValue]="null" selected>Choose a dish</option>
                 @for (dish of dishes; track dish.id) {
                     <option [ngValue]="dish">{{ dish.name }}</option>
@@ -43,3 +43,34 @@
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Angular forms</h2>
+<p>
+  Template-driven <code>[(ngModel)]</code> and reactive <code>[formControl]</code> both bind through the
+  component's <code>ControlValueAccessor</code>: the value, the disabled state, and touched when focus leaves.
+</p>
+<bs-grid>
+  <div bsRow>
+    <div [md]="6">
+      <h3 class="h5">Template-driven</h3>
+      <bs-select [(ngModel)]="formsValue" #tdModel="ngModel" aria-label="Size">
+        <option value="">Pick a size</option>
+        <option value="s">Small</option>
+        <option value="m">Medium</option>
+        <option value="l">Large</option>
+      </bs-select>
+      <demo-form-state [control]="tdModel.control"></demo-form-state>
+    </div>
+    <div [md]="6">
+      <h3 class="h5">Reactive</h3>
+      <bs-select [formControl]="formsControl" aria-label="Size">
+        <option value="">Pick a size</option>
+        <option value="s">Small</option>
+        <option value="m">Medium</option>
+        <option value="l">Large</option>
+      </bs-select>
+      <demo-form-state [control]="formsControl"></demo-form-state>
+    </div>
+  </div>
+</bs-grid>
+<bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>

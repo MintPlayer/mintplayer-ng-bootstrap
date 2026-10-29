@@ -1,5 +1,6 @@
-import { Component, model, ChangeDetectionStrategy} from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
+import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -16,10 +17,21 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-color-picker',
   templateUrl: './color-picker.component.html',
   styleUrls: ['./color-picker.component.scss'],
-  imports: [DecimalPipe, FormsModule, BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsCheckboxComponent, BsRangeComponent, BsListGroupComponent, BsListGroupItemComponent],
+  imports: [ReactiveFormsModule, DemoFormStateComponent, DecimalPipe, FormsModule, BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsColorPickerComponent, BsCheckboxComponent, BsRangeComponent, BsListGroupComponent, BsListGroupItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ColorPickerComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<string>('#0d6efd');
+  protected readonly formsControl = new FormControl<string>('#0d6efd', { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-color-picker [(ngModel)]="value"></bs-color-picker>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-color-picker [formControl]="control"></bs-color-picker>
+  `;
+
 
   colors = Color;
   allowAlpha = model(false);

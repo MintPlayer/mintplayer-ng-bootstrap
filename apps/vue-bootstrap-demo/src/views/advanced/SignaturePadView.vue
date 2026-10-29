@@ -6,7 +6,7 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 const signature = ref<Signature>({ strokes: [] });
 
 const SOURCE = `<BsSignaturePad
-  v-model="signature"
+  v-model:signature="signature"
   :width="500"
   :height="300"
 />`;
@@ -25,7 +25,7 @@ const SOURCE = `<BsSignaturePad
 
     <section>
       <h2>Basic usage</h2>
-      <BsSignaturePad v-model="signature" :width="500" :height="300" />
+      <BsSignaturePad v-model:signature="signature" :width="500" :height="300" />
       <p class="text-body-secondary mt-2">
         Strokes: <code>{{ signature.strokes.length }}</code>
         <template v-if="signature.text"> · Typed: <code>{{ signature.text }}</code></template>

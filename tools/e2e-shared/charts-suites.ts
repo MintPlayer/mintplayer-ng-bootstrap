@@ -15,15 +15,15 @@ export interface ChartsSuiteOptions {
  * (repo convention: verify through the wrappers and demos, never a synthetic
  * harness). Parameterised like `accordion-suites.ts` / `carousel-suites.ts`.
  *
- * Deliberately narrow — geometry and ARIA attributes are covered by the WC's
- * vitest specs, which a browser adds nothing to. What only a real browser can
+ * Deliberately narrow — geometry and ARIA attributes are covered by the
+ * generated element's vitest specs, which a browser adds nothing to. What only a real browser can
  * prove is what this checks: that clicking an arc re-roots through the whole
- * wrapper stack, that the keyboard path reaches a shadow-DOM SVG node and its
- * focus lands there (the S1 risk), and that switching `layout` swaps SVG for
+ * generated front, that the keyboard path reaches an SVG node and its focus
+ * lands there (the S1 risk), and that switching `layout` swaps SVG for
  * HTML without losing the tree.
  *
- * `deepActive` is needed throughout: `document.activeElement` stops at the
- * outermost host, so a focused `<path>` inside a shadow root is invisible to it.
+ * The charts render in the light DOM since #437, so `deepActive` only walks a
+ * shadow root when one is in the way; it reads the focused node either way.
  */
 export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOptions): void {
   const path = options.path ?? '/enterprise/charts';
@@ -41,12 +41,13 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
       // Wait on the rendered tree rather than networkidle: the chart only has a
-      // role-bearing node once its data property has been assigned by the wrapper.
-      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+      // role-bearing node once its data property has been assigned by the wrapper,
+      // and its treeitems and controls are inert until the core marks it live.
+      await page.waitForSelector('.hierarchy-chart[data-mp-hydrated] [role="tree"]');
     });
 
     test('hierarchy: clicking a folder re-roots, the center control zooms back out', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
+      const chart = page.locator('.hierarchy-chart').first();
       const zoomOut = chart.locator('.center-control');
       await expect(zoomOut).toBeDisabled();
 
@@ -59,8 +60,11 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       await page.getByRole('button', { name: 'icicle' }).click();
       // `:not(.focus-cell)` matters: the focus column is itself a treeitem, and
       // clicking it at the root is a deliberate no-op (it is the zoom-out target).
-      await chart.locator('div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)').first().click();
-      await expect.poll(() => chart.getAttribute('root-id')).not.toBeNull();
+      // Re-rooting moves the icicle's focus column onto the clicked folder.
+      const folder = chart.locator('div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)').first();
+      const folderId = await folder.getAttribute('data-id');
+      await folder.click();
+      await expect(chart.locator('.focus-cell')).toHaveAttribute('data-id', folderId!);
 
       // Each layout owns its own zoom-out affordance (centre circle, focus
       // column, breadcrumb header), so `.center-control` exists only in the
@@ -71,11 +75,10 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
 
       await zoomOut.click();
       await expect(zoomOut).toBeDisabled();
-      expect(await chart.getAttribute('root-id')).toBeNull();
     });
 
-    test('hierarchy: keyboard reaches the shadow SVG arcs; Escape dismisses the tooltip, then zooms out', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
+    test('hierarchy: keyboard reaches the SVG arcs; Escape dismisses the tooltip, then zooms out', async ({ page }) => {
+      const chart = page.locator('.hierarchy-chart').first();
       const tooltip = chart.locator('.chart-tooltip');
       await chart.locator('[role="treeitem"]').first().focus();
       expect(await deepActive(page)).toMatchObject({ tag: 'path', role: 'treeitem' });
@@ -103,9 +106,9 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     });
 
     test('hierarchy: ctrl+wheel magnifies geometrically; plain wheel only hints', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
-      const zoomLevel = () =>
-        page.evaluate(() => (document.querySelector('mp-hierarchy-chart') as unknown as { zoomLevel: number }).zoomLevel);
+      const chart = page.locator('.hierarchy-chart').first();
+      // The sunburst's view window IS its viewBox, so the magnification reads off it.
+      const zoomLevel = async () => 1000 / Number((await chart.locator('svg').first().getAttribute('viewBox'))!.split(' ')[2]);
       expect(await zoomLevel()).toBe(1);
 
       // Real modifier+wheel input is engine-dependent in Playwright (mouse.wheel
@@ -117,8 +120,8 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       const viewBox = await chart.locator('svg').getAttribute('viewBox');
       expect(Number(viewBox!.split(' ')[2])).toBeLessThan(1000);
 
-      // Semantic state is untouched by geometric zoom.
-      expect(await chart.getAttribute('root-id')).toBeNull();
+      // Semantic state is untouched by geometric zoom: still at the tree root.
+      await expect(chart.locator('.center-control')).toBeDisabled();
 
       // A plain wheel is never captured: no zoom change, only the hint overlay.
       const before = await zoomLevel();
@@ -128,19 +131,18 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     });
 
     test('hierarchy: the breadcrumb walks back up after a re-root', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
+      const chart = page.locator('.hierarchy-chart').first();
       await page.getByRole('button', { name: 'icicle' }).click();
       await chart.locator('div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)').first().click();
-      await expect.poll(() => chart.getAttribute('root-id')).not.toBeNull();
-
+      // Ancestors become crumb buttons once re-rooted; at the tree root there are none.
       const crumbs = chart.locator('nav.breadcrumb button.crumb');
       await expect(crumbs).not.toHaveCount(0);
       await crumbs.first().click(); // the tree root
-      await expect.poll(() => chart.getAttribute('root-id')).toBeNull();
+      await expect(crumbs).toHaveCount(0);
     });
 
     test('hierarchy: the workspace dataset stays readable — labels only where they fit', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
+      const chart = page.locator('.hierarchy-chart').first();
       await page.getByRole('button', { name: /this workspace/ }).click();
       // 656+ arcs arrive; the label engine must NOT paint one per arc (the
       // speckling this feature exists to fix rendered 197 labels here).
@@ -153,13 +155,14 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       // gives ~20px rings, which hold no readable caption in any orientation.
       // What must hold in every host: magnifying makes captions fit, at the
       // same font size — the whole point of geometric zoom.
-      await page.evaluate(() =>
-        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(zoom: number): void }).setZoomLevel(8));
+      // Six + presses magnify about 11x (1.5 per step), the keyboard path to the same view.
+      await chart.locator('[role="treeitem"]').first().focus();
+      for (const _ of [1, 2, 3, 4, 5, 6]) await page.keyboard.press('+');
       await expect.poll(() => chart.locator('text.arc-label').count()).toBeGreaterThan(0);
     });
 
     test('hierarchy: switching layout swaps SVG arcs for HTML cells, tree intact', async ({ page }) => {
-      const chart = page.locator('mp-hierarchy-chart').first();
+      const chart = page.locator('.hierarchy-chart').first();
       await expect(chart.locator('svg [role="treeitem"]')).not.toHaveCount(0);
 
       await page.getByRole('button', { name: 'icicle' }).click();
@@ -175,7 +178,9 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     });
 
     test('trend: points are keyboard-walkable buttons; sparkline is a named image', async ({ page }) => {
-      const trend = page.locator('mp-trend-chart').first();
+      // Points take a tabindex only once the chart is live, so focusing one
+      // before hydration is a silent no-op: wait for the core's readiness mark.
+      const trend = page.locator('.trend-chart[data-mp-hydrated]').first();
       await trend.locator('.point').first().focus();
       expect(await deepActive(page)).toMatchObject({ tag: 'circle', role: 'button' });
 
@@ -189,7 +194,7 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
       await page.keyboard.press('ArrowRight');
       expect(await label()).not.toBe(before);
 
-      const sparkline = page.locator('mp-sparkline').first().locator('svg[role="img"]');
+      const sparkline = page.locator('.sparkline').first().locator('svg[role="img"]');
       await expect(sparkline).toHaveAttribute('aria-label', /\d/);
     });
   });

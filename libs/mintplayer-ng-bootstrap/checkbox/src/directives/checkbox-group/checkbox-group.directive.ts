@@ -24,7 +24,7 @@ import { BsCheckboxComponent } from '../../component/checkbox.component';
   }],
   host: {
     '(change)': 'onChildChange()',
-    // focusout is composed: the shadow input's blur reaches the host. The
+    // The inner inputs' focusout bubbles to the group host. The
     // stored onTouched was never CALLED before, which kept every
     // invalid-after-touched mirror dead (audit 4.9 prerequisite).
     '(focusout)': 'onTouched?.()',
@@ -49,7 +49,7 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   readonly checkboxes = contentChildren<BsCheckboxComponent>(forwardRef(() => BsCheckboxComponent), { descendants: true });
 
   /** Most-recently-written form value. An effect syncs each child's
-   *  `isToggled` (and the WC's `checked` property) whenever this OR the
+   *  `isToggled` whenever this OR the
    *  `checkboxes()` set changes, so an initial `writeValue` that lands
    *  before children register still applies once the `contentChildren`
    *  query populates. */
@@ -79,7 +79,6 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
         const v = cb.value();
         const isSelected = v != null && arr.includes(v);
         cb.isToggled.set(isSelected);
-        cb.checkboxRef().nativeElement.checked = isSelected;
       });
     });
   }
@@ -105,6 +104,6 @@ export class BsCheckboxGroupDirective implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.checkboxes().map((cb) => (cb.checkboxRef().nativeElement.disabled = isDisabled));
+    this.checkboxes().map((cb) => cb.formDisabled.set(isDisabled));
   }
 }

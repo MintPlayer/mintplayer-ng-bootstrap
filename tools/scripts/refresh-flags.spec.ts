@@ -94,7 +94,7 @@ describe('flagPaths', () => {
     const repoRoot = join('repo', 'root');
     const { flagsRoot, assetsDir } = flagPaths(repoRoot);
 
-    expect(flagsRoot).toBe(join(repoRoot, 'libs', 'mintplayer-web-components', 'flags'));
+    expect(flagsRoot).toBe(join(repoRoot, 'libs', 'mintplayer-ui-core', 'flags'));
     expect(assetsDir).toBe(join(flagsRoot, 'src', 'assets'));
   });
 });

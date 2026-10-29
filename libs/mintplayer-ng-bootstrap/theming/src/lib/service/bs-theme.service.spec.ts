@@ -5,14 +5,14 @@ import { TestBed } from '@angular/core/testing';
 import {
   __resetBsThemeStoreForTests,
   getBsThemeStore,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 import { BsThemeService } from './bs-theme.service';
-import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 import { provideBsTheme } from '../provide-bs-theme';
 
 /**
  * BsThemeService is a pure MIRROR of the core store
- * (libs/mintplayer-web-components/theming/src/store.ts). These tests pin that:
+ * (libs/mintplayer-ui-core/theming/src/store.ts). These tests pin that:
  * the store is the only state, a write on either side shows on both, and the
  * server branch resolves the request cookie against the page's meta default.
  */

@@ -1,25 +1,22 @@
 import * as React from 'react';
-import type { DropdownItemElement } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
 
 export interface BsDropdownItemProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, 'value'> {
   /** Bootstrap `.active` appearance. */
   active?: boolean;
   /** Non-interactive; removed from the menu's roving order. */
   disabled?: boolean;
-  /** Opaque value carried in the menu's `select` event detail. */
+  /** Opaque value reported by the menu's `onSelect`. */
   value?: unknown;
 }
 
 /**
- * `<BsDropdownItem>` — a Bootstrap `.dropdown-item` for use inside
- * `<BsDropdownMenu>`. There is no per-item web component: it renders a plain
- * light-DOM `<li class="dropdown-item">` that the menu WC styles via its shadow
- * `::slotted(.dropdown-item)` rule. Put the navigable content inside, e.g.
- * `<BsDropdownItem><a href="/x">Action</a></BsDropdownItem>` (the companion
- * stylesheet resets the nested link). The opaque `value` is assigned as the
- * `dropdownValue` property on the `<li>` so the menu can carry it in its `select`
- * event — not as `value`, which `HTMLLIElement` owns as a native long (an object
- * or a string written there becomes 0).
+ * `BsDropdownItem` — a Bootstrap `.dropdown-item` inside `BsDropdownMenu`.
+ * Put the navigable control inside, e.g.
+ * `<BsDropdownItem><a href="/x">Action</a></BsDropdownItem>`; the menu's
+ * scoped sheet makes it fill the item row. The opaque `value` is assigned as
+ * the `dropdownValue` property on the `<li>` — not as `value`, which
+ * `HTMLLIElement` owns as a native long (an object or string becomes 0).
  */
 export const BsDropdownItem = React.forwardRef<HTMLLIElement, BsDropdownItemProps>(
   function BsDropdownItem({ active, disabled, value, className, children, ...rest }, ref) {

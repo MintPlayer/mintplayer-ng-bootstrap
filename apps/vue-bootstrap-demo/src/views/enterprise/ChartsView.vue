@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BsHierarchyChart } from '@mintplayer/vue-bootstrap/charts/hierarchy';
+import { BsHierarchyChart, type HierarchyChartLayout, type HierarchyNode } from '@mintplayer/vue-bootstrap/charts/hierarchy';
 import { BsTrendChart } from '@mintplayer/vue-bootstrap/charts/trend';
 import { BsSparkline } from '@mintplayer/vue-bootstrap/charts/sparkline';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { HierarchyChartLayout, HierarchyNode } from '@mintplayer/web-components/charts/hierarchy';
-import type { TrendSeries } from '@mintplayer/web-components/charts/trend';
+import type { TrendSeries } from '@mintplayer/vue-bootstrap/charts/trend';
 
 const leaf = (id: string, name: string, value: number, coverage: number): HierarchyNode =>
   ({ id, name, value, colorValue: coverage });
@@ -65,16 +64,16 @@ const SOURCE = `<BsHierarchyChart
   :data="tree"
   :layout="layout"
   v-model:rootId="rootId"
-  color-min="60"
-  color-max="80"
+  :color-min="60"
+  :color-max="80"
   input-label="Coverage by folder"
   value-unit-label="lines"
 />
 
-<BsTrendChart :series="series" y-min="0" y-max="100" goal="80"
+<BsTrendChart :series="series" :y-min="0" :y-max="100" :goal="80"
   goal-label="Goal 80%" input-label="Coverage over time" />
 
-<BsSparkline :points="sparkPoints" area y-min="0" y-max="100" />`;
+<BsSparkline :points="sparkPoints" area :y-min="0" :y-max="100" />`;
 </script>
 
 <template>
@@ -115,8 +114,8 @@ const SOURCE = `<BsHierarchyChart
         :data="activeTree"
         :layout="layout"
         v-model:rootId="rootId"
-        color-min="60"
-        color-max="80"
+        :color-min="60"
+        :color-max="80"
         show-breadcrumb
         input-label="Coverage by folder"
         value-unit-label="lines"
@@ -127,9 +126,9 @@ const SOURCE = `<BsHierarchyChart
     <div class="trend-box">
       <BsTrendChart
         :series="series"
-        y-min="0"
-        y-max="100"
-        goal="80"
+        :y-min="0"
+        :y-max="100"
+        :goal="80"
         goal-label="Goal 80%"
         input-label="Coverage over time"
         locale="en-US"
@@ -138,7 +137,7 @@ const SOURCE = `<BsHierarchyChart
 
     <h2 class="mt-4">Sparkline</h2>
     <p>
-      unit coverage <BsSparkline :points="sparkPoints" area y-min="0" y-max="100" /> 84%
+      unit coverage <BsSparkline :points="sparkPoints" area :y-min="0" :y-max="100" /> 84%
     </p>
 
     <h2 class="mt-4">Source</h2>

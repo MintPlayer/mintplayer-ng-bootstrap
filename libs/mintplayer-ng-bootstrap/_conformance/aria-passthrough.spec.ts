@@ -1,36 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsAccordionComponent } from '@mintplayer/ng-bootstrap/accordion';
-import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
-import { BsHierarchyChartComponent } from '@mintplayer/ng-bootstrap/charts/hierarchy';
-import { BsSparklineComponent } from '@mintplayer/ng-bootstrap/charts/sparkline';
-import { BsTrendChartComponent } from '@mintplayer/ng-bootstrap/charts/trend';
-import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-import { BsDatatableComponent } from '@mintplayer/ng-bootstrap/datatable';
-import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
-import { BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown-menu';
-import { BsFileManagerComponent } from '@mintplayer/ng-bootstrap/file-manager';
-import {
-  BsNavbarComponent,
-  BsNavbarDropdownComponent,
-  BsNavbarDropdownLabelDirective,
-} from '@mintplayer/ng-bootstrap/navbar';
-import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
-import { BsQueryBuilderComponent } from '@mintplayer/ng-bootstrap/query-builder';
-import { BsRadioComponent } from '@mintplayer/ng-bootstrap/radio';
-import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
-import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
-import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
-import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-import { BsShellComponent } from '@mintplayer/ng-bootstrap/shell';
-import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
-import { BsSplitterComponent } from '@mintplayer/ng-bootstrap/splitter';
-import { BsThemeToggleComponent } from '@mintplayer/ng-bootstrap/theming';
-import { BsTimelineComponent } from '@mintplayer/ng-bootstrap/timeline';
-import { BsTreeSelectComponent } from '@mintplayer/ng-bootstrap/tree-select';
-import { BsTreeviewComponent } from '@mintplayer/ng-bootstrap/treeview';
 
 /**
  * Every Angular wrapper whose template root is a `<mp-*>` / `<mint-*>` element
@@ -113,8 +83,8 @@ interface WrapperCase {
   content?: string;
   /**
    * Markup the wrapper must be nested inside, as `[open, close]`. Some wrappers
-   * throw in their constructor without an ancestor — `bs-tree-select` requires a
-   * `<bs-form>`.
+   * throw in their constructor without an ancestor (the WC-backed `bs-tree-select`
+   * required a `<bs-form>` before it became a generated front).
    */
   wrap?: readonly [string, string];
   /** Extra components/directives the harness template needs for `content`/`wrap`. */
@@ -128,48 +98,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-accordion', tag: 'mp-accordion', component: BsAccordionComponent },
-  { selector: 'bs-carousel', tag: 'mp-carousel', component: BsCarouselComponent },
-  { selector: 'bs-checkbox', tag: 'mp-checkbox', component: BsCheckboxComponent },
-  { selector: 'bs-hierarchy-chart', tag: 'mp-hierarchy-chart', component: BsHierarchyChartComponent },
-  { selector: 'bs-sparkline', tag: 'mp-sparkline', component: BsSparklineComponent },
-  { selector: 'bs-trend-chart', tag: 'mp-trend-chart', component: BsTrendChartComponent },
-  { selector: 'bs-datatable', tag: 'mp-datatable', component: BsDatatableComponent },
-  { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
-  { selector: 'bs-dropdown-menu', tag: 'mp-dropdown-menu', component: BsDropdownMenuComponent },
-  { selector: 'bs-file-manager', tag: 'mp-file-manager', component: BsFileManagerComponent },
-  { selector: 'bs-navbar', tag: 'mp-navbar', component: BsNavbarComponent },
-  {
-    selector: 'bs-navbar-dropdown',
-    tag: 'mp-navbar-dropdown',
-    component: BsNavbarDropdownComponent,
-    // contentChild.required(BsNavbarDropdownLabelDirective) — NG0951 without it.
-    // Must be an <ng-template>: the directive injects TemplateRef (the wrapper
-    // renders it through ngTemplateOutlet), so on a plain element it fails NG0201.
-    content: '<ng-template bsNavbarDropdownLabel>label</ng-template>',
-    needs: [BsNavbarDropdownLabelDirective],
-  },
-  { selector: 'bs-input-group', tag: 'mp-input-group', component: BsInputGroupComponent },
-  { selector: 'bs-pagination', tag: 'mp-pagination', component: BsPaginationComponent },
-  { selector: 'bs-query-builder', tag: 'mp-query-builder', component: BsQueryBuilderComponent },
-  { selector: 'bs-radio', tag: 'mp-radio', component: BsRadioComponent },
-  { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
-  { selector: 'bs-phone-input', tag: 'mp-phone-input', component: BsPhoneInputComponent },
-  { selector: 'bs-select', tag: 'mp-select', component: BsSelectComponent },
-  { selector: 'bs-shell', tag: 'mp-shell', component: BsShellComponent },
-  { selector: 'bs-signature-pad', tag: 'mp-signature-pad', component: BsSignaturePadComponent },
-  { selector: 'bs-splitter', tag: 'mp-splitter', component: BsSplitterComponent },
-  { selector: 'bs-theme-toggle', tag: 'mp-theme-toggle', component: BsThemeToggleComponent },
-  { selector: 'bs-timeline', tag: 'mp-timeline', component: BsTimelineComponent },
-  {
-    selector: 'bs-tree-select',
-    tag: 'mp-tree-select',
-    component: BsTreeSelectComponent,
-    // Its constructor throws '<bs-tree-select> must be inside a <bs-form>'.
-    wrap: ['<bs-form>', '</bs-form>'],
-    needs: [BsFormComponent],
-  },
-  { selector: 'bs-treeview', tag: 'mp-treeview', component: BsTreeviewComponent },
 ];
 
 function probeAttributes(): string {
@@ -259,10 +187,16 @@ describe('Angular wrapper ARIA passthrough', () => {
   });
 
   it('covers every nested-host wrapper in the library', () => {
-    // Guards against a new wrapper being added without an entry above. The count
-    // comes from scanning for templates whose root is an mp-*/mint-* element; if
-    // this fails, add the wrapper to WRAPPERS rather than raising the number.
-    expect(WRAPPERS).toHaveLength(26);
+    // Guards against a new wrapper being added without an entry above: every
+    // template whose root is an mp-*/mint-* element must be listed. The scan
+    // replaces a hand-kept count, which went stale as #437 removed wrappers.
+    const templates = import.meta.glob<string>('../**/*.component.html', { query: '?raw', import: 'default', eager: true });
+    const listed = new Set(WRAPPERS.map((w) => w.tag));
+    const missing = Object.entries(templates)
+      .map(([path, html]) => [path, /^<((?:mp|mint)-[\w-]+)/.exec(html.replace(/<!--[\s\S]*?-->/g, '').trim())?.[1]] as const)
+      .filter(([, tag]) => tag && !listed.has(tag))
+      .map(([path]) => path);
+    expect(missing).toEqual([]);
     expect(new Set(WRAPPERS.map((w) => w.selector)).size).toBe(WRAPPERS.length);
   });
 });

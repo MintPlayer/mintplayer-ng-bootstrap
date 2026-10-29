@@ -15,26 +15,26 @@ async function mockArtistApi(page: Page) {
   await mockArtistQuery(page, artists);
 }
 
-// Read rows out of the mp-datatable's shadow DOM. The Lit WC renders a single
-// <table> inside shadow root, so we have to reach in via evaluate().
+// Read rows out of bs-datatable, which renders its table in the light DOM.
 // Count only the *materialized* rows — placeholders (rows whose page hasn't
 // been fetched yet) are excluded. In lazy virtual mode this stays a small
 // viewport-sized window, never the full result set.
 async function countRealRows(page: Page): Promise<number> {
   return await page.evaluate(() => {
-    const wc = document.querySelector('mp-datatable');
+    const wc = document.querySelector('bs-datatable');
     if (!wc) return 0;
     return wc.querySelectorAll('tbody tr[data-row-key]:not([data-placeholder="true"])').length;
   });
 }
 
-// totalRecords is now DERIVED from the fetch response by the WC itself — the
-// consumer never sets it. Reading it back proves the fetch loop ran and the
-// virtualizer knows the full size without having drained every page.
+// totalRecords is DERIVED from the fetch response by the table itself — the
+// consumer never sets it. aria-rowcount (data rows + the one header row)
+// proves the fetch loop ran and the virtualizer knows the full size without
+// having drained every page.
 async function totalRecords(page: Page): Promise<number> {
   return await page.evaluate(() => {
-    const wc = document.querySelector('mp-datatable') as (HTMLElement & { totalRecords?: number | null }) | null;
-    return wc?.totalRecords ?? 0;
+    const count = document.querySelector('bs-datatable table')?.getAttribute('aria-rowcount');
+    return count ? Number(count) - 1 : 0;
   });
 }
 
@@ -67,21 +67,15 @@ test.describe('bs-datatable virtual mode', () => {
     expect(real).toBeLessThan(200);
   });
 
-  test('paginated mode renders the mp-pagination footer with the correct total pages', async ({ page }) => {
-    // Default mode is pagination. The footer now contains TWO mp-pagination
-    // instances — the rows-per-page selector first (.datatable-per-page,
-    // pageNumbers = [10, 20, 50]) and the page navigator second
-    // (.datatable-pagination, pageNumbers = [1…totalPages]). Scope the
-    // query to the navigator. With 200 records and perPage=20 we expect 10
-    // pages.
-    const totalPagesFromFooter = await page.evaluate(() => {
-      const datatable = document.querySelector('mp-datatable');
-      const pagination = datatable?.querySelector('mp-pagination.datatable-pagination') as
-        | (HTMLElement & { pageNumbers?: number[] })
-        | null;
-      return pagination?.pageNumbers?.length ?? 0;
-    });
-    expect(totalPagesFromFooter).toBe(10);
+  test('paginated mode renders the pagination footer with the correct total pages', async ({ page }) => {
+    // Default mode is pagination. The footer holds the rows-per-page selector
+    // and the page navigator (nav.datatable-pagination); with 200 records and
+    // perPage=20 the navigator ends at page 10 (the middle pages may collapse
+    // into an ellipsis, the last page never does).
+    // The first table: the one this spec's other tests measure (the page has several).
+    const nav = page.locator('bs-datatable').first().locator('nav.datatable-pagination');
+    await expect(nav.locator('[aria-label="Page 10"]')).toHaveCount(1);
+    await expect(nav.locator('[aria-label="Page 11"]')).toHaveCount(0);
   });
 
   test('toggling pagination ↔ virtual keeps the table functional', async ({ page }) => {

@@ -4,23 +4,22 @@ import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  BS_THEME_DEFAULT_MODES,
   BsThemeToggle,
   getBsThemeStore,
   useBsTheme,
   type BsThemeToggleMode,
   type UseBsThemeResult,
 } from '@mintplayer/react-bootstrap/theming';
-import { __resetBsThemeStoreForTests, type MpThemeToggle } from '@mintplayer/web-components/theming';
+import { __resetBsThemeStoreForTests } from '@mintplayer/ui-core/theming';
 
 import { render, renderEl } from './harness';
-import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` is a thin `useSyncExternalStore` adapter over the shared
  * browser store, and `BsThemeToggle` a `createComponent` wrapper. What can go
  * wrong silently is the adapter plumbing, not the store (which has its own
- * spec in the WC lib):
+ * spec in ui-core):
  *
  *  - a listener that is never released keeps an unmounted component alive and
  *    re-rendering on every theme change;
@@ -125,38 +124,37 @@ describe('useBsTheme', () => {
   });
 });
 
+
 describe('BsThemeToggle', () => {
-  it('forwards consumer attributes to <mp-theme-toggle>', async () => {
-    const el = await renderEl(<BsThemeToggle aria-label="Colour mode" id="theme" />, 'mp-theme-toggle');
+  const button = (el: Element) => el.querySelector('button') as HTMLButtonElement;
+
+  it('forwards consumer attributes to its root', async () => {
+    const el = await renderEl(<BsThemeToggle aria-label="Colour mode" id="theme" />, 'span.theme-toggle');
     expect(el.getAttribute('aria-label')).toBe('Colour mode');
     expect(el.getAttribute('id')).toBe('theme');
   });
 
-  it('assigns modes as a property, not an attribute', async () => {
+  it('names the next entry of the default modes, and cycles them through the store', async () => {
+    const el = await renderEl(<BsThemeToggle />, 'span.theme-toggle');
+    expect(button(el).getAttribute('aria-label')).toBe('Switch to light theme');
+    await act(async () => button(el).click());
+    expect(getBsThemeStore().getMode()).toBe('light');
+    expect(button(el).getAttribute('aria-label')).toBe('Switch to dark theme');
+  });
+
+  it('follows a modes prop, never as an attribute', async () => {
     const modes: readonly BsThemeToggleMode[] = [
-      ...BS_THEME_DEFAULT_MODES,
-      { mode: 'sepia', label: 'Sepia', announcement: 'Sepia mode', icon: 'sepia' },
+      { mode: 'auto', label: 'Go auto', announcement: 'Auto', icon: 'M0 0h1v1z' },
+      { mode: 'sepia', label: 'Go sepia', announcement: 'Sepia', icon: 'M0 0h1v1z' },
     ];
-    const el = await renderEl<MpThemeToggle>(<BsThemeToggle modes={modes} />, 'mp-theme-toggle');
-    expect(el.modes).toEqual(modes);
+    const el = await renderEl(<BsThemeToggle modes={modes} />, 'span.theme-toggle');
+    expect(button(el).getAttribute('aria-label')).toBe('Go sepia');
     expect(el.hasAttribute('modes')).toBe(false);
   });
 
-  it('falls back to the default modes', async () => {
-    const el = await renderEl<MpThemeToggle>(<BsThemeToggle />, 'mp-theme-toggle');
-    expect(el.modes).toEqual(BS_THEME_DEFAULT_MODES);
-  });
-
-  it('restores the default modes when the prop is removed', async () => {
-    const modes = BS_THEME_DEFAULT_MODES.slice(0, 2);
-    await renderEl<MpThemeToggle>(<BsThemeToggle modes={modes} />, 'mp-theme-toggle');
-    const el = await renderEl<MpThemeToggle>(<BsThemeToggle />, 'mp-theme-toggle');
-    expect(el.modes).toEqual(BS_THEME_DEFAULT_MODES);
-  });
-
-  it('forwards a ref to the element', async () => {
-    const ref = React.createRef<MpThemeToggle>();
-    const el = await renderEl(<BsThemeToggle ref={ref} />, 'mp-theme-toggle');
+  it('forwards a ref to its root', async () => {
+    const ref = React.createRef<HTMLSpanElement>();
+    const el = await renderEl(<BsThemeToggle ref={ref} />, 'span.theme-toggle');
     expect(ref.current).toBe(el);
   });
 });

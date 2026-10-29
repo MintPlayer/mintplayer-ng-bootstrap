@@ -6,7 +6,7 @@ import {
   provideEnvironmentInitializer,
   type EnvironmentProviders,
 } from '@angular/core';
-import { configureBsTheme, type BsThemeConfig } from '@mintplayer/web-components/theming';
+import { configureBsTheme, type BsThemeConfig } from '@mintplayer/ui-core/theming';
 import { BsThemeService } from './service/bs-theme.service';
 
 /**

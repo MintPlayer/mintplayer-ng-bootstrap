@@ -4,7 +4,7 @@ import {
   resolveMode,
   type BsEffectiveThemeMode,
   type BsThemeMode,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 
 export interface UseBsThemeResult {
   /** The mode the user picked: `auto`, `light`, `dark` or a custom mode. */
@@ -69,7 +69,7 @@ const setMode = (mode: BsThemeMode): void => {
 
 /**
  * The document's colour mode, backed by the shared browser store
- * (`@mintplayer/web-components/theming`). Re-renders when the mode changes
+ * (`@mintplayer/ui-core/theming`). Re-renders when the mode changes
  * from anywhere: this hook, a `<BsThemeToggle>`, another framework's adapter
  * on the same page, another tab, or the OS preference while in `auto`.
  *

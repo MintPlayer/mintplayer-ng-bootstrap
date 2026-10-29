@@ -1,0 +1,198 @@
+// The treeview's stylesheet (PRD #437). Rescoped at build time: every compound
+// gains [data-mps=treeview]. Rows are flat; a row's indent comes from its
+// level, which the core writes as --mp-treeview-level.
+
+// The scope of the final-form selectors below; a group that includes this sheet
+// (S15) sets its own, since its templates stamp theirs.
+$scope: treeview !default;
+
+.treeview {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--mp-treeview-border-color);
+  border-radius: var(--bs-list-group-border-radius, 0.375rem);
+  overflow: hidden;
+
+  --mp-treeview-indent: 20px;
+  --mp-treeview-row-padding-y: 0.5rem;
+  --mp-treeview-row-padding-x: 0.75rem;
+  --mp-treeview-row-hover-bg: var(--bs-list-group-action-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+  --mp-treeview-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary));
+  --mp-treeview-row-selected-color: var(--bs-list-group-active-color, #fff);
+  --mp-treeview-row-focus-outline: 2px solid var(--bs-primary, #1389fd);
+  --mp-treeview-chevron-color: var(--bs-secondary-color, #6c757d);
+  --mp-treeview-border-color: var(--bs-list-group-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+}
+
+.treeview-borderless {
+  border: 0;
+  border-radius: 0;
+}
+
+.treeview-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.treeview-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  padding-block: var(--mp-treeview-row-padding-y);
+  padding-inline: calc((var(--mp-treeview-level, 1) - 1) * var(--mp-treeview-indent) + var(--mp-treeview-row-padding-x))
+    var(--mp-treeview-row-padding-x);
+  cursor: pointer;
+  user-select: none;
+  border-top: 1px solid var(--mp-treeview-border-color);
+  background-color: transparent;
+  color: inherit;
+}
+
+.treeview-row:first-child,
+.treeview-borderless > .treeview-tree > .treeview-row {
+  border-top: 0;
+}
+
+.treeview-row:hover {
+  background-color: var(--mp-treeview-row-hover-bg);
+}
+
+.treeview-row[data-selected="true"] {
+  background-color: var(--mp-treeview-row-selected-bg);
+  color: var(--mp-treeview-row-selected-color);
+}
+
+.treeview-row:focus {
+  outline: none;
+}
+
+.treeview-row:focus-visible {
+  outline: var(--mp-treeview-row-focus-outline);
+  outline-offset: -2px;
+}
+
+.treeview-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  color: var(--mp-treeview-chevron-color);
+  transition: transform 0.15s ease-in-out;
+}
+
+// The chevron is a mask over currentColor: no markup, so no unstamped SVG.
+.treeview-chevron::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.treeview-chevron:dir(rtl)::before {
+  transform: scaleX(-1);
+}
+
+.treeview-chevron[data-expanded="true"] {
+  transform: rotate(90deg);
+}
+
+.treeview-chevron.invisible {
+  visibility: hidden;
+}
+
+.treeview-chevron.loading::before {
+  display: none;
+}
+
+.treeview-spinner {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  animation: mp-treeview-spin 0.8s linear infinite;
+}
+
+@keyframes mp-treeview-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.treeview-row[data-error="true"] > .treeview-chevron::after {
+  content: "!";
+  color: var(--bs-danger, #dc3545);
+  margin-inline-start: 0.25rem;
+}
+
+// The message reads after the label (order), and describes the row.
+.treeview-load-error {
+  order: 1;
+  flex: 0 1 auto;
+  color: var(--bs-danger, #dc3545);
+  font-size: 0.875em;
+}
+
+.treeview-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+// The icon markup is the resolver's: anchored on our stamped icon, final form.
+/*! @mps-global */
+.treeview-icon[data-mps=#{$scope}] svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.treeview-body {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*! @mps-global */
+// A class contract on content a node slot may render (tree-select builds its own
+// .treeview-label): anchored on our stamped row, so nothing outside can match.
+.treeview-row[data-mps=#{$scope}] .treeview-label {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .treeview-chevron {
+    transition: none !important;
+  }
+
+  .treeview-spinner {
+    animation-duration: 2.4s;
+  }
+}

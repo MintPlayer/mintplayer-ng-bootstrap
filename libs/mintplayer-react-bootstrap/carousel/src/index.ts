@@ -1,8 +1,8 @@
-export { BsCarousel } from './BsCarousel';
-export type { BsCarouselProps } from './BsCarousel';
+// The carousel is generated from @mintplayer/ui-core/carousel (PRD #437 D10).
+export * from './generated';
 export type {
   CarouselAnimation,
+  CarouselLabels,
   CarouselOrientation,
   CarouselSlideChangeEventDetail,
-  CarouselPausedChangeEventDetail,
-} from '@mintplayer/web-components/carousel';
+} from '@mintplayer/ui-core/carousel';

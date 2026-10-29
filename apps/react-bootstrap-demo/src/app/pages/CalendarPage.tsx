@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-const SOURCE = "<BsCalendar />";
+const SOURCE = '<BsCalendar selectedDate={selectedDate} onSelectedDateChange={setSelectedDate} />';
 
 export function CalendarPage() {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   return (
     <div className="demo-page">
       <h1>Calendar</h1>
       <p className="text-body-secondary">
-        Accessible month-grid date picker with full keyboard navigation. The
-        same WC drives the Angular and Vue demos.
+        Accessible month-grid date picker with full keyboard navigation, generated
+        from one source for Angular, React, Vue and Lit.
       </p>
 
       <details className="mb-2">
@@ -27,7 +29,10 @@ export function CalendarPage() {
 
       <section>
         <h2>Default</h2>
-        <BsCalendar />
+        <BsCalendar selectedDate={selectedDate} onSelectedDateChange={setSelectedDate} />
+        <p className="text-body-secondary mt-2">
+          Selected: <code>{selectedDate?.toDateString()}</code>
+        </p>
       </section>
 
       <section>

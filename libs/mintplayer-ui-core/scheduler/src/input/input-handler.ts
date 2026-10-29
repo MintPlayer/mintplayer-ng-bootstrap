@@ -1,0 +1,675 @@
+import { SchedulerEvent, TimeSlot } from '@mintplayer/ui-core/scheduler-core';
+import {
+  NormalizedPointerEvent,
+  normalizeMouseEvent,
+  normalizeTouchEvent,
+  getPointerDistance,
+} from './pointer-event';
+import { PointerTarget } from '../drag/drag-types';
+
+/**
+ * Callbacks for input handler events.
+ */
+export interface InputHandlerCallbacks {
+  /** Called when pointer goes down on a valid target */
+  onPointerDown: (pointer: NormalizedPointerEvent, target: PointerTarget, immediate?: boolean) => void;
+  /** Called when pointer moves (during drag) */
+  onPointerMove: (pointer: NormalizedPointerEvent) => void;
+  /** Called when pointer is released */
+  onPointerUp: (pointer: NormalizedPointerEvent) => void;
+  /** Called for click events (not drag) */
+  onClick: (pointer: NormalizedPointerEvent, target: PointerTarget) => void;
+  /** Called for double-click events */
+  onDoubleClick: (pointer: NormalizedPointerEvent, target: PointerTarget) => void;
+  /** Called when touch drag mode is activated (after hold) */
+  onTouchDragActivated?: () => void;
+  /** Called when touch drag mode is deactivated */
+  onTouchDragDeactivated?: () => void;
+  /** Called when the platform cancels an active touch drag; the drag must be abandoned, not committed */
+  onPointerCancel?: () => void;
+  /** Called to get the scrollable container for panning */
+  getScrollContainer?: () => HTMLElement | null;
+}
+
+/**
+ * Configuration for the input handler.
+ */
+export interface InputHandlerConfig {
+  /** The scheduler's root element: listeners and lookups stay inside it. */
+  root: HTMLElement;
+  /** Function to get event by ID */
+  getEventById: (id: string) => SchedulerEvent | null;
+  /** Whether editing is enabled */
+  isEditable: () => boolean;
+  /** Whether selection is enabled */
+  isSelectable: () => boolean;
+  /** Whether the given event is the currently-selected one */
+  isEventSelected?: (eventId: string) => boolean;
+  /** Touch hold duration in ms before drag activates (default: 500) */
+  touchHoldDuration?: number;
+  /** Movement threshold before touch hold is cancelled (default: 10) */
+  touchMoveThreshold?: number;
+}
+
+const DEFAULT_TOUCH_HOLD_DURATION = 600;
+const DEFAULT_TOUCH_MOVE_THRESHOLD = 10;
+
+/**
+ * Unified input handler for mouse and touch events.
+ * Normalizes events and handles touch-specific behaviors (hold-to-drag).
+ */
+export class InputHandler {
+  private readonly config: InputHandlerConfig;
+  private readonly callbacks: InputHandlerCallbacks;
+
+  /**
+   * Which device produced the gesture in progress.
+   *
+   * `contextmenu` cannot be trusted to say so itself: Chromium delivers it as a
+   * `PointerEvent` carrying `pointerType`, but Firefox and WebKit send a bare
+   * `MouseEvent` with no such field. Recording it where the gesture actually
+   * starts is the only engine-independent answer, and the scheduler needs one —
+   * a touch `contextmenu` must yield to hold-to-drag rather than open the editor.
+   *
+   * Pen is deliberately NOT tracked as touch: a stylus drives the mouse path
+   * (`mousedown`/`mousemove` with its 5px threshold), never the hold, so it wants
+   * the desktop context menu.
+   */
+  private lastPointerType: 'mouse' | 'touch' = 'mouse';
+
+  // Touch-specific state
+  private touchHoldTimer: ReturnType<typeof setTimeout> | null = null;
+  private touchStartPosition: { x: number; y: number } | null = null;
+  private isTouchDragMode = false;
+  private touchHoldTarget: HTMLElement | null = null;
+  /** The element the current gesture started on; see bindGestureElement. */
+  private gestureElement: HTMLElement | null = null;
+
+  // Pan mode state (touch-only: pan when touch starts on event and moves quickly)
+  private isPanMode = false;
+  private panStartPosition: { x: number; y: number } | null = null;
+  private panStartScroll: { left: number; top: number } | null = null;
+  private panStartedOnEvent = false;
+
+  // Scroll blocking state (saved styles for restoration)
+  private savedBodyStyles: { overflow: string; touchAction: string } | null = null;
+
+  // Bound event handlers
+  private readonly boundHandleMouseDown: (e: MouseEvent) => void;
+  private readonly boundHandleMouseMove: (e: MouseEvent) => void;
+  private readonly boundHandleMouseUp: (e: MouseEvent) => void;
+  private readonly boundHandleClick: (e: MouseEvent) => void;
+  private readonly boundHandleDblClick: (e: MouseEvent) => void;
+  private readonly boundHandleTouchStart: (e: TouchEvent) => void;
+  private readonly boundHandleTouchMove: (e: TouchEvent) => void;
+  private readonly boundHandleTouchEnd: (e: TouchEvent) => void;
+  private readonly boundHandleTouchCancel: (e: TouchEvent) => void;
+
+  constructor(config: InputHandlerConfig, callbacks: InputHandlerCallbacks) {
+    this.config = config;
+    this.callbacks = callbacks;
+
+    // Bind handlers
+    this.boundHandleMouseDown = this.handleMouseDown.bind(this);
+    this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+    this.boundHandleMouseUp = this.handleMouseUp.bind(this);
+    this.boundHandleClick = this.handleClick.bind(this);
+    this.boundHandleDblClick = this.handleDblClick.bind(this);
+    this.boundHandleTouchStart = this.handleTouchStart.bind(this);
+    this.boundHandleTouchMove = this.handleTouchMove.bind(this);
+    this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+    this.boundHandleTouchCancel = this.handleTouchCancel.bind(this);
+  }
+
+  /**
+   * True when the gesture in progress came from a finger.
+   *
+   * The caller is `contextmenu` arbitration: on touch the browser fires that
+   * event ~100ms before our 600ms hold arms, so acting on it would make
+   * hold-to-drag unreachable.
+   */
+  isTouchGesture(): boolean {
+    return this.lastPointerType === 'touch';
+  }
+
+  /**
+   * Attach all event listeners.
+   */
+  attach(): void {
+    const root = this.config.root;
+
+    root.addEventListener('mousedown', this.boundHandleMouseDown as EventListener);
+    document.addEventListener('mousemove', this.boundHandleMouseMove);
+    document.addEventListener('mouseup', this.boundHandleMouseUp);
+    root.addEventListener('click', this.boundHandleClick as EventListener);
+    root.addEventListener('dblclick', this.boundHandleDblClick as EventListener);
+
+    root.addEventListener('touchstart', this.boundHandleTouchStart as EventListener, {
+      passive: false,
+    });
+    root.addEventListener('touchmove', this.boundHandleTouchMove as EventListener, {
+      passive: false,
+    });
+    root.addEventListener('touchend', this.boundHandleTouchEnd as EventListener);
+    root.addEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
+  }
+
+  /**
+   * Detach all event listeners.
+   */
+  detach(): void {
+    const root = this.config.root;
+
+    root.removeEventListener('mousedown', this.boundHandleMouseDown as EventListener);
+    document.removeEventListener('mousemove', this.boundHandleMouseMove);
+    document.removeEventListener('mouseup', this.boundHandleMouseUp);
+    root.removeEventListener('click', this.boundHandleClick as EventListener);
+    root.removeEventListener('dblclick', this.boundHandleDblClick as EventListener);
+
+    root.removeEventListener('touchstart', this.boundHandleTouchStart as EventListener);
+    root.removeEventListener('touchmove', this.boundHandleTouchMove as EventListener);
+    root.removeEventListener('touchend', this.boundHandleTouchEnd as EventListener);
+    root.removeEventListener('touchcancel', this.boundHandleTouchCancel as EventListener);
+
+    this.unbindGestureElement();
+    this.cancelTouchHold();
+    this.exitPanMode();
+    this.removeScrollBlock();
+  }
+
+  /**
+   * Check if in touch drag mode.
+   */
+  isInTouchDragMode(): boolean {
+    return this.isTouchDragMode;
+  }
+
+  /**
+   * Analyze pointer target to determine what was clicked.
+   */
+  analyzeTarget(element: HTMLElement): PointerTarget {
+    // Check for resize handle first
+    const resizeHandle = element.closest('.resize-handle') as HTMLElement;
+    if (resizeHandle) {
+      const eventEl = resizeHandle.closest(
+        '.scheduler-event, .scheduler-timeline-event'
+      ) as HTMLElement;
+      const eventId = eventEl?.dataset['eventId'];
+      const event = eventId ? this.config.getEventById(eventId) : null;
+
+      if (event) {
+        return {
+          type: 'resize-handle',
+          event,
+          resizeHandle: resizeHandle.dataset['handle'] as 'start' | 'end',
+        };
+      }
+    }
+
+    // Check for event
+    const eventEl = element.closest(
+      '.scheduler-event:not(.preview), .scheduler-timeline-event:not(.preview)'
+    ) as HTMLElement;
+    if (eventEl) {
+      const eventId = eventEl.dataset['eventId'];
+      const event = eventId ? this.config.getEventById(eventId) : null;
+
+      if (event) {
+        return { type: 'event', event };
+      }
+    }
+
+    // Check for slot
+    const slotEl = element.closest(
+      '.scheduler-time-slot, .scheduler-timeline-slot'
+    ) as HTMLElement;
+    if (slotEl) {
+      return { type: 'slot', slotElement: slotEl };
+    }
+
+    return { type: 'none' };
+  }
+
+  // Mouse event handlers
+
+  private handleMouseDown(e: MouseEvent): void {
+    // Recorded before the editable guard: the gesture's device is a fact about
+    // the input, not about whether we chose to act on it, and `contextmenu`
+    // arbitration needs it even on a read-only scheduler.
+    this.lastPointerType = 'mouse';
+    if (!this.config.isEditable()) return;
+
+    const pointer = normalizeMouseEvent(e);
+    const target = this.analyzeTarget(pointer.target);
+
+    // Only handle drag-initiating targets
+    if (target.type === 'none') return;
+
+    // Check if selectable for slots
+    if (target.type === 'slot' && !this.config.isSelectable()) return;
+
+    e.preventDefault();
+
+    this.callbacks.onPointerDown(pointer, target);
+  }
+
+  private handleMouseMove(e: MouseEvent): void {
+    const pointer = normalizeMouseEvent(e);
+    this.callbacks.onPointerMove(pointer);
+  }
+
+  private handleMouseUp(e: MouseEvent): void {
+    const pointer = normalizeMouseEvent(e);
+    this.callbacks.onPointerUp(pointer);
+  }
+
+  private handleClick(e: MouseEvent): void {
+    const pointer = normalizeMouseEvent(e);
+    const target = this.analyzeTarget(pointer.target);
+
+    // Skip event clicks - handled by drag manager
+    if (target.type === 'event' || target.type === 'resize-handle') {
+      return;
+    }
+
+    this.callbacks.onClick(pointer, target);
+  }
+
+  private handleDblClick(e: MouseEvent): void {
+    const pointer = normalizeMouseEvent(e);
+    const target = this.analyzeTarget(pointer.target);
+    this.callbacks.onDoubleClick(pointer, target);
+  }
+
+  // Touch event handlers
+
+  private handleTouchStart(e: TouchEvent): void {
+    // See handleMouseDown: recorded before any guard, because a read-only
+    // scheduler must still suppress the long-press context menu.
+    this.lastPointerType = 'touch';
+    if (!this.config.isEditable()) return;
+
+    // Only handle single touch
+    if (e.touches.length !== 1) {
+      this.cancelTouchHold();
+      return;
+    }
+
+    const pointer = normalizeTouchEvent(e);
+    if (!pointer) return;
+
+    const target = this.analyzeTarget(pointer.target);
+
+    // Only handle drag-initiating targets
+    if (target.type === 'none') return;
+    if (target.type === 'slot' && !this.config.isSelectable()) return;
+
+    this.touchStartPosition = { x: pointer.clientX, y: pointer.clientY };
+    this.touchHoldTarget = pointer.target;
+
+    // Track if touch started on an event (for pan support)
+    this.panStartedOnEvent = target.type === 'event' || target.type === 'resize-handle';
+
+    // Add element-level listeners IMMEDIATELY for ALL drag-initiating touches.
+    // Use e.target (the actual touched element), not pointer.target: in shadow
+    // DOM the two can differ due to retargeting. Touch events stay locked to the
+    // element the touch started on, so once a re-render replaces that element it
+    // is detached and only a listener ON it still hears the rest of the gesture.
+    this.bindGestureElement(e.target as HTMLElement);
+
+    // A touch that starts on a resize handle of the ALREADY-SELECTED event
+    // arms the resize immediately: the visible glyph is the affordance the
+    // user just tapped for, and a second 600ms hold after the selection tap
+    // reads as broken. Scroll is a non-issue — the handle carries
+    // touch-action: none. All other touches keep the hold-to-drag model.
+    if (
+      target.type === 'resize-handle' &&
+      target.event &&
+      this.config.isEventSelected?.(target.event.id)
+    ) {
+      this.activateTouchDragMode(pointer, target);
+      return;
+    }
+
+    // Add visual feedback
+    this.addTouchFeedback(pointer.target, 'pending');
+
+    // Start hold timer
+    const holdDuration =
+      this.config.touchHoldDuration ?? DEFAULT_TOUCH_HOLD_DURATION;
+
+    this.touchHoldTimer = setTimeout(() => {
+      this.activateTouchDragMode(pointer, target);
+    }, holdDuration);
+  }
+
+  private handleTouchMove(e: TouchEvent): void {
+    if (e.touches.length !== 1) {
+      this.cancelTouchHold();
+      this.exitPanMode();
+      return;
+    }
+
+    const pointer = normalizeTouchEvent(e);
+    if (!pointer) return;
+
+    // If in pan mode, continue panning
+    if (this.isPanMode) {
+      e.preventDefault();
+      this.performPan(pointer.clientX, pointer.clientY);
+      return;
+    }
+
+    // If we have a pending touch hold, check if user moved too much
+    if (this.touchHoldTimer && this.touchStartPosition) {
+      const threshold =
+        this.config.touchMoveThreshold ?? DEFAULT_TOUCH_MOVE_THRESHOLD;
+      const distance = getPointerDistance(this.touchStartPosition, {
+        x: pointer.clientX,
+        y: pointer.clientY,
+      });
+
+      if (distance > threshold) {
+        // User moved too much during hold period
+        this.cancelTouchHold();
+
+        // If touch started on an event, enter pan mode instead of allowing native scroll
+        if (this.panStartedOnEvent) {
+          this.enterPanMode(pointer.clientX, pointer.clientY);
+          e.preventDefault();
+        }
+        // Otherwise, allow native scroll (no preventDefault)
+        return;
+      }
+
+      // Still waiting for hold - prevent scroll while waiting
+      // This is critical: we must prevent the browser from starting scroll
+      // intervention during the hold period, otherwise it will take over
+      // and subsequent touchmove events become non-cancelable
+      e.preventDefault();
+      return;
+    }
+
+    // If in touch drag mode, handle the drag
+    if (this.isTouchDragMode) {
+      e.preventDefault();
+      this.callbacks.onPointerMove(pointer);
+    }
+  }
+
+  private handleTouchEnd(e: TouchEvent): void {
+    const pointer = normalizeTouchEvent(e);
+    // The gesture is over whichever branch below handles it.
+    this.unbindGestureElement();
+
+    // If in pan mode, exit it
+    if (this.isPanMode) {
+      this.exitPanMode();
+      return;
+    }
+
+    // If we had a pending hold that never activated, treat as tap
+    if (this.touchHoldTimer) {
+      this.cancelTouchHold();
+
+      if (pointer && this.touchHoldTarget) {
+        const target = this.analyzeTarget(this.touchHoldTarget);
+        this.callbacks.onClick(pointer, target);
+      }
+
+      this.touchHoldTarget = null;
+      return;
+    }
+
+    // If in touch drag mode, finalize
+    if (this.isTouchDragMode && pointer) {
+      this.callbacks.onPointerUp(pointer);
+      this.exitTouchDragMode();
+    }
+  }
+
+  private handleTouchCancel(_e: TouchEvent): void {
+    this.unbindGestureElement();
+    this.cancelTouchHold();
+    this.exitPanMode();
+
+    if (this.isTouchDragMode) {
+      // The platform took the touch away (an incoming call, a system gesture):
+      // abandon the drag. It used to replay a pointer-up at the touch origin,
+      // but that origin was always cleared when the drag armed, so the drag was
+      // never ended and its preview stayed stuck on screen.
+      this.callbacks.onPointerCancel?.();
+      this.exitTouchDragMode();
+    }
+  }
+
+  /**
+   * Listen for the rest of the gesture on the element the touch started on.
+   * At most one element is bound at a time, and it is released when the
+   * gesture ends — before, every touchstart added three listeners that were
+   * never removed.
+   */
+  private bindGestureElement(element: HTMLElement): void {
+    this.unbindGestureElement();
+    this.gestureElement = element;
+    element.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+    element.addEventListener('touchend', this.boundHandleTouchEnd);
+    element.addEventListener('touchcancel', this.boundHandleTouchCancel);
+  }
+
+  private unbindGestureElement(): void {
+    const element = this.gestureElement;
+    if (!element) return;
+    this.gestureElement = null;
+    element.removeEventListener('touchmove', this.boundHandleTouchMove);
+    element.removeEventListener('touchend', this.boundHandleTouchEnd);
+    element.removeEventListener('touchcancel', this.boundHandleTouchCancel);
+  }
+
+  // Touch helpers
+
+  private activateTouchDragMode(
+    pointer: NormalizedPointerEvent,
+    target: PointerTarget
+  ): void {
+    this.touchHoldTimer = null;
+    this.touchStartPosition = null; // Clear so touchmove doesn't think we're still pending
+
+    // Enter touch drag mode
+    this.isTouchDragMode = true;
+
+    // A drag that started on a slot also listens at document level (an event
+    // touch is served by the gesture element alone).
+    if (!this.touchHoldTarget?.closest('.scheduler-event')) {
+      document.addEventListener('touchmove', this.boundHandleTouchMove, { passive: false });
+      document.addEventListener('touchend', this.boundHandleTouchEnd);
+      document.addEventListener('touchcancel', this.boundHandleTouchCancel);
+    }
+
+    // Update visual feedback
+    if (this.touchHoldTarget) {
+      this.removeTouchFeedback(this.touchHoldTarget, 'pending');
+      this.addTouchFeedback(this.touchHoldTarget, 'active');
+    }
+
+    // Add container class
+    const container = this.config.root.querySelector('.scheduler-container');
+    container?.classList.add('touch-drag-mode');
+
+    // Apply scroll blocking to document body and scheduler-content
+    this.applyScrollBlock();
+
+    // A short buzz the moment the hold pays off. The user has just waited 600ms
+    // with no cursor to tell them anything is happening — the dock makes the same
+    // argument for its visual cue and fires the same 10ms pulse
+    // (@mintplayer/ui-core/dock, dock.core.ts). No-op on desktop and where the API is absent.
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate(10);
+      } catch {
+        // Some engines throw when the document has never been interacted with,
+        // or when the user has disabled vibration. Never worth failing a drag for.
+      }
+    }
+
+    // Notify callback
+    this.callbacks.onTouchDragActivated?.();
+
+    // Start the drag immediately (skip pending threshold for touch)
+    this.callbacks.onPointerDown(pointer, target, true);
+  }
+
+  private cancelTouchHold(): void {
+    if (this.touchHoldTimer) {
+      clearTimeout(this.touchHoldTimer);
+      this.touchHoldTimer = null;
+    }
+
+    // Remove document listeners that were added in handleTouchStart
+    document.removeEventListener('touchmove', this.boundHandleTouchMove);
+    document.removeEventListener('touchend', this.boundHandleTouchEnd);
+    document.removeEventListener('touchcancel', this.boundHandleTouchCancel);
+
+    // Remove pending visual feedback
+    if (this.touchHoldTarget) {
+      this.removeTouchFeedback(this.touchHoldTarget, 'pending');
+      this.removeTouchFeedback(this.touchHoldTarget, 'active');
+    }
+
+    // Note: Don't reset touchStartPosition here as it may be needed for pan mode
+    // Also don't reset panStartedOnEvent - it's needed after cancelTouchHold
+  }
+
+  private exitTouchDragMode(): void {
+    this.isTouchDragMode = false;
+    this.touchStartPosition = null;
+    this.touchHoldTarget = null;
+
+    // Remove document-level listeners added during drag mode
+    document.removeEventListener('touchmove', this.boundHandleTouchMove);
+    document.removeEventListener('touchend', this.boundHandleTouchEnd);
+    document.removeEventListener('touchcancel', this.boundHandleTouchCancel);
+
+    // Remove container class
+    const container = this.config.root.querySelector('.scheduler-container');
+    container?.classList.remove('touch-drag-mode');
+
+    // Remove scroll blocking
+    this.removeScrollBlock();
+
+    // Remove all feedback classes
+    this.config.root
+      .querySelectorAll('.touch-hold-active, .touch-hold-pending')
+      .forEach((el) => {
+        el.classList.remove('touch-hold-active', 'touch-hold-pending');
+      });
+
+    // Notify callback
+    this.callbacks.onTouchDragDeactivated?.();
+  }
+
+  private addTouchFeedback(
+    element: HTMLElement,
+    type: 'pending' | 'active'
+  ): void {
+    const targetEl = element.closest(
+      '.scheduler-event, .scheduler-time-slot, .scheduler-timeline-slot'
+    );
+    targetEl?.classList.add(`touch-hold-${type}`);
+  }
+
+  private removeTouchFeedback(
+    element: HTMLElement,
+    type: 'pending' | 'active'
+  ): void {
+    const targetEl = element.closest(
+      '.scheduler-event, .scheduler-time-slot, .scheduler-timeline-slot'
+    );
+    targetEl?.classList.remove(`touch-hold-${type}`);
+  }
+
+  // Pan helpers (touch-only: pan is never initiated from a mouse gesture)
+
+  private enterPanMode(clientX: number, clientY: number): void {
+    const container = this.callbacks.getScrollContainer?.();
+    if (!container) return;
+
+    this.isPanMode = true;
+    this.panStartPosition = { x: clientX, y: clientY };
+    this.panStartScroll = { left: container.scrollLeft, top: container.scrollTop };
+
+    // Add visual feedback for pan mode
+    container.classList.add('pan-mode');
+
+    // Remove hold feedback if any
+    if (this.touchHoldTarget) {
+      this.removeTouchFeedback(this.touchHoldTarget, 'pending');
+      this.removeTouchFeedback(this.touchHoldTarget, 'active');
+    }
+  }
+
+  private exitPanMode(): void {
+    if (!this.isPanMode) return;
+
+    this.isPanMode = false;
+    this.panStartPosition = null;
+    this.panStartScroll = null;
+    this.panStartedOnEvent = false;
+    this.touchStartPosition = null;
+    this.touchHoldTarget = null;
+
+    // Remove visual feedback
+    const container = this.callbacks.getScrollContainer?.();
+    container?.classList.remove('pan-mode');
+  }
+
+  private performPan(clientX: number, clientY: number): void {
+    if (!this.isPanMode || !this.panStartPosition || !this.panStartScroll) return;
+
+    const container = this.callbacks.getScrollContainer?.();
+    if (!container) return;
+
+    // Calculate delta from start position
+    const deltaX = this.panStartPosition.x - clientX;
+    const deltaY = this.panStartPosition.y - clientY;
+
+    // Apply scroll
+    container.scrollLeft = this.panStartScroll.left + deltaX;
+    container.scrollTop = this.panStartScroll.top + deltaY;
+  }
+
+  // Scroll blocking helpers
+
+  private applyScrollBlock(): void {
+    // Save current body styles for restoration
+    this.savedBodyStyles = {
+      overflow: document.body.style.overflow,
+      touchAction: document.body.style.touchAction,
+    };
+
+    // Block scrolling on document body
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    // Block scrolling on scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.add('scroll-blocked');
+    }
+  }
+
+  private removeScrollBlock(): void {
+    // Restore body styles
+    if (this.savedBodyStyles) {
+      document.body.style.overflow = this.savedBodyStyles.overflow;
+      document.body.style.touchAction = this.savedBodyStyles.touchAction;
+      this.savedBodyStyles = null;
+    }
+
+    // Remove scroll blocking from scheduler-content
+    const scrollContainer = this.callbacks.getScrollContainer?.();
+    if (scrollContainer) {
+      scrollContainer.classList.remove('scroll-blocked');
+    }
+  }
+}

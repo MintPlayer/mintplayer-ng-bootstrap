@@ -128,11 +128,11 @@ onBeforeUnmount(() => observer?.disconnect());
     <div class="tile-demo-controls">
       <div class="control-field">
         <label class="form-label mb-1">Stack below</label>
-        <BsSelect v-model="stackBelow" aria-label="Stack below" :options="STACK_OPTIONS" />
+        <BsSelect v-model:value="stackBelow" aria-label="Stack below" :options="STACK_OPTIONS" />
       </div>
       <div class="control-field">
         <label class="form-label mb-1">Gap</label>
-        <BsSelect v-model="gap" aria-label="Gap" :options="GAP_OPTIONS" />
+        <BsSelect v-model:value="gap" aria-label="Gap" :options="GAP_OPTIONS" />
       </div>
       <BsCheckbox v-model="editing" type="switch">Edit layout</BsCheckbox>
       <BsCheckbox v-model="animateReflow">Animate reflow</BsCheckbox>

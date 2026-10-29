@@ -8,8 +8,8 @@ import {
   type EntitySchema,
   type Expression,
   type SortDescriptor,
-} from '@mintplayer/web-components/query-builder';
-import type { DatatableColumnDef } from '@mintplayer/web-components/datatable';
+} from '@mintplayer/vue-bootstrap/query-builder';
+import type { DatatableColumnDef } from '@mintplayer/vue-bootstrap/datatable';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).
@@ -36,7 +36,12 @@ async function refreshSchema() {
   try {
     const r = await fetch(`${API_BASE}/api/${rootEntity.value}/schema`);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    schema.value = await r.json();
+    const s: EntitySchema[] = await r.json();
+    // orderDate opts into the custom editor (the #editor slot).
+    schema.value = s.map((e) => ({
+      ...e,
+      fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)),
+    }));
   } catch {
     error.value = 'Could not fetch schema. Is apps/api running on :5000?';
   }
@@ -109,15 +114,19 @@ watch([query, rootEntity, sortBy], scheduleSearch, { deep: true });
 onMounted(scheduleSearch);
 
 const SOURCE = `<BsQueryBuilder
-  v-model="query"
+  v-model:query="query"
+  v-model:root-entity="rootEntity"
+  v-model:selected-fields="selectedFields"
+  v-model:sort-by="sortBy"
   :schema="schema"
-  :root-entity="rootEntity"
   multi-entity-picker-enabled
-  :selected-fields="selectedFields"
-  :sort-by="sortBy"
   show-preview
-  show-saved-queries
-/>
+>
+  <!-- every field with editor: 'custom' renders its value here -->
+  <template #editor="{ ctx }">
+    <input type="date" :value="ctx.value ?? ''" @input="ctx.onChange(($event.target as HTMLInputElement).value || null)" />
+  </template>
+</BsQueryBuilder>
 <!-- watch([query, rootEntity, sortBy], ...) auto-fires the search. -->
 <BsDatatable :columns="columns" :data="results" />`;
 </script>
@@ -156,18 +165,25 @@ const SOURCE = `<BsQueryBuilder
     <section>
       <h2>Orders schema</h2>
       <BsQueryBuilder
-        v-model="query"
+        v-model:query="query"
+        v-model:root-entity="rootEntity"
+        v-model:selected-fields="selectedFields"
+        v-model:sort-by="sortBy"
         :schema="schema"
-        :root-entity="rootEntity"
         multi-entity-picker-enabled
-        :selected-fields="selectedFields"
-        :sort-by="sortBy"
         show-preview
-        show-saved-queries
-        @root-entity-change="(e: CustomEvent<{ rootEntity: string }>) => rootEntity = e.detail.rootEntity"
-        @selected-fields-change="(e: CustomEvent<{ selectedFields: string[] }>) => selectedFields = e.detail.selectedFields"
-        @sort-by-change="(e: CustomEvent<{ sortBy: SortDescriptor[] }>) => sortBy = e.detail.sortBy"
-      />
+      >
+        <template #editor="{ ctx }">
+          <input
+            type="date"
+            class="form-control form-control-sm"
+            :aria-label="ctx.field.label"
+            :value="typeof ctx.value === 'string' ? ctx.value : ''"
+            :disabled="ctx.disabled"
+            @input="ctx.onChange(($event.target as HTMLInputElement).value || null)"
+          />
+        </template>
+      </BsQueryBuilder>
 
       <div class="d-flex gap-2 align-items-center my-3">
         <span v-if="busy" class="spinner-border spinner-border-sm text-secondary" role="status" aria-hidden="true" />

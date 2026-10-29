@@ -74,14 +74,14 @@
   <section class="mb-5">
     <h2>MS Office product key (non-uniform groups)</h2>
     <p class="text-muted">
-      <code>[groups]="[6,6,4,4,6,6]"</code>, <code>type="alphanumeric"</code>, <code>case="upper"</code>.
+      <code>[groups]="[6,6,4,4,6,6]"</code>, <code>type="alphanumeric"</code>, <code>letterCase="upper"</code>.
       Paste a string with separators (e.g. <code>"AB1234-CD5678-EF12-GH34-IJ5678-KL9012"</code>) — the
       component strips the dashes and fills correctly.
     </p>
     <bs-otp-input
       [groups]="officeGroups"
       type="alphanumeric"
-      case="upper"
+      letterCase="upper"
       size="lg"
       [(ngModel)]="officeKey"
       data-testid="office"

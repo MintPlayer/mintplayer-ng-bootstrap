@@ -7,7 +7,9 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   // computed pair is exactly equivalent in the accessibility tree.
   template: '<ng-content></ng-content>',
   host: {
-    class: 'card-title',
+    // d-block: the host is a custom element, inline by default, and the
+    // title's margin needs a block box.
+    class: 'card-title d-block',
     role: 'heading',
     '[attr.aria-level]': 'level()',
   },

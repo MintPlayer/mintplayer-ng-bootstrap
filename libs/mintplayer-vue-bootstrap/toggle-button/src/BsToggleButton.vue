@@ -1,34 +1,16 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-toggle-button> via the upstream WC entry.
-import '@mintplayer/web-components/toggle-button';
-import type { MpToggleButton, ToggleChangeEventDetail } from '@mintplayer/web-components/toggle-button';
-import { ref, watch, onMounted } from 'vue';
-defineOptions({ inheritAttrs: false });
+/**
+ * A single Bootstrap on/off button: `<BsCheckbox type="toggle_button">`, an
+ * input.btn-check + label.btn, a native checkbox that keeps its role (#437).
+ * `v-model` is the checked state; `color`, `name`, `value`, `disabled`,
+ * validity props and consumer attributes fall through to BsCheckbox, which
+ * puts them on the input.
+ */
+import BsCheckbox from '../../checkbox/src/BsCheckbox.vue';
 
-// The toggle-button WC's v-model surface is the `checked` property
-// (boolean) + the `change` CustomEvent<{ checked, value }>.
-const modelValue = defineModel<boolean>();
-const el = ref<MpToggleButton | null>(null);
-
-const syncToEl = (v: boolean | undefined) => {
-  if (el.value) el.value.checked = !!v;
-};
-
-onMounted(() => syncToEl(modelValue.value));
-watch(modelValue, syncToEl);
-
-function onChange(e: Event) {
-  const detail = (e as CustomEvent<ToggleChangeEventDetail>).detail;
-  modelValue.value = detail.checked;
-}
+const checked = defineModel<boolean>({ default: false });
 </script>
 
 <template>
-  <mp-toggle-button
-    ref="el"
-    v-bind="$attrs"
-    @change="onChange"
-  >
-    <slot />
-  </mp-toggle-button>
+  <BsCheckbox v-model="checked" type="toggle_button"><slot /></BsCheckbox>
 </template>

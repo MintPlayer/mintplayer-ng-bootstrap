@@ -21,10 +21,9 @@ import { test, expect, type Page } from '@playwright/test';
 /** An input group's core promise: its children form ONE continuous row. */
 async function slottedRow(page: Page, groupIndex = 0) {
   return page.evaluate((index) => {
+    // Since #437 the bs-input-group host IS the .input-group: its children are the items.
     const host = document.querySelectorAll('bs-input-group')[index];
-    const wc = host.querySelector(':scope > mp-input-group')!;
-    const assigned = (wc.shadowRoot!.querySelector('slot') as HTMLSlotElement).assignedElements();
-    const boxes = assigned.map((el) => {
+    const boxes = [...host.children].map((el) => {
       const b = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
       return { tag: el.tagName, y: Math.round(b.y), width: +b.width.toFixed(1), flexGrow: cs.flexGrow };
@@ -37,12 +36,12 @@ async function slottedRow(page: Page, groupIndex = 0) {
   }, groupIndex);
 }
 
-/** Reach through the Angular wrapper into the phone input's own composed group. */
+/** The phone input's own group: picker, dial-code addon and number field (light DOM since #437). */
 async function phoneInputInGroup(page: Page) {
   return page.evaluate(() => {
     const bs = document.querySelector('bs-input-group bs-phone-input')!;
-    const mp = bs.querySelector('mp-phone-input')!;
-    const inner = mp.shadowRoot!.querySelector('mp-input-group')!;
+    // The host IS .phone-input (the root bag lands on it), so its group is a direct child.
+    const inner = bs.querySelector(':scope > .input-group')!;
     const kids = [...inner.children].map((el) => {
       const b = el.getBoundingClientRect();
       return { tag: el.tagName, y: Math.round(b.y), width: +b.width.toFixed(1) };
@@ -58,27 +57,21 @@ async function phoneInputInGroup(page: Page) {
     };
     return {
       hostWidth: +bs.getBoundingClientRect().width.toFixed(1),
-      stacked: inner.hasAttribute('stacked'),
+      // Stacking is a container query now, not an attribute: the picker takes its own row.
+      stacked: new Set(kids.map((k) => k.y)).size > 1,
       kids,
       innerLines: [...new Set(kids.map((k) => k.y))].length,
-      addonCorners: corners(document.querySelector('bs-input-group span.addon')!),
-      pickerWidth: +inner.querySelector('mp-select')!.getBoundingClientRect().width.toFixed(1),
+      addonCorners: corners(document.querySelector('bs-input-group > span.addon')!),
+      pickerWidth: +inner.querySelector('select')!.getBoundingClientRect().width.toFixed(1),
     };
   });
 }
 
 async function gotoPhoneInput(page: Page): Promise<void> {
   await page.goto('/basic/forms/phone-input');
-  await page.waitForSelector('bs-input-group bs-phone-input');
-  // Deterministic readiness: both custom elements upgraded and the composed inner
-  // group present, rather than a bare `networkidle` that says nothing about layout.
-  await page.waitForFunction(
-    () =>
-      !!customElements.get('mp-phone-input') &&
-      !!document
-        .querySelector('bs-input-group bs-phone-input mp-phone-input')
-        ?.shadowRoot?.querySelector('mp-input-group'),
-  );
+  // Server-rendered, so the group is there at once; the core marks the live field.
+  // (Not a flag: with a customizable select the addon's flag is hidden by design.)
+  await page.locator('bs-input-group bs-phone-input.phone-input[data-mp-hydrated]').waitFor({ state: 'attached' });
 }
 
 test.describe('bs-input-group joins Angular-wrapped controls', () => {
@@ -102,9 +95,8 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
     expect(stacked).toBe(false);
     expect(innerLines).toBe(1);
     expect(kids.every((k) => k.width > 0)).toBe(true);
-    // The phone input pins its picker (flex/width/min-width, all `!important` in its
-    // own tree). The group's shrink floor must not silently widen it — that floor is
-    // a normal declaration precisely so a control can opt out.
+    // The phone input pins its picker (flex: 0 0 auto, width: auto, min-width: 0).
+    // The group's shrink floor must not silently widen it.
     expect(pickerWidth).toBeLessThan(96);
   });
 
@@ -125,8 +117,7 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
     // The pre-existing defect (PRD §1.2) that the WC migration claimed to fix and
     // only half did: corners paired, sizing never applied.
     await page.goto('/enterprise/scheduler');
-    await page.waitForSelector('bs-input-group bs-select');
-    await page.waitForFunction(() => !!customElements.get('mp-select'));
+    await page.waitForSelector('bs-input-group bs-select select');
 
     const { boxes, lines, pageOverflow } = await slottedRow(page);
     expect(lines).toBe(1);
@@ -142,8 +133,7 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
     // measures. Both properties are required; this asserts the pair.
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/enterprise/scheduler');
-    await page.waitForSelector('bs-input-group bs-select');
-    await page.waitForFunction(() => !!customElements.get('mp-select'));
+    await page.waitForSelector('bs-input-group bs-select select');
 
     const { boxes, lines, pageOverflow } = await slottedRow(page);
     expect(lines).toBeGreaterThan(1);
@@ -152,8 +142,8 @@ test.describe('bs-input-group joins Angular-wrapped controls', () => {
   });
 
   test('a grouped phone input still stacks on a phone', async ({ page }) => {
-    // Unreachable before the fix: the `width > 0` guard declined at zero width, so
-    // the mobile layout was suppressed inside a group rather than merely wrong.
+    // A container query on the phone input itself: it stacks by its own width, so
+    // a field inside a group stacks exactly like one on its own.
     await page.setViewportSize({ width: 390, height: 844 });
     await gotoPhoneInput(page);
     await expect.poll(async () => (await phoneInputInGroup(page)).stacked).toBe(true);

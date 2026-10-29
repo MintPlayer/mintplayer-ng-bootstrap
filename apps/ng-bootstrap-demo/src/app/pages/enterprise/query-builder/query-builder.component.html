@@ -39,20 +39,22 @@
     [showPreview]="true"
     [showSavedQueries]="true"
     [savedQueries]="savedQueries()"
-    (saveQuery)="onSaveQuery($event)"
-    (loadQuery)="onLoadQuery($event)"
-    (deleteQuery)="onDeleteQuery($event)"
+    (savequery)="onSaveQuery($event)"
+    (loadquery)="onLoadQuery($event)"
+    (deletequery)="onDeleteQuery($event)"
   >
-    <!-- Custom editor for the `orderDate` field: a vanilla <input type="date">
-         demonstrates the *bsQueryBuilderEditor projection. -->
-    <input
-      *bsQueryBuilderEditor="'orderDate'; let ctx"
-      type="date"
-      class="form-control form-control-sm custom-date-editor"
-      [value]="ctx.value ?? ''"
-      [disabled]="ctx.disabled"
-      (input)="ctx.onChange(($any($event.target).value || null))"
-    />
+    <!-- The value editor of every field with editor: 'custom' (here orderDate):
+         a vanilla <input type="date"> through the bsQueryBuilderEditor template. -->
+    <ng-template bsQueryBuilderEditor let-ctx="ctx">
+      <input
+        type="date"
+        class="form-control form-control-sm custom-date-editor"
+        [attr.aria-label]="ctx.field.label"
+        [value]="$any(ctx.value) ?? ''"
+        [disabled]="ctx.disabled"
+        (input)="ctx.onChange(($any($event.target).value || null))"
+      />
+    </ng-template>
   </bs-query-builder>
 
   <div class="d-flex gap-2 align-items-center my-3">
@@ -74,15 +76,17 @@
 
   <bs-datatable
     [fetch]="fetchRows"
-    [(settings)]="settings"
+    pagination
+    [(sortColumns)]="sortColumns"
+    [perPageOptions]="[10, 20, 50, 100]"
     [columns]="datatableColumns()"
     [resizableColumns]="false"
   >
-    <ng-container *bsRowTemplate="let row">
+    <ng-template bsDatatableRow let-row="row">
       @for (col of datatableColumns(); track col.name) {
         <td class="text-nowrap">{{ formatCell($any(row), col.name) }}</td>
       }
-    </ng-container>
+    </ng-template>
   </bs-datatable>
 
   <h2>JSON wire format</h2>
@@ -111,3 +115,24 @@
     <li><kbd>Esc</kbd> — close any open dropdown.</li>
   </ul>
 </div>
+
+<h2 class="mt-4">Angular forms</h2>
+<p>
+  Template-driven <code>[(ngModel)]</code> and reactive <code>[formControl]</code> both bind through the
+  component's <code>ControlValueAccessor</code>: the value, the disabled state, and touched when focus leaves.
+</p>
+<bs-grid>
+  <div bsRow>
+    <div [md]="6">
+      <h3 class="h5">Template-driven</h3>
+      <bs-query-builder [schema]="schema()" [(ngModel)]="formsValue" #tdModel="ngModel"></bs-query-builder>
+      <demo-form-state [control]="tdModel.control"></demo-form-state>
+    </div>
+    <div [md]="6">
+      <h3 class="h5">Reactive</h3>
+      <bs-query-builder [schema]="schema()" [formControl]="formsControl"></bs-query-builder>
+      <demo-form-state [control]="formsControl"></demo-form-state>
+    </div>
+  </div>
+</bs-grid>
+<bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>

@@ -4,4 +4,4 @@ export { BsDropdownItem } from './BsDropdownItem';
 export type { BsDropdownItemProps } from './BsDropdownItem';
 export { BsDropdownDivider } from './BsDropdownDivider';
 export { BsDropdownHeader } from './BsDropdownHeader';
-export type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
+export type { DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown-menu';

@@ -71,7 +71,7 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <bs-checkbox type="toggle_button" [(ngModel)]="bold">Bold</bs-checkbox>
+            <bs-toggle-button [(ngModel)]="bold">Bold</bs-toggle-button>
         </div>
         <div [md]="6">
             <span>Value: {{ bold() | json }}</span>

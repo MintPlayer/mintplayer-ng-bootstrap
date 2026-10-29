@@ -5,7 +5,7 @@ import { test, expect, type Page } from '@playwright/test';
 // in server.mjs. Runs against the SSR server (see playwright.config webServer).
 
 const COOKIE = 'bs-theme-mode';
-const TOGGLE = '[slot="topbar"] mp-theme-toggle';
+const TOGGLE = '.app-shell-header .theme-toggle';
 
 const settle = (page: Page) =>
   page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
@@ -26,7 +26,7 @@ test.describe('theme toggle', () => {
     await settle(page);
 
     const html = page.locator('html');
-    // The shadow-root button carries the role; its name is the NEXT action.
+    // The button carries the role; its name is the NEXT action.
     const button = page.locator(TOGGLE).locator('button');
 
     // No cookie: auto, resolved against the emulated light scheme.
@@ -72,48 +72,26 @@ test.describe('theme toggle', () => {
     expect(await res.text()).toContain('data-bs-theme');
   });
 
-  test('upgrading the toggle causes no layout shift', async ({ page }) => {
-    // Hold every script except the blocking pre-boot one, so the page parses,
-    // styles and lays out with <mp-theme-toggle> still undefined.
-    let release!: () => void;
-    const scriptsReleased = new Promise<void>((resolve) => (release = resolve));
-    await page.route('**/*', async (route) => {
-      const request = route.request();
-      if (request.resourceType() === 'script' && !request.url().includes('bs-theme-preboot')) {
-        await scriptsReleased;
-      }
-      await route.continue();
-    });
-
-    await page.goto('/', { waitUntil: 'commit' });
-    const toggle = page.locator(TOGGLE);
-    // color-mode.css reserves the box through mp-theme-toggle:not(:defined).
-    // Assert the box, not display: the topbar is a flex container, which
-    // blockifies the rule's inline-block to block. An empty undefined element
-    // without the rule would lay out at 0x0.
-    await page.waitForFunction(
-      (selector) => {
-        const el = document.querySelector(selector);
-        if (!el || customElements.get('mp-theme-toggle')) return false;
-        const rect = el.getBoundingClientRect();
-        return rect.width > 0 && rect.height > 0;
-      },
-      TOGGLE,
-    );
-    const before = await toggle.boundingBox();
-
-    release();
-    await page.waitForFunction(() => !!customElements.get('mp-theme-toggle'));
-    await expect(toggle.locator('button')).toBeVisible();
-    await settle(page);
-    const after = await toggle.boundingBox();
-
+  test('the server-rendered toggle already has its final box', async ({ browser, baseURL }) => {
+    // With JS off the toggle is server-rendered, disabled, at the size the
+    // scoped sheet gives it; hydration enables it and must not move it.
+    const measure = async (javaScriptEnabled: boolean) => {
+      const context = await browser.newContext({ baseURL, javaScriptEnabled });
+      const page = await context.newPage();
+      await page.goto('/');
+      const root = page.locator('.app-shell-header .theme-toggle').first();
+      const button = root.locator('button');
+      if (javaScriptEnabled) await expect(button).toBeEnabled();
+      else await expect(button).toBeDisabled();
+      const box = await root.boundingBox();
+      await context.close();
+      return box && { width: box.width, height: box.height };
+    };
+    const before = await measure(false);
+    const after = await measure(true);
     expect(before).not.toBeNull();
-    expect(after).not.toBeNull();
-    expect(Math.abs(after!.width - before!.width)).toBeLessThanOrEqual(0.5);
-    expect(Math.abs(after!.height - before!.height)).toBeLessThanOrEqual(0.5);
-    expect(Math.abs(after!.x - before!.x)).toBeLessThanOrEqual(0.5);
-    expect(Math.abs(after!.y - before!.y)).toBeLessThanOrEqual(0.5);
+    expect(before!.width).toBeGreaterThan(0);
+    expect(after).toEqual(before);
   });
 });
 

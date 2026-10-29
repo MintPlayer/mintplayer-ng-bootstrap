@@ -4,7 +4,8 @@ import postcss from 'postcss';
 import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/treeview';
-import { InMemoryTreeSelectProvider } from '@mintplayer/web-components/tree-select';
+import { InMemoryTreeSelectProvider } from '@mintplayer/ui-core/tree-select';
+import '@mintplayer/web-components/tree-select';
 import '@mintplayer/web-components/query-builder';
 import { inMemoryTypeaheadProvider } from '@mintplayer/web-components/typeahead';
 
@@ -152,7 +153,8 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable cellRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], cellRenderer: () => consumerNode('cell') }];
+    el.columns = COLUMNS;
+    el.cellRenderer = () => consumerNode('cell');
     el.data = ROWS;
     await settle(el);
 
@@ -164,7 +166,8 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable headerRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], headerRenderer: () => consumerNode('header') }];
+    el.columns = COLUMNS;
+    el.headerRenderer = () => consumerNode('header');
     el.data = ROWS;
     await settle(el);
 
@@ -193,20 +196,18 @@ describe('consumer DOM mounted through a render callback', () => {
   it('mp-datatable filterRenderer', async () => {
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
     const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
-    el.columns = [{ ...COLUMNS[0], filterable: true, filterRenderer: () => consumerNode('filter') }];
+    el.columns = [{ ...COLUMNS[0], filterable: true, filterMode: 'custom' }];
+    el.filterRenderer = () => consumerNode('filter');
     el.data = ROWS;
     await settle(el);
 
-    const trigger = el.querySelector<HTMLButtonElement>('tr.filter-row .filter-trigger');
-    expect(trigger, 'no filter trigger rendered').not.toBeNull();
-    trigger!.click();
+    const panel = el.querySelector<HTMLElement>('tr.filter-row .filter-panel');
+    expect(panel, 'no filter panel rendered').not.toBeNull();
+    // jsdom has no popover: the panel opens through the toggle event the core listens for.
+    panel!.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open', oldState: 'closed' }));
     await settle(el);
 
-    // The panel is portalled to the document root, so unlike the other three
-    // renderers this content is NOT inside the element — which is precisely why
-    // it is worth asserting: the scoped sheet is installed on the document and
-    // reaches the pane, so an accidental stamp here would be styled by us.
-    const mounted = document.querySelectorAll(`.mp-overlay-pane .${CONSUMER_CLASS}`);
+    const mounted = el.querySelectorAll(`.filter-panel .${CONSUMER_CLASS}`);
     expect(mounted.length, 'filterRenderer output never reached the DOM').toBeGreaterThan(0);
     for (const node of mounted) expectUntouched(node as HTMLElement, 'datatable filterRenderer', selectors);
   });
@@ -223,52 +224,64 @@ describe('consumer DOM mounted through a render callback', () => {
     for (const node of mounted) expectUntouched(node as HTMLElement, 'treeview nodeRenderer', selectors);
   });
 
-  it('mp-tree-select itemTemplate', async () => {
+  it('mp-tree-select itemRenderer', async () => {
     document.body.innerHTML = '<mp-tree-select></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown>;
-    el.itemTemplate = () => consumerNode('item');
+    el.itemRenderer = () => consumerNode('item');
     el.value = { id: '1', label: 'Fruit' };
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'itemTemplate output never reached the DOM').toBeGreaterThan(0);
-    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select itemTemplate', selectors);
+    expect(mounted.length, 'itemRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select itemRenderer', selectors);
   });
 
-  it('mp-tree-select buttonTemplate', async () => {
+  it('mp-tree-select buttonRenderer', async () => {
     document.body.innerHTML = '<mp-tree-select variant="button"></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown>;
-    el.buttonTemplate = () => consumerNode('button');
+    el.buttonRenderer = () => consumerNode('button');
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'buttonTemplate output never reached the DOM').toBeGreaterThan(0);
-    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select buttonTemplate', selectors);
+    expect(mounted.length, 'buttonRenderer output never reached the DOM').toBeGreaterThan(0);
+    for (const node of mounted) expectUntouched(node as HTMLElement, 'tree-select buttonRenderer', selectors);
   });
 
   /**
    * The case that actually regressed (`6e1e57dd`), and the reason this suite is
-   * not decoration: tree-select's nodeRenderer builds a wrapper imperatively and
-   * calls `stampScope` on it, so the ORDER of stamping versus appending the
-   * consumer's node is what decides whether their DOM gets branded.
+   * not decoration: the old tree-select built its row wrapper imperatively and
+   * stamped it, so the ORDER of stamping versus appending the consumer's node
+   * decided whether their DOM got branded. The rows are now template-rendered
+   * (#437), and this pins that the consumer's node still stays unbranded.
    */
-  it('mp-tree-select suggestionTemplate', async () => {
+  it('mp-tree-select suggestionRenderer', async () => {
+    // jsdom has no popover: the panel opens through the toggle event the core listens for.
+    const proto = HTMLElement.prototype as HTMLElement & { showPopover?: () => void };
+    const original = proto.showPopover;
+    proto.showPopover = function (this: HTMLElement) {
+      this.dispatchEvent(Object.assign(new Event('toggle'), { newState: 'open', oldState: 'closed' }));
+    };
     document.body.innerHTML = '<mp-tree-select></mp-tree-select>';
     const el = document.querySelector('mp-tree-select') as HTMLElement & Record<string, unknown> & {
-      open(): Promise<void>;
+      open(): void;
     };
     el.searchDebounceMs = 0;
     el.mode = 'checkbox';
     el.provider = new InMemoryTreeSelectProvider(TREE);
-    el.suggestionTemplate = () => consumerNode('suggestion');
+    el.suggestionRenderer = () => consumerNode('suggestion');
     await settle(el);
-    await el.open();
+    try {
+      el.open();
+    } finally {
+      proto.showPopover = original;
+    }
+    await settle(el);
     await settle(el);
 
     const mounted = el.querySelectorAll(`.${CONSUMER_CLASS}`);
-    expect(mounted.length, 'suggestionTemplate output never reached the DOM').toBeGreaterThan(0);
+    expect(mounted.length, 'suggestionRenderer output never reached the DOM').toBeGreaterThan(0);
     for (const node of mounted) {
-      expectUntouched(node as HTMLElement, 'tree-select suggestionTemplate', selectors);
+      expectUntouched(node as HTMLElement, 'tree-select suggestionRenderer', selectors);
     }
   });
 

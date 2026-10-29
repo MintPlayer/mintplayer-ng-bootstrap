@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
-import type { CarouselAnimation, CarouselOrientation, CarouselSlideChangeEventDetail, CarouselPausedChangeEventDetail } from '@mintplayer/react-bootstrap/carousel';
+import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
+import type { CarouselAnimation, CarouselOrientation } from '@mintplayer/react-bootstrap/carousel';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './CarouselPage.css';
 
 const BASIC_SOURCE = `<BsCarousel indicators interval={4000} aria-label="Animal photos"
-  onSlideChange={(e) => setIndex(e.detail.index)}>
-  <img src="/assets/resized/deer.png" alt="A deer" />
-  <img src="/assets/resized/duck.png" alt="A duck" />
-  <img src="/assets/resized/lion.png" alt="A lion" />
+  onSlideChange={(detail) => setIndex(detail.index)}>
+  <BsCarouselItem><img src="/assets/resized/deer.png" alt="A deer" /></BsCarouselItem>
+  <BsCarouselItem><img src="/assets/resized/duck.png" alt="A duck" /></BsCarouselItem>
+  <BsCarouselItem><img src="/assets/resized/lion.png" alt="A lion" /></BsCarouselItem>
 </BsCarousel>`;
 
 const IMAGES = [
@@ -30,8 +30,8 @@ export function CarouselPage() {
     <div className="demo-page">
       <h1>Carousel</h1>
       <p>
-        <code>BsCarousel</code> wraps the framework-agnostic <code>&lt;mp-carousel&gt;</code> web
-        component: slides are plain children, with indicators, auto-advance, slide/fade animation
+        <code>BsCarousel</code> is generated from the headless carousel core: each slide is a
+        <code>BsCarouselItem</code>, with indicators, auto-advance, slide/fade animation
         in both orientations, touch swipe, keyboard support and a radio-driven no-JS tier.
       </p>
 
@@ -44,11 +44,11 @@ export function CarouselPage() {
           interval={4000}
           paused={paused}
           aria-label="Animal photos"
-          onSlideChange={(e: CustomEvent<CarouselSlideChangeEventDetail>) => setIndex(e.detail.index)}
-          onPausedChange={(e: CustomEvent<CarouselPausedChangeEventDetail>) => setPaused(e.detail.paused)}
+          onSlideChange={(detail) => setIndex(detail.index)}
+          onPausedChange={setPaused}
         >
           {IMAGES.map((img) => (
-            <img key={img.src} src={img.src} alt={img.alt} />
+            <BsCarouselItem key={img.src}><img src={img.src} alt={img.alt} /></BsCarouselItem>
           ))}
         </BsCarousel>
         <div className="mt-2 d-flex gap-2 align-items-center justify-content-center">
@@ -83,12 +83,12 @@ export function CarouselPage() {
         <div className="nojs-pair">
           <BsCarousel animation="fade" indicators aria-label="Fade pair">
             {IMAGES.slice(0, 3).map((img) => (
-              <img key={img.src} src={img.src} alt={img.alt} />
+              <BsCarouselItem key={img.src}><img src={img.src} alt={img.alt} /></BsCarouselItem>
             ))}
           </BsCarousel>
           <BsCarousel animation="slide" indicators aria-label="Slide pair">
             {IMAGES.slice(3).map((img) => (
-              <img key={img.src} src={img.src} alt={img.alt} />
+              <BsCarouselItem key={img.src}><img src={img.src} alt={img.alt} /></BsCarouselItem>
             ))}
           </BsCarousel>
         </div>

@@ -56,11 +56,13 @@ describe('web-components entry points', () => {
     expect(ENTRIES.filter((e) => !LOADERS[e.file]).map((e) => e.name)).toEqual([]);
   });
 
+  // The first entry pays the cold transform of the shared graph (measured 5 s
+  // on a loaded machine), so the default timeout is not a statement about it.
   it.each(SUB_ENTRIES)('$name loads and exports at least one symbol', async ({ file }) => {
     const mod = await LOADERS[file]();
 
     expect(runtimeExports(mod).length).toBeGreaterThan(0);
-  });
+  }, 30_000);
 
   it('the primary entry loads and exports nothing, by design', async () => {
     const primary = ENTRIES.find((e) => e.name === 'index')!;

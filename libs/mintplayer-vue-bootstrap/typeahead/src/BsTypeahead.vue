@@ -9,7 +9,8 @@
  * the role-bearing <input>; `role` is not forwarded, the input is a combobox
  * by contract. Rows come from the `#item="{ item, term }"` slot.
  */
-import { computed, getCurrentInstance, useAttrs, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   connect,
@@ -62,7 +63,8 @@ const emit = defineEmits<{
 
 defineSlots<{ item?(props: { item: T; term: string }): unknown }>();
 
-const id = `bs-typeahead-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const id = `bs-typeahead-${useId()}`;
 
 const [machine, state] = useMachine(
   () =>
@@ -111,7 +113,19 @@ watch(model, (next) => {
   if (next !== machine.snapshot.term) machine.setValue(next);
 });
 
-const api = computed(() => connect(state.value, id, { name: props.name }));
+// Flip the list above the input near the viewport bottom (mounted = browser only).
+const inputEl = useTemplateRef<HTMLInputElement>('input');
+const listboxEl = useTemplateRef<HTMLUListElement>('listbox');
+let untrackSide = (): void => undefined;
+// Mounted runs only on the client, so the readiness mark is never in server HTML.
+const hydrated = shallowRef(false);
+onMounted(() => {
+  untrackSide = trackOpenSide(machine, () => inputEl.value, () => listboxEl.value);
+  hydrated.value = true;
+});
+onBeforeUnmount(() => untrackSide());
+
+const api = computed(() => connect(state.value, id, { name: props.name, hydrated: hydrated.value }));
 /** The input bag without `value` (bound as a DOM property) and with nulls dropped. */
 const inputAttrs = computed(() => {
   const { value: _value, ...bag } = api.value.input;
@@ -142,6 +156,7 @@ function forwardedAttrs(): Record<string, unknown> {
 <template>
   <div class="mp-typeahead" v-bind="api.root">
     <input
+      ref="input"
       class="form-control"
       type="text"
       v-bind="{ ...inputAttrs, ...forwardedAttrs() }"
@@ -151,7 +166,7 @@ function forwardedAttrs(): Record<string, unknown> {
       @keydown="onKeydown"
       @blur="machine.blur()"
     />
-    <ul class="dropdown-menu" v-bind="api.listbox">
+    <ul ref="listbox" class="dropdown-menu" v-bind="api.listbox">
       <li v-if="api.status" class="ta-status" v-bind="api.status.attrs">{{ api.status.text }}</li>
       <li
         v-for="(item, index) in state.items"

@@ -1,3 +1,14 @@
-<mp-shell bsForwardAria #wc [attr.state]="state()" [attr.breakpoint]="breakpoint()" [attr.dismiss-on-navigate]="dismissOnNavigate() ? '' : null" (statechange)="onStatechange($event)">
-    <ng-content></ng-content>
-</mp-shell>
+<a [mpProps]="view().skip" [attr.href]="view().skipHref" (click)="onSkip($event)">{{ view().skipText }}</a>
+@for (toggle of view().toggles; track toggle.mode) {
+  <input [mpProps]="toggle.input" (change)="onToggleChange($event)" />
+}
+<div [mpProps]="view().topbar">
+  @for (toggle of view().toggles; track toggle.mode) {
+    <label [mpProps]="toggle.label">{{ view().hamburgerText }}</label>
+  }
+  <ng-container [ngTemplateOutlet]="topbar()?.template ?? null" />
+</div>
+<div [mpProps]="view().sidebarRoot">
+  <aside [mpProps]="view().sidebar"><ng-container [ngTemplateOutlet]="sidebar()?.template ?? null" /></aside>
+  <div [mpProps]="view().content"><ng-content /></div>
+</div>

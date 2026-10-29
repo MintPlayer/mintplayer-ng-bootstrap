@@ -1,6 +1,12 @@
 .demo-ribbon {
   .ribbon-rtl-wrapper { display: block; }
 
+  // The app accent: the ribbon reads --bs-ribbon-accent from any ancestor.
+  $accents: (word: #2b579a, excel: #217346, powerpoint: #b7472a, outlook: #0078d4, onenote: #7719aa, access: #a4373a);
+  @each $name, $color in $accents {
+    .ribbon-rtl-wrapper[data-accent='#{$name}'] { --bs-ribbon-accent: #{$color}; }
+  }
+
   .demo-tell-me {
     width: 220px;
     padding: 3px 8px;

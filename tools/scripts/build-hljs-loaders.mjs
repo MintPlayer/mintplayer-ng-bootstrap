@@ -50,7 +50,7 @@ export const requireFrom = (repoRoot = REPO_ROOT) =>
 
 export function hljsPaths(repoRoot = REPO_ROOT) {
   return {
-    outPath: join(repoRoot, 'libs/mintplayer-web-components/code-snippet/src/hljs-loaders.generated.ts'),
+    outPath: join(repoRoot, 'libs/mintplayer-ui-core/code-snippet/src/hljs-loaders.generated.ts'),
     commonPath: join(repoRoot, 'node_modules/highlight.js/lib/common.js'),
   };
 }

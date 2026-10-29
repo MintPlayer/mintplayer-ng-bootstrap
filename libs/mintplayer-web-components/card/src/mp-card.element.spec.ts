@@ -1,11 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 import './mp-card.element';
 import { MpCardElement } from './mp-card.element';
 
-function makeCard(attrs: Record<string, string> = {}): MpCardElement {
+function makeCard(attrs: Record<string, string> = {}, inner = ''): MpCardElement {
   const el = document.createElement('mp-card') as MpCardElement;
-  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  Object.entries(attrs).map(([k, v]) => el.setAttribute(k, v));
+  el.innerHTML = inner;
   document.body.appendChild(el);
   return el;
 }
@@ -14,38 +14,30 @@ describe('mp-card', () => {
   let el: MpCardElement;
   afterEach(() => el?.remove());
 
-  it('upgrades to a shadow-DOM element rendering a default slot', async () => {
-    el = makeCard();
-    expect(el).toBeInstanceOf(MpCardElement);
+  it('is the Bootstrap card itself, in the light DOM, children untouched', async () => {
+    el = makeCard({}, '<div class="card-body">x</div>');
+    const body = el.firstElementChild;
     await el.updateComplete;
-    expect(el.shadowRoot).toBeTruthy();
-    expect(el.shadowRoot!.querySelector('slot')).toBeTruthy();
+    expect(el.shadowRoot).toBeNull();
+    expect(el.classList.contains('card')).toBe(true);
+    expect(el.firstElementChild).toBe(body);
   });
 
-  it('reflects the `color` property to the attribute and reads it back', async () => {
+  it('maps color and outline onto Bootstrap classes, and swaps them on change', async () => {
     el = makeCard({ color: 'primary' });
     await el.updateComplete;
-    expect(el.color).toBe('primary'); // attribute -> property
-    el.color = 'success';
+    expect([...el.classList]).toEqual(['card', 'text-bg-primary', 'border-primary']);
+    el.outline = true;
+    el.color = 'danger';
     await el.updateComplete;
-    expect(el.getAttribute('color')).toBe('success'); // property -> attribute
+    expect([...el.classList]).toEqual(['card', 'bg-transparent', 'border-danger']);
   });
 
-  it('reflects the boolean `outline` attribute and property', async () => {
-    el = makeCard({ color: 'danger', outline: '' });
+  it('keeps a consumer class', async () => {
+    el = makeCard({ class: 'h-100', color: 'info' });
     await el.updateComplete;
-    expect(el.outline).toBe(true);
-    el.outline = false;
+    el.color = null;
     await el.updateComplete;
-    expect(el.hasAttribute('outline')).toBe(false);
-  });
-
-  it('installs its document-level sheet once, through the light-style registry (#432)', () => {
-    el = makeCard();
-    makeCard().remove();
-    const entries = getLightStyleEntries().filter((e) => e.key === 'card');
-    expect(entries.length).toBe(1);
-    // A private <style> next to the registry is what let #432 leak unchecked.
-    expect(document.head.querySelectorAll('style[data-mp-card]').length).toBe(0);
+    expect([...el.classList]).toEqual(['h-100', 'card']);
   });
 });

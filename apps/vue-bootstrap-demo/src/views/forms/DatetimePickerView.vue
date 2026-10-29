@@ -11,14 +11,14 @@ const bounded = ref<Date | null>(null);
 const boundsMin = new Date(2026, 0, 1, 9, 0);
 const boundsMax = new Date(2026, 11, 31, 17, 0);
 
-const SOURCE = `<BsDatetimePicker v-model="dt" />`;
+const SOURCE = `<BsDatetimePicker v-model:value="dt" name="appointment" />`;
 
 const BOUNDS_SOURCE = `<script setup>
 const boundsMin = new Date(2026, 0, 1, 9, 0);
 const boundsMax = new Date(2026, 11, 31, 17, 0);
 <\/script>
 
-<BsDatetimePicker v-model="bounded" :min="boundsMin" :max="boundsMax" show-clear />`;
+<BsDatetimePicker v-model:value="bounded" :min="boundsMin" :max="boundsMax" show-clear />`;
 </script>
 
 <template>
@@ -32,7 +32,7 @@ const boundsMax = new Date(2026, 11, 31, 17, 0);
 
     <section>
       <h2>Default</h2>
-      <BsDatetimePicker v-model="dt" />
+      <BsDatetimePicker v-model:value="dt" name="appointment" />
       <p class="text-body-secondary mt-2">
         Selected: <code>{{ dt ? dt.toISOString() : '—' }}</code>
       </p>
@@ -45,7 +45,7 @@ const boundsMax = new Date(2026, 11, 31, 17, 0);
         Pick either bound's own day to see the time list narrow with it — any
         other day keeps all 24 hours.
       </p>
-      <BsDatetimePicker v-model="bounded" :min="boundsMin" :max="boundsMax" show-clear />
+      <BsDatetimePicker v-model:value="bounded" :min="boundsMin" :max="boundsMax" show-clear />
       <p class="text-body-secondary mt-2">
         Selected: <code>{{ bounded ? bounded.toISOString() : '—' }}</code>
       </p>

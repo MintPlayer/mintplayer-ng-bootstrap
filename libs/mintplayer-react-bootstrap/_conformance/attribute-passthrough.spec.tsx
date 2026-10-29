@@ -17,7 +17,7 @@ import {
   BsCardText,
   BsCardTitle,
 } from '@mintplayer/react-bootstrap/card';
-import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
+import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
@@ -36,7 +36,7 @@ import {
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
-import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
@@ -67,7 +67,7 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
-import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
+import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
@@ -136,6 +136,11 @@ interface Case {
    * must still arrive.
    */
   fixedRole?: string;
+  /**
+   * Set when the target is a box around the role-bearing node, which is what
+   * `aria-label` names: the sparkline's sized span holds a role=img svg.
+   */
+  labelTarget?: string;
 }
 
 /** A case whose wrapper can be rendered bare, with nothing but the probe. */
@@ -147,18 +152,18 @@ const bare = (name: string, target: string, Component: React.ElementType): Case 
 
 /** Every exported React wrapper, and the element its attributes must land on. */
 const CASES: Case[] = [
-  bare('BsAccordion', 'mp-accordion', BsAccordion),
+  bare('BsAccordion', 'div.accordion', BsAccordion),
   {
     name: 'BsAccordionItem',
-    target: 'mp-accordion-tab',
+    target: 'details.accordion-item',
     render: (p) => (
       <BsAccordion>
         <BsAccordionItem header="Header" {...p} />
       </BsAccordion>
     ),
   },
-  bare('BsCalendar', 'mp-calendar', BsCalendar),
-  bare('BsCard', 'mp-card', BsCard),
+  bare('BsCalendar', 'div.mp-calendar', BsCalendar),
+  bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),
   bare('BsCardFooter', 'div.card-footer', BsCardFooter),
   bare('BsCardGroup', 'div.card-group', BsCardGroup),
@@ -168,91 +173,97 @@ const CASES: Case[] = [
   bare('BsCardSubtitle', 'div.card-subtitle', BsCardSubtitle),
   bare('BsCardText', 'div.card-text', BsCardText),
   bare('BsCardTitle', 'div.card-title', BsCardTitle),
-  bare('BsCarousel', 'mp-carousel', BsCarousel),
-  bare('BsHierarchyChart', 'mp-hierarchy-chart', BsHierarchyChart),
-  bare('BsSparkline', 'mp-sparkline', BsSparkline),
-  bare('BsTrendChart', 'mp-trend-chart', BsTrendChart),
-  bare('BsCheckbox', 'mp-checkbox', BsCheckbox),
-  bare('BsCodeSnippet', 'mp-code-snippet', BsCodeSnippet),
-  bare('BsDatatable', 'mp-datatable', BsDatatable),
-  bare('BsDatepicker', 'mp-datepicker', BsDatepicker),
-  bare('BsDatetimePicker', 'mp-datetime-picker', BsDatetimePicker),
-  bare('BsDockManager', 'mint-dock-manager', BsDockManager),
-  bare('BsDropdownMenu', 'mp-dropdown-menu', BsDropdownMenu),
-  /* Rendered outside a menu on purpose: inside one, `<mp-dropdown-menu>` assigns
+  { ...bare('BsCarousel', 'div.carousel', BsCarousel), fixedRole: 'region' },
+  { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
+  bare('BsHierarchyChart', 'div.hierarchy-chart', BsHierarchyChart),
+  // No points, no svg: the probe needs data for its labelled node to exist.
+  { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
+  bare('BsTrendChart', 'div.trend-chart', BsTrendChart),
+  bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
+  bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),
+  { ...bare('BsDatatable', 'div.datatable', BsDatatable), labelTarget: 'table' },
+  bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
+  bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),
+  { ...bare('BsDockManager', 'div.dock', BsDockManager), fixedRole: 'region' },
+  bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
+  /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the
      probe's `role` and test the menu instead of the wrapper's rest-spread. */
   bare('BsDropdownItem', 'li.dropdown-item', BsDropdownItem),
   bare('BsDropdownHeader', 'li.dropdown-header', BsDropdownHeader),
   bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
-  bare('BsFileManager', 'mp-file-manager', BsFileManager),
-  bare('BsInputGroup', 'mp-input-group', BsInputGroup),
-  bare('BsMultiRange', 'mp-multi-range', BsMultiRange),
-  bare('BsNavbar', 'mp-navbar', BsNavbar),
-  {
-    name: 'BsNavbarBrand',
-    target: 'mp-navbar-brand',
-    render: (p) => <BsNavbar><BsNavbarBrand {...p} /></BsNavbar>,
-  },
+  { ...bare('BsFileManager', 'div.file-manager', BsFileManager), fixedRole: 'region' },
+  bare('BsInputGroup', 'div.input-group', BsInputGroup),
+  { ...bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange), fixedRole: 'group' },
+  bare('BsNavbar', 'nav.navbar', BsNavbar),
   {
     name: 'BsNavbarDropdown',
-    target: 'mp-navbar-dropdown',
-    render: (p) => <BsNavbar><BsNavbarDropdown {...p}><span slot="label">Menu</span></BsNavbarDropdown></BsNavbar>,
+    target: 'details.dropdown',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarDropdown label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
-    target: 'mp-navbar-item',
-    render: (p) => <BsNavbar><BsNavbarItem {...p} /></BsNavbar>,
+    target: 'div.nav-item',
+    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarItem {...p} /></BsNavbarNav></BsNavbar>,
   },
-  bare('BsOtpInput', 'mp-otp-input', BsOtpInput),
-  bare('BsPagination', 'mp-pagination', BsPagination),
-  bare('BsPhoneInput', 'mp-phone-input', BsPhoneInput),
-  bare('BsQueryBuilder', 'mp-query-builder', BsQueryBuilder),
-  bare('BsRadio', 'mp-radio', BsRadio),
-  bare('BsRadioGroup', 'mp-radio-group', BsRadioGroup),
-  bare('BsRibbon', 'mp-ribbon', BsRibbon),
-  bare('BsQuickAccessToolbar', 'mp-quick-access-toolbar', BsQuickAccessToolbar),
-  bare('BsRibbonTab', 'mp-ribbon-tab', BsRibbonTab),
-  bare('BsRibbonContextualTabSet', 'mp-ribbon-contextual-tab-set', BsRibbonContextualTabSet),
-  bare('BsRibbonGroup', 'mp-ribbon-group', BsRibbonGroup),
-  bare('BsRibbonButton', 'mp-ribbon-button', BsRibbonButton),
-  bare('BsRibbonSplitButton', 'mp-ribbon-split-button', BsRibbonSplitButton),
-  bare('BsRibbonDropdownButton', 'mp-ribbon-dropdown-button', BsRibbonDropdownButton),
-  bare('BsRibbonMenuItem', 'mp-ribbon-menu-item', BsRibbonMenuItem),
-  bare('BsRibbonMenuSeparator', 'mp-ribbon-menu-separator', BsRibbonMenuSeparator),
-  bare('BsRibbonToggleButton', 'mp-ribbon-toggle-button', BsRibbonToggleButton),
-  bare('BsRibbonCheckBox', 'mp-ribbon-checkbox', BsRibbonCheckBox),
-  bare('BsRibbonComboBox', 'mp-ribbon-combobox', BsRibbonComboBox),
-  bare('BsRibbonColorPicker', 'mp-ribbon-color-picker', BsRibbonColorPicker),
-  bare('BsRibbonGroupButton', 'mp-ribbon-group-button', BsRibbonGroupButton),
-  bare('BsRibbonGallery', 'mp-ribbon-gallery', BsRibbonGallery),
-  bare('BsRibbonGalleryItem', 'mp-ribbon-gallery-item', BsRibbonGalleryItem),
-  bare('BsRibbonTemplateItem', 'mp-ribbon-template-item', BsRibbonTemplateItem),
-  bare('BsScheduler', 'mp-scheduler', BsScheduler),
-  bare('BsSelect', 'mp-select', BsSelect),
-  bare('BsShell', 'mp-shell', BsShell),
-  bare('BsSignaturePad', 'mp-signature-pad', BsSignaturePad),
-  bare('BsSplitter', 'mp-splitter', BsSplitter),
-  bare('BsTabControl', 'mp-tab-control', BsTabControl),
+  bare('BsNavbarNav', 'div.navbar-nav', BsNavbarNav),
+  bare('BsOtpInput', 'input', BsOtpInput),
+  bare('BsPagination', 'nav', BsPagination),
+  bare('BsPhoneInput', 'input[type=tel]', BsPhoneInput),
+  bare('BsQueryBuilder', 'div.query-builder', BsQueryBuilder),
+  bare('BsRadio', 'input[type=radio]', BsRadio),
+  { ...bare('BsRadioGroup', 'div', BsRadioGroup), fixedRole: 'radiogroup' },
+  { ...bare('BsRibbon', 'div.ribbon', BsRibbon), fixedRole: 'region' },
+  { ...bare('BsQuickAccessToolbar', 'div.qat', BsQuickAccessToolbar), fixedRole: 'toolbar' },
+  { ...bare('BsRibbonTab', 'div.ribbon-tabpanel', BsRibbonTab), fixedRole: 'tabpanel' },
+  bare('BsRibbonContextualTabSet', 'div.ribbon-contextual-tab-set', BsRibbonContextualTabSet),
+  bare('BsRibbonGroup', 'div.ribbon-group-host', BsRibbonGroup),
+  bare('BsRibbonButton', 'div.ribbon-button-host', BsRibbonButton),
+  bare('BsRibbonSplitButton', 'div.ribbon-split-button-host', BsRibbonSplitButton),
+  bare('BsRibbonDropdownButton', 'div.ribbon-dropdown-button-host', BsRibbonDropdownButton),
+  { ...bare('BsRibbonMenuItem', 'div.ribbon-menu-item', BsRibbonMenuItem), fixedRole: 'none' },
+  { ...bare('BsRibbonMenuSeparator', 'div.ribbon-menu-separator', BsRibbonMenuSeparator), fixedRole: 'separator' },
+  bare('BsRibbonToggleButton', 'div.ribbon-toggle-button-host', BsRibbonToggleButton),
+  bare('BsRibbonCheckBox', 'div.ribbon-checkbox-host', BsRibbonCheckBox),
+  bare('BsRibbonComboBox', 'div.ribbon-combobox-host', BsRibbonComboBox),
+  bare('BsRibbonColorPicker', 'div.ribbon-color-picker-host', BsRibbonColorPicker),
+  bare('BsRibbonGroupButton', 'div.ribbon-group-button-host', BsRibbonGroupButton),
+  bare('BsRibbonGallery', 'div.ribbon-gallery-host', BsRibbonGallery),
+  { ...bare('BsRibbonGalleryItem', 'div.ribbon-gallery-item', BsRibbonGalleryItem), fixedRole: 'none' },
+  bare('BsRibbonTemplateItem', 'div.ribbon-template-item', BsRibbonTemplateItem),
+  bare('BsScheduler', 'div.scheduler', BsScheduler),
+  bare('BsSelect', 'select', BsSelect),
+  bare('BsShell', 'div.shell', BsShell),
+  bare('BsSignaturePad', 'div.mp-signature-pad', BsSignaturePad),
+  bare('BsSplitter', 'div.splitter', BsSplitter),
+  bare('BsSplitterPanel', 'div.splitter-panel', BsSplitterPanel),
+  bare('BsTabControl', 'div.tab-control', BsTabControl),
   {
+    // A marker: BsTabControl renders its pane and forwards the page's attributes there.
     name: 'BsTabPage',
-    target: 'mp-tab-page',
-    render: (p) => <BsTabControl><BsTabPage {...p} /></BsTabControl>,
+    target: 'div.tab-pane',
+    render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
+    fixedRole: 'tabpanel',
   },
-  bare('BsThemeToggle', 'mp-theme-toggle', BsThemeToggle),
+  bare('BsThemeToggle', 'span.theme-toggle', BsThemeToggle),
   {
     name: 'BsTileManager',
     target: '.mp-tile-manager',
     render: (p) => <BsTileManager tiles={[{ id: 'a' }]} {...p} />,
     fixedRole: 'region',
   },
-  bare('BsTimeline', 'mp-timeline', BsTimeline),
-  bare('BsTimelineItem', 'mp-timeline-item', BsTimelineItem),
-  bare('BsTimeList', 'mp-time-list', BsTimeList),
-  bare('BsTimepicker', 'mp-timepicker', BsTimepicker),
-  bare('BsToggleButton', 'mp-toggle-button', BsToggleButton),
-  bare('BsTreeSelect', 'mp-tree-select', BsTreeSelect),
-  bare('BsTreeview', 'mp-treeview', BsTreeview),
+  { ...bare('BsTimeline', 'div.timeline', BsTimeline), fixedRole: 'list' },
+  { ...bare('BsTimelineItem', 'div.timeline-item', BsTimelineItem), fixedRole: 'listitem' },
+  { ...bare('BsTimeList', 'div.mp-time-list', BsTimeList), fixedRole: 'listbox' },
+  bare('BsTimepicker', 'div.mp-timepicker', BsTimepicker),
+  bare('BsToggleButton', 'input[type=checkbox]', BsToggleButton),
+  bare('BsTreeSelect', 'div.tree-select', BsTreeSelect),
+  {
+    name: 'BsTreeview',
+    target: 'ul.treeview-tree',
+    render: (p) => <BsTreeview items={[{ id: 'a', label: 'A' }]} {...p} />,
+    fixedRole: 'tree',
+  },
   { ...bare('BsTypeahead', 'input', BsTypeahead), fixedRole: 'combobox' },
 ];
 
@@ -314,7 +325,8 @@ describe('React wrapper attribute passthrough', () => {
       expect(target, `${entry.target} was not rendered by <${entry.name}>`).not.toBeNull();
       // Proves the wrapper spreads its rest props at all. A wrapper that
       // destructures every known prop and forgets `...rest` fails here.
-      expect(target!.getAttribute('aria-label')).toBe(PROBE['aria-label']);
+      const labelled = entry.labelTarget ? target!.querySelector(entry.labelTarget) : target;
+      expect(labelled?.getAttribute('aria-label')).toBe(PROBE['aria-label']);
       // The bare names travel a different road — `@lit/react` routes any name
       // it finds on the element prototype through a property rather than an
       // attribute — so they are a genuinely separate failure, not a repeat.

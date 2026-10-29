@@ -1,3 +1,3 @@
-export * from './lib/components/multi-range.component';
-export * from './lib/value-accessor/multi-range-value-accessor';
-export * from '@mintplayer/web-components/multi-range';
+export * from './generated';
+export * from './value-accessor/multi-range-value-accessor';
+export type { MultiRangeOrientation } from '@mintplayer/ui-core/multi-range';

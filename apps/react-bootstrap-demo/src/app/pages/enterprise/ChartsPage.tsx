@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
+import { BsHierarchyChart, type HierarchyChartLayout, type HierarchyNode } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { HierarchyChartLayout, HierarchyNode } from '@mintplayer/web-components/charts/hierarchy';
-import type { TrendSeries } from '@mintplayer/web-components/charts/trend';
+import type { TrendSeries } from '@mintplayer/react-bootstrap/charts/trend';
 
 const leaf = (id: string, name: string, value: number, coverage: number): HierarchyNode =>
   ({ id, name, value, colorValue: coverage });
@@ -49,7 +48,7 @@ const SOURCE = `<BsHierarchyChart
   colorMax={80}
   inputLabel="Coverage by folder"
   valueUnitLabel="lines"
-  onHierarchyZoom={e => setRootId(e.detail.node.id)}
+  onRootIdChange={setRootId}
 />
 
 <BsTrendChart series={series} yMin={0} yMax={100} goal={80}

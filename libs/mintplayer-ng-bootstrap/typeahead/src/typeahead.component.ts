@@ -20,9 +20,11 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { isObservable, Observable } from 'rxjs';
-import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
 import { machineSignal, MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import { abortError } from '@mintplayer/ui-core/async';
+import { preHydrationValue } from '@mintplayer/ui-core/forms';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import {
   connect,
   TYPEAHEAD_SCOPE,
@@ -96,6 +98,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
 
   readonly itemTemplate = contentChild<BsTypeaheadItemDirective<T>>(BsTypeaheadItemDirective);
   private readonly inputRef = viewChild.required<ElementRef<HTMLInputElement>>('input');
+  private readonly listboxRef = viewChild.required<ElementRef<HTMLUListElement>>('listbox');
 
   readonly id = inject(BsIdService).next('bs-typeahead');
   /**
@@ -113,6 +116,8 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
   readonly selectedItem;
 
   private readonly disabledByCva = signal(false);
+  /** Set by afterNextRender (client only), so the readiness mark is never in server HTML. */
+  private readonly hydrated = signal(false);
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
 
@@ -137,7 +142,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     });
     this.state = machineSignal(this.machine);
     this.api = computed(() => {
-      const api = connect(this.state(), this.id, { name: this.name() });
+      const api = connect(this.state(), this.id, { name: this.name(), hydrated: this.hydrated() });
       // A host aria-label / aria-labelledby wins over inputLabel (naming conformance).
       return { ...api, input: { ...api.input, ...this.hostAria } };
     });
@@ -173,6 +178,14 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     });
 
     this.adoptPreHydrationText(host);
+
+    // Browser only (afterNextRender never runs on the server): flip the list above the input near the viewport bottom.
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const untrack = trackOpenSide(this.machine, () => this.inputRef().nativeElement, () => this.listboxRef().nativeElement);
+      destroyRef.onDestroy(untrack);
+      this.hydrated.set(true);
+    });
   }
 
   /**
@@ -185,8 +198,8 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
    */
   private adoptPreHydrationText(host: HTMLElement): void {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    const typed = host.querySelector('input')?.value ?? '';
-    if (!typed || typed === this.machine.snapshot.term) return;
+    const typed = preHydrationValue(host, this.machine.snapshot.term, 'input');
+    if (typed === null) return;
     this.machine.setValue(typed);
     this.value.set(typed);
     afterNextRender(() => {
@@ -237,17 +250,6 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
   setDisabledState(isDisabled: boolean): void {
     this.disabledByCva.set(isDisabled);
   }
-}
-
-/** Collect `aria-*` (copied) and `id` / `tabindex` (moved) from the host element. */
-function takeHostAria(host: HTMLElement): Record<string, string> {
-  const bag = Object.fromEntries(
-    Array.from(host.attributes)
-      .filter(({ name }) => name.startsWith('aria-') || name === 'id' || name === 'tabindex')
-      .map(({ name, value }) => [name, value]),
-  );
-  ['id', 'tabindex'].filter((name) => name in bag).forEach((name) => host.removeAttribute(name));
-  return bag;
 }
 
 /** Promise or Observable in, Promise out; the Observable is unsubscribed when the request aborts. */

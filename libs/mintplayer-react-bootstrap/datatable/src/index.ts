@@ -1,1 +1,36 @@
-export { BsDatatable } from './BsDatatable';
+// The datatable is generated from @mintplayer/ui-core/datatable (PRD #437 D10).
+export * from './generated';
+export { DEFAULT_DATATABLE_LABELS, cellText, computeNextSort, sortRows } from '@mintplayer/ui-core/datatable';
+export type {
+  ComparisonFilterChangeDetail,
+  DatatableColumnDef,
+  DatatableDistincts,
+  DatatableFetch,
+  DatatableFetchRequest,
+  DatatableFetchResponse,
+  DatatableHrefFor,
+  DatatableHrefState,
+  DatatableLabels,
+  DatatableLoadErrorDetail,
+  DatatableReloadOptions,
+  DatatableSelectionMode,
+  DistinctValue,
+  DistinctValues,
+  DistinctsRequest,
+  FilterChangeDetail,
+  FilterContext,
+  FilterInputType,
+  FilterMode,
+  FilterOperator,
+  FilterSelection,
+  RowEventDetail,
+  RowKey,
+  RowRenderContext,
+  SelectionChangeEventDetail,
+  SortColumn,
+  SortDirection,
+  TreeIdKey,
+  TreeRowExpandDetail,
+  TreeSelectionStrategy,
+  ValuesFilterChangeDetail,
+} from '@mintplayer/ui-core/datatable';

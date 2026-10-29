@@ -1,5 +1,5 @@
 import { computed, contentChildren, Directive, ElementRef, inject, input, signal } from '@angular/core';
-import { firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '@mintplayer/web-components/a11y';
+import { firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '@mintplayer/ui-core/roving';
 import { BsRovingFocusItemDirective } from './roving-focus-item.directive';
 
 export type BsRovingFocusOrientation = 'vertical' | 'horizontal' | 'both';
@@ -94,7 +94,7 @@ export class BsRovingFocusDirective {
 
   /**
    * Index math delegates to the shared pure functions in
-   * @mintplayer/web-components/a11y — this directive and the WC RovingFocus
+   * @mintplayer/ui-core/roving — this directive and the WC RovingFocus
    * controller had independently identical copies that had ALREADY drifted
    * (wrap-vs-clamp default). One implementation, two adapters. The directive
    * keeps its own signals and discovery: those are Angular/light-DOM concerns

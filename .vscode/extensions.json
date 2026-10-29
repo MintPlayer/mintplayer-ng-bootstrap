@@ -6,6 +6,7 @@
     "vitest.explorer",
     "ms-playwright.playwright",
     "dbaeumer.vscode-eslint",
-    "somewhatstationery.some-sass"
+    "somewhatstationery.some-sass",
+    "Vue.volar"
   ]
 }

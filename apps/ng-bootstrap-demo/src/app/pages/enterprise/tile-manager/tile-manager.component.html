@@ -22,18 +22,18 @@
         <div [md]="3" class="mb-3">
           <label class="form-label">Stack below</label>
           <bs-select aria-label="Stack below" [ngModel]="stackBelow()" (ngModelChange)="stackBelow.set(+$event)">
-            <option [value]="0">never</option>
-            <option [value]="576">576px</option>
-            <option [value]="768">768px</option>
+            <option [ngValue]="0">never</option>
+            <option [ngValue]="576">576px</option>
+            <option [ngValue]="768">768px</option>
           </bs-select>
         </div>
         <div [md]="3" class="mb-3">
           <label class="form-label">Gap</label>
           <bs-select aria-label="Gap" [ngModel]="gap()" (ngModelChange)="gap.set(+$event)">
-            <option [value]="4">tight</option>
-            <option [value]="8">small</option>
-            <option [value]="12">comfortable</option>
-            <option [value]="20">spacious</option>
+            <option [ngValue]="4">tight</option>
+            <option [ngValue]="8">small</option>
+            <option [ngValue]="12">comfortable</option>
+            <option [ngValue]="20">spacious</option>
           </bs-select>
         </div>
         <div [md]="3" class="mb-3">

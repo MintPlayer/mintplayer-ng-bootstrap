@@ -1,0 +1,109 @@
+// The whole Bootstrap 5.3 stack, plus this design system's utility patches and
+// the primary-button re-bind. Not an entry point: bootstrap.scss loads it into
+// @layer mp.bootstrap through meta.load-css, which is what puts every rule here
+// below the components (@layer mp.components) and below any unlayered consumer
+// rule (PRD #437 C1-C3).
+//
+// Every partial is enabled. Components no longer render behind a shadow root,
+// so their DOM uses the page's Bootstrap; a component sheet must never import a
+// partial itself (C4, enforced by _conformance/no-bootstrap-partials-in-scoped).
+
+// Configuration
+@import "bootstrap/scss/functions";
+@import "bootstrap/scss/variables";
+@import "bootstrap/scss/variables-dark";
+@import "bootstrap/scss/maps";
+@import "bootstrap/scss/mixins";
+@import "bootstrap/scss/utilities";
+
+// Utility patches: each map.merge()s into $utilities, so they sit between
+// utilities and utilities/api.
+@import "utilities/cursor";
+@import "utilities/white-space";
+@import "utilities/overflow";
+@import "utilities/width";
+
+// Layout & components
+//
+// The [data-bs-theme=dark] token block in root is pruned by Angular's
+// critical-CSS inliner (beasties), because the static index.html carries no
+// data-bs-theme, and its include markers do not survive the production
+// minifier (PRD dark-mode D5c, measured). Apps must set
+// optimization.styles.inlineCritical to false; see the ng demo's project.json
+// and nx run ng-bootstrap-demo:check-critical-css.
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/images";
+@import "bootstrap/scss/containers";
+@import "bootstrap/scss/grid";
+@import "bootstrap/scss/tables";
+@import "bootstrap/scss/forms";
+@import "bootstrap/scss/buttons";
+@import "bootstrap/scss/transitions";
+@import "bootstrap/scss/dropdown";
+@import "bootstrap/scss/button-group";
+@import "bootstrap/scss/nav";
+@import "bootstrap/scss/navbar";
+@import "bootstrap/scss/card";
+@import "bootstrap/scss/accordion";
+@import "bootstrap/scss/breadcrumb";
+@import "bootstrap/scss/pagination";
+@import "bootstrap/scss/badge";
+@import "bootstrap/scss/alert";
+@import "bootstrap/scss/progress";
+@import "bootstrap/scss/list-group";
+@import "bootstrap/scss/close";
+@import "bootstrap/scss/toasts";
+@import "bootstrap/scss/modal";
+@import "bootstrap/scss/tooltip";
+@import "bootstrap/scss/popover";
+@import "bootstrap/scss/carousel";
+@import "bootstrap/scss/spinners";
+@import "bootstrap/scss/offcanvas";
+@import "bootstrap/scss/placeholders";
+
+// Re-bind .btn-primary / .btn-outline-primary scoped variables to var(--bs-primary)
+// so runtime mutations of --bs-primary propagate to buttons. Bootstrap's
+// button-variant mixin emits color literals into the scoped --bs-btn-* vars,
+// which is why the unpatched rules ignore --bs-primary changes at runtime.
+.btn-primary {
+  --bs-btn-bg: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--bs-primary), #000 15%);
+  --bs-btn-hover-border-color: color-mix(in srgb, var(--bs-primary), #000 20%);
+  --bs-btn-active-bg: color-mix(in srgb, var(--bs-primary), #000 20%);
+  --bs-btn-active-border-color: color-mix(in srgb, var(--bs-primary), #000 25%);
+  --bs-btn-disabled-bg: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--bs-primary);
+  --bs-btn-border-color: var(--bs-primary);
+  --bs-btn-hover-bg: var(--bs-primary);
+  --bs-btn-hover-border-color: var(--bs-primary);
+  --bs-btn-active-bg: var(--bs-primary);
+  --bs-btn-active-border-color: var(--bs-primary);
+  --bs-btn-disabled-color: var(--bs-primary);
+  --bs-btn-disabled-border-color: var(--bs-primary);
+  --bs-btn-focus-shadow-rgb: var(--bs-primary-rgb);
+}
+
+// WCAG 2.2 target size (2.5.8, 24 x 24 CSS px). In .pagination-sm a link
+// holding one narrow glyph (the « and » arrows) measures 23px wide with the
+// Linux fonts CI renders with; the floor keeps every page link a valid target.
+// Each following link overlaps its neighbour by one border width (Bootstrap's
+// collapsed borders), so the floor adds that back: a 24px floor left 23px
+// unobscured (axe, measured on CI).
+.page-link {
+  min-inline-size: calc(24px + var(--bs-border-width));
+  text-align: center;
+}
+
+// Helpers
+@import "bootstrap/scss/helpers";
+
+// Utilities
+@import "bootstrap/scss/utilities/api";

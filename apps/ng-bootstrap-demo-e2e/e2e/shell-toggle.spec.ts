@@ -2,38 +2,32 @@ import { test, expect, type Page } from '@playwright/test';
 
 // JS-enabled counterpart to shell-nojs.spec.ts. With scripting on, the demo wires
 // the in-shell hamburger to the Auto/Show/Hide radios (the `statechange` event ->
-// `[state]`) and vice-versa. These specs lock in the two bugs that were fixed:
-//   1. the hamburger reports the *resolved visual* open state (not the raw, in
-//      `auto`+wide inverted, checkbox), so the radios light up correctly; and
-//   2. each hamburger click keeps flipping once an explicit `state` is set
-//      (the Angular wrapper stops the raw WC event double-firing the binding).
+// `[state]`) and vice-versa. These specs lock in that:
+//   1. the hamburger reports the resolved visual open state, so the radios light
+//      up correctly; and
+//   2. each hamburger click keeps flipping once an explicit `state` is set.
 
-const shellOf = (page: Page) => page.locator('mp-shell').first();
-const hamburger = (page: Page) => shellOf(page).locator('label.shell-hamburger');
+const shellOf = (page: Page) => page.locator('bs-shell.shell').first();
+// One hamburger per viewport mode; only the current mode's is displayed.
+const hamburger = (page: Page) => shellOf(page).locator('label.shell-hamburger:visible');
 const sidebar = (page: Page) => shellOf(page).locator('aside.sidebar');
-const checkedRadio = (page: Page) => page.locator('mp-radio[checked]');
+const checkedRadio = (page: Page) => page.locator('input.btn-check:checked + label.btn');
 // The toggle-button radios are Bootstrap `btn-check`: a visually-hidden <input>
 // covered by a clickable <label class="btn">. Click the label, not the input.
 const radio = (page: Page, name: string) =>
-  page.locator('mp-radio').filter({ hasText: name }).locator('label.btn');
+  page.locator('input.btn-check + label.btn').filter({ hasText: name });
 
 async function goto(page: Page) {
   await page.goto('/overlays/shell');
   await expect(shellOf(page)).toBeVisible();
-  // Destructive (non-hydrating) SSR bootstrap + an async WC upgrade. Wait for a
-  // deterministic readiness signal instead of `networkidle` (the dev server's
-  // HMR socket keeps the network busy, which hangs `networkidle` on Firefox):
-  // the `mp-shell` is upgraded (its imperative API exists and Lit has rendered
-  // the in-shadow hamburger). The shadow renders *after* connectedCallback, by
-  // which point Angular has already attached the `(statechange)` listener.
-  await page.waitForFunction(() => {
-    const s = document.querySelector('mp-shell') as (HTMLElement & { toggle?: unknown }) | null;
-    return !!(s && typeof s.toggle === 'function' && s.shadowRoot?.querySelector('.shell-hamburger'));
-  });
-  await expect(page.locator('mp-radio[checked]')).toHaveCount(1);
+  // The server HTML is already the working shell; wait for hydration so the
+  // (statechange) listener is attached before the first click. The e2e server
+  // is a production build (no ng debug global), so wait on the core's marker.
+  await page.locator('bs-shell[data-mp-hydrated]').waitFor({ state: 'attached' });
+  await expect(checkedRadio(page)).toHaveCount(1);
 }
 
-test.describe('mp-shell toggle <-> radio sync (JS enabled)', () => {
+test.describe('bs-shell toggle <-> radio sync (JS enabled)', () => {
   test('wide: starts open on Auto; hamburger alternates hide/show and lights the radio', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await goto(page);

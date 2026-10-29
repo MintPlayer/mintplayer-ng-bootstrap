@@ -14,18 +14,18 @@ import '@mintplayer/web-components/typeahead';
  * component INSIDE it starves that child of its styles — the original #408 bug,
  * one level up.
  *
- * `mp-file-manager` is the case in this repo (it renders mp-datatable and
- * mp-treeview in its shadow root). It must mirror the light-style registry onto
- * its own root via `adoptLightStyles`.
+ * `mp-file-manager` was the case until #437 moved it to the light DOM (it
+ * composes mp-datatable and mp-treeview). Such a host must mirror the
+ * light-style registry onto its own root via `adoptLightStyles`.
  *
  * This suite exists so the next shadow-DOM component that embeds a light-tier
  * one fails here instead of shipping silently unstyled.
  */
 
-const LIGHT_TIER_TAGS = ['mp-datatable', 'mp-treeview', 'mp-tree-select', 'mp-typeahead'] as const;
+const LIGHT_TIER_TAGS = ['mp-file-manager', 'mp-datatable', 'mp-treeview', 'mp-tree-select', 'mp-typeahead'] as const;
 
 /** Shadow-rooted hosts that render a light-tier component inside themselves. */
-const SHADOW_HOSTS_EMBEDDING_LIGHT_TIER = ['mp-file-manager'] as const;
+const SHADOW_HOSTS_EMBEDDING_LIGHT_TIER: readonly string[] = [];
 
 describe('light-tier components nested inside a shadow root', () => {
   beforeEach(() => {

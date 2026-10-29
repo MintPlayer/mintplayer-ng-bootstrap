@@ -76,13 +76,13 @@ async function mockTreeApi(page: Page) {
 // Read every visible body row (real + placeholder) out of the tree-mode table.
 //
 // Scoped by the `tree-table` class the demo puts on that <bs-datatable>, NOT by
-// position. These helpers used to take "the last <mp-datatable> on the page",
+// position. These helpers used to take "the last datatable on the page",
 // which was the tree example until a Column filters section was added below it
 // — after which every tree assertion was silently reading the wrong table.
 async function readRows(page: Page) {
   return page.evaluate(() => {
-    const wc = document.querySelector('.tree-table mp-datatable');
-    // Tier L: mp-datatable renders in the light DOM, so its rows are ordinary
+    const wc = document.querySelector('bs-datatable.tree-table');
+    // bs-datatable renders in the light DOM, so its rows are ordinary
     // descendants of the host — no shadow hop.
     if (!wc) return [];
     const rows = wc.querySelectorAll('tbody tr[data-row-key]');
@@ -101,8 +101,8 @@ async function readRows(page: Page) {
 // aria-label="Expand row"|"Collapse row">`.
 async function clickChevron(page: Page, rowKey: string) {
   await page.evaluate((key) => {
-    const wc = document.querySelector('.tree-table mp-datatable');
-    if (!wc) throw new Error('tree-mode mp-datatable not found');
+    const wc = document.querySelector('bs-datatable.tree-table');
+    if (!wc) throw new Error('tree-mode bs-datatable not found');
     const row = wc.querySelector(`tr[data-row-key="${key}"]`);
     if (!row) throw new Error(`row ${key} not found`);
     const btn = row.querySelector('button.tree-chevron') as HTMLButtonElement | null;
@@ -213,7 +213,7 @@ test.describe('bs-datatable tree mode', () => {
 
   test('table uses role=treegrid', async ({ page }) => {
     const role = await page.evaluate(() => {
-      const wc = document.querySelector('.tree-table mp-datatable');
+      const wc = document.querySelector('bs-datatable.tree-table');
       return wc?.querySelector('table')?.getAttribute('role');
     });
     expect(role).toBe('treegrid');

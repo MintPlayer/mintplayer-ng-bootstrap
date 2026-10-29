@@ -1,0 +1,327 @@
+// The tree-select's stylesheet (PRD #437). Rescoped at build time: every
+// compound gains [data-mps=tree-select]. It is the group's one sheet (S15): the
+// panel's tree rows are the treeview's markup, stamped with this group's scope,
+// so the treeview's rules are included here, their final-form selectors too.
+@use '../../../treeview/src/styles/treeview.scoped' with ($scope: tree-select);
+
+.tree-select {
+  display: inline-block;
+  width: 100%;
+  position: relative;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--bs-body-color, #212529);
+  --ts-border: var(--bs-border-color, #dee2e6);
+  --ts-primary: var(--bs-primary, #0d6efd);
+  --ts-radius: var(--bs-border-radius, 0.375rem);
+  --ts-muted: var(--bs-secondary-color, #6c757d);
+}
+
+.tree-select[data-disabled='true'] {
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+// ---- Trigger ------------------------------------------------------------
+.ts-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(1.5em + 0.75rem + 2px);
+  padding: 0.25rem 0.5rem;
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  cursor: text;
+}
+
+.ts-control:focus-within {
+  border-color: var(--ts-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+}
+
+.ts-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: calc(1.5em + 0.75rem + 2px);
+  padding: 0.375rem 0.75rem;
+  background: var(--bs-body-bg, #fff);
+  color: inherit;
+  font: inherit;
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  cursor: pointer;
+  text-align: start;
+}
+
+.ts-button:focus-visible {
+  outline: none;
+  border-color: var(--ts-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+}
+
+.ts-button-body {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ts-placeholder {
+  color: var(--ts-muted);
+}
+
+.ts-single-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-search {
+  flex: 1 1 4rem;
+  min-width: 4rem;
+  border: 0;
+  outline: 0;
+  padding: 0.125rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+}
+
+.ts-search.panel-search {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  padding: 0.375rem 0.5rem;
+}
+
+.ts-search.panel-search:focus-visible {
+  border-color: var(--ts-primary);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+}
+
+// ---- Chips --------------------------------------------------------------
+.ts-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 0.125rem 0.375rem;
+  background: var(--bs-secondary-bg, #e9ecef);
+  border-radius: var(--ts-radius);
+  font-size: 0.875em;
+  line-height: 1.2;
+}
+
+.ts-chip-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ts-chip-remove,
+.ts-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font: inherit;
+  font-size: 1em;
+  opacity: 0.7;
+}
+
+.ts-chip-remove:hover,
+.ts-clear:hover {
+  opacity: 1;
+}
+
+.ts-chip-remove:focus-visible,
+.ts-clear:focus-visible,
+.ts-load-more:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--ts-primary);
+  outline-offset: 1px;
+}
+
+.ts-clear {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  font-size: 1.1em;
+}
+
+// The caret is a mask over currentColor: no markup to sanitise.
+.ts-caret {
+  flex: 0 0 auto;
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
+  color: var(--ts-muted);
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform 0.15s ease;
+}
+
+.tree-select[data-open='true'] .ts-caret {
+  transform: rotate(180deg);
+}
+
+// ---- Panel: a native popover in the top layer, placed by trackPopovers --
+.ts-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  min-width: var(--mp-popover-min-width, auto);
+  box-sizing: border-box;
+  flex-direction: column;
+  color: var(--bs-body-color, #212529);
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--ts-border);
+  border-radius: var(--ts-radius);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.ts-panel:popover-open {
+  display: flex;
+}
+
+.ts-panel-header,
+.ts-panel-footer {
+  flex: 0 0 auto;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--ts-border);
+}
+
+.ts-panel-footer {
+  border-bottom: 0;
+  border-top: 1px solid var(--ts-border);
+}
+
+.ts-panel-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  max-height: var(--mp-tree-select-panel-max-height, 300px);
+}
+
+.ts-state {
+  padding: 0.75rem;
+  color: var(--ts-muted);
+  text-align: center;
+}
+
+.ts-load-more {
+  display: block;
+  width: 100%;
+  padding: 0.375rem;
+  border: 0;
+  border-top: 1px solid var(--ts-border);
+  background: transparent;
+  color: var(--ts-primary);
+  cursor: pointer;
+  font: inherit;
+}
+
+.ts-load-more:hover {
+  background: var(--bs-secondary-bg, #e9ecef);
+}
+
+.ts-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  box-sizing: border-box;
+  border: 0.15em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ts-spin 0.75s linear infinite;
+  vertical-align: -0.125em;
+}
+
+@keyframes ts-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ---- The decorative check glyph (multiple / checkbox modes) -------------
+.ts-node-check {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 0.4rem;
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: 0.25em;
+  background: var(--bs-body-bg, #fff);
+  cursor: pointer;
+  vertical-align: -0.125em;
+}
+
+.ts-node-check[data-state='checked'],
+.ts-node-check[data-state='mixed'] {
+  border-color: var(--ts-primary);
+  background: var(--ts-primary);
+}
+
+.ts-node-check[data-state='checked']::after,
+.ts-node-check[data-state='mixed']::after {
+  content: '';
+  width: 0.7em;
+  height: 0.7em;
+  background: #fff;
+}
+
+.ts-node-check[data-state='checked']::after {
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='%23000' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m6 10 3 3 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.ts-node-check[data-state='mixed']::after {
+  height: 0.15em;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// The caret turn and the spinner are the only motion.
+@media (prefers-reduced-motion: reduce) {
+  .ts-caret,
+  .ts-spinner {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

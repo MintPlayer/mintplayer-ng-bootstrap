@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
   BsRibbonComponent,
+  BsRibbonTellMeDirective,
   BsQuickAccessToolbarComponent,
   BsRibbonTabComponent,
   BsRibbonContextualTabSetComponent,
@@ -25,7 +26,7 @@ import {
   BsRibbonGroupButtonComponent,
   BsRibbonGalleryComponent,
   BsRibbonGalleryItemComponent,
-  type RibbonTabChangeEvent,
+  type RibbonTabChangeEventDetail,
   type RibbonComboBoxOption,
   type RibbonGroupButtonOption,
   type RibbonGroupSize,
@@ -55,6 +56,7 @@ interface AppAccentOption {
     CommonModule,
     FormsModule,
     BsRibbonComponent,
+    BsRibbonTellMeDirective,
     BsQuickAccessToolbarComponent,
     BsRibbonTabComponent,
     BsRibbonContextualTabSetComponent,
@@ -83,7 +85,7 @@ export class RibbonComponent {
   readonly minimized = signal(false);
   readonly layout = signal<'classic' | 'simplified'>('classic');
   readonly version = model<RibbonVersion>('office-2016');
-  readonly appAccent = model<string>('#2B579A');
+  readonly appAccent = model<string>('word');
   readonly colorScheme = model<ColorScheme>('auto');
   readonly touchMode = model<TouchMode>('auto');
   readonly direction = model<Direction>('ltr');
@@ -159,11 +161,11 @@ export class RibbonComponent {
                          dialogLauncher="Clipboard Dialog">
           <bs-ribbon-button itemId="paste" label="Paste" icon="📋"
                             size="large" tooltip="Paste (Ctrl+V)"
-                            (itemClick)="onPaste($event)"></bs-ribbon-button>
+                            (itemclick)="onPaste($event)"></bs-ribbon-button>
           <bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
-                            (itemClick)="onCut($event)"></bs-ribbon-button>
+                            (itemclick)="onCut($event)"></bs-ribbon-button>
           <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
-                            (itemClick)="onCopy($event)"></bs-ribbon-button>
+                            (itemclick)="onCopy($event)"></bs-ribbon-button>
         </bs-ribbon-group>
       </bs-ribbon-tab>
     </bs-ribbon>`;
@@ -174,14 +176,14 @@ export class RibbonComponent {
       [label]="pasteMode().label"
       [icon]="pasteMode().icon"
       size="large"
-      (mainAction)="onPaste($event)">
+      (mainaction)="onPaste($event)">
       <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
-                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+                           (menuselect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
       <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
-                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+                           (menuselect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
       <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
       <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
-                           (menuSelect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
+                           (menuselect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
     </bs-ribbon-split-button>`;
 
   readonly snippetValueItems = dedent`
@@ -199,7 +201,7 @@ export class RibbonComponent {
     <bs-ribbon-contextual-tab-set
       label="Picture Tools"
       color="#F2C744"
-      [hidden]="!pictureSelected()">
+      [visible]="pictureSelected()">
       <bs-ribbon-tab tabId="picture-format" label="Format">
         <bs-ribbon-group groupId="picture-styles" label="Picture Styles">
           …
@@ -208,39 +210,37 @@ export class RibbonComponent {
     </bs-ribbon-contextual-tab-set>`;
 
   readonly snippetQat = dedent`
-    <bs-quick-access-toolbar label="Quick Access Toolbar"
-                             [touchMode]="touchMode()"
-                             [appAccent]="appAccent()">
+    <bs-quick-access-toolbar aria-label="Quick Access Toolbar"
+                             [touchMode]="touchMode()">
       <bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
-                        (itemClick)="onSave($event)"></bs-ribbon-button>
+                        (itemclick)="onSave($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
-                        (itemClick)="onUndo($event)"></bs-ribbon-button>
+                        (itemclick)="onUndo($event)"></bs-ribbon-button>
     </bs-quick-access-toolbar>
 
     <bs-ribbon …> … </bs-ribbon>`;
 
   readonly snippetTheming = dedent`
+    <!-- .excel { --bs-ribbon-accent: #217346; } -->
     <bs-ribbon
+      class="excel"
       version="office-2016"
-      appAccent="#217346"
       colorScheme="auto"
       touchMode="auto">
       …
     </bs-ribbon>`;
 
   readonly snippetSlotIcons = dedent`
-    <!-- Project any element with slot="icon" — SVGs, <i> from an icon font,
-         images, whatever. The host auto-sizes it from the item's size,
-         or use one of the .ribbon-icon-large / -medium / -small utility
-         classes for an explicit override. -->
+    <!-- Any element works as an icon: an SVG, an icon-font <i>, an image.
+         It is sized from the size the item renders at. -->
     <bs-ribbon-button itemId="save" label="Save" size="large"
-                      (itemClick)="onSave($event)">
-      <i slot="icon" class="bi bi-save"></i>
+                      (itemclick)="onSave($event)">
+      <i *bsRibbonButtonIconTemplate class="bi bi-save"></i>
     </bs-ribbon-button>
 
     <bs-ribbon-button itemId="copy" label="Copy" size="small"
-                      (itemClick)="onCopy($event)">
-      <svg slot="icon" class="ribbon-icon-small" viewBox="0 0 16 16">…</svg>
+                      (itemclick)="onCopy($event)">
+      <svg *bsRibbonButtonIconTemplate viewBox="0 0 16 16">…</svg>
     </bs-ribbon-button>`;
 
   togglePictureTools(): void {
@@ -262,15 +262,15 @@ export class RibbonComponent {
   ];
 
   readonly appAccents: AppAccentOption[] = [
-    { label: 'Word', value: '#2B579A' },
-    { label: 'Excel', value: '#217346' },
-    { label: 'PowerPoint', value: '#B7472A' },
-    { label: 'Outlook', value: '#0078D4' },
-    { label: 'OneNote', value: '#7719AA' },
-    { label: 'Access', value: '#A4373A' },
+    { label: 'Word', value: 'word' },
+    { label: 'Excel', value: 'excel' },
+    { label: 'PowerPoint', value: 'powerpoint' },
+    { label: 'Outlook', value: 'outlook' },
+    { label: 'OneNote', value: 'onenote' },
+    { label: 'Access', value: 'access' },
   ];
 
-  onTabChange(event: RibbonTabChangeEvent): void {
+  onTabChange(event: RibbonTabChangeEventDetail): void {
     console.log('Tab changed:', event);
   }
 

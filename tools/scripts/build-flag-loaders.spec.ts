@@ -28,7 +28,7 @@ describe('flagPaths', () => {
   it('derives every path from the injected repo root', () => {
     const root = join('base', 'repo');
     const paths = flagPaths(root);
-    expect(paths.flagsSrc).toBe(join(root, 'libs/mintplayer-web-components/flags/src'));
+    expect(paths.flagsSrc).toBe(join(root, 'libs/mintplayer-ui-core/flags/src'));
     expect(paths.assetsDir).toBe(join(paths.flagsSrc, 'assets'));
     expect(paths.loadersPath).toBe(join(paths.flagsSrc, 'flag-loaders.generated.ts'));
     expect(paths.bundlePath).toBe(join(paths.flagsSrc, 'all-flags.generated.ts'));
@@ -127,7 +127,7 @@ describe('main', () => {
 
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('1 flag(s)'));
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('wrote   libs/mintplayer-web-components/flags/src/flag-loaders.generated.ts'),
+      expect.stringContaining('wrote   libs/mintplayer-ui-core/flags/src/flag-loaders.generated.ts'),
     );
   });
 
@@ -139,10 +139,10 @@ describe('main', () => {
     await main(root);
 
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('skipped libs/mintplayer-web-components/flags/src/flag-loaders.generated.ts'),
+      expect.stringContaining('skipped libs/mintplayer-ui-core/flags/src/flag-loaders.generated.ts'),
     );
     expect(console.log).toHaveBeenCalledWith(
-      expect.stringContaining('skipped libs/mintplayer-web-components/flags/src/all-flags.generated.ts'),
+      expect.stringContaining('skipped libs/mintplayer-ui-core/flags/src/all-flags.generated.ts'),
     );
   });
 });

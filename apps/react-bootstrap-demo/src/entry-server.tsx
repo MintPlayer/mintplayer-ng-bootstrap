@@ -1,42 +1,23 @@
 // Server entry for SSR. Loaded through Vite (dev: `ssrLoadModule`; prod: the
 // `vite build --ssr` bundle), so the `@mintplayer/*` tsconfig path aliases and
 // TS/JSX resolve here — `server.js` stays a thin plain-ESM transport.
-//
-// IMPORTANT: the lit-ssr DOM shim must be installed *before* any module that
-// registers a web component. Importing a `@mintplayer/react-bootstrap` wrapper
-// runs `customElements.define(...)` at module load; without the shim that
-// throws in Node. This import is first on purpose — ESM evaluates imports in
-// source order, so the globals exist before `./app/app` pulls in any wrapper.
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
-
+// No DOM shim: the React fronts render their own JSX and define no custom
+// elements, so nothing here touches a browser global at load (PRD #437).
 import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { Writable } from 'node:stream';
-// Framework-agnostic helper: splices `<mp-shell>`'s Declarative Shadow DOM into
-// the HTML so the sidebar + hamburger toggle work with JavaScript disabled.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
-// Splices each `<mp-dropdown-menu>`'s Declarative Shadow DOM into the HTML so
-// the menu renders styled with JavaScript disabled.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Splices each `<mp-navbar>` family element's Declarative Shadow DOM into the
-// HTML so the navbar renders — and collapses/reveals via its pure-CSS state
-// machine — with JavaScript disabled.
-import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
-// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
-// no-JS carousel navigates with JS disabled. Composed with the other injectors.
-import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
-// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
-// so tabs open and close through the shadow input state machine with JS off.
-import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
-export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/web-components/theming';
+export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/ui-core/theming';
+// The component sheets the render installed, as marker <style> tags for the
+// <!--app-head--> slot (PRD #437 S12). Read AFTER render(): fronts install on first render.
+export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import App from './app/app';
 
 /**
- * Render the app for `url` to an HTML string with `<mp-shell>`'s DSD injected.
+ * Render the app for `url` to an HTML string.
  *
  * Uses `renderToPipeableStream` + `onAllReady` (rather than `renderToString`)
  * so lazy/`Suspense` routes fully resolve server-side — every page's markup is
@@ -56,7 +37,7 @@ export function render(url: string): Promise<string> {
       },
       final(cb) {
         clearTimeout(timer);
-        resolve(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(Buffer.concat(chunks).toString('utf-8')))))));
+        resolve(Buffer.concat(chunks).toString('utf-8'));
         cb();
       },
     });
@@ -68,6 +49,10 @@ export function render(url: string): Promise<string> {
         </StaticRouter>
       </StrictMode>,
       {
+        // React outlines a COMPLETED boundary bigger than this (default 12.8 KB)
+        // into a hidden <div id="S:n"> revealed by an inline script: with JS off
+        // the page stays hidden. A buffered render gains nothing from chunking.
+        progressiveChunkSize: Number.POSITIVE_INFINITY,
         onAllReady() {
           pipe(writable);
         },

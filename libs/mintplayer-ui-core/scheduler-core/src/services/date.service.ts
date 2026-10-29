@@ -1,0 +1,484 @@
+import { DayOfWeek, TimeFormat } from '../models/types';
+import { TimeSlot, TimeSlotRow, SchedulerGrid } from '../models/time-slot';
+
+/**
+ * Service for date calculations and formatting
+ */
+export class DateService {
+  /**
+   * Get the start of the week for a given date
+   */
+  getWeekStart(date: Date, firstDayOfWeek: DayOfWeek = 1): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = (day < firstDayOfWeek ? 7 : 0) + day - firstDayOfWeek;
+    d.setDate(d.getDate() - diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  /**
+   * Get all days in a week starting from a given date
+   */
+  getWeekDays(date: Date, firstDayOfWeek: DayOfWeek = 1): Date[] {
+    const weekStart = this.getWeekStart(date, firstDayOfWeek);
+    const days: Date[] = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(weekStart);
+      day.setDate(weekStart.getDate() + i);
+      days.push(day);
+    }
+    return days;
+  }
+
+  /**
+   * Get the start of the month for a given date
+   */
+  getMonthStart(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+  }
+
+  /**
+   * Get the end of the month for a given date
+   */
+  getMonthEnd(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+  }
+
+  /**
+   * Get all days in a month
+   */
+  getMonthDays(date: Date): Date[] {
+    const start = this.getMonthStart(date);
+    const end = this.getMonthEnd(date);
+    const days: Date[] = [];
+    const current = new Date(start);
+    while (current <= end) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  }
+
+  /**
+   * Get weeks for a month view (includes days from adjacent months)
+   */
+  getMonthWeeks(date: Date, firstDayOfWeek: DayOfWeek = 1): Date[][] {
+    const monthStart = this.getMonthStart(date);
+    const monthEnd = this.getMonthEnd(date);
+    const viewStart = this.getWeekStart(monthStart, firstDayOfWeek);
+
+    const weeks: Date[][] = [];
+    let current = new Date(viewStart);
+
+    // Generate 6 weeks to ensure consistent grid
+    for (let w = 0; w < 6; w++) {
+      const week: Date[] = [];
+      for (let d = 0; d < 7; d++) {
+        week.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
+      weeks.push(week);
+
+      // Stop if we've passed the end of the month and completed the week
+      if (current > monthEnd && weeks.length >= 4) {
+        break;
+      }
+    }
+
+    return weeks;
+  }
+
+  /**
+   * Get the start of the year for a given date
+   */
+  getYearStart(date: Date): Date {
+    return new Date(date.getFullYear(), 0, 1, 0, 0, 0, 0);
+  }
+
+  /**
+   * Get all months in a year
+   */
+  getYearMonths(date: Date): Date[] {
+    const months: Date[] = [];
+    for (let i = 0; i < 12; i++) {
+      months.push(new Date(date.getFullYear(), i, 1));
+    }
+    return months;
+  }
+
+  /**
+   * Get time slots for a day
+   */
+  getTimeSlots(
+    date: Date,
+    slotDuration: number = 1800,
+    minTime: string = '00:00:00',
+    maxTime: string = '24:00:00'
+  ): TimeSlot[] {
+    const slots: TimeSlot[] = [];
+    const [minHour, minMinute] = minTime.split(':').map(Number);
+    const [maxHour, maxMinute] = maxTime.split(':').map(Number);
+
+    const startSeconds = minHour * 3600 + minMinute * 60;
+    const endSeconds = maxHour * 3600 + maxMinute * 60;
+
+    // Wall-clock times, not elapsed seconds from midnight: on a DST change day
+    // midnight + 12h is 11:00 or 13:00, which shifted every later row by an hour
+    // (and the week grid takes its rows from its first day, often a Sunday).
+    const atWallClock = (seconds: number) => {
+      const d = new Date(date);
+      d.setHours(Math.floor(seconds / 3600), Math.floor((seconds % 3600) / 60), seconds % 60, 0);
+      return d;
+    };
+    for (let seconds = startSeconds; seconds < endSeconds; seconds += slotDuration) {
+      slots.push({ start: atWallClock(seconds), end: atWallClock(seconds + slotDuration) });
+    }
+
+    return slots;
+  }
+
+  /**
+   * Generate a scheduler grid for week view
+   */
+  getWeekGrid(
+    date: Date,
+    firstDayOfWeek: DayOfWeek = 1,
+    slotDuration: number = 1800,
+    minTime: string = '00:00:00',
+    maxTime: string = '24:00:00',
+    timeFormat: TimeFormat = '24h'
+  ): SchedulerGrid {
+    const columns = this.getWeekDays(date, firstDayOfWeek);
+
+    // Each day on its own wall clock, zipped by index. Copying the first day's
+    // hours onto the others carried its DST shift across the whole week: on a
+    // spring-forward Sunday 02:00 reads back as 03:00 and the 02:00 row vanished.
+    const perDay = columns.map((day) => this.getTimeSlots(day, slotDuration, minTime, maxTime));
+    const [minHour = 0, minMinute = 0] = minTime.split(':').map(Number);
+
+    const rows: TimeSlotRow[] = perDay[0].map((_, i) => {
+      const slots = perDay.map((daySlots) => daySlots[i]);
+      // The row's label: a day whose clock really shows this time (not the gap
+      // of a spring-forward day), else the first.
+      const minutes = minHour * 60 + minMinute + (i * slotDuration) / 60;
+      const labelSlot = slots.find((slot) => slot.start.getHours() * 60 + slot.start.getMinutes() === minutes) ?? slots[0];
+      return { time: labelSlot.start, label: this.formatTime(labelSlot.start, timeFormat), slots };
+    });
+    const allSlots = rows.flatMap((row) => row.slots);
+
+    return { columns, rows, allSlots };
+  }
+
+  /**
+   * Round a date to the nearest slot
+   */
+  roundToSlot(date: Date, slotDuration: number): Date {
+    const ms = date.getTime();
+    const slotMs = slotDuration * 1000;
+    const rounded = Math.round(ms / slotMs) * slotMs;
+    return new Date(rounded);
+  }
+
+  /**
+   * Floor a date to the slot start
+   */
+  floorToSlot(date: Date, slotDuration: number): Date {
+    const ms = date.getTime();
+    const slotMs = slotDuration * 1000;
+    const floored = Math.floor(ms / slotMs) * slotMs;
+    return new Date(floored);
+  }
+
+  /**
+   * Ceiling a date to the slot end
+   */
+  ceilToSlot(date: Date, slotDuration: number): Date {
+    const ms = date.getTime();
+    const slotMs = slotDuration * 1000;
+    const ceiled = Math.ceil(ms / slotMs) * slotMs;
+    return new Date(ceiled);
+  }
+
+  /**
+   * Detect time format preference based on locale
+   * Uses the Intl API to determine if the locale uses 12-hour or 24-hour time
+   */
+  detectTimeFormat(locale?: string): TimeFormat {
+    const resolvedLocale = locale || (typeof navigator !== 'undefined' ? navigator.language : 'en-US');
+    try {
+      const options = new Intl.DateTimeFormat(resolvedLocale, { hour: 'numeric' }).resolvedOptions();
+      return options.hour12 ? '12h' : '24h';
+    } catch {
+      // Fallback to 24h if detection fails
+      return '24h';
+    }
+  }
+
+  /** Memoized `getWeekInfo().firstDay` per locale — see resolveFirstDayOfWeek. */
+  private readonly weekStarts = new Map<string, DayOfWeek>();
+
+  /**
+   * Which day the week starts on: the caller's explicit choice, else the
+   * locale's own convention, else Monday.
+   *
+   * Two numbering systems meet here and they disagree about Sunday.
+   * `Date.prototype.getDay()` — which every calculation in this file speaks — is
+   * 0-6 with **Sunday = 0**. `Intl.Locale…getWeekInfo().firstDay` is 1-7 with
+   * **Sunday = 7**. The `% 7` is that conversion, and it is the only place the
+   * 1-7 domain is allowed to exist: `DayOfWeek` stays 0-6 because it is also the
+   * type of `BusinessHours.daysOfWeek`, which is `getDay()`-based and would
+   * silently accept a meaningless 7 if the type were widened.
+   *
+   * Resolved from the locale the CALLER passes, never from a stored default. A
+   * derivation reading `DEFAULT_OPTIONS.locale` would have read the old 'en-US'
+   * literal and handed every user on earth a Sunday start, Europe included.
+   *
+   * `getWeekInfo` is absent in Firefox, and is a getter on some engines and a
+   * method on others; both shapes and neither are handled.
+   */
+  resolveFirstDayOfWeek(explicit?: DayOfWeek, locale?: string): DayOfWeek {
+    if (explicit !== undefined) return explicit;
+
+    const key = locale ?? '';
+    const cached = this.weekStarts.get(key);
+    if (cached !== undefined) return cached;
+
+    let resolved: DayOfWeek = 1;
+    try {
+      const resolvedLocale =
+        locale || (typeof navigator !== 'undefined' ? navigator.language : undefined);
+      const info = new Intl.Locale(resolvedLocale ?? 'en-US') as Intl.Locale & {
+        weekInfo?: { firstDay?: number };
+        getWeekInfo?: () => { firstDay?: number };
+      };
+      const firstDay =
+        typeof info.getWeekInfo === 'function' ? info.getWeekInfo()?.firstDay : info.weekInfo?.firstDay;
+      if (typeof firstDay === 'number') resolved = (firstDay % 7) as DayOfWeek;
+    } catch {
+      // No Intl.Locale, no getWeekInfo, or an unparseable tag. Monday stands.
+    }
+
+    this.weekStarts.set(key, resolved);
+    return resolved;
+  }
+
+  /**
+   * Format a time of day.
+   *
+   * Was hand-rolled — `${hours}:${minutes}` with hardcoded 'AM'/'PM' literals —
+   * which no locale could reach: nl wants "a.m.", ja "午前", and several locales
+   * separate with something other than a colon.
+   *
+   * `format` is an explicit override. Leave it undefined and `hour12` is not
+   * passed at all, so `Intl` applies whatever the locale itself does — which is
+   * the behaviour the scheduler wants by default and the reason
+   * `detectTimeFormat` is not needed on this path.
+   */
+  formatTime(date: Date, format?: TimeFormat, locale?: string): string {
+    return this.timeFormatter(format, locale).format(date);
+  }
+
+  /**
+   * `Intl.DateTimeFormat` instances are expensive to construct and this runs once
+   * per slot per day — hundreds of times per render. Memoized on the only two
+   * inputs that vary.
+   */
+  private readonly timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+  private timeFormatter(format?: TimeFormat, locale?: string): Intl.DateTimeFormat {
+    const key = `${locale ?? ''}|${format ?? ''}`;
+    const cached = this.timeFormatters.get(key);
+    if (cached) return cached;
+
+    const options: Intl.DateTimeFormatOptions =
+      format === '12h'
+        ? // 'numeric', not '2-digit': a 12-hour clock reads "9:05 AM", never
+          // "09:05 AM". The distinction is what makes it look native.
+          { hour: 'numeric', minute: '2-digit', hour12: true }
+        : format === '24h'
+          ? { hour: '2-digit', minute: '2-digit', hour12: false }
+          : { hour: 'numeric', minute: '2-digit' };
+
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    this.timeFormatters.set(key, formatter);
+    return formatter;
+  }
+
+  /**
+   * Format date for display.
+   *
+   * `locale` is optional and stays optional all the way down: `undefined` tells
+   * `Intl` to use the runtime's own locale. It used to default to `'en-US'`,
+   * which is not a neutral fallback but an instruction to render US English.
+   */
+  formatDate(date: Date, locale?: string, options?: Intl.DateTimeFormatOptions): string {
+    return date.toLocaleDateString(locale, options);
+  }
+
+  /**
+   * Format date with weekday — "Mon, Jul 27" in en-US, "ma 27 jul" in nl-BE,
+   * "7月27日(月)" in ja-JP. The field order is the locale's business, not ours.
+   */
+  formatDateWithWeekday(date: Date, locale?: string): string {
+    return this.formatDate(date, locale, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /**
+   * Format a date RANGE, letting the locale place the separator and elide the
+   * shared parts ("Jul 27 – Aug 2, 2026"). Falls back to a plain join where
+   * `formatRange` is unavailable.
+   */
+  formatDateRange(
+    start: Date,
+    end: Date,
+    locale?: string,
+    options?: Intl.DateTimeFormatOptions,
+  ): string {
+    const formatter = new Intl.DateTimeFormat(locale, options);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
+  }
+
+  /**
+   * Format a start–end time pair as one range.
+   *
+   * Beats joining two `formatTime` results with a literal separator: the locale
+   * chooses the dash AND elides what the ends share, so en-US reads
+   * "9:00 – 10:00 AM" rather than "9:00 AM - 10:00 AM". The event chips used a
+   * hyphen while the announcements used an en-dash; now neither hardcodes one.
+   */
+  formatTimeRange(start: Date, end: Date, format?: TimeFormat, locale?: string): string {
+    const formatter = this.timeFormatter(format, locale);
+    if (typeof formatter.formatRange === 'function') {
+      return formatter.formatRange(start, end);
+    }
+    return `${formatter.format(start)} – ${formatter.format(end)}`;
+  }
+
+  /**
+   * Get month name
+   */
+  getMonthName(date: Date, locale?: string, format: 'long' | 'short' = 'long'): string {
+    return date.toLocaleDateString(locale, { month: format });
+  }
+
+  /**
+   * Get day name
+   */
+  getDayName(date: Date, locale?: string, format: 'long' | 'short' | 'narrow' = 'short'): string {
+    return date.toLocaleDateString(locale, { weekday: format });
+  }
+
+  /**
+   * Check if two dates are the same day
+   */
+  isSameDay(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  }
+
+  /**
+   * Check if two dates are the same month
+   */
+  isSameMonth(date1: Date, date2: Date): boolean {
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth()
+    );
+  }
+
+  /**
+   * Check if a date is today
+   */
+  isToday(date: Date): boolean {
+    return this.isSameDay(date, new Date());
+  }
+
+  /**
+   * Check if a date is in the past
+   */
+  isPast(date: Date): boolean {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const check = new Date(date);
+    check.setHours(0, 0, 0, 0);
+    return check < now;
+  }
+
+  /**
+   * Check if a date falls within a range
+   */
+  isInRange(date: Date, start: Date, end: Date): boolean {
+    return date >= start && date <= end;
+  }
+
+  /**
+   * Get the number of days between two dates
+   */
+  getDaysDifference(date1: Date, date2: Date): number {
+    const d1 = new Date(date1);
+    d1.setHours(0, 0, 0, 0);
+    const d2 = new Date(date2);
+    d2.setHours(0, 0, 0, 0);
+    return Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+  }
+
+  /**
+   * Add days to a date
+   */
+  addDays(date: Date, days: number): Date {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+  }
+
+  /**
+   * Add weeks to a date
+   */
+  addWeeks(date: Date, weeks: number): Date {
+    return this.addDays(date, weeks * 7);
+  }
+
+  /**
+   * Add months to a date
+   */
+  addMonths(date: Date, months: number): Date {
+    const result = new Date(date);
+    result.setMonth(result.getMonth() + months);
+    return result;
+  }
+
+  /**
+   * Add years to a date
+   */
+  addYears(date: Date, years: number): Date {
+    const result = new Date(date);
+    result.setFullYear(result.getFullYear() + years);
+    return result;
+  }
+
+  /**
+   * Get seconds from midnight for a date
+   */
+  getSecondsFromMidnight(date: Date): number {
+    return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
+  }
+
+  /**
+   * Get duration in seconds between two dates
+   */
+  getDurationInSeconds(start: Date, end: Date): number {
+    return Math.round((end.getTime() - start.getTime()) / 1000);
+  }
+}
+
+/**
+ * Singleton instance of DateService
+ */
+export const dateService = new DateService();

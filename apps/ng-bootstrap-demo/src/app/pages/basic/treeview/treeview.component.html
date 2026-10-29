@@ -34,7 +34,7 @@
     [items]="items()"
     [(expandedIds)]="expandedIds"
     selectionMode="single">
-    <ng-container *bsTreeviewNode="let node">
+    <ng-container *bsTreeviewNode="let node = node">
         <span [innerHTML]="iconFor(node.iconKey)" class="me-2"></span>
         {{ node.label }}
     </ng-container>

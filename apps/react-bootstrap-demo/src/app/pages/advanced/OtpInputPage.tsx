@@ -3,11 +3,10 @@ import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 const SOURCE = `<BsOtpInput
-  length={6}
-  type="numeric"
+  aria-label="Verification code"
   value={code}
-  onValueChange={e => setCode(e.detail)}
-  onComplete={e => alert("Code: " + e.detail)}
+  onValueChange={setCode}
+  onComplete={(code) => verify(code)}
 />`;
 
 export function OtpInputPage() {
@@ -18,22 +17,24 @@ export function OtpInputPage() {
     <div className="demo-page">
       <h1>OTP input</h1>
       <p className="text-body-secondary">
-        Segmented one-time-passcode input. <code>value-change</code> fires
-        on every character; <code>complete</code> fires once when every
-        slot is filled.
+        Segmented one-time-passcode input. <code>onValueChange</code> fires
+        on every character; <code>onComplete</code> fires once when every
+        box is filled. With JavaScript off it is a plain text field that
+        submits under <code>name</code>.
       </p>
 
       <section>
         <h2>6-digit numeric code</h2>
-        <BsOtpInput
-          {...{ length: 6, type: 'numeric', value: code } as React.ComponentProps<typeof BsOtpInput>}
-          onValueChange={(e: CustomEvent<string>) => setCode(e.detail)}
-          onComplete={(e: CustomEvent<string>) => setCompletedCode(e.detail)}
-        />
+        <BsOtpInput aria-label="Verification code" value={code} onValueChange={setCode} onComplete={setCompletedCode} />
         <p className="text-body-secondary mt-2">
           Current value: <code>{code || '—'}</code>
           {completedCode ? <> · Completed: <code>{completedCode}</code></> : null}
         </p>
+      </section>
+
+      <section>
+        <h2>Product key</h2>
+        <BsOtpInput aria-label="Product key" groups={[5, 5, 5, 5, 5]} type="alphanumeric" />
       </section>
 
       <section>

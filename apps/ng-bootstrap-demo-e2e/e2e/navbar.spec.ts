@@ -1,46 +1,42 @@
 import { test, expect, type Page } from '@playwright/test';
 
-// Regression guard for the WC-backed navbar (`mp-navbar` + `mp-navbar-dropdown` +
-// the `bs-dropdown-menu` panel), locking in the behaviours restored after the
-// migration off the legacy Angular navbar. These are CSS/layout/interaction
+// Regression guard for the navbar (#437: headless core + Angular front, light
+// DOM). `<bs-navbar>` is the `.navbar` itself; the collapse is a checkbox and
+// every dropdown a native `<details>` whose `<summary>` is the trigger and whose
+// `.dropdown-menu` child is the panel. These are CSS/layout/interaction
 // concerns (margins, `position`, centering, scroll, dismiss-on-navigate), so
-// they live here (a real browser) rather than in the jsdom WC unit tests, which
+// they live here (a real browser) rather than in the jsdom unit tests, which
 // have no layout engine or media queries. The navbar is the app shell, so every
 // test drives it from `/`.
 
-const navbar = (page: Page) => page.locator('mp-navbar').first();
+const navbar = (page: Page) => page.locator('bs-navbar').first();
 const toggler = (page: Page) => navbar(page).locator('label.navbar-toggler');
-/** A top-level dropdown trigger — its accessible name is the slotted label. */
-const trigger = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
+/** A dropdown trigger: the label inside its `<summary>`. */
+const trigger = (page: Page, name: string) => navbar(page).locator('summary').getByText(name, { exact: true });
+const collapseRows = (page: Page) =>
+  page.evaluate(() => getComputedStyle(document.querySelector('bs-navbar .navbar-collapse')!).gridTemplateRows);
 
 async function goto(page: Page) {
   await page.goto('/');
   await expect(navbar(page)).toBeVisible();
-  // Destructive (non-hydrating) bootstrap + async WC upgrade. Wait for a
-  // deterministic readiness signal, not `networkidle` (the dev server's HMR
-  // socket hangs it on Firefox): the navbar's shadow is rendered and its
-  // dropdowns have set `data-js` (so the JS click path, not `:focus-within`, is
-  // what controls visibility).
-  await page.waitForFunction(() => {
-    const n = document.querySelector('mp-navbar');
-    const dd = document.querySelector('mp-navbar-dropdown');
-    return !!(n?.shadowRoot?.querySelector('.navbar-toggler') && dd?.hasAttribute('data-js'));
-  });
+  // Hydrated: the core writes the toggle's role and state only on the client,
+  // so their presence means the attachment (keys, outside click, dismiss on
+  // navigate) is live. Not `networkidle`: the dev server's HMR socket hangs it.
+  await expect(navbar(page).locator('input.navbar-toggle[aria-expanded]')).toHaveCount(1);
 }
 
-/** Computed layout of a top-level dropdown's slotted panel (`:not([slot=label])`). */
+/** A dropdown's open state and its panel's computed layout, by trigger label. */
 function panelInfo(page: Page, label: string) {
   return page.evaluate((name) => {
-    const dds = [...document.querySelectorAll('mp-navbar-dropdown:not([data-submenu])')];
-    const dd = dds.find((d) => (d.querySelector('[slot="label"]')?.textContent || '').trim() === name);
-    if (!dd) return null;
-    const panel = dd.querySelector<HTMLElement>(':scope > :not([slot="label"])');
-    if (!panel) return null;
+    const details = [...document.querySelectorAll<HTMLDetailsElement>('bs-navbar details.dropdown')].find(
+      (d) => (d.querySelector(':scope > summary')?.textContent || '').trim() === name,
+    );
+    const panel = details?.querySelector<HTMLElement>(':scope > .dropdown-menu');
+    if (!details || !panel) return null;
     const c = getComputedStyle(panel);
-    const r = panel.getBoundingClientRect();
     return {
-      open: dd.hasAttribute('data-open') || dd.hasAttribute('data-menu-open'),
-      display: c.display,
+      open: details.open,
+      visible: panel.checkVisibility(),
       position: c.position,
       margin: c.margin,
     };
@@ -55,7 +51,7 @@ test.describe('navbar — wide mode (JS enabled)', () => {
 
   test('nav links are not underlined', async ({ page }) => {
     const decoration = await page.evaluate(() => {
-      const a = document.querySelector('mp-navbar-item a');
+      const a = document.querySelector('bs-navbar-item a');
       return a ? getComputedStyle(a).textDecorationLine : null;
     });
     expect(decoration).toBe('none');
@@ -63,7 +59,7 @@ test.describe('navbar — wide mode (JS enabled)', () => {
 
   test('fixed positioning pins the bar to the top, full width', async ({ page }) => {
     const box = await page.evaluate(() => {
-      const n = document.querySelector('mp-navbar')!;
+      const n = document.querySelector('bs-navbar')!;
       const c = getComputedStyle(n);
       const r = n.getBoundingClientRect();
       // scrollbar-agnostic: bar spans ~the full viewport width.
@@ -75,67 +71,57 @@ test.describe('navbar — wide mode (JS enabled)', () => {
   });
 
   test('page content clears the fixed bar by its live height (bsNavbarContent)', async ({ page }) => {
-    // The directive replaces a hand-maintained padding constant: a
+    // Server-side the offset is a CSS estimate; once rendered, a
     // ResizeObserver sets the content's padding-top to the bar's offsetHeight.
     await expect
       .poll(() => page.evaluate(() => {
-        const bar = document.querySelector('mp-navbar') as HTMLElement;
+        const bar = document.querySelector('bs-navbar') as HTMLElement;
         const content = document.querySelector('.app-content') as HTMLElement;
         return Math.abs(parseFloat(getComputedStyle(content).paddingTop) - bar.offsetHeight) < 1;
       }))
       .toBe(true);
   });
 
-  test('bs-navbar-nav groups flatten into the nav row; the end group right-aligns', async ({ page }) => {
-    // The grouping container is display:contents, so its items must be REAL
-    // flex children of the WC's .navbar-nav (same row as any bare item), and
-    // align="end" must land the group in the right-pushed end list — the
-    // mechanism the Phase-7 spike validated, locked in against the live app.
+  test('the nav groups share one row; the end group right-aligns', async ({ page }) => {
     const info = await page.evaluate(() => {
-      const home = [...document.querySelectorAll('mp-navbar-item a')].find((a) => a.textContent === 'Home')!;
       const groups = [...document.querySelectorAll('bs-navbar-nav')];
-      const endItem = document.querySelector('bs-navbar-nav[slot="end"] mp-navbar-item')!;
+      const home = [...document.querySelectorAll('bs-navbar-item a')].find((a) => a.textContent === 'Home')!;
+      const endItem = document.querySelector('bs-navbar-nav.nav-end bs-navbar-item')!;
       const hr = home.getBoundingClientRect();
       const er = endItem.getBoundingClientRect();
       return {
-        displays: groups.map((g) => getComputedStyle(g).display),
+        groups: groups.map((g) => g.classList.contains('navbar-nav')),
         rowAligned: Math.abs(hr.y + hr.height / 2 - (er.y + er.height / 2)) < 2,
         endX: er.x,
         vw: window.innerWidth,
       };
     });
-    expect(info.displays).toEqual(['contents', 'contents']);
-    expect(info.rowAligned).toBe(true); // grouped items are flex peers of bare items
+    expect(info.groups).toEqual([true, true]);
+    expect(info.rowAligned).toBe(true);
     expect(info.endX).toBeGreaterThan(info.vw / 2); // end group pushed right
   });
 
   test('a first-level dropdown opens as an absolute overlay below the trigger', async ({ page }) => {
     await trigger(page, 'Basic').click();
-    const info = await panelInfo(page, 'Basic');
-    expect(info).toMatchObject({ open: true, display: 'block', position: 'absolute' });
+    expect(await panelInfo(page, 'Basic')).toMatchObject({ open: true, visible: true, position: 'absolute' });
   });
 
   test('switching between dropdowns closes the previous and opens the next', async ({ page }) => {
-    // Open + close both ride the mousedown (press-time resolution): the open
-    // dropdown's document capture listener closes it, then the pressed
-    // trigger's own handler opens the next — one event, deterministic order.
     // Assert VISIBILITY, not just the state flag (a flag-only check once
     // passed while the panel wasn't painted).
     await trigger(page, 'Overlays').click();
-    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: true, display: 'block' });
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: true, visible: true });
 
     await trigger(page, 'Advanced').click();
-    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, display: 'none' });
-    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, display: 'block' });
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, visible: false });
+    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, visible: true });
   });
 
   test('switching survives a drifting click (press-time resolution)', async ({ page }) => {
     // The real-mouse failure mode: press on the "Advanced" trigger, release a
-    // few px lower — in the zone where the open "Overlays" panel bleeds under
-    // this trigger. With a click-based open, the mid-gesture panel removal
-    // retargets the click to the common ancestor and the dropdown never opens
-    // (the user needed a second click). Press-time resolution is immune: the
-    // toggle fires on mousedown, before any drift.
+    // few px lower, in the zone the open "Overlays" panel covered. A click-time
+    // toggle loses that gesture: the click retargets to a common ancestor and
+    // the dropdown never opens. The core toggles on the press instead.
     await trigger(page, 'Overlays').click();
     expect((await panelInfo(page, 'Overlays'))?.open).toBe(true);
 
@@ -145,17 +131,16 @@ test.describe('navbar — wide mode (JS enabled)', () => {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height + 6); // drift below the trigger
     await page.mouse.up();
 
-    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, display: 'block' });
-    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, display: 'none' });
+    expect(await panelInfo(page, 'Advanced')).toMatchObject({ open: true, visible: true });
+    expect(await panelInfo(page, 'Overlays')).toMatchObject({ open: false, visible: false });
   });
 
   test('clicking a nav link dismisses the open dropdown and navigates', async ({ page }) => {
     await trigger(page, 'Basic').click();
     expect((await panelInfo(page, 'Basic'))?.open).toBe(true);
 
-    // The WC assigns `role="menuitem"` to each item's control (the <a>), so it's
-    // exposed as a menuitem, not a link.
-    await page.getByRole('menuitem', { name: 'Alert', exact: true }).click();
+    // Disclosure navigation, not an ARIA menu: items stay links.
+    await navbar(page).getByRole('link', { name: 'Alert', exact: true }).click();
     await expect(page).toHaveURL(/\/basic\/alert$/);
     expect((await panelInfo(page, 'Basic'))?.open).toBe(false);
   });
@@ -169,8 +154,7 @@ test.describe('navbar — small mode (JS enabled)', () => {
 
   test('the hamburger toggles the collapse', async ({ page }) => {
     await expect(toggler(page)).toBeVisible();
-    const rows = () => page.evaluate(() =>
-      getComputedStyle(document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-collapse')!).gridTemplateRows);
+    const rows = () => collapseRows(page);
 
     expect(await rows()).toBe('0px'); // collapsed
     await toggler(page).click();
@@ -180,12 +164,11 @@ test.describe('navbar — small mode (JS enabled)', () => {
   });
 
   test('the hamburger morphs into an X while open (animated toggler)', async ({ page }) => {
-    // The 3 shadow bars key their transforms off the same in-shadow `:checked`
-    // machine as the collapse (no-JS-safe; the JS-enabled spec carries the
-    // visual assertion because computed styles are unreadable with JS off).
+    // The 3 bars key their transforms off the same `:checked` state as the
+    // collapse (no-JS-safe; the JS-enabled spec carries the visual assertion
+    // because computed styles are unreadable with JS off).
     const bars = () => page.evaluate(() => {
-      const sr = document.querySelector('mp-navbar')!.shadowRoot!;
-      const [b1, b2, b3] = [...sr.querySelectorAll('.navbar-toggler-bar')].map((b) => getComputedStyle(b));
+      const [b1, b2, b3] = [...document.querySelectorAll('bs-navbar .navbar-toggler-bar')].map((b) => getComputedStyle(b));
       return { t1: b1.transform, o2: b2.opacity, t3: b3.transform };
     });
 
@@ -207,13 +190,9 @@ test.describe('navbar — small mode (JS enabled)', () => {
   });
 
   test('clicking a TOP-LEVEL nav link collapses the bar', async ({ page }) => {
-    // The regression: dismiss-on-navigate unchecked the checkbox, but the
-    // no-JS `:focus-within` reveal wasn't data-js-gated, so focus resting on
-    // the still-visible top-level link held the menu open. (Dropdown leaves
-    // hide on close and drop focus, which masked it — so this test clicks a
-    // TOP-LEVEL link, not a menu item.)
-    const rows = () => page.evaluate(() =>
-      getComputedStyle(document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-collapse')!).gridTemplateRows);
+    // Clicks a TOP-LEVEL link, not a menu item: closing a dropdown hides its
+    // items and drops focus, which would mask a collapse that stays open.
+    const rows = () => collapseRows(page);
 
     await toggler(page).click();
     await expect.poll(rows).not.toBe('0px'); // open
@@ -225,7 +204,7 @@ test.describe('navbar — small mode (JS enabled)', () => {
 
   test('the brand is centered (equal auto inline margins)', async ({ page }) => {
     const m = await page.evaluate(() => {
-      const brand = document.querySelector('[slot="brand"]')!;
+      const brand = document.querySelector('bs-navbar .navbar-brand')!;
       const c = getComputedStyle(brand);
       return { left: parseFloat(c.marginLeft), right: parseFloat(c.marginRight) };
     });
@@ -236,23 +215,14 @@ test.describe('navbar — small mode (JS enabled)', () => {
   test('first-level dropdowns render inline with a 1rem inset', async ({ page }) => {
     await toggler(page).click();
     await trigger(page, 'Basic').click();
-    const info = await panelInfo(page, 'Basic');
-    expect(info).toMatchObject({ open: true, position: 'static', margin: '0px 16px' });
+    expect(await panelInfo(page, 'Basic')).toMatchObject({ open: true, position: 'static', margin: '0px 16px' });
   });
 
   test('nested submenus render inline with a 0.5rem inset', async ({ page }) => {
     await toggler(page).click();
     await trigger(page, 'Basic').click();
     await trigger(page, 'Forms').click();
-    const sub = await page.evaluate(() => {
-      const dds = [...document.querySelectorAll('mp-navbar-dropdown[data-submenu]')];
-      const forms = dds.find((d) => (d.querySelector('[slot="label"]')?.textContent || '').includes('Forms'));
-      const panel = forms?.querySelector<HTMLElement>(':scope > :not([slot="label"])');
-      if (!panel) return null;
-      const c = getComputedStyle(panel);
-      return { position: c.position, margin: c.margin };
-    });
-    expect(sub).toMatchObject({ position: 'static', margin: '0px 8px' });
+    expect(await panelInfo(page, 'Forms')).toMatchObject({ open: true, position: 'static', margin: '0px 8px' });
   });
 
   test('a fixed bar whose open menu exceeds the viewport scrolls internally', async ({ page }) => {
@@ -261,12 +231,12 @@ test.describe('navbar — small mode (JS enabled)', () => {
     // Poll (the collapse opens over ~0.35s; content height settles after).
     await expect
       .poll(() => page.evaluate(() => {
-        const n = document.querySelector('mp-navbar') as HTMLElement;
+        const n = document.querySelector('bs-navbar') as HTMLElement;
         return n.scrollHeight > n.clientHeight; // taller than the capped bar -> internal scroll
       }))
       .toBe(true);
     const info = await page.evaluate(() => {
-      const n = document.querySelector('mp-navbar') as HTMLElement;
+      const n = document.querySelector('bs-navbar') as HTMLElement;
       return {
         overflowY: getComputedStyle(n).overflowY,
         capped: n.getBoundingClientRect().bottom <= window.innerHeight + 1,
@@ -287,7 +257,7 @@ test.describe('navbar — active-route highlighting', () => {
     // '/' is active on load (exact match). Compare against an inactive link's
     // color rather than a hard-coded token value.
     const colors = await page.evaluate(() => {
-      const links = [...document.querySelectorAll('mp-navbar-item a')];
+      const links = [...document.querySelectorAll('bs-navbar-item a')];
       const home = links.find((a) => a.textContent === 'Home')!;
       return {
         homeActive: home.classList.contains('active'),
@@ -301,7 +271,7 @@ test.describe('navbar — active-route highlighting', () => {
 
   test('the menu item of the current route paints the full row with the active background', async ({ page }) => {
     await trigger(page, 'Basic').click();
-    await page.getByRole('menuitem', { name: 'Alert', exact: true }).click();
+    await navbar(page).getByRole('link', { name: 'Alert', exact: true }).click();
     await expect(page).toHaveURL(/\/basic\/alert$/);
 
     await trigger(page, 'Basic').click(); // reopen to inspect the item
@@ -323,26 +293,22 @@ test.describe('navbar — active-route highlighting', () => {
 
   test('the trigger CHAIN of the active route highlights without opening anything', async ({ page }) => {
     // Navigate to a nested route (Basic → Forms → Select), then assert both
-    // ancestor triggers carry the WC `active` attribute while closed.
+    // ancestor triggers carry `.active` while closed.
     await trigger(page, 'Basic').click();
     await trigger(page, 'Forms').click();
-    await page.getByRole('menuitem', { name: 'Select', exact: true }).click();
+    await navbar(page).getByRole('link', { name: 'Select', exact: true }).click();
     await expect(page).toHaveURL(/\/basic\/forms\/select$/);
 
     const state = await page.evaluate(() => {
-      const byLabel = (name: string) =>
-        [...document.querySelectorAll('mp-navbar-dropdown')].find(
-          (d) => (d.querySelector(':scope > [slot="label"], :scope > span[slot="label"]')?.textContent || '').trim() === name,
-        );
-      const basic = byLabel('Basic')!;
-      const trigger = basic.shadowRoot!.querySelector('.dropdown-toggle')!;
+      const summaryOf = (name: string) =>
+        [...document.querySelectorAll('bs-navbar details.dropdown > summary')].find((s) => (s.textContent || '').trim() === name)!;
       return {
-        basicActive: basic.hasAttribute('active'),
-        formsActive: byLabel('Forms')!.hasAttribute('active'),
-        overlaysActive: byLabel('Overlays')!.hasAttribute('active'),
-        anyOpen: !!document.querySelector('mp-navbar-dropdown[data-open]'),
-        triggerColor: getComputedStyle(trigger).color,
-        inactiveColor: getComputedStyle(byLabel('Overlays')!.shadowRoot!.querySelector('.dropdown-toggle')!).color,
+        basicActive: summaryOf('Basic').classList.contains('active'),
+        formsActive: summaryOf('Forms').classList.contains('active'),
+        overlaysActive: summaryOf('Overlays').classList.contains('active'),
+        anyOpen: !!document.querySelector('bs-navbar details.dropdown[open]'),
+        triggerColor: getComputedStyle(summaryOf('Basic')).color,
+        inactiveColor: getComputedStyle(summaryOf('Overlays')).color,
       };
     });
     expect(state.anyOpen).toBe(false); // dismiss-on-navigate closed everything
@@ -354,15 +320,14 @@ test.describe('navbar — active-route highlighting', () => {
 });
 
 test.describe('navbar — keyboard a11y', () => {
-  const deepActive = (page: Page) =>
+  const active = (page: Page) =>
     page.evaluate(() => {
-      let el = document.activeElement;
-      while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+      const el = document.activeElement;
       if (!el || el === document.body) return null;
       return {
         desc: el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''),
         text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 20),
-        inNavbar: !!el.closest('mp-navbar') || !!(el.getRootNode() as ShadowRoot).host?.closest?.('mp-navbar') || (el.getRootNode() as ShadowRoot).host?.tagName === 'MP-NAVBAR',
+        inNavbar: !!el.closest('bs-navbar'),
       };
     });
 
@@ -373,12 +338,11 @@ test.describe('navbar — keyboard a11y', () => {
     // Tab: brand link → the toggle checkbox (real keyboard so :focus-visible applies).
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
-    expect((await deepActive(page))?.desc).toBe('input.navbar-toggle');
+    expect((await active(page))?.desc).toBe('input.navbar-toggle');
 
     // The ring paints on the visible label (sibling selector), rounded.
     const ring = await page.evaluate(() => {
-      const label = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler')!;
-      const c = getComputedStyle(label);
+      const c = getComputedStyle(document.querySelector('bs-navbar .navbar-toggler')!);
       return { boxShadow: c.boxShadow, borderRadius: parseFloat(c.borderRadius) };
     });
     expect(ring.boxShadow).not.toBe('none');
@@ -392,7 +356,7 @@ test.describe('navbar — keyboard a11y', () => {
     await page.keyboard.press('Tab'); // brand
     await page.keyboard.press('Tab'); // toggler checkbox
     await page.keyboard.press('Tab'); // must SKIP the hidden collapse entirely
-    const stop = await deepActive(page);
+    const stop = await active(page);
     expect(stop?.inNavbar ?? false).toBe(false); // lands in page content, not invisible links
   });
 
@@ -404,26 +368,26 @@ test.describe('navbar — keyboard a11y', () => {
     await page.keyboard.press('Tab');
     await page.keyboard.press('Space'); // open the collapse via the checkbox
     await page.keyboard.press('Tab');
-    expect((await deepActive(page))?.text).toBe('Home');
+    expect((await active(page))?.text).toBe('Home');
   });
 
-  test('wide mode: ArrowDown enters the menu; Escape closes and returns focus to the trigger', async ({ page }) => {
+  test('wide mode: ArrowDown enters the panel; Escape closes and returns focus to the trigger', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await goto(page);
 
-    // Focus the "Basic" trigger (its shadow <a>) and arrow into the menu.
     await page.evaluate(() => {
-      const dd = [...document.querySelectorAll('mp-navbar-dropdown:not([data-submenu])')]
-        .find((d) => (d.querySelector('[slot="label"]')?.textContent || '').trim() === 'Basic')!;
-      dd.shadowRoot!.querySelector<HTMLElement>('.dropdown-toggle')!.focus();
+      const summary = [...document.querySelectorAll<HTMLElement>('bs-navbar details.nav-item.dropdown > summary')].find(
+        (s) => (s.textContent || '').trim() === 'Basic',
+      )!;
+      summary.focus();
     });
     await page.keyboard.press('ArrowDown');
     expect((await panelInfo(page, 'Basic'))?.open).toBe(true);
-    expect((await deepActive(page))?.text).toBe('Alert'); // first item control focused
+    expect((await active(page))?.text).toBe('Alert'); // first item's link focused
 
     await page.keyboard.press('Escape');
     expect((await panelInfo(page, 'Basic'))?.open).toBe(false);
-    expect((await deepActive(page))?.desc).toBe('a.nav-link'); // back on the trigger
+    expect((await active(page))?.desc).toBe('summary.nav-link'); // back on the trigger
   });
 });
 
@@ -434,10 +398,9 @@ test.describe('navbar — dark mode', () => {
     await goto(page);
     await expect(page.locator('html')).toHaveAttribute('data-bs-theme', 'dark');
 
-    const rgb = await page.evaluate(() => {
-      const bar = document.querySelector('mp-navbar')!.shadowRoot!.querySelector('.navbar-toggler-bar')!;
-      return getComputedStyle(bar).backgroundColor; // painted via var(--bs-navbar-color)
-    });
+    const rgb = await page.evaluate(() =>
+      // painted via var(--bs-navbar-color)
+      getComputedStyle(document.querySelector('bs-navbar .navbar-toggler-bar')!).backgroundColor);
     const [r, g, b] = rgb.match(/\d+(\.\d+)?/g)!.map(Number);
     const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     expect(luminance).toBeGreaterThan(0.5); // light stroke on dark bar

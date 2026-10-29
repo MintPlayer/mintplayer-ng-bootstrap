@@ -7,28 +7,8 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// Injects <mp-shell>'s Declarative Shadow DOM into SSR output — see docs/prd/shell-wc-ssr.md
-// Framework-agnostic helper, shared by all three SSR servers.
-import { injectMpShellDsd } from '@mintplayer/web-components/shell/ssr';
-// Injects <mp-dropdown-menu> & friends' Declarative Shadow DOM into SSR output
-// so the dropdown WC renders with JS disabled. Composed with injectMpShellDsd.
-import { injectMpDropdownDsd } from '@mintplayer/web-components/dropdown-menu/ssr';
-// Injects <mp-navbar> & friends' Declarative Shadow DOM into SSR output so the
-// navbar WC renders — and collapses/reveals via its CSS state machine — with JS
-// disabled. Composed with the shell + dropdown injectors.
-import { injectMpNavbarDsd } from '@mintplayer/web-components/navbar/ssr';
-// Same pattern for <mp-carousel>: count-variant DSD chrome so the radio-driven
-// no-JS carousel navigates with JS disabled. Composed with the other injectors.
-import { injectMpCarouselDsd } from '@mintplayer/web-components/carousel/ssr';
-// Same pattern for <mp-accordion>: [multi] x [tab-count] DSD chrome variants,
-// so tabs open and close through the shadow input state machine with JS off.
-import { injectMpAccordionDsd } from '@mintplayer/web-components/accordion/ssr';
-// The light-tier WCs (datatable, treeview, tree-select, query-builder family)
-// have no shadow root, so there is no DSD chrome for them — their rescoped
-// sheets are document-level. This inserts those <style> tags into <head> for
-// the tags the page actually contains, so they are styled with JS disabled;
-// the client-side installLightStyles sees the marker and skips its own install.
-import { injectMpLightStyles } from '@mintplayer/web-components/light-dom/ssr';
+// Component sheets need no post-processing here: the Angular fronts write them
+// into DOCUMENT.head during the render (PRD #437 D8).
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -102,19 +82,14 @@ app.use((req, res, next) => {
     .handle(req)
     .then(async (response) => {
       if (!response) return next();
-      // Inject <mp-shell>'s Declarative Shadow DOM so the WC renders/toggles
-      // with JS disabled (shadow chrome is static; slotted light DOM is
-      // Angular's). Reusable helper from @mintplayer/ng-bootstrap/shell.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(injectMpAccordionDsd(injectMpCarouselDsd(injectMpNavbarDsd(injectMpDropdownDsd(injectMpShellDsd(await response.text()))))));
         const headers = new Headers(response.headers);
-        headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode
         // cookie (PRD dark-mode D4), so the HTML differs per cookie: a shared
         // cache must key on it, or one user's theme is served to another.
         headers.append('Vary', 'Cookie');
-        return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
+        return writeResponseToNodeResponse(new Response(response.body, { status: response.status, headers }), res);
       }
       return writeResponseToNodeResponse(response, res);
     })

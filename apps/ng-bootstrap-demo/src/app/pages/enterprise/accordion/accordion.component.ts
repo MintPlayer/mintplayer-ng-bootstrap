@@ -111,18 +111,30 @@ export class AccordionComponent {
   `;
 
   protected readonly snippetThemingScss = dedent`
-    /* The chrome lives in the web component's shadow root, so page CSS
-       reaches it through the Bootstrap custom properties and ::part() —
-       ::ng-deep no longer applies. */
-    .multi-level {
+    /* Bootstrap declares the --bs-accordion-* properties on every .accordion,
+       in a lower cascade layer than page CSS, so a plain rule on the accordion
+       wins — and a nested accordion needs its own rule, or it re-declares the
+       defaults. */
+    .multi-level,
+    .multi-level .accordion {
       --bs-accordion-btn-bg: #333;
       --bs-accordion-btn-color: #fff;
       --bs-accordion-active-bg: #444;
       --bs-accordion-active-color: #fff;
+      --bs-accordion-border-width: 0;
     }
 
-    .multi-level::part(content) {
-      background-color: #ccc;
+    /* Each nesting level gets a lighter header. */
+    .multi-level .accordion {
+      --bs-accordion-btn-bg: #666;
+    }
+
+    .multi-level .accordion .accordion {
+      --bs-accordion-btn-bg: #999;
+    }
+
+    .multi-level ::ng-deep .accordion-content {
+      background-color: var(--bs-secondary-bg);
     }
   `;
 }

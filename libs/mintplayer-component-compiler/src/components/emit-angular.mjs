@@ -1,0 +1,196 @@
+// The Angular component of a compiled component: a standalone OnPush
+// component over the template stage's `.html`, hosting the core through
+// `useCore` (PRD #437 D10). Named slots become structural directives
+// (`*bsNavbarBrand`); the default slot is `<ng-content />`.
+import { emitAngular, partialGuard } from '../templates/emit-angular.mjs';
+import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall } from './model.mjs';
+
+const angularOutput = (output) => output.lower;
+
+function inputLine(model, input) {
+  const type = `${model.inputsType}['${input.name}']`;
+  // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
+  const transform =
+    input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? `(v: unknown) => numberAttribute(v) as ${type}` : null;
+  const value = input.default ?? 'undefined';
+  const call = input.model
+    ? `model<${type}>(${value})`
+    : transform
+    ? `input<${type}, unknown>(${value}, { transform: ${transform} })`
+    : input.default !== undefined
+      ? `input<${type}>(${value})`
+      : `input<${type}>()`;
+  return `${jsdoc(input.doc, '  ')}  readonly ${input.name} = ${call};`;
+}
+
+/**
+ * @returns {{ file: string, text: string, exports: string[] }}
+ */
+export function emitAngularComponent(model, { generator, runtime = '@mintplayer/ng-bootstrap/machine', extension }) {
+  const { names } = model;
+  const named = model.slots.filter((slot) => slot.name !== 'default');
+  const ext = model.extensions.angular;
+  const extNames = ext ? [...ext.exports] : [];
+  const has = (name) => extNames.includes(name);
+
+  const angularImports = new Set(['ChangeDetectionStrategy', 'Component', 'ElementRef', 'inject']);
+  const oneWay = model.inputs.filter((i) => !i.model);
+  if (oneWay.length) angularImports.add('input');
+  if (oneWay.length < model.inputs.length) angularImports.add('model');
+  if (oneWay.some((i) => i.kind === 'boolean')) angularImports.add('booleanAttribute');
+  if (oneWay.some((i) => i.kind === 'number')) angularImports.add('numberAttribute');
+  if (model.outputs.length) angularImports.add('output');
+  if (named.length) angularImports.add('computed');
+  if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
+  // Content queries: a parent reads each queried child's `contentChild`, which carries its wrapper's `contentInputs`.
+  if (model.content.length) angularImports.add('contentChildren');
+  if (model.queried || model.wrapsContent) angularImports.add('computed');
+  const contentImports = [...model.content.map(({ child }) => child), ...(model.queried?.within ? [model.queried.within] : [])].filter(
+    (other, i, all) => other !== model && all.indexOf(other) === i,
+  );
+
+  // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
+  const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
+  const usesOutlet = template.uses.includes('NgTemplateOutlet');
+  const directives = ['MpPropsDirective', 'MpTeleportDirective', 'MpTrustedHtmlPipe'].filter((d) => template.uses.includes(d));
+  const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
+  // Composed children and the slot directives their content uses. A standalone
+  // component is in its own template's scope, so composing itself imports nothing.
+  const composed = template.composed
+    .filter(({ child }) => child.names.angular !== names.angular)
+    .map(({ child, slots }) => ({ module: child.module.angular, names: [child.names.angular, ...[...slots].map((slot) => child.names.slotDirective(slot))] }));
+  if (guards.length) angularImports.add('Directive');
+  const machine = [...directives, 'useCore', 'useScopedStyles'];
+  const provides = model.provides;
+  if (provides) machine.push('provideCoreContext');
+
+  const types = [model.inputsType, model.methodsType].filter(Boolean);
+  const coreNames = [model.core];
+  if (provides) coreNames.push(provides);
+  const lines = [banner(model, generator), `import { ${[...angularImports].sort().join(', ')} } from '@angular/core';`];
+  if (usesOutlet) lines.push(`import { NgTemplateOutlet } from '@angular/common';`);
+  lines.push(`import { ${[...new Set(machine)].sort().join(', ')} } from '${runtime}';`);
+  // The partials' guard contexts name the types their props do.
+  const partialTypes = guards.flatMap(({ partial }) =>
+    (partial.props.text.match(/\b[A-Za-z_]\w*\b/g) ?? []).filter((n) => partial.importedTypes.has(n)).map((n) => [partial.importedTypes.get(n), n]),
+  );
+  lines.push(coreImports(model, { values: coreNames, types, slotTypes: true, extraTypes: partialTypes }));
+  composed.forEach((c) => lines.push(`import { ${c.names.join(', ')} } from '${c.module}';`));
+  contentImports.forEach((other) => lines.push(`import { ${other.names.angular} } from './${other.names.file}.component.generated';`));
+  styleImports(model)
+    .filter(({ module }) => module !== model.entryModule)
+    .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
+  if (ext) lines.push(`import { ${extNames.map((n) => `${n} as ext_${n}`).join(', ')} } from '${extension(ext.file)}';`);
+  lines.push('');
+
+  // Slot directives.
+  named.forEach((slot) => {
+    // The outlet passes the params both as `$implicit` (`let-args`) and spread (`let-x="x"`).
+    const context = slot.params ? `${slot.params} & { $implicit: ${slot.params} }` : 'unknown';
+    const directive = names.slotDirective(slot.name);
+    lines.push(
+      `/** The \`${slot.name}\` slot of \`<${names.selector}>\`: \`<ng-template ${names.slotSelector(slot.name)}>\` or \`*${names.slotSelector(slot.name)}\`. */`,
+      `@Directive({ selector: '[${names.slotSelector(slot.name)}]' })`,
+      `export class ${directive} {`,
+      `  readonly templateRef = inject<TemplateRef<${context}>>(TemplateRef);`,
+      ...(slot.params ? [`  static ngTemplateContextGuard(_dir: ${directive}, ctx: unknown): ctx is ${context} {`, `    return true;`, `  }`] : []),
+      `}`,
+      '',
+    );
+  });
+
+  // Partial guards: they type each inlined partial's let- variables.
+  guards.forEach(({ partial, attribute, directive }) => {
+    lines.push(
+      `/** Types the \`${partial.name}\` partial's context in this template. */`,
+      `@Directive({ selector: 'ng-template[${attribute}]' })`,
+      `export class ${directive} {`,
+      `  static ngTemplateContextGuard(_dir: ${directive}, ctx: unknown): ctx is ${partial.props.text} {`,
+      `    return true;`,
+      `  }`,
+      `}`,
+      '',
+    );
+  });
+
+  const meta = [
+    `  selector: '${names.selector}',`,
+    `  templateUrl: './${model.templateBase}.generated.html',`,
+    `  imports: [${[...directives, ...(usesOutlet ? ['NgTemplateOutlet'] : []), ...guards.map((g) => g.directive), ...composed.flatMap((c) => c.names)].join(', ')}],`,
+    `  changeDetection: ChangeDetectionStrategy.OnPush,`,
+  ];
+  if (provides) meta.push(`  providers: [provideCoreContext(${provides}, ${names.angular})${has('providers') ? ', ...ext_providers' : ''}],`);
+  else if (has('providers')) meta.push(`  providers: ext_providers,`);
+  if (has('hostDirectives')) meta.push(`  hostDirectives: ext_hostDirectives,`);
+
+  lines.push(jsdoc(model.doc).trimEnd(), `@Component({`, ...meta, `})`, `export class ${names.angular} {`);
+  lines.push(`  /** The host element. */`, `  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);`, '');
+  model.inputs.forEach((input) => lines.push(inputLine(model, input)));
+  model.outputs.forEach((output) =>
+    lines.push(`${jsdoc(output.doc, '  ')}  readonly ${angularOutput(output)} = output<${output.type}>();`),
+  );
+  if (model.inputs.length || model.outputs.length) lines.push('');
+
+  named.forEach((slot) => lines.push(`  private readonly ${slot.name}Slot = contentChild(${names.slotDirective(slot.name)});`));
+  if (named.length) {
+    lines.push(
+      `  /** The template's named slots. */`,
+      `  protected readonly slots = computed(() => ({ ${named.map((slot) => `${slot.name}: this.${slot.name}Slot()?.templateRef`).join(', ')} }));`,
+    );
+  }
+
+  const ownInputs = `({ ${model.inputs.map((i) => `${i.name}: this.${i.name}()`).join(', ')} })`;
+  if (model.wrapsContent) {
+    lines.push(`  /** This element's inputs, as a content query reads them around a queried child. */`, `  readonly contentInputs = computed(() => ${ownInputs});`);
+  }
+  if (model.queried) {
+    const within = model.queried.within;
+    if (within) lines.push(`  readonly #contentWithin = inject(${within.names.angular}, { optional: true });`);
+    lines.push(
+      `  /** What a parent's content query reads from this element. */`,
+      `  readonly contentChild = computed(() => ({ inputs: ${ownInputs}, within: ${within ? 'this.#contentWithin?.contentInputs() ?? null' : 'null'} }));`,
+    );
+  }
+  model.content.forEach(({ input, child }) => lines.push(`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`));
+  const inputEntries = [
+    ...model.inputs.map((i) => `${i.name}: this.${i.name}()`),
+    ...model.content.map(({ input }) => `${input}: this.content_${input}().map((c) => c.contentChild())`),
+  ];
+  const inputsObject = `({ ${inputEntries.join(', ')} })`;
+  const inputsFn = has('extendInputs') ? `ext_extendInputs(() => ${inputsObject})` : `() => ${inputsObject}`;
+  const options = [`inputs: ${inputsFn}`, `idPrefix: '${names.selector}'`];
+  if (model.outputs.length) options.push(`outputs: { ${model.outputs.map((o) => `${o.name}: this.${angularOutput(o)}`).join(', ')} }`);
+  if (model.host) {
+    const bag = `props.${model.hostExpression}`;
+    options.push(`hostBag: (props) => ${scopedHostBag(model, bag)}`);
+  }
+  const models = model.inputs.filter((i) => i.model);
+  if (models.length) options.push(`models: { ${models.map((i) => `${i.name}: this.${i.name}`).join(', ')} }`);
+  lines.push(`  readonly #core = useCore(${model.core}, { ${options.join(', ')} });`);
+  if (provides) lines.push(`  /** What this component hands its content. */`, `  readonly provided = this.#core.provided;`);
+  if (model.propNames.length) lines.push(`  /** The template's props. */`, `  protected readonly props = this.#core.props;`);
+  lines.push('');
+
+  lines.push(`  constructor() {`);
+  if (model.style) lines.push(`    ${styleInstall(model, 'useScopedStyles')}`);
+  lines.push(`  }`);
+
+  model.methods.forEach((method) => {
+    const sig = `${model.methodsType}['${method.name}']`;
+    lines.push(
+      '',
+      jsdoc(method.doc, '  ').trimEnd(),
+      `  ${method.name}(...args: Parameters<${sig}>): ReturnType<${sig}> {`,
+      `    return this.#core.call('${method.name}', args) as ReturnType<${sig}>;`,
+      `  }`,
+    );
+  });
+  lines.push(`}`, '');
+
+  const text = lines.filter((line) => line !== '').length ? lines.join('\n').replace(/\n{3,}/g, '\n\n') : '';
+  return {
+    file: `${names.file}.component.generated.ts`,
+    text,
+    exports: [names.angular, ...named.map((slot) => names.slotDirective(slot.name))],
+  };
+}

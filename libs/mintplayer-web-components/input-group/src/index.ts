@@ -1,1 +1,1 @@
-export * from './components/mp-input-group';
+export * from './mp-input-group';

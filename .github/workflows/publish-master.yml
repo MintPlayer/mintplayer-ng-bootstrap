@@ -72,9 +72,7 @@ jobs:
       # and vue-bootstrap aren't reachable from there, so they were
       # silently absent from the publish plan on the first PR-4 deploy.
       # The demos are left out: they build after the plan below.
-      # codegen-ssr-chrome is the demos' one non-^build dependency, which
-      # their --exclude-task-dependencies build would otherwise skip.
-      run: npx nx run-many -t build codegen-ssr-chrome --exclude=ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo --configuration=production
+      run: npx nx run-many -t build --exclude=ng-bootstrap-demo,react-bootstrap-demo,vue-bootstrap-demo --configuration=production
 
     # Decides every package's version from the built .d.ts files and stamps it
     # into each package.json (source and dist), without tagging: the tags wait

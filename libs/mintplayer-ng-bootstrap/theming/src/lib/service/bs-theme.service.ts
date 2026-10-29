@@ -14,7 +14,7 @@ import {
   resolveServerTheme,
   type BsEffectiveThemeMode,
   type BsThemeMode,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 
 /**
  * Angular's view of the document's Bootstrap colour mode (PRD dark-mode D4).
@@ -27,10 +27,10 @@ import {
  * **This service is a pure mirror of the framework-neutral store.** In the
  * browser it holds no state of its own: `mode`/`effectiveMode` are refreshed
  * from `getBsThemeStore().subscribe()`, and `setMode()` forwards to the store's
- * `setMode()` (libs/mintplayer-web-components/theming/src/store.ts), which owns
+ * `setMode()` (libs/mintplayer-ui-core/theming/src/store.ts), which owns
  * validation, the `bs-theme-mode` cookie, the `data-bs-theme` write, the
  * `prefers-color-scheme` listener and cross-tab sync. So a change made anywhere
- * else (`<mp-theme-toggle>`, another tab, the OS) reaches these signals, and a
+ * else (`<bs-theme-toggle>`, another tab, the OS) reaches these signals, and a
  * copy here could never drift. Any behaviour added to the store's `setMode()`
  * must be reflected here, and vice versa; the mirror tests in
  * bs-theme.service.spec.ts pin it.
@@ -104,7 +104,7 @@ export class BsThemeService {
 
   /**
    * Set the user's mode. Forwards to the store's `setMode()`
-   * (libs/mintplayer-web-components/theming/src/store.ts): an invalid mode is a
+   * (libs/mintplayer-ui-core/theming/src/store.ts): an invalid mode is a
    * no-op with a warning, a valid one is persisted to the cookie and applied to
    * `<html>`, and the signals update through the store subscription. Custom
    * variants need a matching `[data-bs-theme="<value>"] { ... }` rule.

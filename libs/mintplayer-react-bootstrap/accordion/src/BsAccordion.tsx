@@ -1,28 +1,37 @@
 import * as React from 'react';
-import { createComponent, type EventName } from '@lit/react';
-// Side-effect-registers both WCs on import. The React SSR entry installs the
-// lit-ssr DOM shim before any wrapper module loads, so this is Node-safe.
+import { createContext, forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef } from 'react';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
-  MpAccordion,
-  MpAccordionTab,
-  type AccordionTabToggleDetail,
-} from '@mintplayer/web-components/accordion';
+  ACCORDION_SCOPE,
+  accordionKeydown,
+  accordionScopedStyles,
+  accordionSummaryClick,
+  accordionToggled,
+  connectAccordion,
+  connectAccordionTab,
+  type AccordionOptions,
+  type AccordionTabToggle,
+} from '@mintplayer/ui-core/accordion';
+import { reactProps } from '../../machine/src/react-props';
 
-export interface BsAccordionProps extends React.HTMLAttributes<HTMLElement> {
-  /** Allow several tabs to stay open at once (checkbox machine with JS off). */
+export interface BsAccordionProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Allow several tabs to stay open at once. */
   multi?: boolean;
   /** Paint the open header with the Bootstrap active background. */
   highlightActiveTab?: boolean;
-  /** A tab opened or closed. `detail.index` is its position. */
-  onTabToggle?: (event: CustomEvent<AccordionTabToggleDetail>) => void;
-  className?: string;
+  /** A tab opened or closed. `index` is its position. */
+  onTabToggle?: (change: AccordionTabToggle) => void;
   /** `BsAccordionItem`s; anything else renders as plain accordion content. */
   children?: React.ReactNode;
 }
 
-export interface BsAccordionItemProps extends React.HTMLAttributes<HTMLElement> {
+export interface BsAccordionItemProps extends React.HTMLAttributes<HTMLDetailsElement> {
   /** Header content — any node, not just a string. */
   header?: React.ReactNode;
+  /**
+   * Whether the tab is open. Written to the row only when it changes, so a
+   * user toggle stands until the next change — follow it with `onTabToggle`.
+   */
   isActive?: boolean;
   disabled?: boolean;
   children?: React.ReactNode;
@@ -33,89 +42,76 @@ export interface BsAccordionItemProps extends React.HTMLAttributes<HTMLElement> 
   index?: number;
 }
 
-/**
- * Retyped to the wire shape the facades emit: attribute-named/attribute-valued
- * props, so React SSR serialises them into the HTML where the DSD injector and
- * the no-JS CSS can see them (carousel lesson — `@lit/react` drops props whose
- * names match a prototype accessor).
- */
-type MpAccordionInnerProps = {
-  multi?: boolean;
-  'highlight-active-tab'?: boolean;
-  className?: string;
-  children?: React.ReactNode;
-  onTabToggle?: (event: CustomEvent<AccordionTabToggleDetail>) => void;
-} & React.RefAttributes<MpAccordion>;
+interface AccordionContext {
+  readonly options: AccordionOptions;
+  readonly root: React.RefObject<HTMLDivElement | null>;
+}
 
-type MpAccordionTabInnerProps = {
-  'accordion-tab'?: string;
-  slot?: string;
-  'is-active'?: string;
-  disabled?: string;
-  children?: React.ReactNode;
-} & React.RefAttributes<MpAccordionTab>;
+const Context = createContext<AccordionContext>({ options: { id: 'bs-accordion' }, root: { current: null } });
 
-const MpAccordionComponent = createComponent({
-  react: React,
-  tagName: 'mp-accordion',
-  elementClass: MpAccordion,
-  events: {
-    onTabToggle: 'mp-accordion-tab-toggle' as EventName<CustomEvent<AccordionTabToggleDetail>>,
-  },
-}) as unknown as React.ForwardRefExoticComponent<MpAccordionInnerProps>;
-
-const MpAccordionTabComponent = createComponent({
-  react: React,
-  tagName: 'mp-accordion-tab',
-  elementClass: MpAccordionTab,
-}) as unknown as React.ForwardRefExoticComponent<MpAccordionTabInnerProps>;
-
-/**
- * One tab: a header and a body that render as SIBLINGS, not as a wrapper
- * around them. Named slots only accept direct children of `<mp-accordion>`,
- * so the header cannot live inside the tab element — a React fragment lets
- * one component contribute both.
- */
-export function BsAccordionItem({
-  header,
-  isActive,
-  disabled,
-  index = 0,
-  children,
-  // Forwarded to the tab, which is the element that owns the panel content.
-  ...rest
-}: BsAccordionItemProps) {
+/** One tab: a native `<details>` row of the parent `BsAccordion`. */
+export function BsAccordionItem({ header, isActive, disabled, index = 0, className, children, ...rest }: BsAccordionItemProps) {
+  const { options, root } = useContext(Context);
+  const view = connectAccordionTab(options, index, { disabled });
+  const { class: itemClass, ...itemBag } = view.item;
   return (
-    <>
-      <span accordion-header="" slot={`h${index}`}>
+    <details
+      {...reactProps(itemBag)}
+      open={isActive}
+      {...rest}
+      className={[String(itemClass), className].filter(Boolean).join(' ')}>
+      <summary
+        {...reactProps(view.summary)}
+        onClick={(event) => accordionSummaryClick(event.nativeEvent, !!disabled)}
+        onKeyDown={(event) => root.current && accordionKeydown(root.current, event.nativeEvent, index, !!disabled)}>
         {header}
-      </span>
-      <MpAccordionTabComponent
-        accordion-tab=""
-        slot={`c${index}`}
-        {...(isActive ? { 'is-active': '' } : {})}
-        {...(disabled ? { disabled: '' } : {})}
-        {...rest}>
-        {children}
-      </MpAccordionTabComponent>
-    </>
+      </summary>
+      <div {...reactProps(view.content)}>{children}</div>
+    </details>
   );
 }
 
 /**
- * React wrapper for `<mp-accordion>`.
+ * `BsAccordion` — Bootstrap accordion on native `<details name>` (#437).
  *
- *     <BsAccordion multi onTabToggle={e => …}>
+ *     <BsAccordion multi onTabToggle={({ index, active }) => …}>
  *       <BsAccordionItem header="Profile" isActive>Body</BsAccordionItem>
  *     </BsAccordion>
  *
- * Items are numbered here rather than by themselves: the index is a tab's
- * identity for slots and toggle events, and only the parent knows the order.
+ * Renders the markup of `@mintplayer/ui-core/accordion`, so the server HTML is
+ * the working accordion with JavaScript off. Items are numbered here: the
+ * index is a tab's identity for ids and toggles, and only the parent knows
+ * the order.
  */
-export const BsAccordion = React.forwardRef<MpAccordion, BsAccordionProps>(function BsAccordion(
-  { multi, highlightActiveTab, children, ...props },
+export const BsAccordion = forwardRef<HTMLDivElement | null, BsAccordionProps>(function BsAccordion(
+  { multi, highlightActiveTab, onTabToggle, className, children, ...rest },
   ref,
 ) {
+  installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
+
+  const reactId = useId();
+  const options: AccordionOptions = {
+    id: `bs-accordion-${reactId.replace(/[^a-zA-Z0-9_-]/g, '')}`,
+    multi,
+    highlightActiveTab,
+  };
+  const rootRef = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement);
+
+  // `toggle` does not bubble: one capture-phase listener hears every row.
+  const latest = useRef({ multi: !!multi, onTabToggle });
+  latest.current = { multi: !!multi, onTabToggle };
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const onToggle = (event: Event) => {
+      const change = accordionToggled(root, event, latest.current.multi);
+      if (change) latest.current.onTabToggle?.(change);
+    };
+    root.addEventListener('toggle', onToggle, { capture: true });
+    return () => root.removeEventListener('toggle', onToggle, { capture: true });
+  }, []);
+
   let itemIndex = 0;
   const numbered = React.Children.map(children, (child) =>
     React.isValidElement<BsAccordionItemProps>(child) && child.type === BsAccordionItem
@@ -123,13 +119,14 @@ export const BsAccordion = React.forwardRef<MpAccordion, BsAccordionProps>(funct
       : child,
   );
 
+  const { class: rootClass, ...rootBag } = connectAccordion(options);
   return (
-    <MpAccordionComponent
-      ref={ref}
-      {...(multi ? { multi: true } : {})}
-      {...(highlightActiveTab ? { 'highlight-active-tab': true } : {})}
-      {...props}>
-      {numbered}
-    </MpAccordionComponent>
+    <div
+      ref={rootRef}
+      {...reactProps(rootBag)}
+      {...rest}
+      className={[String(rootClass), className].filter(Boolean).join(' ')}>
+      <Context.Provider value={{ options, root: rootRef }}>{numbered}</Context.Provider>
+    </div>
   );
 });

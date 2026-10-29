@@ -17,7 +17,7 @@
 
 <h2>Simple card</h2>
 
-<bs-card class="d-block mb-3">
+<bs-card class="mb-3">
     <bs-card-body>
         <bs-card-title>Simple card</bs-card-title>
         <bs-card-text>Basic card with only body content.</bs-card-text>
@@ -28,7 +28,7 @@
 
 <h2>Header, body, footer</h2>
 
-<bs-card class="d-block mb-3">
+<bs-card class="mb-3">
     <bs-card-header>Header</bs-card-header>
     <bs-card-body>
         <bs-card-title>Body title</bs-card-title>
@@ -44,7 +44,7 @@
 
 <h2>Nested card</h2>
 
-<bs-card class="d-block mb-3" style="max-width: 24rem;">
+<bs-card class="mb-3" style="max-width: 24rem;">
     <bs-card-body>
         <bs-card-title>Outer card</bs-card-title>
         <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
@@ -61,7 +61,7 @@
 
 <h2>With list-group</h2>
 
-<bs-card class="d-block mb-3">
+<bs-card class="mb-3">
     <bs-card-header>List of elements</bs-card-header>
     <bs-list-group>
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
@@ -75,7 +75,7 @@
 
 <h2>Image at the top</h2>
 
-<bs-card class="d-block mb-3" style="max-width: 320px;">
+<bs-card class="mb-3" style="max-width: 320px;">
     <bs-card-img position="top" [src]="placeholderTopBottom" alt="placeholder"></bs-card-img>
     <bs-card-body>
         <bs-card-title>Top image</bs-card-title>
@@ -87,7 +87,7 @@
 
 <h2>Image at the bottom</h2>
 
-<bs-card class="d-block mb-3" style="max-width: 320px;">
+<bs-card class="mb-3" style="max-width: 320px;">
     <bs-card-body>
         <bs-card-title>Bottom image</bs-card-title>
         <bs-card-text>Text above the image, inside the body.</bs-card-text>
@@ -99,7 +99,7 @@
 
 <h2>Image overlay</h2>
 
-<bs-card class="d-block mb-3" style="max-width: 320px;">
+<bs-card class="mb-3" style="max-width: 320px;">
     <bs-card-img position="overlay" [src]="placeholderOverlay" alt="background">
         <bs-card-title>Overlaid title</bs-card-title>
         <bs-card-text>Overlaid description.</bs-card-text>
@@ -111,7 +111,7 @@
 <h2>Colour variants &mdash; filled</h2>
 
 @for (color of colorKeys; track color) {
-    <bs-card class="d-block mb-2" [color]="colors[color]">
+    <bs-card class="mb-2" [color]="colors[color]">
         <bs-card-body>
             <bs-card-title>{{ color }}</bs-card-title>
             <bs-card-text>text-bg-{{ color }} applied to the host.</bs-card-text>
@@ -124,7 +124,7 @@
 <h2>Colour variants &mdash; outline</h2>
 
 @for (color of colorKeys; track color) {
-    <bs-card class="d-block mb-2" [color]="colors[color]" [outline]="true">
+    <bs-card class="mb-2" [color]="colors[color]" [outline]="true">
         <bs-card-body>
             <bs-card-title>{{ color }}</bs-card-title>
             <bs-card-text>border border-{{ color }} bg-transparent applied to the host.</bs-card-text>
@@ -136,7 +136,7 @@
 
 <h2>Header / footer colours independent of the root</h2>
 
-<bs-card class="d-block mb-3">
+<bs-card class="mb-3">
     <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
     <bs-card-body>
         <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
@@ -176,7 +176,7 @@
 
 <h2>Horizontal layout via bs-grid</h2>
 
-<bs-card class="d-block mb-3" style="max-width: 540px;">
+<bs-card class="mb-3" style="max-width: 540px;">
     <bs-grid>
         <div bsRow class="g-0">
             <div [md]="4">
@@ -196,9 +196,9 @@
 
 <h2>Header with nav-tabs</h2>
 
-<bs-card class="d-block mb-3">
-    <bs-card-header [navStyle]="'tabs'">
-        <ul class="nav">
+<bs-card class="mb-3">
+    <bs-card-header>
+        <ul class="nav card-header-tabs">
             @for (page of tabPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activeTab()" href="#"
@@ -209,7 +209,7 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
-        <bs-card-text>The slotted &lt;ul class="nav"&gt; gets <code>card-header-tabs</code> applied; click a tab to switch the body content.</bs-card-text>
+        <bs-card-text>The &lt;ul class="nav card-header-tabs"&gt; carries Bootstrap's own class; click a tab to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
@@ -217,9 +217,9 @@
 
 <h2>Header with nav-pills</h2>
 
-<bs-card class="d-block mb-3">
-    <bs-card-header [navStyle]="'pills'">
-        <ul class="nav">
+<bs-card class="mb-3">
+    <bs-card-header>
+        <ul class="nav card-header-pills">
             @for (page of pillPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activePill()" href="#"
@@ -230,7 +230,7 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>
-        <bs-card-text>The slotted nav gets <code>card-header-pills</code> applied; click a pill to switch the body content.</bs-card-text>
+        <bs-card-text>The nav carries <code>card-header-pills</code>; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 

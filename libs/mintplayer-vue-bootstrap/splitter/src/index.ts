@@ -1,8 +1,8 @@
-import '@mintplayer/web-components/splitter';
-
-export { default as BsSplitter } from './BsSplitter.vue';
-
-export {
-  MpSplitter,
-  type SplitterResizeEventDetail,
-} from '@mintplayer/web-components/splitter';
+// The splitter is generated from @mintplayer/ui-core/splitter (PRD #437 D10).
+export * from './generated';
+export type {
+  SplitterLabels,
+  SplitterOrientation,
+  SplitterResizeEventDetail,
+  SplitterResizeKey,
+} from '@mintplayer/ui-core/splitter';

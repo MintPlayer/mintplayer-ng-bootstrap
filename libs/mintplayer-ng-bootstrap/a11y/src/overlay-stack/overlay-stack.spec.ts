@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { dismissStack } from '@mintplayer/web-components/a11y';
+import { dismissStack } from '@mintplayer/ui-core/overlay';
 import { BsOverlayStackService } from './overlay-stack.service';
 
 describe('BsOverlayStackService', () => {

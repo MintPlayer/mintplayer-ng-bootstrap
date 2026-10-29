@@ -8,7 +8,7 @@ import {
   type Expression,
   type SortDescriptor,
 } from '@mintplayer/web-components/query-builder';
-import type { DatatableColumnDef } from '@mintplayer/web-components/datatable';
+import type { DatatableColumnDef } from '@mintplayer/react-bootstrap/datatable';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).
@@ -30,10 +30,15 @@ const SOURCE = `<BsQueryBuilder
   query={query}
   showPreview
   showSavedQueries
-  onQueryChange={e => setQuery(e.detail.tree)}
+  onQueryChange={setQuery}
+  editor={({ ctx }) => <input type="date" onInput={e => ctx.onChange(e.currentTarget.value || null)} />}
 />
 {/* useEffect on [query, rootEntity, selectedFields, sortBy] auto-fires search. */}
 <BsDatatable columns={columns} data={results} />`;
+
+/** orderDate opts into the custom editor (the `editor` render prop). */
+const withCustomDateEditor = (schema: EntitySchema[]): EntitySchema[] =>
+  schema.map((e) => ({ ...e, fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)) }));
 
 export function QueryBuilderPage() {
   const [schema, setSchema] = useState<EntitySchema[]>([]);
@@ -51,7 +56,7 @@ export function QueryBuilderPage() {
     let cancelled = false;
     fetch(`${API_BASE}/api/${rootEntity}/schema`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((s: EntitySchema[]) => { if (!cancelled) setSchema(s); })
+      .then((s: EntitySchema[]) => { if (!cancelled) setSchema(withCustomDateEditor(s)); })
       .catch(() => { if (!cancelled) setError('Could not fetch schema. Is apps/api running on :5000?'); });
     return () => { cancelled = true; };
   }, [rootEntity]);
@@ -152,18 +157,26 @@ export function QueryBuilderPage() {
         <BsQueryBuilder
           schema={schema}
           query={query}
-          onQueryChange={(e: CustomEvent<{ tree: Expression }>) => setQuery(e.detail.tree)}
-          onRootEntityChange={(e: CustomEvent<{ rootEntity: string }>) => setRootEntity(e.detail.rootEntity)}
-          onSelectedFieldsChange={(e: CustomEvent<{ selectedFields: string[] }>) => setSelectedFields(e.detail.selectedFields)}
-          onSortByChange={(e: CustomEvent<{ sortBy: SortDescriptor[] }>) => setSortBy(e.detail.sortBy)}
-          {...{
-            rootEntity,
-            multiEntityPickerEnabled: true,
-            selectedFields,
-            sortBy,
-            showPreview: true,
-            showSavedQueries: true,
-          } as React.ComponentProps<typeof BsQueryBuilder>}
+          rootEntity={rootEntity}
+          multiEntityPickerEnabled
+          selectedFields={selectedFields}
+          sortBy={sortBy}
+          showPreview
+          onQueryChange={(tree: Expression) => setQuery(tree)}
+          onRootEntityChange={(entity: string) => setRootEntity(entity)}
+          onSelectedFieldsChange={(fields: string[]) => setSelectedFields(fields)}
+          onSortByChange={(sort: SortDescriptor[]) => setSortBy(sort)}
+          editor={({ ctx }) => (
+            // The value editor of every field with editor: 'custom' (orderDate here).
+            <input
+              type="date"
+              className="form-control form-control-sm"
+              aria-label={ctx.field.label}
+              defaultValue={typeof ctx.value === 'string' ? ctx.value : ''}
+              disabled={ctx.disabled}
+              onInput={(e) => ctx.onChange(e.currentTarget.value || null)}
+            />
+          )}
         />
 
         <div className="d-flex gap-2 align-items-center my-3">

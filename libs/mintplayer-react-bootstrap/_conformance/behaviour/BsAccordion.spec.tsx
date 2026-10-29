@@ -1,23 +1,23 @@
 import * as React from 'react';
+import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import type { AccordionTabToggle } from '@mintplayer/react-bootstrap/accordion';
 
-import { emit, render, renderEl } from './harness';
+import { render, renderEl } from './harness';
 
 /**
- * The accordion's structure is the thing under test. A tab is a header and a
- * body rendered as SIBLINGS — named slots only accept direct children of
- * `<mp-accordion>`, so the header cannot live inside the tab element — and the
- * two halves are paired by index (`h0`/`c0`, `h1`/`c1`, ...). Only the parent
- * knows the order, so `BsAccordion` numbers its items as it renders them.
- *
- * Every failure mode here is silent: mis-numbered slots produce an accordion
- * whose headers open the wrong panels, or no panels at all, with no error.
+ * `BsAccordion` renders the markup of `@mintplayer/ui-core/accordion` itself:
+ * one native `<details>` per item, header in the `<summary>`, body in the
+ * region. Items are numbered by the parent, and the number is the item's
+ * identity for its ids — a mis-numbered item points its header at another
+ * item's region with no error, so the pairing is what is pinned here.
  */
 
-const headers = (host: HTMLElement) => [...host.querySelectorAll('[accordion-header]')];
-const tabs = (host: HTMLElement) => [...host.querySelectorAll('mp-accordion-tab')];
+const rows = (host: HTMLElement) => [...host.querySelectorAll<HTMLDetailsElement>('details.accordion-item')];
+const summary = (row: Element) => row.querySelector('summary')!;
+const region = (row: Element) => row.querySelector('[role="region"]')!;
 
 const THREE = (
   <BsAccordion>
@@ -27,37 +27,29 @@ const THREE = (
   </BsAccordion>
 );
 
-describe('BsAccordion — slot numbering', () => {
-  it('renders a header and a tab per item', async () => {
+describe('BsAccordion — markup', () => {
+  it('renders one row per item inside the .accordion root', async () => {
     const host = await render(THREE);
-    expect(headers(host)).toHaveLength(3);
-    expect(tabs(host)).toHaveLength(3);
+    expect(host.querySelector('div.accordion')).not.toBeNull();
+    expect(rows(host)).toHaveLength(3);
   });
 
-  it('numbers the header slots in document order', async () => {
+  it('pairs each header with its own region', async () => {
     const host = await render(THREE);
-    expect(headers(host).map((h) => h.getAttribute('slot'))).toEqual(['h0', 'h1', 'h2']);
-  });
-
-  it('pairs each tab with its header by index', async () => {
-    const host = await render(THREE);
-    expect(tabs(host).map((t) => t.getAttribute('slot'))).toEqual(['c0', 'c1', 'c2']);
-  });
-
-  it('renders header and body as siblings, not nested', async () => {
-    const host = await render(THREE);
-    expect(headers(host)[0].contains(tabs(host)[0])).toBe(false);
-    expect(headers(host)[0].parentElement).toBe(tabs(host)[0].parentElement);
+    rows(host).forEach((row) => {
+      expect(summary(row).getAttribute('aria-controls')).toBe(region(row).id);
+      expect(region(row).getAttribute('aria-labelledby')).toBe(summary(row).id);
+    });
   });
 
   it('keeps the header content and the body content apart', async () => {
     const host = await render(THREE);
-    expect(headers(host)[1].textContent).toBe('Two');
-    expect(tabs(host)[1].textContent).toBe('Second body');
+    expect(summary(rows(host)[1]).textContent).toBe('Two');
+    expect(region(rows(host)[1]).textContent).toBe('Second body');
   });
 
-  // Numbering counts only real items. A separator or a bare node between two
-  // items must not consume an index, or every later pair is off by one.
+  // Numbering counts only real items. A separator between two items must not
+  // consume an index, or every later pair is off by one.
   it('does not let a foreign child consume an index', async () => {
     const host = await render(
       <BsAccordion>
@@ -66,12 +58,12 @@ describe('BsAccordion — slot numbering', () => {
         <BsAccordionItem header="Two">Second</BsAccordionItem>
       </BsAccordion>,
     );
-    expect(headers(host).map((h) => h.getAttribute('slot'))).toEqual(['h0', 'h1']);
+    const ids = rows(host).map((row) => summary(row).id);
+    expect(ids[0]).toMatch(/-h0$/);
+    expect(ids[1]).toMatch(/-h1$/);
     expect(host.querySelector('hr')).not.toBeNull();
   });
 
-  // Only a direct child can be numbered; anything deeper needs the index
-  // passed by hand, which is exactly what the prop is documented for.
   it('honours an explicit index for an item that is not a direct child', async () => {
     const host = await render(
       <BsAccordion>
@@ -82,67 +74,24 @@ describe('BsAccordion — slot numbering', () => {
         </div>
       </BsAccordion>,
     );
-    expect(headers(host)[0].getAttribute('slot')).toBe('h4');
-    expect(tabs(host)[0].getAttribute('slot')).toBe('c4');
+    expect(summary(rows(host)[0]).id).toMatch(/-h4$/);
+  });
+
+  it('gives two accordions distinct ids', async () => {
+    const host = await render(
+      <>
+        {THREE}
+        {THREE}
+      </>,
+    );
+    const ids = rows(host).map((row) => summary(row).id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('renders an empty accordion without error', async () => {
     const host = await render(<BsAccordion />);
-    expect(headers(host)).toHaveLength(0);
-    expect(host.querySelector('mp-accordion')).not.toBeNull();
-  });
-});
-
-describe('BsAccordion — attribute-shaped props', () => {
-  // These reach the element as attributes rather than properties on purpose:
-  // React SSR serialises attributes into the HTML, which is what the DSD
-  // injector and the no-JS CSS select on. A property would vanish server-side.
-  it('omits multi entirely when it is off', async () => {
-    const el = await renderEl(<BsAccordion />, 'mp-accordion');
-    expect(el.hasAttribute('multi')).toBe(false);
-  });
-
-  it('sets multi when it is on', async () => {
-    const el = await renderEl(<BsAccordion multi />, 'mp-accordion');
-    expect(el.hasAttribute('multi')).toBe(true);
-  });
-
-  it('maps highlightActiveTab to its hyphenated attribute', async () => {
-    const el = await renderEl(<BsAccordion highlightActiveTab />, 'mp-accordion');
-    expect(el.hasAttribute('highlight-active-tab')).toBe(true);
-  });
-
-  it('omits the highlight attribute when it is off', async () => {
-    const el = await renderEl(<BsAccordion />, 'mp-accordion');
-    expect(el.hasAttribute('highlight-active-tab')).toBe(false);
-  });
-
-  it('marks an initially open item', async () => {
-    const host = await render(
-      <BsAccordion>
-        <BsAccordionItem header="One" isActive>
-          Body
-        </BsAccordionItem>
-      </BsAccordion>,
-    );
-    expect(tabs(host)[0].hasAttribute('is-active')).toBe(true);
-  });
-
-  it('marks a disabled item', async () => {
-    const host = await render(
-      <BsAccordion>
-        <BsAccordionItem header="One" disabled>
-          Body
-        </BsAccordionItem>
-      </BsAccordion>,
-    );
-    expect(tabs(host)[0].hasAttribute('disabled')).toBe(true);
-  });
-
-  it('leaves both off by default', async () => {
-    const host = await render(THREE);
-    expect(tabs(host)[0].hasAttribute('is-active')).toBe(false);
-    expect(tabs(host)[0].hasAttribute('disabled')).toBe(false);
+    expect(rows(host)).toHaveLength(0);
+    expect(host.querySelector('div.accordion')).not.toBeNull();
   });
 
   it('renders a React node as the header, not only a string', async () => {
@@ -151,21 +100,75 @@ describe('BsAccordion — attribute-shaped props', () => {
         <BsAccordionItem header={<b data-rich="">Rich</b>}>Body</BsAccordionItem>
       </BsAccordion>,
     );
-    expect(headers(host)[0].querySelector('[data-rich]')?.textContent).toBe('Rich');
+    expect(summary(rows(host)[0]).querySelector('[data-rich]')?.textContent).toBe('Rich');
+  });
+});
+
+describe('BsAccordion — state', () => {
+  it('groups the rows by name when single-open, and not when multi', async () => {
+    const single = await render(THREE);
+    expect(new Set(rows(single).map((row) => row.getAttribute('name'))).size).toBe(1);
+    const multi = await render(
+      <BsAccordion multi>
+        <BsAccordionItem header="One">First</BsAccordionItem>
+      </BsAccordion>,
+    );
+    expect(rows(multi)[0].hasAttribute('name')).toBe(false);
+  });
+
+  it('marks highlightActiveTab on the root', async () => {
+    const el = await renderEl(<BsAccordion highlightActiveTab />, 'div.accordion');
+    expect(el.hasAttribute('data-highlight-active')).toBe(true);
+  });
+
+  it('opens an initially active item', async () => {
+    const host = await render(
+      <BsAccordion>
+        <BsAccordionItem header="One" isActive>
+          Body
+        </BsAccordionItem>
+      </BsAccordion>,
+    );
+    expect(rows(host)[0].open).toBe(true);
+  });
+
+  it('takes a disabled item out of the tab order', async () => {
+    const host = await render(
+      <BsAccordion>
+        <BsAccordionItem header="One" disabled>
+          Body
+        </BsAccordionItem>
+      </BsAccordion>,
+    );
+    expect(summary(rows(host)[0]).getAttribute('aria-disabled')).toBe('true');
+    expect(summary(rows(host)[0]).getAttribute('tabindex')).toBe('-1');
   });
 });
 
 describe('BsAccordion — events', () => {
-  it('maps the WC toggle event onto onTabToggle', async () => {
-    const seen: CustomEvent[] = [];
-    const el = await renderEl(
-      <BsAccordion onTabToggle={(e) => seen.push(e)} />,
-      'mp-accordion',
+  it('reports a row toggle through onTabToggle', async () => {
+    const seen: AccordionTabToggle[] = [];
+    const host = await render(
+      <BsAccordion onTabToggle={(change) => seen.push(change)}>
+        <BsAccordionItem header="One">First</BsAccordionItem>
+        <BsAccordionItem header="Two">Second</BsAccordionItem>
+      </BsAccordion>,
     );
 
-    await emit(el, 'mp-accordion-tab-toggle', { index: 1, isActive: true });
+    await act(async () => {
+      const row = rows(host)[1];
+      // Flipping `open` fires the native toggle (once, asynchronously), as a click does.
+      const toggled = new Promise((resolve) => row.addEventListener('toggle', resolve, { once: true }));
+      row.open = true;
+      await toggled;
+    });
 
-    expect(seen).toHaveLength(1);
-    expect(seen[0].detail).toEqual({ index: 1, isActive: true });
+    expect(seen).toEqual([{ index: 1, active: true }]);
+  });
+
+  it('forwards its ref to the root element', async () => {
+    const ref = React.createRef<HTMLDivElement | null>();
+    await render(<BsAccordion ref={ref} />);
+    expect(ref.current?.classList.contains('accordion')).toBe(true);
   });
 });

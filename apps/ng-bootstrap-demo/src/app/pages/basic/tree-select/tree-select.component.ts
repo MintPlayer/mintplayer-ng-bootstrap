@@ -1,5 +1,7 @@
+import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import {
   BsTreeSelectComponent,
@@ -43,10 +45,25 @@ const SAMPLE_TREE: TreeNode[] = [
   selector: 'demo-tree-select',
   templateUrl: './tree-select.component.html',
   styleUrls: ['./tree-select.component.scss'],
-  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsTreeSelectComponent],
+  imports: [ReactiveFormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, FormsModule, BsCodeSnippetComponent, BsFormComponent, BsTreeSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreeSelectComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<Value>([]);
+  protected readonly formsControl = new FormControl<Value>([], { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-form>
+      <bs-tree-select mode="multiple" [provider]="memoryProvider" placeholder="Pick a few…" [(ngModel)]="value"></bs-tree-select>
+    </bs-form>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-form>
+      <bs-tree-select mode="multiple" [provider]="memoryProvider" placeholder="Pick a few…" [formControl]="control"></bs-tree-select>
+    </bs-form>
+  `;
+
   // 1. Single select with server search — hits the real /api/treeItems backend.
   protected readonly httpProvider = inject(TreeSelectHttpProvider);
   protected readonly singleValue = signal<Value>(null);

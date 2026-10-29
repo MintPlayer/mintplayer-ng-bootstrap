@@ -1,10 +1,11 @@
-export { default as BsHierarchyChart } from './BsHierarchyChart.vue';
+// The hierarchy chart is generated from @mintplayer/ui-core/charts/hierarchy (PRD #437 D10).
+export * from './generated';
 export type {
-  HierarchyNode,
   HierarchyChartLayout,
   HierarchyChildrenLoader,
-  HierarchyNodeFormatter,
-  HierarchyNodeEventDetail,
   HierarchyHoverEventDetail,
   HierarchyLoadErrorEventDetail,
-} from '@mintplayer/web-components/charts/hierarchy';
+  HierarchyNode,
+  HierarchyNodeEventDetail,
+  HierarchyNodeFormatter,
+} from '@mintplayer/ui-core/charts/hierarchy';

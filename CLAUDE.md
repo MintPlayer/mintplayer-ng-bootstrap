@@ -4,20 +4,30 @@ Project-wide technical conventions for the `@mintplayer/*-bootstrap` workspace. 
 
 ## What this workspace is
 
-A multi-framework Bootstrap component system. As of 2026 it is split into:
+A multi-framework Bootstrap component system. Since #437 (2026-10) every component is **a framework-neutral
+core plus four fronts that each render their own template** (see "Headless core + fronts" below):
 
-- **`@mintplayer/web-components`** (`libs/mintplayer-web-components`) — framework-agnostic **Lit** web components. The single source of UI truth.
-- **`@mintplayer/ng-bootstrap`** (`libs/mintplayer-ng-bootstrap`) — Angular wrappers.
-- **`@mintplayer/react-bootstrap`** (`libs/mintplayer-react-bootstrap`) — React wrappers.
-- **`@mintplayer/vue-bootstrap`** (`libs/mintplayer-vue-bootstrap`) — Vue wrappers.
+- **`@mintplayer/ui-core`** (`libs/mintplayer-ui-core`) — the cores, the shared infrastructure (store, overlay,
+  focus, roving, drag, virtual window, scoped styles), the Bootstrap baseline, and — for most components — the
+  single component source (core + `.view.vue` template + manifest) the compiler generates the fronts from.
+- **`@mintplayer/ng-bootstrap`** (`libs/mintplayer-ng-bootstrap`) — the Angular fronts.
+- **`@mintplayer/react-bootstrap`** (`libs/mintplayer-react-bootstrap`) — the React fronts.
+- **`@mintplayer/vue-bootstrap`** (`libs/mintplayer-vue-bootstrap`) — the Vue fronts.
+- **`@mintplayer/web-components`** (`libs/mintplayer-web-components`) — the **Lit** fronts (`mp-*` custom
+  elements), for consumers without a framework. Most are generated; a few slot-based ones (checkbox, toggle
+  button, tab control, pagination, shell…) are hand-written shadow-root elements.
+- `libs/mintplayer-component-compiler` — the component compiler (PRD D10) and its Nx plugin.
 - Demo apps: `apps/{ng,react,vue}-bootstrap-demo` (+ `-e2e` Playwright projects).
 - Backend for data-driven demos: `apps/api` (ASP.NET Core + EF Core).
 
-New components default to **a Lit WC + hand-written wrappers per framework** (dock / scheduler / timeline / treeview / tree-select are the precedent). Wrappers are normal source, NOT codegen'd.
+**A framework front never renders an `<mp-*>` element.** Angular SSR runs on domino (no `customElements`), so a
+wrapper around a custom element server-renders an empty tag; every front renders real HTML instead.
 
-## Web component authoring
+## Hand-written Lit elements (`@mintplayer/web-components`)
 
-Each WC lives at `libs/mintplayer-web-components/<name>/` with this shape:
+This section applies to the hand-written `mp-*` elements. A component with a D10 manifest has its Lit front
+generated into `<name>/src/generated/` — never hand-write or edit it. Each hand-written WC lives at
+`libs/mintplayer-web-components/<name>/` with this shape:
 
 ```
 <name>/
@@ -46,14 +56,6 @@ Some larger components instead use `<el>.element.html` + `<el>.element.scss` →
 - `nx build mintplayer-web-components` runs `codegen-wc` + `cem` (custom-elements manifest) automatically as `dependsOn`.
 - Generated files (`*.styles.ts`, `*.element.template.ts`, `custom-elements.json`) are **gitignored build artifacts** (`.gitignore`: `libs/**/*.styles.ts` etc.) — never stage or hand-edit them; only the `.scss`/`.html` sources are tracked.
 
-### SSR chrome codegen (`*-chrome.generated.ts`)
-
-WCs with a no-JS SSR path ship a Declarative-Shadow-DOM "chrome" constant, rendered from the **built** element via `@lit-labs/ssr`:
-
-- `tools/lit-ssr-utils/gen-<name>-chrome.mjs` → `libs/mintplayer-web-components/<name>/ssr/mp-<name>-chrome.generated.ts`, produced by the Nx target `codegen-<name>-chrome`, which `dependsOn` the WC `build` (it imports the compiled `dist` element, so it can't be part of `build` — that would be circular).
-- Like all generated files, `*-chrome.generated.ts` are gitignored build artifacts (`.gitignore`: `libs/mintplayer-web-components/**/*.generated.ts`). Never commit or hand-edit them.
-- They regenerate automatically because every SSR demo build `dependsOn` the aggregate **`mintplayer-web-components:codegen-ssr-chrome`** (it fans out to the per-component `codegen-*-chrome` targets). **When adding a new SSR WC, add its `codegen-<name>-chrome` to that aggregate** — the demos need no change. After editing a WC's shadow markup/styles, rerun `nx run mintplayer-web-components:codegen-ssr-chrome` (or just build a demo) so the SSR chrome isn't stale.
-
 ### Light tier — emulated encapsulation, no shadow DOM
 
 A component that mounts **consumer-authored DOM** (a render callback like `rowRenderer` /
@@ -61,7 +63,9 @@ A component that mounts **consumer-authored DOM** (a render callback like `rowRe
 **light DOM**. Inside a shadow root that content is starved: the page's stylesheets — the consumer's
 own Angular/React/Vue component CSS *and* Bootstrap's global utilities — cannot cross the boundary,
 so a `<bs-badge>` in a datatable row renders as bare text and `me-2` does nothing (issue #408).
-`mp-datatable` is the reference implementation.
+Every D10-generated front is light DOM by construction (the host is the render root and the core's bags
+carry `data-mps`), so these rules now bite only a **hand-written** element; `mp-typeahead` is the remaining
+hand-written light-tier reference.
 
 **The admission rule is mechanical:** mounts consumer DOM ⇒ light tier. Takes content only through
 real `<slot>`s ⇒ keep the shadow root (slotted nodes never leave the light DOM, so they are already
@@ -79,7 +83,7 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   recurses, so call it BEFORE consumer content is appended**, never after. Stamping a subtree that
   already holds a consumer's node brands their DOM with your scope and lets your rules (a bare
   `button[data-mps=…]`, say) match their content. The decoy suite cannot catch this: it only tests
-  UNSTAMPED elements. `mp-tree-select`'s `nodeRenderer` is the reference, and its spec pins it.
+  UNSTAMPED elements. `_conformance/consumer-dom-boundary.spec.ts` pins it.
 - `createRenderRoot()` returns `this`; `installLightStyles('<scope>', sheet)` runs right before
   `customElements.define`. The SSR guard checks `document.head`, not `typeof document` — Angular's
   SSR DOM shim provides a `document` with no usable head.
@@ -93,15 +97,12 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   not cross a shadow boundary — so a component that KEEPS its shadow root but renders a light-tier
   component inside it starves it (issue #408 again, one level up). Any such host must mirror the
   registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
-  `mp-file-manager` is the reference. `_conformance/light-styles-nesting.spec.ts` enforces it. The
-  corollary is that converting a component can force its ANCESTORS to convert too — the
-  query-builder family had to go together for exactly this reason.
-- **Do not re-import a Bootstrap partial the page already ships.** `libs/mintplayer-ng-bootstrap/_bootstrap.scss`
-  provides `utilities`, `root`, `reboot`, `type`, `images` and `buttons` globally, and in the light
-  DOM those reach the component. Importing them again ships the CSS twice AND the rescoped copy
-  silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`), making the page's own theming
-  unoverridable. Partials that are commented out there (`forms`, `tables`, `badge`, `card`, `alert`,
-  `list-group`, `close`, …) are NOT global and must still be imported.
+  `mp-accordion` and `mp-shell` do it. `_conformance/light-styles-nesting.spec.ts` enforces it.
+- **Do not import a Bootstrap partial into a component sheet at all** (C4 under "Bootstrap
+  layering" below). The page ships the whole baseline, so a rescoped copy is a duplicate that
+  silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`) and makes the page's own theming
+  unoverridable. Only a shadow-root element, which the page's CSS cannot reach, re-declares what it
+  needs (the `_styles/*.styles.scss` partial copies).
 - **Every document-level sheet goes through `installLightStyles` — light tier or not.** A slot-based
   component that needs document CSS for its slotted content (`mp-card`: `::slotted()` cannot reach
   `.card-title` inside a body, nor out-rank Bootstrap's `.card-header`) installs it through the
@@ -162,15 +163,15 @@ Consequences to design around:
 
 `tsconfig.base.json` maps `@mintplayer/web-components/*` → `libs/mintplayer-web-components/*` (wildcard). A new `<name>/src/index.ts` is auto-discovered as a sub-entrypoint by `vite.config.mts` and resolves in dev/build with no extra config.
 
-## Headless core + fronts (new architecture; pilot: typeahead #436, programme: #437)
+## Headless core + fronts (the architecture; pilot #436, programme #437)
 
-Decided 2026-10-19: components move from "a Lit WC + three wrappers that render `<mp-*>`" to **a
-framework-neutral core in `@mintplayer/ui-core` + four fronts that each render their own template**
-(Angular, React, Vue, Lit). Reason: Angular SSR runs on domino (no `customElements`), so a wrapper around a
-WC emits an empty element and 24 of 30 WC-backed components showed nothing with JS off; light-tier
-elements cannot be Lit-SSR'd at all. **The shell PRD's "no HTML may be duplicated across the components" rule
-is reversed** for components on this architecture. The typeahead is the reference
-(`libs/mintplayer-ui-core/typeahead`, `docs/prd/typeahead-wc-436.md` §15 has the cost per front).
+Every component is **a framework-neutral core in `@mintplayer/ui-core` + four fronts that each render their
+own template** (Angular, React, Vue, Lit). Reason: Angular SSR runs on domino (no `customElements`), so a
+wrapper around a WC emitted an empty element and 24 of 30 WC-backed components showed nothing with JS off;
+light-tier elements could not be Lit-SSR'd at all. Every front now server-renders the same tree it hydrates,
+so there is no DSD chrome, no `@lit-labs/ssr` and no post-render HTML injection anywhere. **New components
+are written as a D10 source** (below); the navbar is the reference, the dock / ribbon / scheduler the
+heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
 
 - **Core** (`ui-core/<name>`): a class extending `Machine<S>` (`ui-core/store`: immutable snapshot,
   `subscribe`, batched `update`). Commands, keyboard (`keydown(key) → consumed`), async via
@@ -182,20 +183,81 @@ is reversed** for components on this architecture. The typeahead is the referenc
   `useMachine`/`useSnapshot` (`useSyncExternalStore`) + `reactProps()`; Vue `useMachine` (`shallowRef`);
   Lit `MachineController` + the `props()` element-part directive.
 - **Styles**: one `<name>.scoped.scss` in the core → a plain-string `*.scoped.styles.ts` (ui-core `codegen`
-  target; no lit import), rescoped with `[data-mps=<name>]` like a light sheet. Every front writes
-  `data-mps="<name>"` on its own nodes (it is in the bags) and installs the sheet through the shared registry
-  (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into `DOCUMENT.head`
-  on the server — no string post-processing. No `styleUrls`, no `::ng-deep`.
+  target; no lit import), rescoped with `[data-mps=<name>]` like a light sheet, and installed through the shared
+  registry (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into
+  `DOCUMENT.head` on the server — no string post-processing. No `styleUrls`, no `::ng-deep`. **S15: one scope
+  and one sheet per D10 group** (`style: { scope: '<name>' }` in the manifest). The compiler stamps
+  `data-mps="<scope>"` on every native element of the group's templates (partials too) and on the Angular/Lit
+  host, so a D10 core's bags carry **no** `data-mps` (`_conformance/no-scope-in-compiled-bags.spec.ts`), and a
+  template may not write one. A group that renders another core's markup `@use`s that core's sheet with its own
+  scope (`tree-select` → treeview, `navbar` → dropdown-menu, `datepicker` → calendar); a reusable sheet takes
+  `$scope: <name> !default` for its final-form selectors. Hand-written fronts (accordion, input-group, shell,
+  tab-control, tile-manager, typeahead, sparkline, dropdown-menu) still stamp their own scope.
+- **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
+  a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
+  (`<name>/src/templates/*.view.vue`) and a plain-data manifest (`<name>/src/<name>.component.ts`, `import type`
+  only — Node loads it with types stripped). The compiler GENERATES the whole Angular / React / Vue / Lit
+  component into each front's `<entry>/src/generated/` (gitignored), via the inferred Nx target
+  `mintplayer-ui-core:compile-components` (`-check` fails on stale output). Never hand-write a front for a
+  component that has a manifest; a front-specific need goes in an extension file next to the entry
+  (`<element>.angular.ts`: `hostDirectives` / `providers` / `extendInputs`; React `useExtendInputs`). Two-way
+  inputs are `model: true` (Angular `model()`, Vue `update:x`, Lit property write-back). Scaffold a new group
+  with `nx g ./libs/mintplayer-component-compiler:component <name>`. The template subset is in the lib's
+  README; the navbar is the reference.
 - **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
   identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node
   whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this).
 
-## Framework wrappers
+### What a generated front looks like (and how to test it)
 
-- **Angular** (`libs/mintplayer-ng-bootstrap/<name>/`): `@Component` with `CUSTOM_ELEMENTS_SCHEMA`, bridges `[attr.x]` inputs and `(custom-event)` outputs to the WC; `<ng-template>` directives are bridged to render-callbacks via `EmbeddedViewRef`. Form controls implement `ControlValueAccessor`.
-- **React** (`libs/mintplayer-react-bootstrap/<name>/`): `@lit/react` `createComponent`; object/function props assigned via the element ref; controlled `value` + `onChange`.
-- **Vue** (`libs/mintplayer-vue-bootstrap/<name>/`): `.vue` SFC; `v-model` via `defineModel`; object props assigned to the element ref `onMounted`/`watch`; named scoped slots.
+- **The root bag lands on the host in Angular and Lit** (`bs-foo` / `mp-foo` carries `class="foo"`,
+  `data-mps`, the role); React and Vue render it on a `div.foo`. In a spec, query the host itself, not
+  `.foo` inside it.
+- **Outputs are lowercased** everywhere: Angular `(layoutchange)`, Vue `@layoutchange`, Lit a
+  `layoutchange` CustomEvent; React `onLayoutChange` receives the payload, not an event. **Angular outputs
+  are `output()`s, not DOM events** — an e2e cannot listen for them; observe the committed DOM instead
+  (expose `data-*` hooks in the core's bags, as the scheduler's `data-start` / `data-end` do).
+- **Two-way models** (`model: true`) write back only when the core calls `api.setState(patch)` with the
+  model's own key; `api.emit` dispatches an output and nothing else.
+- **Readiness:** a core that attaches behaviour writes `hydratedAttr()` (`data-mp-hydrated`, from
+  `ui-core/store`) on its root. It is never in server HTML, so e2e waits on it rather than on markup the
+  server already rendered.
+- **Consumer content** is front-native: slots (`<ng-template>` directive / render prop / scoped slot /
+  `slot=`), never a render callback returning DOM. A slot must be an identifier and never share an input's
+  name (React and Vue would pass the slot as the input: hence `iconTemplate`, `labelTemplate`). Content that
+  must survive a move is teleported into core-owned hosts (`<teleport :to>`, the dock); nested children read
+  as declarations go through a manifest `content:` query (the ribbon), so the parent can server-render chrome
+  for them.
+- **Front-specific needs** go in an extension file next to the entry, never into the generated output:
+  Angular `<element>.angular.ts` (`hostDirectives`, `providers` — e.g. the CVA, `extendInputs`), React
+  `useExtendInputs`. Every form control is a `ControlValueAccessor` in Angular and `v-model` in Vue.
+- **Stale manifests fake failures:** after a core or template change rerun the compiler
+  (`nx run mintplayer-ui-core:compile-components`); after a Lit front's inputs change, `custom-elements.json`
+  goes stale and the WC conformance specs misreport — rerun `nx run mintplayer-web-components:cem
+  --skip-nx-cache`.
+- **Import lists go stale on every conversion:** `no-custom-elements-in-fronts` and the scoping specs list
+  components explicitly; prune or extend them in the same commit.
+
+### Bootstrap layering (PRD §6, C1–C6)
+
+- **C1. Bootstrap is a page-level prerequisite.** Templates use plain Bootstrap classes (`form-control`,
+  `dropdown-menu`, `nav-tabs`, `table`, …) and the page's Bootstrap styles them.
+- **C2. One baseline:** `@mintplayer/ui-core/styles/bootstrap.scss` (every partial the catalog uses, plus the
+  workspace patches and utilities). Angular's `_bootstrap.scss` re-exports it; React and Vue apps import it
+  instead of `bootstrap.min.css`.
+- **C3. Cascade layers.** The baseline is `@layer mp.bootstrap`, every scoped sheet `@layer mp.components`,
+  ordered once at the top of the baseline. Component rules beat Bootstrap regardless of specificity, a
+  consumer's unlayered CSS beats both (theming needs no `!important`), and Bootstrap's `!important`
+  utilities still win.
+- **C4. A scoped sheet carries only what Bootstrap lacks** — layout, state on native carriers
+  (`details[open] > .dropdown-menu`), component parts, focus rings, reduced motion — and **never imports a
+  Bootstrap partial** (functions, variables and mixins only). `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts`
+  enforces it.
+- **C5. No front has a shadow root**, so no front imports partials. (The hand-written shadow-root Lit
+  elements are the exception and re-declare what they use from `web-components/_styles`.)
+- **C6. Dark mode is page-level**: `[data-bs-theme]` on `<html>` reaches every front. `@container
+  style(--mp-color-mode)` queries exist only for shadow-root elements.
 
 ## Accessibility
 
@@ -220,10 +282,10 @@ code path remembers it.
 - **A WC whose role lives on an inner node must accept a `label`.** Expose a `label` (or
   `aria-label`) attribute and render it onto the role-bearing node. A consumer cannot reach inside
   a shadow root, and `aria-label` on a roleless host is ignored by browsers.
-- **Wrappers are transparent.** A consumer's `aria-*`, `role`, `id` and `tabindex` on a wrapper
-  must reach the `mp-*` element. Angular: forward host attributes, don't leave them on the `bs-*`
-  host. React: props interfaces extend `React.HTMLAttributes<I>` and spread `...rest`. Vue:
-  `inheritAttrs: false` + `v-bind="$attrs"` on the inner element.
+- **Fronts are transparent.** A consumer's `aria-*`, `id` and `tabindex` on a front must reach the
+  role-bearing node (a consumer `role` only where the core's contract leaves it free). The compiler's
+  `mp-attrs` routing does this in React and Vue; in Angular and Lit the root bag is on the host. The
+  `_conformance/attribute-passthrough` / `aria-passthrough` specs in each lib enforce it.
 - **Every pointer gesture has a keyboard equivalent.** Drag to resize, drag to reorder and swipe
   are each a keyboard-operable command too, with the keymap announced on entry via the live
   announcer. No keyboard path is a release blocker, not a follow-up.
@@ -262,24 +324,23 @@ It MUST carry `aria-controls` naming the region it reveals, MUST be named by a `
 viewport- or mode-dependent inversion. Reference implementation:
 `libs/mintplayer-web-components/accordion/src/components/mp-accordion.ts` (native `<details name>` rows).
 
-**Tier 2 — DSD chrome via `@lit-labs/ssr` (visible but inert with no JS).** The chrome contains the
-**shadow** markup only, so: emit no role whose ARIA contract depends on attributes JS assigns to
-**light-DOM** children (`role="menu"` without `menuitem`s is invalid, not merely incomplete); gate
-any such role behind the `data-js` branch with a degradation that is valid without it; parameterise
-the chrome generator on every attribute that changes ARIA **state**, not only structure; and never
-render a control as enabled when it cannot function.
+**Tier 2 — server-rendered, inert until hydrated (visible with no JS).** The server renders the same
+tree the client hydrates. So: a role whose ARIA contract only holds once JS runs (a `tablist` with a
+roving tabindex, `role="menu"` with `menuitem`s) is written by the core only in its enhanced/hydrated
+state, with a degradation that is valid without it (the tab control's radios + labels); and never
+render a control as enabled when it cannot function (the file manager's toolbar is disabled until live).
 
 Both tiers: `aria-expanded` (or any state) written only from an event handler is frozen at its
-template literal in the generated chrome. If JS is its only writer, the no-JS DOM lies.
+server value. State belongs in the core's snapshot and its bags, so the server HTML tells the truth.
 
 ### Before you open the PR
 
 1. Tab through it, keyboard only. Every control reachable, visibly focused, no trap, Escape closes.
 2. Every pointer gesture has a keyboard equivalent, and the demo page documents the keymap.
 3. Roles/names/state asserted in a `*.aria.spec.ts` — the states too, not just the initial render.
-4. `aria-label` / `role` / `id` / `tabindex` set on the wrapper land on the `mp-*` element, in all
-   three frameworks.
-5. If it has an `ssr/` dir: view it with JS disabled and check the tier rules above.
+4. `aria-label` / `role` / `id` / `tabindex` set on the front land on the role-bearing node, in all
+   four fronts.
+5. View it with JS disabled and check the tier rules above.
 6. No `outline: none` without a `:focus-visible` replacement in the same stylesheet.
 
 ## Build & test

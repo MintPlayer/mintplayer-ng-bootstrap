@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { MpCheckbox } from '@mintplayer/web-components/checkbox';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { BsCheckboxGroupDirective } from './checkbox-group.directive';
 import { BsCheckboxComponent } from '../../component/checkbox.component';
@@ -61,11 +60,11 @@ class GroupFormHostComponent {
 
 describe('BsCheckboxGroupDirective as a form control', () => {
   let fixture: ComponentFixture<GroupFormHostComponent>;
-  const boxes = () => [...fixture.nativeElement.querySelectorAll('mp-checkbox')] as MpCheckbox[];
+  // bs-checkbox renders a native input (#437): query and click that.
+  const boxes = () => [...fixture.nativeElement.querySelectorAll('input[type=checkbox]')] as HTMLInputElement[];
   const toggle = (index: number, checked: boolean) => {
-    const wc = boxes()[index];
-    wc.checked = checked;
-    wc.dispatchEvent(new CustomEvent('change', { bubbles: true, detail: { checked, indeterminate: false } }));
+    const input = boxes()[index];
+    if (input.checked !== checked) input.click();
     fixture.detectChanges();
   };
 
@@ -75,6 +74,7 @@ describe('BsCheckboxGroupDirective as a form control', () => {
   });
 
   it('checks the boxes whose value is in the form array, named as an array field', () => {
+    expect(boxes()).toHaveLength(3);
     expect(boxes().map((b) => b.checked)).toEqual([false, true, false]);
     expect(boxes().every((b) => b.name === 'toppings[]')).toBe(true);
   });
@@ -95,6 +95,7 @@ describe('BsCheckboxGroupDirective as a form control', () => {
 
   it('disables every box with the control', () => {
     fixture.componentInstance.ctrl.disable();
+    fixture.detectChanges();
     expect(boxes().every((b) => b.disabled)).toBe(true);
   });
 

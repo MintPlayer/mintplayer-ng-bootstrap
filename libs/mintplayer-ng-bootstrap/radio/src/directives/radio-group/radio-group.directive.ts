@@ -1,31 +1,28 @@
-import { contentChildren, Directive, effect, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
+import { afterNextRender, computed, Directive, ElementRef, forwardRef, inject, input, PLATFORM_ID, signal } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { MpRadio } from '@mintplayer/web-components/radio';
-import type { RadioGroupChangeEventDetail } from '@mintplayer/web-components/radio-group';
-import { BsRadioComponent } from '../../component/radio.component';
-
-// Side-effect: registers <mp-radio-group>, the preferred host element (below).
-import '@mintplayer/web-components/radio-group';
+import { connectRadioGroup, radioGroupName } from '@mintplayer/ui-core/radio';
+import { preHydrationChoice } from '@mintplayer/ui-core/forms';
+import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 
 /**
- * Groups N `<bs-radio>` children into a single-select FormControl whose
- * value is the selected radio's `value()`. The group owns the shared
- * `[name]` (radios don't carry their own). Acts as its own
- * `ControlValueAccessor` — bind `[formControl]` / `[(ngModel)]` on the
- * element carrying `[bsRadioGroup]`.
+ * Groups N `<bs-radio>` descendants into a single-select FormControl whose
+ * value is the selected radio's `value()`. Bind `[formControl]` /
+ * `[(ngModel)]` on the element carrying it.
  *
- * Host it on `<mp-radio-group>` where the markup allows: the WC supplies
- * `role="radiogroup"`, the roving tab stop, arrow move-and-select and
- * exclusivity, and this directive is only the CVA bridge (it listens for
- * the WC's `group-change`, which is the ONLY signal a keyboard-driven
- * selection produces — the WC checks radios programmatically, so no
- * `change` bubbles). On any other host (a `<tbody>`, a `<bs-button-group>`)
- * the WC element cannot be used, and this directive coordinates the
- * one-of-N itself on bubbled `change` — shadow roots keep the browser's
- * native auto-uncheck from ever firing across `<mp-radio>` boundaries.
+ * The group hands its `name` to every radio (generated when none is given),
+ * so they are native radios of ONE set in one node tree: the browser supplies
+ * exclusivity, the single tab stop, arrow move-and-select and posinset, also
+ * with JavaScript off (#437). This directive only carries the value, the
+ * disabled state and the touched signal.
+ *
+ * `<bs-radio-group>` is the element form and takes `role="radiogroup"`; name
+ * it with `aria-label` / `aria-labelledby`. On another host (a `<tbody>`, a
+ * `<bs-button-group>`) the attribute form adds no role, because the host keeps
+ * its own; radios that are not descendants wire in with `[group]="g"`.
  */
 @Directive({
-  selector: '[bsRadioGroup]',
+  selector: '[bsRadioGroup], bs-radio-group',
   exportAs: 'bsRadioGroup',
   providers: [{
     provide: NG_VALUE_ACCESSOR,
@@ -33,33 +30,35 @@ import '@mintplayer/web-components/radio-group';
     multi: true,
   }],
   host: {
-    '(change)': 'onChildChange($event)',
-    '(group-change)': 'onGroupChange($event)',
-    // focusout is composed: the shadow input's blur reaches the host. The
-    // stored onTouched was never CALLED before, which kept every
-    // invalid-after-touched mirror dead (audit 4.9 prerequisite).
+    '[attr.role]': 'groupAttrs()[\'role\']',
+    '[attr.aria-required]': 'groupAttrs()["aria-required"]',
+    '[attr.aria-disabled]': 'groupAttrs()["aria-disabled"]',
     '(focusout)': 'onTouched?.()',
   },
 })
 export class BsRadioGroupDirective implements ControlValueAccessor {
 
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
+  private readonly isElementHost = this.host.localName === 'bs-radio-group';
+  private readonly id = inject(BsIdService).next('bs-radio-group');
 
   readonly name = input<string | null>(null);
-  // Wrap in forwardRef: BsRadioComponent imports this directive (for
-  // `inject(BsRadioGroupDirective, {...})`), so the two modules form a cycle.
-  // Whichever side webpack/vite evaluates first sees `undefined` for the
-  // other's exports at field-initialiser time, which makes the recorded query
-  // predicate null — ng-mocks' MockDirective then fails with "the query
-  // selector wasn't defined" on consumers (e.g. shell.component.spec.ts).
-  readonly radios = contentChildren<BsRadioComponent>(forwardRef(() => BsRadioComponent), { descendants: true });
+  /** Marks the set required: `aria-required` on the group and `required` on every radio. */
+  readonly required = input<boolean>(false);
 
-  /** Most-recently-written form value. An effect syncs each child's
-   *  `isToggled` (and the WC's `checked` property) whenever this OR the
-   *  `radios()` set changes, so an initial `writeValue` that lands before
-   *  children register still applies once the `contentChildren` query
-   *  populates. */
-  private readonly currentValue = signal<string | null>(null);
+  /** The radios' shared `name`; one is generated so native grouping always forms. */
+  readonly groupName = computed(() => this.name() ?? radioGroupName(this.id));
+
+  private readonly selected = signal<string | null>(null);
+  readonly value = this.selected.asReadonly();
+
+  private readonly formDisabled = signal(false);
+  readonly disabled = this.formDisabled.asReadonly();
+
+  protected readonly groupAttrs = computed(() => {
+    const attrs = connectRadioGroup({ required: this.required(), disabled: this.disabled() });
+    return this.isElementHost ? attrs : { ...attrs, role: null };
+  });
 
   private onValueChange?: (value: string | null) => void;
   // protected, not private: the focusout host binding compiles outside the
@@ -67,39 +66,26 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   protected onTouched?: () => void;
 
   constructor() {
-    effect(() => {
-      const value = this.currentValue();
-      this.radios().map((r) => {
-        const isSelected = r.value() === value;
-        r.isToggled.set(isSelected);
-        r.radioRef().nativeElement.checked = isSelected;
-      });
-    });
+    this.adoptPreHydrationChoice();
   }
 
-  /** Keyboard/pointer selection routed through an `<mp-radio-group>` host. */
-  onGroupChange(ev: Event) {
-    if (ev.target !== this.host) return;
-    const value = (ev as CustomEvent<RadioGroupChangeEventDetail>).detail.value;
-    this.radios().map((r) => r.isToggled.set(r.value() === value));
+  /** Called by a radio whose native input became checked. */
+  select(value: string | null) {
+    this.selected.set(value);
     this.onValueChange?.(value);
   }
 
-  onChildChange(ev: Event) {
-    // An <mp-radio-group> host owns exclusivity and reports via group-change;
-    // handling the bubbled change here too would double-emit into the form.
-    if (this.host.tagName === 'MP-RADIO-GROUP') return;
-    if (!this.onValueChange) return;
-    const target = ev.target as HTMLElement;
-    const checked = this.radios().filter((r) => {
-      const wc: MpRadio = r.radioRef().nativeElement;
-      const isChecked = wc === target && wc.checked;
-      // Shadow DOM blocks native one-of-N — uncheck every non-target sibling.
-      if (wc !== target) wc.checked = false;
-      r.isToggled.set(isChecked);
-      return isChecked;
-    });
-    this.onValueChange(checked[0]?.value() ?? null);
+  /**
+   * A radio picked in the server-rendered page before hydration would be reverted
+   * by the `[checked]` bindings. Read it while the host holds the server DOM, and
+   * report it once the form directives have written their initial value (ngModel
+   * writes in a microtask after the first render).
+   */
+  private adoptPreHydrationChoice(): void {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    const picked = preHydrationChoice(this.host);
+    if (picked === null) return;
+    afterNextRender(() => queueMicrotask(() => this.select(picked)));
   }
 
   registerOnChange(fn: (_: string | null) => void) {
@@ -111,10 +97,10 @@ export class BsRadioGroupDirective implements ControlValueAccessor {
   }
 
   writeValue(value: string | null) {
-    this.currentValue.set(value);
+    this.selected.set(value ?? null);
   }
 
   setDisabledState(isDisabled: boolean) {
-    this.radios().map((r) => (r.radioRef().nativeElement.disabled = isDisabled));
+    this.formDisabled.set(isDisabled);
   }
 }

@@ -1,6 +1,57 @@
-// Re-export everything framework-agnostic from the WC entry. The Angular
-// wrapper component + editor directive remain Angular-specific.
-export * from '@mintplayer/web-components/query-builder';
-
-export { BsQueryBuilderComponent } from './lib/components/query-builder.component';
-export { BsQueryBuilderEditorDirective } from './lib/components/query-builder-editor.directive';
+// The query builder is generated from @mintplayer/ui-core/query-builder (PRD #437 D10).
+export * from './generated';
+export * from './value-accessor/query-builder-value-accessor';
+export {
+  DEFAULT_MESSAGES,
+  DEFAULT_OPERATOR_CATALOG,
+  MaxDepthExceededError,
+  addChild,
+  addEmptyConditionTo,
+  addEmptyGroupTo,
+  addEmptySubqueryTo,
+  changeConditionField,
+  changeConditionOperator,
+  cloneTree,
+  collectDescendantIds,
+  defaultValueFor,
+  emptyCondition,
+  emptyGroup,
+  emptySubquery,
+  findNodeById,
+  mapTree,
+  moveNode,
+  newId,
+  operatorsForType,
+  removeNode,
+  renderExpression,
+  setGroupLogic,
+  updateCondition,
+  validateOperatorOverrides,
+  valueShapeFor,
+  visitTree,
+} from '@mintplayer/ui-core/query-builder';
+export type {
+  Condition,
+  EditorContext,
+  EntitySchema,
+  Expression,
+  FieldDef,
+  FieldDefOption,
+  FieldType,
+  Group,
+  Operator,
+  OperatorCatalog,
+  OperatorOverrides,
+  QueryBuilderMessages,
+  RenderExpressionOptions,
+  SaveQueryDetail,
+  SavedQuery,
+  SavedQueryNameDetail,
+  SortDescriptor,
+  SubQueryCondition,
+  TreeVisitor,
+  ValidateOperatorOverridesResult,
+  ValueShape,
+  VisitTreeOptions,
+  VisitorContext,
+} from '@mintplayer/ui-core/query-builder';

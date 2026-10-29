@@ -1,6 +1,5 @@
 import { Directive, forwardRef, inject } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import type { CheckboxChangeEventDetail } from '@mintplayer/web-components/checkbox';
 import { BsCheckboxComponent } from '../component/checkbox.component';
 
 /**
@@ -17,10 +16,8 @@ import { BsCheckboxComponent } from '../component/checkbox.component';
     multi: true,
   }],
   host: {
+    // The inner native input's change and blur bubble to the host.
     '(change)': 'onChangeEvent($event)',
-    // focusout is composed: the shadow input's blur reaches the host. The
-    // stored onTouched was never CALLED before, which kept every
-    // invalid-after-touched mirror dead (audit 4.9 prerequisite).
     '(focusout)': 'onTouched?.()',
   },
 })
@@ -32,11 +29,9 @@ export class BsCheckboxValueAccessor implements ControlValueAccessor {
   onTouched?: () => void;
 
   onChangeEvent(ev: Event) {
-    if (!this.onValueChange) return;
-    // The bubbled `change` originates from <mp-checkbox> and is a
-    // CustomEvent with a `CheckboxChangeEventDetail` payload.
-    const detail = (ev as CustomEvent<CheckboxChangeEventDetail>).detail;
-    this.onValueChange(detail.checked);
+    const target = ev.target as HTMLInputElement | null;
+    if (!this.onValueChange || target?.type !== 'checkbox') return;
+    this.onValueChange(target.checked);
   }
 
   registerOnChange(fn: (_: boolean) => void) {
@@ -52,7 +47,6 @@ export class BsCheckboxValueAccessor implements ControlValueAccessor {
   }
 
   setDisabledState(isDisabled: boolean) {
-    const wc = this.host.checkboxRef().nativeElement;
-    wc.disabled = isDisabled;
+    this.host.formDisabled.set(isDisabled);
   }
 }

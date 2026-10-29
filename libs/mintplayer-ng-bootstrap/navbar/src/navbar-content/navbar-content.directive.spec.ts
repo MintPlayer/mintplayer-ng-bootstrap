@@ -1,6 +1,6 @@
 import { Component, PLATFORM_ID } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { BsNavbarComponent } from '../navbar/navbar.component';
+import { BsNavbarComponent } from '../generated';
 import { BsNavbarContentDirective } from './navbar-content.directive';
 
 @Component({
@@ -35,22 +35,22 @@ describe('BsNavbarContentDirective', () => {
     globalThis.ResizeObserver = original;
   });
 
-  it('on the server, clears the bar by a fixed approximation', () => {
+  it('on the server, clears the bar by a CSS estimate a theme can override', () => {
     TestBed.configureTestingModule({ providers: [{ provide: PLATFORM_ID, useValue: 'server' }] });
     TestBed.overrideComponent(HostComponent, {
       set: { template: `<bs-navbar #nav></bs-navbar><main [bsNavbarContent]="nav">Page</main>` },
     });
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement.querySelector('main') as HTMLElement).style.paddingTop).toBe(`${BsNavbarContentDirective.SSR_NAVBAR_HEIGHT}px`);
+    expect((fixture.nativeElement.querySelector('main') as HTMLElement).style.getPropertyValue('padding-top')).toBe('var(--bs-navbar-content-offset, 3.5rem)');
   });
 
-  it('in the browser, drops the server approximation and follows the bar\'s measured height', async () => {
+  it('in the browser, drops the CSS estimate and follows the bar\'s measured height', async () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     await fixture.whenStable();
     const main = fixture.nativeElement.querySelector('main') as HTMLElement;
-    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'MP-NAVBAR'));
+    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'BS-NAVBAR'));
     expect(observer).toBeDefined();
     // removed before measuring, so it is not counted twice
     expect(main.style.paddingTop).toBe('');
@@ -63,7 +63,7 @@ describe('BsNavbarContentDirective', () => {
     const fixture = TestBed.createComponent(HostComponent);
     fixture.detectChanges();
     await fixture.whenStable();
-    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'MP-NAVBAR'));
+    const [observer] = FakeResizeObserver.instances.filter((o) => o.observed.some((el) => el.tagName === 'BS-NAVBAR'));
     fixture.destroy();
     expect(observer.disconnected).toBe(true);
   });

@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   connect,
@@ -140,12 +141,21 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
     if (value !== undefined && value !== machine.snapshot.term) machine.setValue(value);
   }, [machine, value]);
 
-  const api = connect(state, id, { name: name ?? null });
+  // Flip the list above the input near the viewport bottom.
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listboxRef = useRef<HTMLUListElement>(null);
+  useEffect(() => trackOpenSide(machine, () => inputRef.current, () => listboxRef.current), [machine]);
+  // Effects run only on the client, so the readiness mark is never in server HTML.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+
+  const api = connect(state, id, { name: name ?? null, hydrated });
   const { value: termValue, ...inputBag } = reactProps(api.input);
 
   return (
     <div className="mp-typeahead" {...reactProps(api.root)}>
       <input
+        ref={inputRef}
         className="form-control"
         type="text"
         {...inputBag}
@@ -163,7 +173,7 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
           machine.blur();
         }}
       />
-      <ul className="dropdown-menu" {...reactProps(api.listbox)}>
+      <ul ref={listboxRef} className="dropdown-menu" {...reactProps(api.listbox)}>
         {api.status && (
           <li className="ta-status" {...reactProps(api.status.attrs)}>
             {api.status.text}

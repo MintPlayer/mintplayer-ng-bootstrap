@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import { capColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+
 defineOptions({ inheritAttrs: false });
 
-defineProps<{ color?: string }>();
+const props = defineProps<{ color?: CardColor }>();
+
+const classes = computed(() => ['card-footer', ...capColorClasses(props.color)]);
 </script>
 
 <template>
-  <div class="card-footer" :class="color ? 'text-bg-' + color : null" v-bind="$attrs">
+  <div :class="classes" v-bind="$attrs">
     <slot />
   </div>
 </template>

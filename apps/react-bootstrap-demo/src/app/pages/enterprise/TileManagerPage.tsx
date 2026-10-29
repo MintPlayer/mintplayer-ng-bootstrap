@@ -122,14 +122,14 @@ export function TileManagerPage() {
       <div className="tile-demo-controls">
         <div className="control-field">
           <label className="form-label mb-1">Stack below</label>
-          <BsSelect aria-label="Stack below" value={String(stackBelow)} options={STACK_OPTIONS} onValueChange={(e) => setStackBelow(Number(e.detail.value ?? 0))} />
+          <BsSelect aria-label="Stack below" value={String(stackBelow)} options={STACK_OPTIONS} onValueChange={({ value }) => setStackBelow(Number(value ?? 0))} />
         </div>
         <div className="control-field">
           <label className="form-label mb-1">Gap</label>
-          <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={(e) => setGap(Number(e.detail.value ?? 12))} />
+          <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={({ value }) => setGap(Number(value ?? 12))} />
         </div>
-        <BsCheckbox type="switch" checked={editing} onChange={(e) => setEditing(e.detail.checked)}>Edit layout</BsCheckbox>
-        <BsCheckbox type="checkbox" checked={animateReflow} onChange={(e) => setAnimateReflow(e.detail.checked)}>Animate reflow</BsCheckbox>
+        <BsCheckbox type="switch" checked={editing} onCheckedChange={setEditing}>Edit layout</BsCheckbox>
+        <BsCheckbox type="checkbox" checked={animateReflow} onCheckedChange={setAnimateReflow}>Animate reflow</BsCheckbox>
       </div>
 
       <div className="tile-demo-checklist">

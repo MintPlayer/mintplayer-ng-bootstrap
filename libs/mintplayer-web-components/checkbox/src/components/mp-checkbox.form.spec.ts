@@ -133,12 +133,13 @@ describe('mp-checkbox property surface', () => {
     expect(el.color).toBe('outline-dark');
   });
 
-  it('the toggle-button variant announces pressed state that follows checked', async () => {
+  it('the toggle-button variant is a native checkbox whose checked state follows', async () => {
     const el = await mount('<mp-checkbox type="toggle_button">C</mp-checkbox>');
-    expect(inner(el).getAttribute('aria-pressed')).toBe('false');
+    expect(inner(el).hasAttribute('role')).toBe(false);
+    expect(inner(el).hasAttribute('aria-pressed')).toBe(false);
     el.checked = true;
     await el.updateComplete;
-    expect(inner(el).getAttribute('aria-pressed')).toBe('true');
+    expect((inner(el) as HTMLInputElement).checked).toBe(true);
   });
 
   it('indeterminate announces as mixed, and the attribute drives it', async () => {

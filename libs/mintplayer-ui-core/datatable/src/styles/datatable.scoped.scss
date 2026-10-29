@@ -1,0 +1,851 @@
+.datatable {
+  display: block;
+  width: 100%;
+  position: relative;
+
+  --mp-datatable-border-color: var(--bs-border-color, rgba(0, 0, 0, 0.125));
+  --mp-datatable-row-hover-bg: var(--bs-table-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+  --mp-datatable-row-selected-bg: var(--bs-list-group-active-bg, var(--bs-primary, #0d6efd));
+  --mp-datatable-row-selected-color: var(--bs-list-group-active-color, #fff);
+  --mp-datatable-cut-opacity: 0.55;
+  --mp-datatable-resize-handle-color: var(--bs-primary, #0d6efd);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.datatable-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.datatable-scroll {
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+.datatable-scroll.datatable-virtual {
+  // Default viewport height so the table actually scrolls when the host isn't
+  // given an explicit constrained height. Override via the CSS variable.
+  max-height: var(--mp-datatable-virtual-max-height, 480px);
+
+  // Sticky header so it stays visible while the body scrolls. Each <th>
+  // gets its own sticky position so the table-layout rules still apply.
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--bs-body-bg, #fff);
+  }
+
+  // The generic `thead th[data-sortable]:hover` rule below sets a
+  // semi-transparent `--mp-datatable-row-hover-bg` (rgba(0,0,0,0.04))
+  // as the background-color. On a sticky header that fully replaces
+  // the opaque body bg above, so scrolled rows behind the header
+  // bleed through. Apply the hover tint as a layered
+  // `background-image` instead so it stacks ON TOP of the opaque
+  // body bg — same visual hover effect, but the header stays opaque.
+  thead th[data-sortable="true"]:hover {
+    background-color: var(--bs-body-bg, #fff);
+    background-image: linear-gradient(
+      var(--mp-datatable-row-hover-bg),
+      var(--mp-datatable-row-hover-bg)
+    );
+  }
+
+  // The filter row sticks BELOW the header row. `top` cannot reference a
+  // sibling's height and the header's height varies with content, padding and
+  // font, so the component measures row 1 and publishes it as
+  // `--mp-datatable-header-height` (36px in Chromium/Firefox, 33px in WebKit on
+  // the same markup — a hard-coded value would be wrong somewhere). Without the
+  // offset both rows pin at 0 and the filter row lands ON the header.
+  //
+  // The opaque background is not decoration: without it, body rows scrolling
+  // underneath show through, exactly as for the header above.
+  thead tr.filter-row th {
+    position: sticky;
+    top: var(--mp-datatable-header-height, 0px);
+    z-index: 1;
+    background-color: var(--bs-body-bg, #fff);
+  }
+}
+
+tr.virtual-spacer {
+  pointer-events: none;
+}
+
+/*! @mps-global */
+tr.virtual-spacer[data-mps=datatable] > td {
+  border-bottom: 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0;
+  // Until the measure-once pass runs (see `_hasMeasuredInitial`), columns
+  // sized by their natural content. Once measurement locks a width onto
+  // each header, the `.measured` modifier switches the table to fixed
+  // layout so the widths are authoritative and overflowing rows clip with
+  // ellipsis rather than expanding the column.
+  table-layout: auto;
+}
+
+table.measured {
+  table-layout: fixed;
+}
+
+// Body cells are usually CONSUMER DOM: a rowRenderer hands the component its
+// own td elements, which the rewriter cannot stamp. Every td rule below is
+// therefore authored in final form, anchored on the tr this component renders
+// (child combinator, so a nested consumer table is left alone). Only the
+// checkbox cell is ours, and it needs to out-rank these anchored rules.
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td {
+  // Pair with `table-layout: fixed` so wider content in later
+  // virtual-scroll slices clips with ellipsis instead of wrapping or
+  // shifting the column. Consumers that need wrapping cells can opt out
+  // via `cellClass` / their own row-template td styling.
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+thead th {
+  background-color: var(--bs-table-bg, transparent);
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  text-align: left;
+  font-weight: 600;
+  padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  position: relative;
+  user-select: none;
+}
+
+thead th[data-sortable="true"] {
+  cursor: pointer;
+  // The padding moves INTO the button below. The whole cell reads as clickable
+  // — `cursor: pointer` and a hover background on the `<th>` — so the whole
+  // cell has to BE clickable; with the padding out here, only the text was, and
+  // a short label in a wide column left most of the header dead.
+  //
+  // Total width is unchanged: the same padding is simply inside a `border-box`
+  // button that fills the cell, so the intrinsic width the measure pass reads
+  // during the `auto` phase is the same text plus the same padding.
+  padding: 0;
+
+  &::before,
+  &::after {
+    position: absolute;
+    display: block;
+    opacity: 0.3;
+    bottom: 0.5em;
+    // They paint over the sort button, so without this a click on the arrows
+    // lands on the th, which has no listener: a dead zone 12-24px wide at the
+    // right of every sortable header (measured, #426 spike S2).
+    pointer-events: none;
+  }
+
+  &::before {
+    content: "\2191";
+    right: 1em;
+  }
+
+  &::after {
+    content: "\2193";
+    right: 0.5em;
+  }
+
+  &[aria-sort="ascending"]::after {
+    opacity: 1;
+  }
+
+  &[aria-sort="descending"]::before {
+    opacity: 1;
+  }
+}
+
+thead th[data-sortable="true"]:hover {
+  background-color: var(--mp-datatable-row-hover-bg);
+}
+
+.header-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+// The sortable header is a real <button> (keyboard-activatable), restyled to be
+// visually indistinguishable from the plain header span. font/color inherit is
+// needed because a UA button does not inherit either.
+button.header-sort {
+  border: 0;
+  margin: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  // Fills the cell, so clicking anywhere in the header sorts — not just the
+  // label. `display: flex` overrides the `inline-flex` of `.header-cell`, which
+  // the button also carries; `width: 100%` + `border-box` make it cover the
+  // cell whose padding it inherited (see `thead th[data-sortable]` above).
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  // The cell is the positioned ancestor for the sort arrows and the resize
+  // handle, and the handle sits at z-index 2 — above this button, so a drag to
+  // resize still beats a click to sort.
+}
+
+.resize-handle:focus-visible,
+button.header-sort:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color);
+  outline-offset: 1px;
+}
+
+tbody tr:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color);
+  outline-offset: -2px;
+}
+
+.sort-index {
+  position: absolute;
+  right: 0.1em;
+  bottom: 0.3em;
+  font-size: 0.65em;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+// The hit area is wide and transparent; the line you see is the ::before. It
+// grows LEFTWARD, inside its own column, never across the border: in virtual
+// mode every header cell is sticky, and the next one would paint over an
+// overhang (and on the last column an overhang widens the scroller).
+.resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  // WCAG 2.5.8: 24px, since the sort button abuts it and the spacing
+  // exception cannot apply. Capped so a narrow column keeps a sort target.
+  width: 24px;
+  max-width: 50%;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 2;
+  // Without this a touch drag is claimed by the scroller as a pan: the browser
+  // fires pointercancel a few pixels in and the resize stops. preventDefault()
+  // on pointerdown cannot prevent that, and touch-action is frozen at
+  // touchstart, so it must be declared up front.
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 3px;
+}
+
+.resize-handle:hover::before,
+.resize-handle.active::before {
+  background-color: var(--mp-datatable-resize-handle-color);
+}
+
+// A finger needs more than a mouse, and with no hover it needs to SEE where the
+// handle is, so the line rests visible.
+@media (pointer: coarse) {
+  .resize-handle {
+    width: 40px;
+  }
+
+  .resize-handle::before {
+    background-color: var(--mp-datatable-border-color);
+  }
+}
+
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  vertical-align: middle;
+}
+
+// Inline media in cells (icons supplied via a cellRenderer) renders inside
+// this shadow root, so the consuming component can't size it with its own
+// stylesheet. Cap it here and keep it centered against the adjacent text;
+// consumers tune the cap via `--mp-datatable-cell-media-max-width`
+// (defaults to `none`, i.e. unconstrained).
+/*! @mps-global */
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td svg,
+tbody[data-mps=datatable] > tr[data-mps=datatable] > td img {
+  max-width: var(--mp-datatable-cell-media-max-width, none);
+  height: auto;
+  vertical-align: middle;
+}
+
+tbody tr {
+  cursor: default;
+}
+
+tbody tr[data-clickable="true"] {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background-color: var(--mp-datatable-row-hover-bg);
+}
+
+tbody tr[data-selected="true"] {
+  background-color: var(--mp-datatable-row-selected-bg);
+  color: var(--mp-datatable-row-selected-color);
+}
+
+tbody tr[data-cut="true"] {
+  opacity: var(--mp-datatable-cut-opacity);
+}
+
+tbody tr[data-focused="true"] {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: -2px;
+}
+
+// Final form so it out-ranks the anchored td rules above (0,3,0 vs 0,2,3).
+// 20px checkbox + 0.5rem padding each side. The generic td rule clips
+// overflow with an ellipsis; a checkbox cell never holds text, so a
+// too-narrow cell must clip silently rather than render ".." next to it.
+/*! @mps-global */
+tr[data-mps=datatable] > .checkbox-cell[data-mps=datatable] {
+  width: 2.5rem;
+  padding-inline: 0.5rem;
+  text-align: center;
+  text-overflow: clip;
+}
+
+// selection-mode="checkbox": the whole cell toggles, not only the checkbox.
+// A class rendered by the element rather than a :host attribute selector, because
+// selectionMode is often set as a property and the attribute is not reflected.
+.checkbox-cell.checkbox-cell-toggles {
+  cursor: pointer;
+}
+
+// The checkboxes are Bootstrap's .form-check-input; the cell centres them.
+.checkbox-cell .form-check-input {
+  margin: 0;
+  vertical-align: middle;
+}
+
+// Deselect-all shows only while something is selected. visibility also takes
+// it out of the tab order and the accessibility tree.
+.form-check-input[data-hidden='true'] {
+  visibility: hidden;
+}
+
+// ── Tree mode ──────────────────────────────────────────────────────────────
+.tree-chevron-cell {
+  width: 2rem;
+  padding-right: 0;
+  // The row's depth comes from the template; the indent per level from the table.
+  padding-inline-start: calc(var(--mp-datatable-depth, 0) * var(--mp-datatable-tree-indent, 1.25rem));
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tree-chevron {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--bs-body-color, inherit);
+  font-size: 0.85em;
+  border-radius: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: var(--mp-datatable-row-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary, #0d6efd);
+    outline-offset: 1px;
+  }
+}
+
+tbody tr[data-placeholder="true"] {
+  cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.tree-placeholder-cell {
+  color: var(--bs-secondary-color, #6c757d);
+  font-style: italic;
+  padding-left: 1.25rem;
+}
+
+.empty-state,
+.loading-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.datatable-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+}
+
+.datatable-per-page,
+.datatable-pagination {
+  flex: 0 1 auto;
+}
+
+// ─── Fill mode (#442) ──────────────────────────────────────────────────────
+// The element fits a sized parent: header rows stick to the top, the footer to
+// the bottom, only the rows scroll in between, and horizontally the whole
+// table — footer included — scrolls as one. The HOST is the one scroll box for
+// both axes; `.datatable-scroll` gives up its own, or `thead` would stick to it
+// instead and scroll away with it. Each rule below out-ranks the default it
+// replaces by carrying the host attribute.
+
+.datatable[data-fill='true'] {
+  height: 100%;
+  overflow: auto;
+}
+
+.datatable[data-fill='true'] .datatable-shell {
+  height: auto;
+  // Few rows still put the footer at the bottom of the parent.
+  min-height: 100%;
+  // As wide as the table, so the footer spans and scrolls with it.
+  width: max-content;
+  min-width: 100%;
+}
+
+.datatable[data-fill='true'] .datatable-scroll {
+  overflow: visible;
+  flex: 1 0 auto;
+  // The virtual viewport cap: the parent sizes the scroller here.
+  max-height: none;
+}
+
+.datatable[data-fill='true'] .datatable-scroll > table {
+  // `width: 100%` inside a `max-content` shell is cyclic, and Chromium resolved
+  // it to 800000px. The measured header widths keep a narrow parent scrolling
+  // horizontally instead of squeezing the columns.
+  width: auto;
+  min-width: 100%;
+  // Collapsed borders do not travel with sticky cells: a 1px see-through gap
+  // opens between the header row and the filter row.
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.datatable[data-fill='true'] .datatable-scroll > table > thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+// Opaque on the cells, not only on thead: the cell background (Bootstrap's
+// `--bs-table-bg` among others) is transparent and the rows would show through.
+// `--mp-datatable-fill-bg` (header and footer) lets a container with its own
+// background, such as a card, match it. It is inherited, never declared here.
+// The `> table >` chain keeps a table rendered inside a cell template out.
+.datatable[data-fill='true'] .datatable-scroll > table > thead th {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+}
+
+// The hover tint is translucent; layer it over the opaque background, as in
+// virtual mode, so the header stays opaque while hovered.
+.datatable[data-fill='true'] .datatable-scroll > table > thead th[data-sortable="true"]:hover {
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+  background-image: linear-gradient(
+    var(--mp-datatable-row-hover-bg),
+    var(--mp-datatable-row-hover-bg)
+  );
+}
+
+.datatable[data-fill='true'] .datatable-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background-color: var(--mp-datatable-fill-bg, var(--bs-body-bg, #fff));
+}
+
+// ─── Filter row ────────────────────────────────────────────────────────────
+
+tr.filter-row th {
+  // No width here, ever. Widths live on row 1's <th>, and `table-layout: fixed`
+  // resolves columns from the first row only — so once the measure pass has run
+  // this row is structurally incapable of affecting geometry. Restating a width
+  // here would be ignored at best and fight the measurement at worst.
+  //
+  // The cell carries no padding: the trigger fills it edge to edge and owns the
+  // padding instead, so the whole cell is a click target. The element also
+  // renders `class="p-0"`, whose Bootstrap utility is `!important` and would win
+  // anyway — this keeps the component looking the same when it is used WITHOUT
+  // Bootstrap loaded, rather than leaving two disagreeing sources of truth.
+  padding: 0;
+  border-bottom: 1px solid var(--mp-datatable-border-color);
+  font-weight: 400;
+  // The sort affordance's 2rem right padding belongs to row 1 only; repeating
+  // it here would push the trigger off-centre under the header label.
+  user-select: none;
+}
+
+.filter-trigger {
+  // WIDTH-NEUTRAL, and this is load-bearing rather than cosmetic. Before the
+  // measure pass the table is `table-layout: auto`, where a filter cell wider
+  // than its column WIDENS that column — and the inflated value is then what
+  // gets measured and pinned for the life of the table. Measured: a trigger
+  // with unbreakable content took a 224px column to 515px. `width: 100%` plus
+  // `min-width: 0` keeps the cell's contribution at zero.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  // Mirrors the `p-2 rounded-0` utilities the element renders. Those are
+  // `!important` and win where Bootstrap is loaded; these keep the appearance
+  // identical where it is not.
+  padding: 0.5rem;
+  border-radius: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.filter-trigger:hover {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+}
+
+// Bootstrap's focus-ring utilities do not reach here, and the hover style above
+// is not a focus indicator — it is shared with the pointer state.
+.filter-trigger:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+.filter-trigger[aria-expanded='true'] {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+  border-color: var(--mp-datatable-border-color);
+}
+
+.filter-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
+
+// "This column is filtered" — the component attaches no meaning to it; the
+// consumer decides when it is true.
+.filter-trigger.active .filter-icon {
+  fill: var(--bs-primary, #0d6efd);
+}
+
+.filter-trigger.active::after {
+  content: '';
+  width: 0.375rem;
+  height: 0.375rem;
+  margin-inline-start: 0.25rem;
+  border-radius: 50%;
+  background-color: var(--bs-primary, #0d6efd);
+  flex: 0 0 auto;
+}
+
+// ─── Filter panel ──────────────────────────────────────────────────────────
+// A native popover in its filter cell: the top layer escapes .datatable-scroll's
+// clipping, and trackPopovers places it under its trigger through the
+// --mp-popover-* properties.
+
+.filter-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  // The panel lives in a header cell: do not inherit its alignment and weight.
+  text-align: start;
+  font-weight: 400;
+  min-width: 12rem;
+  max-width: min(22rem, calc(100vw - 2rem));
+  padding: 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, inherit);
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.filter-panel-body {
+  // Either the consumer's filter slot or the built-in panel below renders here.
+  // Nothing in this block may assume anything about a consumer's contents.
+  display: block;
+  max-height: min(20rem, 60vh);
+  overflow: auto;
+}
+
+// ─── Resize options dialog (overlay pane, opened by a tap or Enter on a handle)
+// The non-drag way to resize, so its targets are full touch size: whoever
+// opened it may well be on a phone.
+
+.resize-panel {
+  // A native popover, placed by trackPopovers through the --mp-popover-* properties.
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 12rem;
+  padding: 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: var(--bs-body-color, inherit);
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+// Only while open: a display value on the closed popover would show it.
+.resize-panel:popover-open {
+  display: flex;
+}
+
+.resize-panel-steps {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.resize-panel-width {
+  flex: 1 1 auto;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.resize-panel-step,
+.resize-panel-action {
+  min-height: 2.75rem;
+  padding: 0.25rem 0.75rem;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.resize-panel-step {
+  flex: 0 0 2.75rem;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.resize-panel-step:hover,
+.resize-panel-action:hover {
+  // Fallbacks: the pane lives in document.body, outside the host that
+  // declares these properties.
+  background-color: var(--mp-datatable-row-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+}
+
+.resize-panel-step:focus-visible,
+.resize-panel-action:focus-visible {
+  outline: 2px solid var(--mp-datatable-resize-handle-color, var(--bs-primary, #0d6efd));
+  outline-offset: 1px;
+}
+
+// ─── Built-in filter panel ─────────────────────────────────────────────────
+// Rendered when no `filter` slot is supplied. A consumer's own panel reaches
+// none of these rules: they all anchor on class names this component renders,
+// and the rewriter stamps only what it rendered.
+
+.filter-clear,
+.filter-invert {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.375rem;
+  background: transparent;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  text-align: start;
+  line-height: 1.4;
+}
+
+.filter-clear:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.filter-invert[aria-pressed='true'] {
+  background-color: var(--bs-primary, #0d6efd);
+  border-color: var(--bs-primary, #0d6efd);
+  color: var(--bs-primary-bg-subtle, #fff);
+}
+
+// One look for every field in the panel, whatever its type. Declared once and
+// shared: the search box, the operand box and the operator select were drifting
+// apart three copies at a time, and `font: inherit` had already gone missing
+// from the search box — a form control does NOT inherit the page font, so it
+// was rendering in the UA's system font while its neighbours used the page's.
+.filter-search,
+.filter-operand,
+.filter-operator {
+  box-sizing: border-box;
+  padding: 0.25rem 0.5rem;
+  background-color: var(--bs-body-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--mp-datatable-border-color, var(--bs-border-color, rgba(0, 0, 0, 0.125)));
+  border-radius: 0.25rem;
+  // Both halves matter: `font` alone leaves the UA line-height, which differs
+  // between an input and a select and makes them different heights.
+  font: inherit;
+  line-height: 1.5;
+}
+
+// `type=number` otherwise renders a pair of spinner buttons that make it taller
+// and narrower than the text field beside it — the two read as different
+// controls for no reason. Arrow-key stepping still works without them.
+.filter-operand[type='number'] {
+  appearance: textfield;
+}
+
+.filter-operand::-webkit-outer-spin-button,
+.filter-operand::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.filter-search {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.375rem;
+}
+
+// Bootstrap's focus-ring utilities do not reach here (see the trigger above),
+// and none of these controls has a state that could double as an indicator.
+.filter-clear:focus-visible,
+.filter-invert:focus-visible,
+.filter-search:focus-visible,
+.filter-option input:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+// Comparison mode: an operator and one operand, side by side. The operand takes
+// the remaining width with `min-width: 0`, so a long `type=date` control shrinks
+// instead of pushing the panel wider than its max-width.
+.filter-comparison {
+  display: flex;
+  gap: 0.375rem;
+  // `stretch`, not `center`: a <select> and an <input> do not agree on their
+  // intrinsic height — Chromium's UA sheet forces `line-height: normal` on a
+  // select, so it lands a pixel short of the input beside it however carefully
+  // the two are given the same font, padding and border. Stretching makes the
+  // row decide instead of the UA.
+  align-items: stretch;
+}
+
+.filter-operator {
+  flex: 0 0 auto;
+  // A native select sizes to its WIDEST option, so without a cap the six
+  // spelled-out operators would set the panel's width on their own.
+  max-width: 9rem;
+  padding-inline: 0.375rem;
+}
+
+.filter-operand {
+  flex: 1 1 auto;
+  // In flex, `min-width: 0` is what lets a `type=date` control — which has a
+  // wide intrinsic size — shrink instead of pushing the panel past its
+  // max-width.
+  min-width: 0;
+}
+
+.filter-operator:focus-visible,
+.filter-operand:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, #0d6efd);
+  outline-offset: 1px;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  // A long value must not widen the panel past its max-width.
+  overflow-wrap: anywhere;
+}
+
+.filter-option:hover {
+  background-color: var(--mp-datatable-row-hover-bg, rgba(var(--bs-emphasis-color-rgb), 0.04));
+}
+
+// Values that were present when the filter was applied but are not in the data
+// any more. Listed so a selection can be widened without clearing it first —
+// dimmed, never hidden, and never removed from the tab order.
+.filter-remaining {
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.filter-loading,
+.filter-no-values,
+.filter-has-more {
+  display: block;
+  padding: 0.25rem;
+  color: var(--bs-secondary-color, #6c757d);
+  font-size: 0.875em;
+}
+
+.filter-summary {
+  margin-inline-start: 0.25rem;
+  // The trigger is width-neutral by contract (see `.filter-trigger`), so the
+  // summary must never be what makes it wide: it truncates instead.
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .resize-handle {
+    transition: none !important;
+  }
+}

@@ -1,19 +1,25 @@
-export * from './file-manager/file-manager.component';
+// The file manager is generated from @mintplayer/ui-core/file-manager (PRD #437 D10).
+export * from './generated';
+export { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '@mintplayer/ui-core/file-manager';
 export type {
-  FileSystemNode,
-  FileSystemNodeType,
-  FileManagerSelectionMode,
-  FileManagerViewMode,
-  FileManagerMessages,
-  OperationKind,
-  OperationFlags,
+  ChildrenLoadedEventDetail,
+  ConflictDecision,
   ConflictResolver,
   DialogResolver,
-  UploadEntry,
+  FileManagerChildrenLoader,
+  FileManagerErrorEventDetail,
+  FileManagerIconResolver,
+  FileManagerMessages,
+  FileManagerSelectionEventDetail,
+  FileManagerSelectionMode,
+  FileManagerViewMode,
+  FileSystemNode,
+  FileSystemNodeType,
   NavigateEventDetail,
   NodeOpenEventDetail,
-  SelectionChangeEventDetail,
-  UploadRequestEventDetail,
   OperationEventDetail,
-} from '@mintplayer/web-components/file-manager';
-export { DEFAULT_FILE_MANAGER_MESSAGES, mergeMessages } from '@mintplayer/web-components/file-manager';
+  OperationFlags,
+  OperationKind,
+  UploadEntry,
+  UploadRequestEventDetail,
+} from '@mintplayer/ui-core/file-manager';

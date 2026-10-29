@@ -21,7 +21,7 @@ test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up
     await picker.scrollIntoViewIfNeeded();
 
     await picker.getByRole('button', { name: 'Choose date' }).click();
-    const calendar = picker.locator('mp-calendar').first();
+    const calendar = picker.locator('.datetime-picker-popup-date');
     await expect(calendar).toBeVisible();
 
     // Read the calendar's bounding rect and assert it fits inside the viewport.
@@ -37,7 +37,7 @@ test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up
     await picker.scrollIntoViewIfNeeded();
 
     await picker.getByRole('button', { name: 'Choose time' }).click();
-    const timeList = picker.locator('mp-time-list').first();
+    const timeList = picker.locator('.datetime-picker-popup-time');
     await expect(timeList).toBeVisible();
 
     const rect = await timeList.boundingBox();
@@ -51,15 +51,9 @@ test.describe('datetime-picker — popup stays in viewport (issue #332 follow-up
     const picker = page.locator('bs-datetime-picker').first();
     const trigger = picker.getByRole('button', { name: 'Choose date' });
     await trigger.click();
-    const calendar = picker.locator('mp-calendar').first();
+    const calendar = picker.locator('.datetime-picker-popup-date');
     await expect(calendar).toBeVisible();
 
-    // `enterFromTop` animates the popup from `top: -50%` to `top: 0` over 500ms.
-    // Waiting for the entrance to settle ensures `before` is the popup's resting
-    // position, not a mid-flight value — otherwise the post-scroll delta is
-    // polluted by the tail of the entrance animation and reads as 17–48px in
-    // Firefox instead of ~100px.
-    await page.waitForTimeout(600);
     const before = await calendar.boundingBox();
     expect(before).not.toBeNull();
 

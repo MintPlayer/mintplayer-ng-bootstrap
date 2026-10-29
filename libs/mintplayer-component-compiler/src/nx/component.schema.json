@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/schema",
+  "$id": "NxComponentCompilerComponent",
+  "title": "Scaffold a compiled component group",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The group's entry name, kebab-case (e.g. `rating`).",
+      "$default": {
+        "$source": "argv",
+        "index": 0
+      },
+      "x-prompt": "Component group name (kebab-case)?"
+    },
+    "config": {
+      "type": "string",
+      "description": "The component-compiler config that names the core lib and the fronts. Defaults to the workspace's only component-compiler.config.mjs."
+    },
+    "skipFormat": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

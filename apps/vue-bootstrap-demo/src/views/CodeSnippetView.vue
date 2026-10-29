@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { CodeLineAnnotation } from '@mintplayer/web-components/code-snippet';
+import type { CodeLineActivation, CodeLineAnnotation } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const META_SOURCE = `<script setup lang="ts">
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
@@ -52,7 +52,7 @@ const ANNOTATED_SOURCE = `<BsCodeSnippet
   @line-activate="onLineActivate" />
 
 <!-- kind is opaque — colour it yourself:
-     .coverage::part(annotation-uncovered) { background: rgb(220 53 69 / 16%); } -->`;
+     .coverage :deep(.annotation-uncovered) { background: rgb(220 53 69 / 16%); } -->`;
 
 const SIZED_SOURCE = `<BsCodeSnippet class="sized-snippet" :code="source" language="ts" line-numbers />
 
@@ -61,11 +61,10 @@ const SIZED_SOURCE = `<BsCodeSnippet class="sized-snippet" :code="source" langua
 const activeLine = ref<number | null>(6);
 const lineHref = (line: number) => `#L${line}`;
 
-// The event is cancelable; cancel it when you handle activation yourself,
-// or the anchor navigates as well.
-function onLineActivate(event: CustomEvent<{ line: number }>): void {
+// Prevent the link's navigation when you handle the activation yourself.
+function onLineActivate(event: CodeLineActivation): void {
   event.preventDefault();
-  activeLine.value = event.detail.line;
+  activeLine.value = event.line;
 }
 </script>
 
@@ -157,25 +156,22 @@ function onLineActivate(event: CustomEvent<{ line: number }>): void {
 
 /*
   Annotation colours belong to the consumer: `kind` is opaque, so the component
-  ships no rule for it and `::part(annotation-<kind>)` is the channel.
-
-  The Vue wrapper has no host element of its own — `v-bind="$attrs"` puts the
-  class straight onto `<mp-code-snippet>` — so `::part()` matches with no
-  descendant step, as in React. (Angular needs `::ng-deep mp-code-snippet`.)
+  ships no rule for it and the row class `annotation-<kind>` is the channel. The
+  rows are the snippet's own markup, so this scoped sheet reaches them with :deep().
 */
 .sized-snippet {
   max-height: 220px;
 }
 
-.coverage::part(annotation-covered) {
+.coverage :deep(.annotation-covered) {
   background: rgb(25 135 84 / 14%);
 }
 
-.coverage::part(annotation-partial) {
+.coverage :deep(.annotation-partial) {
   background: rgb(255 193 7 / 20%);
 }
 
-.coverage::part(annotation-uncovered) {
+.coverage :deep(.annotation-uncovered) {
   background: rgb(220 53 69 / 16%);
 }
 </style>

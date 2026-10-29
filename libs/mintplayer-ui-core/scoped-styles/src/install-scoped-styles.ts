@@ -19,10 +19,13 @@
  * `adoptLightStyles(shadowRoot)` so that content keeps its styling inside
  * those trees — including sheets registered later.
  *
- * Server rendering: the registry is a browser mechanism (`installLightStyles`
- * is a no-op without `document.head`). A server renderer writes the marker
- * `<style>` itself with {@link writeScopedStyleTag}; the client registry then
- * treats that marker as installed.
+ * Server rendering: without a `document.head` (Node, or the lit-ssr DOM shim
+ * the React and Vue demos run under) `installLightStyles` only RECORDS the
+ * sheet, and {@link collectScopedStyles} returns the recorded sheets as marker
+ * `<style>` tags for the server to splice into the page head (PRD #437 S12).
+ * Angular SSR has a real `DOCUMENT` and writes the tag itself with
+ * {@link writeScopedStyleTag}. Either way the client registry treats the marker
+ * as installed, so hydration adds no second copy.
  */
 
 const REGISTRY_KEY = Symbol.for('mp.lightStyles');
@@ -77,10 +80,14 @@ function supportsConstructableSheets(): boolean {
  * so shadow adopters still get a sheet.
  */
 export function installLightStyles(key: string, styles: ScopedStyleSource | string): void {
-  // SSR guard: `typeof document` alone is not enough — @lit-labs/ssr's DOM
-  // shim installs a minimal global `document` WITHOUT `head` (measured: the
-  // react demo's SSR module runner). Require the parts we actually use.
-  if (typeof document === 'undefined' || !document.head) return;
+  // SSR guard: `typeof document` alone is not enough — a server DOM shim can
+  // install a global `document` WITHOUT a usable `head` (measured with
+  // @lit-labs/ssr's shim; Angular's SSR shim is the same kind of risk).
+  // Require the parts we actually use.
+  if (typeof document === 'undefined' || !document.head) {
+    recordServerSheet(key, styles);
+    return;
+  }
   const registry = getRegistry();
   if (registry.entries.has(key)) return;
 
@@ -126,6 +133,33 @@ export function writeScopedStyleTag(doc: Document, key: string, cssText: string)
   styleEl.textContent = cssText;
   head.appendChild(styleEl);
   return true;
+}
+
+const SERVER_KEY = Symbol.for('mp.scopedStyles.server');
+
+/** Sheets installed where there is no document to write to: the server's record, per process. */
+function serverSheets(): Map<string, string> {
+  const g = globalThis as Record<symbol, unknown>;
+  return ((g[SERVER_KEY] as Map<string, string> | undefined) ??= new Map());
+}
+
+function recordServerSheet(key: string, styles: ScopedStyleSource | string): void {
+  const sheets = serverSheets();
+  if (!sheets.has(key)) sheets.set(key, typeof styles === 'string' ? styles : styles.cssText);
+}
+
+/**
+ * The scoped sheets installed during server rendering, as marker `<style>`
+ * tags for the page head (React/Vue `entry-server`). The record is per
+ * process, not per request: a superset that always holds the current page's
+ * sheets, because a front installs its sheet before it first renders. Every
+ * component sheet starts with the layer order statement, so the order of the
+ * tags among themselves and against the baseline does not matter.
+ */
+export function collectScopedStyles(): string {
+  return [...serverSheets()]
+    .map(([key, cssText]) => `<style ${SCOPED_STYLE_MARKER}="${key}">${cssText.replace(/<\/style/gi, '<\\/style')}</style>`)
+    .join('');
 }
 
 /** Snapshot of everything installed so far. */

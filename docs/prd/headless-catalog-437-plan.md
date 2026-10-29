@@ -1,0 +1,242 @@
+# Plan — Headless core + four fronts for the whole catalog (#437)
+
+**PRD:** `docs/prd/headless-catalog-437.md`.
+**Status:** in progress — M0–M3 done, M4 under way. Draft PR #439.
+**Branch:** `feat/headless-catalog-437`, rebased onto `master` at fd49127e on 2026-10-28 (picks up tile-manager #441, datatable fill mode #443, package versioning #445 / #447).
+**Delivery:** one PR. Commit per milestone; the test sweep runs once at the end (M9).
+
+Each component milestone is the same checklist, done for every component in the wave:
+
+1. **Core** in `ui-core/<name>`, covering:
+   - machine
+   - `connect()` bags
+   - `<name>.scoped.scss`, with no Bootstrap partials (C4)
+   - specs, ported from the WC `*.spec.ts` and `*.aria.spec.ts`
+2. **Fronts.** An Angular component, a React component, a Vue SFC, and the Lit element rebuilt on the core.
+   - All four render their own template, with the no-JS carriers in the template (D4).
+   - None contains `<mp-*>`.
+3. **Demo pages** in all three apps updated to the new API, with the keymap documented.
+4. **E2e.** Port the existing e2e and add `<name>-nojs.spec.ts` (PRD §9.3).
+5. **CHANGELOG** `### Breaking` entry for the component.
+
+## M0 — Spikes (PRD §7)
+
+- [x] S1 Bootstrap layering, all three demos
+- [x] S12 React/Vue SSR sheet collection (pairs with S1)
+- [x] S2 compound cores (radio-group + radio, accordion, tab: no machine, native radios)
+- [x] S3 nested cores (tree-select over treeview): (a) sub-machine. `attachTreeController` (ui-core/treeview) is the shared tree behaviour; the tree-select core attaches it with a `click` hook and reuses `connectTreeview` for the row bags
+- [x] S5 hydration with consumer templates and pre-hydration text
+- [x] S6 measurement-free server layout (carousel, splitter, hierarchy chart): pass per component, PRD §7
+- [x] S9 navbar dropdown CSS-only open: a native `<details>`
+- [x] S8 base-select under SSR
+- [x] S11 theme cookie SSR and code-snippet highlighting
+- [x] S4 virtual window in React/Vue: measured 2026-10-29 by the shared virtual-window e2e suite (figures in PRD §7)
+- [x] S10 query-builder editor contract (before M5): a front-native `editor` slot; the leak spec is moot (below)
+- [x] S7 scheduler static grid: go, by building it (every view a server-rendered static grid, M6)
+- [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
+- [x] Write each verdict into PRD §7 (closing verdicts, 2026-10-29), and update D1–D9 and C1–C8 accordingly
+
+## M1 — Bootstrap baseline (PRD §6)
+
+- [x] `ui-core/styles/bootstrap.scss` plus prebuilt `bootstrap.css`:
+  - Bootstrap in `@layer mp.bootstrap`
+  - the layer order declared once
+  - the button re-bind, `color-mode.css` and the utility patches carried over
+- [x] `libs/mintplayer-ng-bootstrap/_bootstrap.scss` becomes a re-export, and the commented-out partials are enabled through the baseline
+- [x] React and Vue demos import the baseline instead of `bootstrap.min.css`
+- [x] Scoped-sheet codegen wraps output in `@layer mp.components`
+- [x] Typeahead scoped sheet: drop the `form-control` and `dropdown` partial imports (fixes the pilot's specificity trap)
+- [x] `_conformance/no-bootstrap-partials-in-scoped.spec.ts`
+- [x] `collectScopedStyles()`, wired into React and Vue `entry-server`
+- [x] Permanent override-probe e2e (consumer CSS beats the component) in all three demos
+
+## M2 — Shared ui-core infrastructure (PRD D8)
+
+- [x] `ui-core/overlay`: placement with flip, dismiss stack, open state. Move the typeahead onto it (fixes the pilot's no-flip deviation).
+- [x] `ui-core/roving`
+- [x] `ui-core/announce`
+- [x] `ui-core/focus` (trap, restore by key, inert)
+- [x] `ui-core/forms`:
+  - `adoptPreHydrationText`, generalised out of the Angular typeahead
+  - `errorFeedback` bag
+- [x] `ui-core/tree`
+- [x] `ui-core/virtual-window` (per the S4 result)
+- [x] `ui-core/drag`
+- [x] Move into ui-core:
+  - `swiper-core`, `scheduler-core`, `timeline-core`, `charts/core` and `phone-core`
+  - theming store and cookie
+  - datatable sort
+  - the query-builder model
+- [x] Bridges:
+  - a compound-registration helper per front (S2): **deferred to M3**, built with radio-group when S2 runs
+  - a `hrefFor` convention type
+  - hydrated marker in the bags: `data-mp-hydrated` (`ui-core/store` `hydratedAttr`), an attribute rather than the `mp-hydrated` class, because `class` stays the front's
+- [x] Conformance specs:
+  - no `<mp-*>` in the framework libs (§9.1)
+  - SSR non-empty per demo route (§9.2)
+  - the shared e2e hydration-warning listener (§9.4)
+
+## M3 — Wave A (PRD §8)
+
+- [x] card (no core): class mapping in `ui-core/card`; `navStyle` dropped (breaking)
+- [x] input-group (no core): plain `.input-group` in every front; sheet in `ui-core/input-group` for RTL, bare and hosted controls. The Lit `mp-input-group` stays a shadow WC until phone-input converts (M4), because `mp-phone-input` composes it in its shadow root
+- [x] checkbox / switch (no machine; the native input is the state): ids, classes and the ARIA bag live in `ui-core/checkbox`. `BsControlValidityDirective` exposes signals the front renders, and the error node is `.invalid-feedback d-block`. The Lit `mp-checkbox` stays a shadow WC until datatable converts (M5), because `mp-datatable` renders it in its shadow root
+- [x] toggle-button (new Angular front): `bs-toggle-button` is a second selector of `BsCheckboxComponent` with the type fixed, so there is one code path, not a duplicate component. React and Vue compose `BsCheckbox`, and Lit `mp-toggle-button` is light DOM on `connectCheckbox`
+- [x] radio + radio-group
+- [x] pagination (+ `hrefFor`)
+- [x] shell
+- [x] accordion (+ tab)
+- [x] tab-control (+ page); delete `isServerSide` — the Lit `mp-tab-control` stays as-is until the dock converts (M6)
+- [x] dropdown-menu — moved to M4: the navbar dropdown detects submenus through it and its DSD injector reads the menu chrome, so it converts together with the navbar
+- [x] sparkline (+ Vue front)
+- [x] Delete the shell and accordion chrome generators, injectors and targets (removed with their components; dropdown-menu, navbar and carousel follow in M4)
+
+## M3b — Component compiler (PRD D10; gates the rest of M4)
+
+This turns S13 into the full library. Every M4–M6 component is then authored as a component source, and its fronts are generated.
+
+- [x] `libs/mintplayer-component-compiler` Nx plugin project (`@mintplayer/nx-component-compiler`): move `tools/front-templates` into it as the template stage, keep its spec, delete `tools/front-templates`
+- [x] Manifest API: plain data `satisfies ComponentGroup` (inputs incl. `model`, outputs, methods, `provides`, styles), typed against the core; hooks live on `ComponentCore`
+- [x] Emitters for the front components: Angular (signal inputs and outputs, CVA for a model, `hostDirectives` extensions), React (`forwardRef`, `useMachine`, props extend `HTMLAttributes` + rest passthrough), Vue (`defineProps` / `defineEmits` / `defineModel`, `inheritAttrs: false`), Lit (properties, events, `LightChildren`, light DOM)
+- [x] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element (2026-10-29). Manifest `style: { scope }`; no D10 bag carries `data-mps` (conformance spec); borrowed markup is styled by `@use` of the lender's sheet
+- [x] Output routing: `<front-lib>/<group>/src/generated/` + entry-point scaffolding (ng-package secondary entry, React/Vue vite entry, WC sub-entry) written once by the generator
+- [x] Nx: `createNodes` infers `compile-components` (cacheable inputs and outputs); front `build` / `test` / `typecheck` `dependsOn` it; `nx g …:component` scaffold; `--check` in CI (CI `--check` dropped: outputs are gitignored, see S17)
+- [x] S14 navbar family + dropdown-menu fully generated; the hand-written fronts are deleted (dropdown-menu converts with M4)
+- [x] S15 group styles, on the 25 D10 groups. The accordion is hand-written (not a D10 group) and keeps its own stamp
+- [x] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle): three of three
+  - the select's CVA is resolved: `select.angular.ts` adds the accessor and validity as `hostDirectives` and merges the form state over the inputs in `extendInputs`
+- [ ] S17 clean-tree build + cache hit: read from the CI run (M9)
+- [x] S18 template type errors fail `typecheck`; decide on a VS Code extension
+- [x] S19 fixture workspace run (publishability): `fixture.spec.ts` packs, compiles and type-checks a foreign workspace
+- [x] Verdicts S14–S19 written in PRD §7
+
+## M4 — Wave B
+
+Every item below is authored as a D10 component source once M3b lands.
+
+- [x] navbar (+ brand, item, dropdown) and dropdown-menu (moved from M3); delete `SSR_NAVBAR_HEIGHT`, the navbar chrome and the dropdown-menu chrome
+  - S13 templates; Lit navbar and dropdown-menu in light DOM; navbar and dropdown chrome deleted; `SSR_NAVBAR_HEIGHT` replaced by a CSS estimate; press-time triggers; new Lit, core and e2e specs; CHANGELOG entries written; the navbar family generated under S14
+  - *As built:* the dropdown-menu has no manifest. Its four fronts are hand-written over `ui-core/dropdown-menu`, rendering its bags
+- [x] select: one D10 source (`ui-core/select`), a native `<select>` in every front; query-builder and scheduler use plain native selects inside
+  - compiler additions it needed: `NATIVE_TAGS` (`<selectedcontent>`), `:value.prop` on a select as a React-only seed, `mp-attrs` (consumer attributes on a non-root element in React and Vue), a Lit `<slot>Renderer` per scoped slot, kebab-case Lit attributes, slot parameter types imported in Angular
+  - left for every `mp-attrs` component: Angular and Lit keep consumer `aria-*` other than `aria-label` on the host
+- [x] dropdown-menu stays hand-written: its item, divider and header are attribute directives on the consumer's own `<li>`s, which a generated component cannot be
+- [x] Angular `aria-passthrough.spec.ts` lists `PENDING_437` (code-snippet): dropped with the conversion, the generated front puts consumer attributes on its root
+- [x] otp-input: one D10 source (`ui-core/otp-input`), one real input in every front, the boxes decorative; `case` renamed `letterCase`; Angular CVA + `focus()` delegation as host directives
+  - compiler fixes it needed: builtin output types (`string`) are not imported; the Vue `mp-attrs` merge coerces the bag's `class` to a string
+- [x] multi-range: one D10 source (`ui-core/multi-range`), native range inputs stacked on one track in every front; the core adds the neighbour constraint, the fill and press-on-track; Angular CVA as a host directive
+  - compiler addition it needed: a `:style` bag below the root (Angular `[style]`, React `reactStyle()`, Lit `styleMap`), for the geometry custom properties of PRD D7
+- [x] calendar: one D10 source (`ui-core/calendar`); the grid, keymap and week numbers are pure functions and `attachCalendarGrid` is the shared DOM behaviour, so the pickers render the same grid; inert (disabled month buttons, no tabbable day) until hydrated
+  - compiler fix it needed: a `kind: 'number'` Angular input casts `numberAttribute` to the declared type (a literal union such as `FirstDayOfWeek`)
+- [x] datepicker, timepicker (+ time-list), datetime-picker: one D10 source each; a native `date` / `time` / `datetime-local` field before hydration, then a readonly display + hidden `name` input + native `popover="auto"` popups placed by `ui-core/overlay` `trackPopovers`; Angular CVA + validator as host directives
+  - `mp-scheduler` (a shadow-root host) embeds `mp-datetime-picker`: it now adopts the light sheets and ships `_styles/input-group.styles` (Bootstrap `.input-group` + `.btn`), and its editor's Escape steps aside while a picker popover is open
+- [x] signature-pad
+- [x] theme-toggle (Q2)
+- [x] code-snippet: highlighting after hydration (S11); the rows set through the compiler's new `v-html`; highlight.js loaders moved to ui-core
+- [x] phone-input; convert the Lit `mp-input-group` to a light front over `ui-core/input-group` with it. The flag corpus moved to `ui-core/flags`, the rich-option rules of the select became a shared Sass mixin (`select/src/styles/_rich-select.scss`), and the stacked layout is a container query (no ResizeObserver)
+- [x] M4 controls that sit in a group (select, phone-input, datepicker, ...) read the `.input-group-sm/lg` ancestor and the `--mp-group-radius-*` channel in their own scoped sheets: the group no longer mirrors `size` onto them. Select and phone-input pair their own corners; a control that renders its own `.input-group` (date, time, datetime, phone pickers) is sized and paired by one generic nested-group rule in `input-group.scoped.scss`
+- [x] splitter (da8fc1d8, converted in M6 ahead of the file manager): MOVED to M6, lands with dock and file-manager. The dock renders every split node as a nested `mp-splitter` and reads its shadow dividers, `resizing` events and size pinning (`dock/src/core/intersection-sizing.ts`); converting it alone would break the dock until M6. It becomes a splitter + splitter-pane group (D1: the parent owns sizes, each pane registers and renders the divider before it)
+- [x] timeline (+ item): layout is CSS on the root classes, rows are light children, selection by key
+- [x] trend-chart (+ Vue front)
+- [x] carousel (+ item); delete the carousel chrome. The radios stay the index store in both tiers; the parent learns the slide count from its declared items on the server (Angular content query, React children, Vue slot vnodes)
+- [x] typeahead React/Vue fronts confirmed template-owning (PRD §8 Wave B note): both render their own markup from `connect()` bags through `useMachine`, no `<mp-typeahead>` inside
+
+## M5 — Wave C
+
+- [x] treeview: flat rows (APG flat tree), so no front needs a recursive template; lazy children merge in the core; `node` slot replaces `nodeRenderer(node, ctx)`
+- [x] tree-select (D2(a)): one D10 source; native popover panel; multiple mode is `aria-selected` + `aria-multiselectable`, checkbox mode `aria-checked` (mixed) with a decorative check glyph; `bs-form` ancestor no longer required
+- [x] datatable:
+  - `virtual-window`
+  - `initialPage`
+  - `hrefFor` sort and paging
+  - delete the wrapper's `isPlatformServer` guards and `rowViews` bridges
+  - **Design (decided 2026-10-28):**
+    - **Consumer content is front-native slots (D3):**
+      - `header {column}`, `cell {row, column, rowIndex}`, `row {row, rowIndex, ctx}` (whole row: the consumer's `<td>`s), and `filter {column, ctx}` (a custom filter panel).
+      - The column def keeps only data: name, label, flags, filter config, and `format(row) → string` for the default cell text.
+      - `cellRenderer` / `headerRenderer` / `filterRenderer` (functions returning a DOM `Node`) are gone; Lit gets `cellRenderer({…})` etc. as slot renderers.
+      - Angular's `*bsDatatableColumn` (a header template that doubled as the column definition) gives way to `[columns]` plus `*bsDatatableHeader` / `*bsDatatableCell` / `*bsDatatableRow`. Angular already took `[columns]`, so all fronts now share one API.
+    - **Composition is by repeated markup (D2(b) is unavailable in a template):**
+      - The row checkbox is a native `input.form-check-input`. Its `indeterminate` is set after render (D4).
+      - The pager and the per-page picker are `nav > ul.pagination` built from `connectPagination` bags, with `hrefFor` links (D5).
+    - **The core** is built from a pure `connectDatatable(options) → view` plus the `datatableCore` machine:
+      - The machine owns data, sort, paging, selection, focus, tree expansion, the fetch lifecycle (`SupersedingRequest`), the windowed page cache and filter state.
+      - DOM work lives in `attach`: measuring column widths, resize drag, scroll tracking, and focus.
+    - **No Angular extras (revised while landing):** the `settings` and `selection` bridges were dropped rather
+      than ported. `[(sortColumns)]` / `[(page)]` / `[(perPage)]` / `[(selectedIds)]` are the API in all four
+      fronts, and `(selectionchange)` carries the rows; a second Angular-only model would only duplicate them.
+    - **Custom filter panels are per column (revised while landing):** `filterMode: 'custom'` renders the `filter`
+      slot for that column only. A table-wide slot would have replaced the built-in panel on every column.
+    - **Panels are native popovers:** the filter and resize panels are `popover="auto"` with a `popovertarget`
+      trigger, placed by `trackPopovers`; the document-root overlay portal is no longer involved.
+    - **Stages:**
+      - (1) flat table: sort, paging, selection, keyboard, row events, slots;
+      - (2) fetch, reload, windowed fetch, virtual scroll, fill;
+      - (3) tree mode;
+      - (4) filter row and panels, distincts;
+      - (5) column resize;
+      - (6) fronts' extras, specs, conformance, demos, e2e.
+- [x] query-builder (+ group, condition, subquery), per S10: one D10 source (`ui-core/query-builder`).
+    - The recursive group / condition / subquery elements became flat rows with `aria-level` (the compiler has no
+      component recursion); `entityForNode` resolves a subquery's entity per row.
+    - Custom editors are one `editor` slot over fields marked `editor: 'custom'`; the slot's `onChange` reaches
+      the core through a module-level map keyed by the root's `data-qb-instance` (the datatable precedent).
+    - Live value inputs keep a per-input draft in the core, so a half-typed number survives a Vue re-render.
+    - The light-styles SSR generator lost its stale datatable row and the four query-builder rows.
+- [x] **M5a — compiler nesting** (recursive partials + component composition), before the hierarchy chart and
+  M6. Own PRD and plan: `docs/prd/component-compiler-nesting-437.md`, `docs/prd/component-compiler-nesting-437-plan.md`
+  (spikes NS1–NS6). Its N5 puts the query builder back on nested markup.
+- [x] hierarchy-chart (+ Vue front). The server renders at `FALLBACK_HOST_SCALE` (a 420px host) and a ResizeObserver refits once live: the S6 answer for this component. The Lit bridge now follows a later consumer `aria-label`, and compiled attributes fall back to their default on removal (and `"false"` is false).
+
+## M6 — Wave D
+
+- [x] file-manager (c875d03a). Deviation from the §8 no-JS target: the server renders the toolbar (commands disabled until live), the breadcrumb, the folder tree and the listing table, but has no folder links and no multipart upload form. The breadcrumb and folders are buttons that need JS. It composes the D10 splitter, treeview and datatable (`<mp-splitter>` / `<mp-treeview>` / `<mp-datatable>` in its view, so each front renders its own). The datatable's `cell` slot gets `row: unknown`, so the core sorts the rows itself (`autoSort=false`, `v-model:sortColumns`) and the slot reads its typed row as `view.rows[rowIndex]`. Columns are memoised per messages object, because a new `columns` array resets the widths. The no-custom-elements list lost 15 stale rows (charts, datatable, query-builder, splitter, tree-select), and the scoping spec now imports the hierarchy, splitter and file-manager sheets.
+- [x] tile-manager — landed on master separately as #440 / PR #441 (headless core + four fronts)
+- [x] dock. **Decided 2026-10-28 (owner): pane content is portalled into core-owned hosts.** The old element kept a pane's consumer content alive across a redock through shadow `<slot>`s. A front-rendered pane would remount whenever its stack changes: React, Vue and Angular all remount content whose parent changes. Rejected alternatives:
+  - a flat layer positioned over the stacks (golden-layout virtual mode, flexlayout-react): tab order would follow the layer;
+  - keyed slots that remount on a move: an editor pane would lose its state;
+  - keeping the dock Lit-only (Q1).
+
+  Design:
+  - [x] **Compiler: `<teleport :to="exp">…</teleport>`** (215247ab) (Vue's own syntax). React emits `createPortal(children, to)`, Vue `<Teleport :to>`, Angular a `bsTeleport` structural directive from the `machine` entry (it creates the embedded view and moves its root nodes into `to`, as CDK's DomPortalOutlet does), and Lit a `teleport(to, template)` directive that `render()`s into `to`. A null `to` renders nothing, which is the server's case. Pane content therefore does not server-render: the owner accepted this.
+  - [x] **Core:** `attach` creates one `div.dock-pane-content` host per pane name (scoped `data-mps=dock`) and puts them in state (`paneHosts`). Every pane name is kept, so a host never changes identity. The view lists every pane in one flat keyed `v-for` of teleports at the root, a position no framework ever reparents. Each stack's body renders an EMPTY `[data-dock-pane-body=<name>]` placeholder for its active pane. A MutationObserver on the root re-seats each host into its current placeholder after every commit, before paint. This is safe because no framework touches foreign children of an element it renders empty. A host whose pane is not shown is parked in a hidden `.dock-parking` element the template renders empty, and the portal still renders into it, so its state survives. *As built:* a pane that leaves the layout keeps its host (and content) parked, the way an unslotted child stayed alive before.
+  - [x] **Layout:** the pure modules (`layout-tree`, `resize`, `geometry`, `sizes`, `intersection-sizing`) move to `ui-core/dock` with their specs. A recursive `dock-node` partial renders `split` as `<mp-splitter>` + `<mp-splitter-panel>` and `stack` as its own tablist strip + body, without the legacy Lit `mp-tab-control`. The floating windows, drop indicator and joystick are declarative. Pointer drag, floating drag/resize, intersection handles and the keyboard pane-move mode stay attach-time behaviour that commits through the layout tree. *As built:* live gesture geometry lives in a `visual` state slice and commits only at gesture end; split weights are pushed through `splitterControl()`; the Angular demo gained an "Apply layout JSON" control so the e2e can inject layouts against a production build. Specs: the moved core specs, `mp-dock-manager.spec.ts` (Lit front), and the four ng e2e specs rewritten for the light DOM.
+- [x] ribbon (+ 17 children). **Decided 2026-10-29 (owner): nested children stay the API, and the tab strip must server-render** ("if the plumbing lives in our libraries rather than the consumer's application, that's perfectly fine"). Rejected: a `tabs` data input (the consumer would describe the ribbon twice) and a client-only strip.
+  - [x] **Compiler: content queries.** A manifest `content: { tabs: { component: 'ribbon-tab', within: 'ribbon-contextual-tab-set' } }` hands the core `ContentChild[]` (each child's declared inputs plus its wrapper's): Angular `contentChildren()`, React/Vue `useContent()` over the children/slot vnodes, Lit a `ContentQuery` (MutationObserver + `notifyContentChange`). It reads declarations, never mounted components, so the strip, the contextual bands and every panel are in the server HTML.
+  - [x] **Compiler guards found on the way:** a slot named like an input silently replaced it in React and Vue (the ribbon's `icon`, the navbar dropdown's `label`): slots must now be identifiers and never an input's name, so they are `iconTemplate` / `labelTemplate`. A string input typed as a literal union gets the literals in its Lit converter (`literal-types.mjs`), so an unknown enum attribute keeps the default, which 37 compiled elements had lost; the WC properties conformance now resolves D10 indexed-access types (`scanInterfaceMembers`).
+  - [x] **Core + styles:** `ribbon.core.ts` carries the reflow, overflow, KeyTips, roving focus, contextual announcements; `ribbon.scoped.scss` is the old CSS ported, with item sizes derived in CSS from the group's `data-resolved-size` and the layout (no `size` rewrites), and the accent read from a consumer `--bs-ribbon-accent` (the `appAccent` input is gone).
+  - [x] **Specs:** the moved pure specs, `mp-ribbon.spec.ts` (Lit front: ARIA, keyboard, contextual, KeyTips, items, QAT), the three ng e2e specs rewritten for the light DOM (the axe spec's `aria-valid-attr-value` exemption is gone), and the demo spec's tab-strip assertion. *Open for M9:* the Win32 visual baselines need regenerating.
+  - [x] **Demos:** all three ported; QAT named by `aria-label` (its `label` attribute named nothing).
+- [x] scheduler (fcb66271, a4b3c944, 17eb4b92). S7 answered *go* by building it: month, week, day, timeline and year are static grids with events positioned from the core's geometry, so the server renders the whole grid.
+  - **Core:** `ui-core/scheduler` holds the pure modules (state, drag, input, geometry, keyboard grid) with their specs. The view is one D10 source. Pointer drag, resize and the keyboard grid stay attach-time behaviour that commits through the core. Selection follows `focusin`, and keys read `document.activeElement`.
+  - **Two-way models:** `view`, `date`, `selectedRange` and `selectedEvent` are `model: true`. A model is written back through `api.setState`, never `api.emit`. Removing the `view`/`date` attribute is not a command: the core keeps what it shows and writes it back (the properties conformance pins `mp-scheduler@view`).
+  - **Guards:** `slotDuration` outside an integer 60..86400 falls back to the default; a tiny or negative step hung the grid loop.
+  - **Test hooks:** the root carries `data-mp-hydrated` once live (never in server HTML). Event buttons carry `data-start`/`data-end` and the editor's date fields `data-value`. Angular outputs are `output()`s, not DOM events, so the e2e observes committed values in the DOM.
+  - **Specs:** the 13 old element specs and their fixtures were replaced by `mp-scheduler.spec.ts` (Lit front, 14 tests). The React event-map and Vue `BsScheduler` behaviour specs were deleted with the wrappers. The ng e2e (views, resize, keyboard walkthrough) and the three axe gates were rewritten for the light DOM; `aria-valid-attr-value` is audited again. Touch resize uses CDP `Input.dispatchTouchEvent`. *Open for M9:* run them.
+  - **Demos:** all three ported to the generated fronts, with inline styles moved to classes.
+
+## M7 — Removal sweep (PRD §10)
+
+- [x] Delete what's left:
+  - `tools/lit-ssr-utils` generators and specs
+  - `gen-light-styles-chrome`
+  - `light-dom` SSR injector
+  - `codegen-ssr-chrome` and its `dependsOn` entries (WC project, three demos, publish workflow)
+  - the server.ts and entry-server injector chains. *As built:* the React and Vue servers also lost the Lit DOM shim (and Vue its History stub), and both clients `lit-element-hydrate-support`: neither front defines a custom element any more. `@lit-labs/ssr`, `-ssr-client` and `-ssr-dom-shim` left the root `package.json`.
+- [x] Delete every `data-js` gate and the unused WC infrastructure moved to ui-core. No `data-js` gate was left (the last stale comment was in an e2e). Deleted: the WC `overlay` entry (`OverlayController`, no importers); the ng `_spike-lit-context` spec. The ng `a11y` entry imports `dismissStack` / roving helpers from ui-core, not web-components. React drops the `@lit/react` and web-components peers, Vue the web-components peer, Angular `lit` (it keeps web-components for `theming/color-mode.css`). *Kept:* the Lit `mp-tab-control` takes its pages through real `<slot>`s, so by the admission rule it keeps its shadow root and stays the Lit tab-control.
+- [x] Remove `light-dark()` and `--mp-color-mode` workarounds from scoped sheets (C6). None were left in a scoped sheet. What remains is legitimate: the code-snippet palette is a real two-scheme palette in `light-dark()`, and the `web-components/_styles` style queries serve the shadow-tier Lit checkbox and toggle button, which C6 allows.
+- [x] Grep the framework libs for `isPlatformServer`; every hit is justified or removed. Angular, 15 files. All but two guard a browser-only API with no template divergence: the observers in observe-size, viewport and forward-aria; the measurements in navbar-content; `requestAnimationFrame` in the offcanvas; the navigation lock, theming, user-agent, radio-group and typeahead. `machine/scoped-styles` and the tile manager write sheets into `DOCUMENT.head` on the server, by design. The two template forks, `priority-nav` and `bsNoNoscript`, are Angular-only components outside the #437 catalog (never WC-backed), so they stay. React and Vue have none.
+
+## M8 — Docs
+
+- [x] CLAUDE.md: rewrite the WC-authoring, SSR chrome, Bootstrap and wrapper-trap sections for the new architecture; add the Bootstrap layering rules (C1–C5). *As built:* the workspace map leads with ui-core and the compiler; the WC section is scoped to hand-written Lit elements; the SSR chrome section is gone; a "what a generated front looks like" section records the testing traps (host-borne root bag, lowercased outputs, Angular outputs are not DOM events, `setState` model write-back, `data-mp-hydrated`, slot naming, stale manifests); C1–C6 are a subsection; no-JS tier 2 is "server-rendered, inert until hydrated".
+- [x] CHANGELOG. No hand version bumps: since #445 every `package.json` holds `0.0.0-PLACEHOLDER` and the publish workflow plans the versions, so CHANGELOG entries name no version numbers.
+- [ ] PRD Status → Complete, with an as-built summary and deviations
+
+## M9 — Verification (once, at the end)
+
+- [ ] Build all five libraries and three demos
+- [ ] Unit tests (ui-core, web-components, ng, react, vue)
+- [ ] E2e across the three demos: functional, no-JS, axe, axe-nojs, override probe
+- [ ] Keyboard walk-through of each wave's demo pages
+- [ ] Push once, read CI, then mark the PR ready

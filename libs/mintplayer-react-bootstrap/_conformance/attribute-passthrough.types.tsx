@@ -8,7 +8,7 @@ import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
 import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
-import { BsNavbar, BsNavbarBrand, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
@@ -80,10 +80,10 @@ export const probes = [
   <BsTrendChart role="none" id="tc" tabIndex={-1} />,
   <BsNavbar role="none" id="n" tabIndex={-1} />,
   <BsNavbar>
-    <BsNavbarBrand role="none" id="nb" tabIndex={-1} />
+    <BsNavbarNav role="none" id="nb" tabIndex={-1} />
   </BsNavbar>,
   <BsNavbar>
-    <BsNavbarDropdown role="none" id="nd" tabIndex={-1}><span slot="label">Menu</span></BsNavbarDropdown>
+    <BsNavbarDropdown label="Menu" role="none" id="nd" tabIndex={-1} />
   </BsNavbar>,
   <BsNavbar>
     <BsNavbarItem role="none" id="ni" tabIndex={-1} />

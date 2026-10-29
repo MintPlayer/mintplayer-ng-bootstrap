@@ -19,3 +19,24 @@
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2 class="mt-4">Angular forms</h2>
+<p>
+  Template-driven <code>[(ngModel)]</code> and reactive <code>[formControl]</code> both bind through the
+  component's <code>ControlValueAccessor</code>: the value, the disabled state, and touched when focus leaves.
+</p>
+<bs-grid>
+  <div bsRow>
+    <div [md]="6">
+      <h3 class="h5">Template-driven</h3>
+      <bs-rating [(ngModel)]="formsValue" #tdModel="ngModel"></bs-rating>
+      <demo-form-state [control]="tdModel.control"></demo-form-state>
+    </div>
+    <div [md]="6">
+      <h3 class="h5">Reactive</h3>
+      <bs-rating [formControl]="formsControl"></bs-rating>
+      <demo-form-state [control]="formsControl"></demo-form-state>
+    </div>
+  </div>
+</bs-grid>
+<bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>

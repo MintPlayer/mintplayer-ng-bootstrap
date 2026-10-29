@@ -1,5 +1,3 @@
-export { default as BsNavbar } from './BsNavbar.vue';
-export { default as BsNavbarItem } from './BsNavbarItem.vue';
-export { default as BsNavbarBrand } from './BsNavbarBrand.vue';
-export { default as BsNavbarDropdown } from './BsNavbarDropdown.vue';
-export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+// The navbar components are generated from @mintplayer/ui-core/navbar (PRD #437 D10).
+export * from './generated';
+export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail, NavbarLabels } from '@mintplayer/ui-core/navbar';

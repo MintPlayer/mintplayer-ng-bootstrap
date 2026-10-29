@@ -23,7 +23,7 @@ export default defineConfig(() => ({
       // starting with `mp-` or `mint-` as a custom element.
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-'),
+          isCustomElement: (tag) => tag.startsWith('mp-') || tag.startsWith('mint-') || tag === 'selectedcontent',
         },
       },
     }),
@@ -48,7 +48,7 @@ export default defineConfig(() => ({
       // Vitest 4 removed `coverage.all`: without an explicit `include`, a source
       // file no test imports is absent from the report rather than 0%.
       include: ['**/*.{ts,vue}'],
-      exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '_conformance/**'],
+      exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '_conformance/**', /* D10 fronts, gitignored (#437) */ '**/src/generated/**'],
       reporter: ['lcov'],
       reportsDirectory: '../../coverage/libs/mintplayer-vue-bootstrap',
     },

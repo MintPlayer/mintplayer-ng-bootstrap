@@ -10,6 +10,663 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Outputs no longer share a name with a native DOM event (issue #437).** Angular, Vue and Lit listen to a
+  lowercased output name on the element, which also catches the native event of that name bubbling from inside
+  the component, such as `selectionchange` from a filter `<input>` or `animationend` from a slide. The compiler
+  now refuses such a name, and these outputs are renamed:
+  - datatable, timeline and tree-select: `selectionChange` → `selectionChanged` (Angular `(selectionchanged)`,
+    React `onSelectionChanged`, Vue `@selectionchanged`, Lit `selectionchanged`);
+  - tree-select: `search` → `searchStart` (`searchstart`, `onSearchStart`);
+  - carousel: `animationStart` / `animationEnd` → `slideStart` / `slideEnd`.
+  **Migration**: rename the listener.
+
+- **Card is plain Bootstrap markup (issue #437, wave A).** No front renders `<mp-card>` any more:
+  `bs-card` (Angular) is the `.card` itself, `BsCard` (React/Vue) renders a `div.card`, and `mp-card` (Lit) is a
+  light-DOM element that toggles the same classes on itself. The card ships no stylesheet; the layered Bootstrap
+  baseline styles it, so the card renders with JS off and in Angular SSR.
+  - **`navStyle` removed** from `bs-card-header` / `BsCardHeader` in all three frameworks, and
+    `applyHeaderNavStyle` from `@mintplayer/web-components/card`. Put Bootstrap's own `card-header-tabs` /
+    `card-header-pills` class on the nav: `<ul class="nav card-header-tabs">`.
+  - The class mapping for `color` / `outline` / image `position` lives in `@mintplayer/ui-core/card`
+    (`cardColorClasses`, `capColorClasses`, `cardImgClass`, `CARD_COLORS`, `CardColor`, `CardImagePosition`).
+    `CardImagePosition` moved there from `@mintplayer/web-components/card`, which re-exports it.
+  - `mp-card`'s shadow root, its `part`s, its `--mp-card-*` custom properties and its document-level card sheet
+    are gone. Style a card with ordinary CSS on `.card`.
+  - `bs-card-title`, `bs-card-subtitle` and `bs-card-text` hosts carry `d-block`, and `bs-card-group` drops its
+    `:host { display: block }` so Bootstrap's `.card-group` flex layout applies.
+- **Input group is a plain `.input-group` (issue #437, wave A).** `bs-input-group` (Angular) is the `.input-group`
+  itself and `BsInputGroup` (React/Vue) renders a `div.input-group`, so the children are its direct children
+  and render with JS off and in Angular SSR. `size` maps to `input-group-sm` / `input-group-lg`; the class and
+  role mapping and the RTL / hosted-control sheet live in `@mintplayer/ui-core/input-group`.
+  - `role="group"` is still added only when the group is named, but the Angular front reads the name from the
+    host's static `aria-label` / `aria-labelledby`. A group named through a binding sets `role="group"` itself.
+  - `size` is no longer mirrored onto `mp-*` controls inside the group; the controls read the group's size
+    class themselves.
+  - `<mp-input-group>` (Lit) is unchanged for now: `mp-phone-input` composes it in its shadow root.
+- **Checkbox renders a native input (issue #437, wave A).** `bs-checkbox` / `BsCheckbox` render a plain
+  `<input type=checkbox>` in Bootstrap's `.form-check` / `.form-switch` / `.btn-check` markup, with no
+  `<mp-checkbox>`, so a checkbox renders with JS off and in Angular SSR. The class mapping and ARIA contract live in
+  `@mintplayer/ui-core/checkbox` (`connectCheckbox`, `checkboxClasses`, `checkboxIds`).
+  - Angular: `checkboxRef` is removed. `id` and `tabindex` move from the host to the input, and `aria-*` is
+    copied onto it. Validation state from `BsControlValidityDirective` is rendered on the input with an
+    `.invalid-feedback` message, not mirrored onto the host.
+  - React: `onChange` is now the native input `change` event. Use the new `onCheckedChange(checked)` for the
+    boolean. The ref is the `<input>`. `checked` / `defaultChecked` / `indeterminate` / `invalid` / `errorText`
+    are props.
+  - Vue: `v-model` is the checked state, and the new `v-model:indeterminate` is the mixed state. Attributes land on
+    the input (`inheritAttrs: false`).
+  - The mixed state is the `indeterminate` property plus `aria-checked="mixed"`. A user toggle clears it.
+  - `FEEDBACK_CLASS` in `@mintplayer/ui-core/forms` is now `invalid-feedback d-block`.
+  - `takeHostAria` moved to `@mintplayer/ng-bootstrap/a11y`.
+  - `<mp-checkbox>` (Lit) is unchanged for now: `mp-datatable` renders it in its shadow root.
+- **Toggle button is a checkbox toggle button in every front (issue #437, wave A).** It renders
+  `input.btn-check` + `label.btn`, with the contract from `@mintplayer/ui-core/checkbox`. The input keeps the native
+  checkbox role: `role="button"` + `aria-pressed` are removed, because `aria-pressed` froze at its server value when a
+  click toggled the checkbox with JS off, while the native checked state stays correct either way.
+  - Angular gains `<bs-toggle-button>`, a second selector of `BsCheckboxComponent` with the type fixed to
+    `toggle_button`. It takes `[(isToggled)]`, `ngModel` / `formControl` and `color`.
+  - React: `BsToggleButton` is `<BsCheckbox type="toggle_button">`. `onChange` is the native event; use
+    `onCheckedChange(checked)` instead of `e.detail.checked`. `color` is a typed prop, and the ref is the input.
+  - Vue: `BsToggleButton` is `<BsCheckbox type="toggle_button">`, so `v-model` is unchanged and attributes land on
+    the input.
+  - `<mp-toggle-button>` (Lit) renders in the light DOM. Its children become the label, and host `aria-label`,
+    `aria-labelledby` and `aria-describedby` are written onto the input. The inner input has no `name`, because the
+    form-associated host submits. `toggleButtonStyles` is still exported for `mp-checkbox`.
+
+- **Radios are native radios sharing a name in every front (issue #437, wave A).** A radio renders a plain
+  `<input type=radio>` in `.form-check` (or `.btn-check` + `label.btn` for `type="toggle_button"`) markup, and a
+  group renders an element with `role="radiogroup"` that hands every radio one `name`. The browser then supplies
+  one-of-N, the single tab stop, arrow move-and-select, position-in-set and form submission, with JS off and in
+  Angular SSR. The contract lives in `@mintplayer/ui-core/radio` (`connectRadio`, `radioClasses`,
+  `connectRadioGroup`, `radioGroupName`).
+  - Angular: `bsRadioGroup` also matches a `<bs-radio-group>` element, which takes `name`, `required`, `disabled`
+    and `ngModel` / `formControl`. `radioRef` is removed. `id`, `tabindex` and `aria-*` land on the input, and
+    `[inputLabel]` names a radio that has no visible label. A choice made before hydration is adopted.
+  - React: `BsRadioGroup` takes `value` + `onValueChange(value)` (or `defaultValue`), replacing `onGroupChange`.
+    A standalone `BsRadio` takes `checked` + `onCheckedChange`. The refs are the `div` and the input.
+  - Vue: `BsRadioGroup` keeps `v-model` and provides `radioGroupKey`. Attributes on `BsRadio` land on the input.
+  - `<mp-radio>` / `<mp-radio-group>` (Lit) render in the light DOM. The group is no longer form-associated: the
+    checked native input submits itself. The custom roving tabindex and arrow handling are gone in favour of the
+    native set. The `checked` attribute is the initial state only; the `checked` property reads the input.
+- **Pagination renders Bootstrap's `.pagination` markup in every front (issue #437, wave A).** Each front renders
+  `<nav aria-label><ul class="pagination"><li class="page-item"><button class="page-link">` itself, from
+  `@mintplayer/ui-core/pagination` (`connectPagination`, `buildPaginationLayout`, `previousPage`, `nextPage`), so
+  Angular SSR emits the real control. A new `hrefFor(page)` renders every page as a link that works with JS off
+  (a plain click still selects in place), and `labels` localizes the accessible names (default English).
+  - Angular: no `<mp-pagination>` inside `bs-pagination`; `aria-*` / `id` / `tabindex` land on the `<nav>`.
+    New `[labels]` and `[hrefFor]` inputs.
+  - React: `BsPagination` is a plain component. `onMpPaginationPageChange(event)` is replaced by
+    `onPageChange(page)`; `defaultSelectedPageNumber` makes it uncontrolled. The ref is the `<nav>`.
+  - Vue: `pageNumbers`, `numberOfBoxes`, `showArrows`, `size`, `labels` and `hrefFor` are declared props;
+    attributes land on the `<nav>`.
+  - `<mp-pagination>` (Lit) is unchanged and keeps its shadow root until `mp-datatable` converts.
+
+- **Shell renders its own HTML in every front (issue #437, wave A).** `bs-shell` (Angular) is the `.shell` itself,
+  `BsShell` (React/Vue) renders a `div.shell`, and `mp-shell` (Lit) renders the same markup in its shadow root.
+  The markup, ids and ARIA come from `@mintplayer/ui-core/shell`. The open state is one native checkbox per
+  viewport mode, with a hamburger `<label>` for each. `checked` always means revealed, so the drawer toggles with
+  JS off and in Angular SSR, and no viewport inverts it.
+  - **Angular:** `*bsShellSidebar` is now a structural directive. A new `*bsShellTopbar` fills the top bar.
+    `(statechange)` emits `BsShellStateChange` (`{ open }`), not the WC's `CustomEvent`.
+  - **React:** the top bar and sidebar are the `topbar` / `sidebar` props instead of `slot=` children, and
+    `onStatechange` receives `{ open }`. The ref is `BsShellHandle` (`{ element, toggle }`).
+  - **Vue:** the top bar and sidebar are the `#topbar` / `#sidebar` named slots, and `@statechange` receives
+    `ShellStateChange` (`{ open }`), now exported from `@mintplayer/vue-bootstrap/shell`.
+  - **Removed:** the `hamburger` slot, `shellStyles` and the `::part(topbar)` hook. Style the shell's
+    `.topbar` with ordinary CSS. Also removed: the `mp-shell` Declarative-Shadow-DOM chrome
+    (`injectMpShellDsd`, `@mintplayer/web-components/shell/ssr`) and the `codegen-shell-chrome` target.
+
+- **Accordion renders Bootstrap's accordion markup in every front (issue #437, wave A).** `bs-accordion` (Angular)
+  is the `.accordion` itself, `BsAccordion` (React/Vue) renders a `div.accordion`, and `mp-accordion` (Lit)
+  renders the same markup in its shadow root. Each row is a native `<details class="accordion-item">`, and the
+  ids, `name` group and ARIA come from `@mintplayer/ui-core/accordion`. The server HTML is a working accordion
+  with JS off. Single-open uses the `name` attribute, so no script or CSS state machine is involved.
+  - **React/Vue:** `onTabToggle` / `@tab-toggle` receives `AccordionTabToggle` (`{ index, active }`), not a
+    `CustomEvent` with `detail`. `AccordionTabToggleDetail` is replaced by `AccordionTabToggle`. The React ref
+    is the `.accordion` `HTMLDivElement`.
+  - **Lit:** the shadow ids and the group name changed (`acc-h<n>`, `acc-c<n>`, `acc-group`). The `tab-count`
+    attribute and the `data-js` marker are gone.
+  - **Theming:** set Bootstrap's `--bs-accordion-*` custom properties on `.accordion` with ordinary CSS.
+    Bootstrap re-declares them on every `.accordion`, so a nested accordion needs its own rule. The
+    `::part(header)`, `::part(button)` and `::part(content)` hooks are removed.
+  - **Removed:** the Declarative-Shadow-DOM chrome (`injectMpAccordionDsd`,
+    `@mintplayer/web-components/accordion/ssr`) and the `codegen-accordion-chrome` target.
+  - **Vue:** the accordion's id comes from `useId()` rather than the instance `uid`, so the server and the
+    hydrating client agree on every IDREF.
+- **Tab control renders Bootstrap nav-tabs over native radios in every front (issue #437, wave A).** One radio
+  per tab is the selection and the CSS pairs the n-th radio with the n-th pane, so the server HTML switches tabs
+  with JS off (panes are `region`s labelled by their tab). After hydration the labels become APG tabs: roving
+  tabindex, `aria-selected`, Left/Right/Home/End with automatic activation, disabled tabs skipped. Ids and ARIA
+  come from `@mintplayer/ui-core/tab-control`.
+  - **Angular:** `bs-tab-control` is the `.tab-control` itself. `bs-tab-page` renders nothing in place (its
+    content is projected into the control's pane). `isServerSide`, `tabName` and `tabControlName` are removed.
+  - **React:** `<BsTabPage tabId header disabled>` pages inside `<BsTabControl activeTab onTabActivate>`;
+    `onTabActivate` receives the `tabId`. The ref is the `.tab-control` `HTMLDivElement`. Page attributes land
+    on the pane (except `role`).
+  - **Vue:** `<BsTabControl v-model>` with `<BsTabPage tab-id disabled>`, the tab content in a `#header` slot.
+    `BsTabPage` is exported. Page attributes land on the pane (except `role`).
+  - **Removed:** the `MpTabControl` / `MpTabPage` re-exports from the framework libraries. The Lit
+    `mp-tab-control` stays unchanged until the dock, which depends on it, converts.
+- **Sparkline renders its own svg in every front (issue #437, wave A).** The geometry and the accessible name
+  come from `@mintplayer/ui-core/charts/sparkline`, so the server HTML is the finished chart. A `.sparkline` box
+  holds a `role="img"` viewBox svg; the consumer's `aria-label` names the svg.
+  - **Angular:** `bs-sparkline` is the `.sparkline` box itself. `sparklineRef` is removed. Without a `locale`,
+    the summary is formatted for `LOCALE_ID`.
+  - **React:** the ref is the `.sparkline` `HTMLSpanElement`. The props are React props, no longer
+    custom-element properties. Other attributes land on the box.
+  - **Vue:** `points`, `area`, `showLastDot`, `yMin`, `yMax`, `locale`, `inputLabel` and `summaryFormatter`
+    are declared props, so numbers need a binding (`:y-min="0"`). Other attributes land on the box.
+  - The Lit `mp-sparkline` renders from the same core and keeps its shadow root.
+- **Navbar is generated from one source in every front (issue #437, wave A).** The navbar, nav, item and dropdown
+  are written once in `@mintplayer/ui-core/navbar` and compiled into all four fronts by the new component compiler
+  (`@mintplayer/nx-component-compiler`). Every front renders Bootstrap's `.navbar` markup, so the server HTML is the
+  finished bar, and the collapse works with JS off.
+  - **Every front:**
+    - The landmark is named by the consumer's `aria-label`. The `label` input/prop is removed.
+    - A new `navbar-nav` element groups items: `bs-navbar-nav` / `BsNavbarNav` / `mp-navbar-nav`, with `align`.
+    - `expanded` is two-way: Angular `[(expanded)]`, Vue `v-model:expanded`; the Lit property follows the bar.
+      The `expandedchange` output still reports only user toggles.
+    - Item nesting inside a dropdown comes from the navbar's own context, not `BS_DROPDOWN_MENU_CONTEXT`.
+  - **Angular:**
+    - `bs-navbar-brand` is replaced by the `[bsNavbarBrand]` directive on an `<ng-template>`.
+    - `bs-navbar-dropdown` takes a `label` input; `[bsNavbarDropdownLabel]` still overrides it with markup.
+    - `[bsNavbarContent]` reserves `var(--bs-navbar-content-offset, 3.5rem)` on the server and with JS off, then
+      follows the bar's measured height.
+  - **React / Vue:** the components are `forwardRef` / `defineExpose` components with a `toggle()` method.
+    Consumer attributes land on the rendered `.navbar`, `.navbar-nav`, `.nav-item` and `details.dropdown`.
+  - **Lit:** the elements render in the light DOM. `mp-navbar-brand` is removed (put a `slot="brand"` child in
+    `mp-navbar`), `slot="end"` is replaced by `<mp-navbar-nav align="end">`, `mp-navbar-dropdown` is a native `<details>` whose `label` attribute or `slot="label"` names it,
+    and the DSD chrome is retired. `mp-dropdown-menu`'s `input-label` is removed: name it with `aria-label`.
+- **Select is a native `<select>` generated from one source in every front (issue #437, wave B).** The select is
+  written once in `@mintplayer/ui-core/select` and compiled into all four fronts. Every front renders a
+  `<select class="form-select">` in the light DOM, so it opens, picks and submits with JS off and in Angular SSR;
+  the selection is the options' `selected` attribute on the server (React's `defaultValue`).
+  - **Every front:**
+    - The change event is `valuechange` (Angular `(valuechange)`, React `onValueChange`, Vue `@valuechange`) and
+      reports `{ value, values }`. React's callback receives that detail itself, not an event.
+    - `value` and `values` are two-way. A `value=""` option means no selection (`null`).
+    - The form value is the native select's own: there is no form-associated custom element any more. A `name`
+      submits one entry per selected option.
+    - `options` takes `{ value, label, disabled? }` items and `{ label, options }` groups (rendered as
+      `<optgroup>`). Without `options`, `<option>` / `<optgroup>` children are rendered inside the select.
+    - Rich options (customizable select, `appearance: base-select`) come from an `option` slot instead of an
+      `optionRenderer` that returned an HTML string: Angular `<ng-template bsSelectOption let-option="option">`,
+      React `option={({ option }) => …}`, Vue `#option="{ option }"`, Lit `optionRenderer` returning a template.
+      Only where the engine supports it; elsewhere the option is its label.
+    - A consumer's `aria-*`, `id` and `tabindex` reach the `<select>` in React and Vue, whose props are typed
+      for `HTMLSelectElement`. In Angular and Lit, `aria-label` on the host names the select.
+  - **Angular:** `identifier` is removed. `BsSelectOption` (the `option` directive) now writes the `selected`
+    attribute for SSR. The generated slot directive is `BsSelectOptionDirective`.
+  - **Vue:** `v-model` is now `v-model:value` (and `v-model:values` when `multiple`).
+  - **Lit:** `mp-select` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
+    (`input-label`, `error-text`, `number-visible`).
+  - `mp-query-builder` and `mp-scheduler` use plain native selects internally.
+- **OTP input is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/otp-input` and compiled into all four fronts. Each front renders one real `<input>` in
+  the light DOM, with the boxes as `aria-hidden` decoration. With JS off, and before hydration, it is a plain
+  `.form-control` that submits under `name` (masked for a `password` code).
+  - **Every front:**
+    - `case` is renamed `letterCase` (`letter-case` on the Lit element). `case` cannot be a React prop binding.
+    - The change event is `valuechange` (Angular `(valuechange)` and `[(value)]`, React `onValueChange`, Vue
+      `v-model:value`). `complete` reports the full code (React `onComplete` receives the string itself).
+    - The form value is the native input's own: there is no form-associated custom element any more.
+    - `clear()` and `focusInput()` are methods. `focus()` on the Angular host moves into the input.
+  - **Angular:** `BsOtpInputValueAccessor` is a host directive of `bs-otp-input`, and `BsControlValidityDirective`
+    (`errorMessages`) is applied to it as well.
+  - **Lit:** `mp-otp-input` renders in the light DOM (no shadow root, no `part`s). Attributes are kebab-case
+    (`input-label`, `error-text`, `letter-case`).
+- **Multi-range is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/multi-range` and compiled into all four fronts. Every thumb is a native
+  `<input type="range">` stacked over one track, in the light DOM. The browser now owns the slider role, the
+  keyboard (including RTL mirroring) and form submission under `name`. With JS off the thumbs still drag, step
+  and submit. The core adds the neighbour constraint, the fill and the press-on-track.
+  - **Every front:**
+    - The events are `valueinput` (while moving) and `valuechange` (on commit), each carrying the
+      `number[]`. They were `value-input` and `value-change`.
+    - The value is the `value` model: Angular `[(value)]`, React `value` + `onValueInput` / `onValueChange`
+      (both receive the array itself), Vue `v-model:value`.
+    - A written value is sorted and clamped. `null` shows as `[min, max]` and is not reported back.
+    - `getValues()` is a method.
+  - **Angular:** `BsMultiRangeValueAccessor` is a host directive of `bs-multi-range`. A form write never marks the
+    control dirty.
+  - **Lit:** `mp-multi-range` has no shadow root and no `part`s. The `.thumb` and `.track` classes are now
+    `multi-range-thumb` and `multi-range-track`. `minDistance` is the `min-distance` attribute.
+- **Calendar is generated from one source in every front (issue #437, wave B).** It is written once in
+  `@mintplayer/ui-core/calendar` and compiled into all four fronts. The month grid, its keymap and its
+  week numbers are pure functions there, so the date pickers render the same grid. With JS off the month
+  renders inert: the month buttons are disabled and no day is tabbable until the page hydrates.
+  - **Every front:**
+    - `selectedDate` and `currentMonth` are two-way and default to `null`. Angular's `selectedDate` used to
+      default to today. `null` for the month shows the selected day's month, else today's.
+    - The events are `selecteddatechange` and `currentmonthchange` (were `selected-date-change` /
+      `current-month-change`). React has `onSelectedDateChange` / `onCurrentMonthChange`; Vue has
+      `v-model:selected-date` / `v-model:current-month`, replacing the plain `v-model`.
+    - The methods are `previousMonth()`, `nextMonth()`, `select(date)` and `focusGrid()`. `goto(day)` and the
+      Lit host's `focus()` override are gone.
+    - `labels` localises the month buttons and the week column.
+  - **Lit:** `mp-calendar` renders in the light DOM (no shadow root). Its classes are now `calendar-*`
+    (`calendar-day-selected`, `calendar-chevron-previous`, …). `MpCalendarElement` is now `MpCalendar`.
+- **Datepicker, timepicker and datetime picker are generated from one source in every front (issue #437,
+  wave B).** Each is written once in `@mintplayer/ui-core/{datepicker,timepicker,datetime-picker}` and
+  compiled into all four fronts. With JS off each is a native `date` / `time` / `datetime-local` field that
+  submits `name` with the form and honours `min`, `max` and `step`. Once hydrated, the field becomes a
+  readonly display, a hidden input carries `name` (ISO `YYYY-MM-DD`, `HH:MM` or `YYYY-MM-DDTHH:MM`), and the
+  triggers open the grid and the slot list in native `popover="auto"` popups. The browser handles Escape,
+  light dismiss and focus return. The popups no longer animate in.
+  - **Every front:**
+    - `selectedDate` / `selectedTime` default to `null` (Angular defaulted to now).
+    - The events are `selecteddatechange`, `selectedtimechange` and `valuechange` (the Lit datetime picker
+      emitted `value-change`). React has `onSelectedDateChange` / `onSelectedTimeChange` / `onValueChange`,
+      which receive the value rather than an event. Vue has `v-model:selected-date` / `v-model:selected-time`
+      / `v-model:value`.
+    - Open state is an `openChange` event. The timepicker's `isOpen` model and the datetime picker's
+      `opened` / `closed` outputs are gone. The methods are `open()` / `close()`, or `openDate()`,
+      `openTime()`, `closePopups()` and `clear()` on the datetime picker.
+    - Accessible names go through `labels`, which replaces `triggerLabel`, `dateButtonLabel`,
+      `timeButtonLabel`, `clearLabel`, `todayLabel` and `nowLabel`. `calendarLabels` localises the grid.
+      `inputLabel` names the field.
+    - Each takes `name`, `required`, `invalid` and `errorText` (the forms contract). `min` / `max` default to
+      `null`, not `undefined`.
+  - **Angular:** every picker keeps a `ControlValueAccessor` and a validator (`min`, `max`, `disabledDate`)
+    as a host directive (`BsDatepickerValueAccessor`, `BsTimepickerValueAccessor`,
+    `BsDatetimePickerValueAccessor`). `BsControlValidityDirective` carries the control's errors to the field.
+  - **Lit:** `mp-datepicker`, `mp-timepicker`, `mp-time-list` and `mp-datetime-picker` render in the light DOM
+    (no shadow root, no `part`s, no `data-open`). A shadow-root host must call `adoptLightStyles` and provide
+    Bootstrap's `.input-group` / `.btn`, as `mp-scheduler` now does. The classes are prefixed
+    (`datetime-picker-date`, `time-slot`, …), and the host's `focus()` override is gone; focus the
+    `.form-control` field instead. `MpDatepickerElement`, `MpTimepickerElement` and `MpDatetimePickerElement`
+    are now `MpDatepicker`, `MpTimepicker` and `MpDatetimePicker`.
+- **Signature pad is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/signature-pad` and compiled into all four fronts. A canvas cannot draw without JS, so
+  with JS off the pad renders but every control is disabled. The canvas repaints itself whenever a front
+  rewrites its `width` / `height`.
+  - **Every front:**
+    - The event is `signaturechange` (the Lit element emitted `signature-change`). React has
+      `onSignatureChange`, which receives the `Signature` rather than an event. Vue binds with
+      `v-model:signature` (plain `v-model` is gone).
+    - `labels` (`pad`, `type`, `undo`, `clear`) localises the names and button texts. `inputLabel` names the
+      canvas.
+    - Each takes `disabled`, `required`, `invalid` and `errorText`. The error describes the typed field, or
+      the canvas when the typed field is off.
+    - Undo and Clear stay enabled on an empty pad, so focus is never dropped; on an empty pad they do nothing.
+    - `showAccessibilityToggle` is a boolean input or property. The attribute `show-accessibility-toggle="false"`
+      no longer turns it off, because a present boolean attribute counts as true.
+  - **Angular:** `BsSignaturePadValueAccessor` is a host directive, so `ngModel` / `formControl` need no
+    extra import. `BsControlValidityDirective` carries the control's errors to the pad. A `null` write
+    clears the pad.
+  - **Lit:** `mp-signature-pad` renders in the light DOM (no shadow root, no `part`s). Its classes are
+    `signature-pad-canvas`, `signature-pad-text`, `signature-pad-undo` and `signature-pad-clear`.
+    `MpSignaturePadElement` is now `MpSignaturePad`. The `Signature`, `Stroke` and `Point` types come from
+    `@mintplayer/ui-core/signature-pad` and are re-exported by every front.
+- **Phone input is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/phone-input` (`phoneInputCore`, `connectPhoneInput`) and compiled into all four
+  fronts, so it is server-rendered everywhere. With JS off it is a plain country select and tel input, and
+  the typed text submits under `name`; once live, a hidden input submits the E.164 value instead.
+  - **Every front:** the root is `.phone-input` (a `div` in React and Vue, the host in Angular and Lit), and
+    it holds one Bootstrap `.input-group`: a native `select.form-select`, a `span.input-group-text.addon`
+    with the flag and dial code, and the `input[type=tel]`. Consumer attributes (`aria-label`, `id`, ...)
+    land on the tel input. Validity is on that input too (`required`, and a custom error for a number the
+    rules reject).
+  - **Two-way:** `value` (E.164, or null) and `country`. The events are `valueChange` (the E.164 string),
+    `countryChange` (the ISO code) and `phoneChange` (`PhoneChangeEventDetail`): Angular `(valuechange)`,
+    `(countrychange)`, `(phonechange)`; React `onValueChange`, `onCountryChange`, `onPhoneChange`, each
+    with the payload itself rather than a DOM event.
+  - **Angular:** the component carries its own `ControlValueAccessor` and `BsControlValidityDirective` as
+    host directives, so `[(ngModel)]`, `[formControl]` and `errorMessages` work as before.
+  - **Narrow layout:** a container query on `.phone-input` stacks the picker above the number below 22rem.
+    The `ResizeObserver` and the `stacked` attribute are gone.
+  - **Methods:** `focusInput()` (the number field, never the picker) and `whenReady()` (flags and the rules in
+    flight have landed).
+  - **Removed:** the Lit element's form association (`formValue`, `formReset`, `formRestore`) and its
+    `nationalNumber` / `dialCode` / `valid` getters; read them from `phoneChange`.
+  - **Moved:** the flag corpus (`loadAllFlags`, `loadFlag`, `FlagMap`) is now `@mintplayer/ui-core/flags`,
+    no longer `@mintplayer/web-components/flags`. `PhoneChangeEventDetail` comes from ui-core and every front
+    re-exports it.
+- **Timeline is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/timeline` (`timelineCore`, `timelineItemCore`, `connectTimeline`) and compiled into all
+  four fronts, so it is server-rendered everywhere and already laid out with JS off: side, reverse and the
+  last connector are CSS on the root classes (`timeline-<orientation>`, `timeline-align-<align>`,
+  `timeline-reverse`), not attributes a script writes. `@mintplayer/ui-core/timeline-core` is gone; its
+  models and `resolveSides` are in `@mintplayer/ui-core/timeline` and re-exported by every front.
+  - **Every front:** the root is `.timeline` (a `div` in React and Vue, the host in Angular and Lit) and each
+    row is a `.timeline-item` child of it. There is no shadow root, so `::part()` hooks are gone; style the
+    `.timeline-*` classes. `input-label` (`inputLabel`) names the list, and a host `aria-label` wins.
+  - **Declarative items:** `<bs-timeline-item>` (Angular), `BsTimelineItem` (React/Vue) and
+    `<mp-timeline-item>` (Lit). The `title` input is now `itemTitle` (it shadowed `HTMLElement.title`), the
+    item's own content is its body (was `slot="content"`), and `opposite` / `heading` / `marker` /
+    `connector` are slots (Angular `*bsTimelineItemOpposite`, ...; React node props; Vue `#opposite`). The
+    authored `selected` attribute is gone: select through the timeline's `selectedIds`.
+  - **Data rows:** the `title` slot is now `heading`. The region slots are scoped with `{ item, ctx }`:
+    Angular `*bsTimelineMarker="let item = item"` (and `Heading`, `Timestamp`, `Opposite`, `Content`,
+    `Connector`), React `marker={({ item }) => ...}` (the `render*` props are gone), Vue `#marker="{ item }"`,
+    Lit `markerRenderer`.
+  - **Selection is by key and two-way:** `selectedIds` holds strings (an item's `id`, else a data row's index
+    or a declarative item's `itemId`). Angular `[(selectedIds)]` replaces the `selection` model of
+    `TimelineItem[]`; Vue `v-model:selectedIds`; React `selectedIds` + `onSelectedIdsChange`.
+    `selectionChange` still reports the consumer's own item objects.
+  - **Events:** Angular `(itemclick)`, `(selectionchange)`, `(selectedidschange)`; Lit `itemclick`,
+    `selectionchange`, `selectedidschange` (were `item-click` and `selection-change`).
+- **Trend chart is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/charts/trend` (`trendChartCore`, `connectTrendChart`, `layoutTrend`) and compiled
+  into all four fronts, Vue included, so the server HTML is the finished SVG in every framework. Before
+  hydration the points are named images; once live they are a roving set of buttons.
+  - **Every front:** the root is `.trend-chart` (a `div` in React and Vue, the host in Angular and Lit) and
+    the `<svg>` is its child. There is no shadow root; style the `.trend-chart` classes and the
+    `--mp-trend-chart-*` custom properties.
+  - **Events:** `trend-point-hover` / `trend-point-select` are now `pointHover` / `pointSelect`: Angular
+    `(pointhover)` / `(pointselect)`, Lit `pointhover` / `pointselect`, React `onPointHover` /
+    `onPointSelect` (the payload, not a `CustomEvent`), Vue `@pointhover` / `@pointselect`.
+  - **Vue:** numeric inputs are typed numbers; bind them (`:y-min="0"`, not `y-min="0"`).
+  - The `TrendSeries` / `TrendPoint` / event types come from `@mintplayer/ui-core/charts/trend` and every
+    front re-exports them; `@mintplayer/web-components/charts/trend` no longer re-exports `charts/core`.
+- **Splitter is generated from one source in every front, and its panels are declared (issue #437).** It is
+  written once in `@mintplayer/ui-core/splitter` (`splitterCore`, `splitterPanelCore`) and compiled into all
+  four fronts. The server HTML already splits the space evenly; the dividers take focus once live.
+  - **Panels:** wrap every pane in a splitter panel: `<bs-splitter-panel>` (Angular), `<BsSplitterPanel>`
+    (React, Vue), `<mp-splitter-panel>` (Lit). Direct children are no longer wrapped for you.
+  - **Every front:** the root is `.splitter` (a `div` in React and Vue, the host in Angular and Lit). There is
+    no shadow root. A panel is `.splitter-panel` (`display: contents`) holding a `.splitter-divider` and a
+    `.splitter-pane`; the pane takes the size. The `--mp-splitter-*` custom properties are unchanged, set
+    them on `.splitter`. `resizing` and `touch-mode` are classes on the root, not host attributes, and an
+    active divider carries `data-active`, not `.active`.
+  - **Events:** `resize-start` / `resize-end` are now `resizeStart` / `resizeEnd` (`resizing` keeps its
+    name): Angular `(resizestart)` / `(resizing)` / `(resizeend)`, Lit the same lowercased names, React
+    `onResizeStart` / `onResizing` / `onResizeEnd` (the payload), Vue `@resizestart` / `@resizing` /
+    `@resizeend`.
+  - **Accessible names** are localizable: `labels = { divider: 'Resize between panel ${before} and panel ${after}' }`.
+  - `getPanelSizes()` / `setPanelSizes()` / `resizeDividerBy()` remain on the Angular component and the Lit
+    element. The `SplitterStateManager`, `ResizeManager`, `InputHandler` and `splitterStyles` exports are
+    gone; `Direction` is `SplitterOrientation`, `ResizeKey` is `SplitterResizeKey`.
+- **File manager is generated from one source in every front, composed of the splitter, treeview and
+  datatable (issue #437).** It is written once in `@mintplayer/ui-core/file-manager` (`fileManagerCore`,
+  `connectFileManager`) and compiled into all four fronts. Each front renders its own splitter, treeview and
+  datatable, so the server HTML is the whole browser (toolbar, breadcrumb, tree and list). The commands
+  stay disabled until the component is live.
+  - **Every front:** the root is `.file-manager` with `role="region"` (a `div` in React and Vue, the host in
+    Angular and Lit). There is no shadow root, so page CSS reaches the internals. The `--mp-file-manager-*`
+    custom properties are unchanged; set them on `.file-manager`.
+  - **Two-way state:** `currentFolderId`, `viewMode`, `selectedIds`, `uploads` and `pending` are models.
+    Angular: `[(uploads)]`, and `fm.uploads()` still reads the signal. Vue: `v-model:uploads`. The old
+    `pendingOpIds` / `pendingCount` signals are gone; read `pending` instead (a `Record<id, OperationKind>`).
+  - **Events** are lowercased like every compiled component. Angular uses `(navigate)`, `(nodeopen)`,
+    `(selectionchanged)` (was `selectionChange`), `(uploadrequest)`, `(operation)`, `(errorreported)` and
+    `(childrenloaded)`. Lit uses the same names. React uses `onNavigate`, `onNodeOpen`, `onSelectionChanged`
+    and so on, receiving the payload. Vue uses `@navigate`, `@nodeopen` and so on.
+  - **Sorting** is the file manager's own: the list hands the datatable rows already sorted (`autoSort` off),
+    so folders-first ordering holds until a column is clicked.
+  - **Messages:** two new keys, `renameLabel(name)` (the rename editor's accessible name) and
+    `ariaFolderTree`.
+  - `markPending` / `clearPending` / `reportError` / `reportUploadProgress` / `clearUpload` remain on the
+    Angular component and the Lit element. The node, event and messages types come from
+    `@mintplayer/ui-core/file-manager`, and every front re-exports them.
+- **Dock manager is generated from one source in every front, composed of the splitter (issue #437).** It
+  is written once in `@mintplayer/ui-core/dock` (`dockCore`, `connectDock`; the layout tree, geometry and
+  sizing helpers moved there from `@mintplayer/web-components/dock`) and compiled into all four fronts.
+  `<mint-dock-manager>` is replaced by `<mp-dock-manager>` (Lit) and the generated `BsDockManager`
+  components.
+  - **Pane content** comes from one `pane` slot, called with the pane's name, in place of
+    `<bs-dock-pane name>` / `slot="<pane>"` children. Angular: `<ng-template bsDockManagerPane let-pane="pane">`
+    (`BsDockPaneComponent` is gone). React: `pane={({ pane }) => …}`. Vue: `<template #pane="{ pane }">`.
+    Lit: `paneRenderer` or `slot="pane"` children. Each pane renders once into a core-owned host that the
+    dock moves between stacks, so its state survives every drag, drop and tear-off. A pane removed from
+    the layout keeps its content alive, out of sight, as an unslotted child did before. Pane content is not
+    server-rendered: the server HTML is the tabs and splits, inert until the dock is live.
+  - **Every front:** the root is `.dock` with `role="region"` (a `div` in React and Vue, the host in Angular
+    and Lit). There is no shadow root, so page CSS reaches the internals, and the tabs are plain
+    `role="tab"` buttons (`mp-tab-control` is no longer used). Accessible names come from a new `labels`
+    input (`DockLabels`, `DOCK_LABELS`, `mergeDockLabels`).
+  - **Two-way `layout`:** Angular `[(layout)]` (type `DockLayoutInput`), Vue `v-model:layout`, Lit writes
+    the property back. There is no JSON `layout` attribute any more.
+  - **Events** are lowercased like every compiled component: `layoutchange` (replaces
+    `dock-layout-changed` and Angular's `layoutSnapshotChange`) and the new `paneactivated`. React:
+    `onLayoutChange`, `onPaneActivated`, receiving the payload.
+  - `captureLayout()` remains on the Angular component, the Vue instance and the Lit element.
+- **Ribbon is generated from one source in every front, its tab strip server-rendered (issue #437).** The
+  ribbon, the quick access toolbar and all sixteen item / tab / group / menu elements are written once in
+  `@mintplayer/ui-core/ribbon` and compiled into all four fronts. The `bs-ribbon-*` Angular, React and Vue
+  wrappers around `<mp-ribbon-*>` are gone; the Lit elements keep their `mp-ribbon-*` tags.
+  - **Nested children stay the API.** Tabs, groups and items are still authored as children. The ribbon
+    reads its tabs (and the contextual sets around them) through a compiler content query, so the tab
+    strip, the contextual bands and every panel are in the server HTML, in every front.
+  - **No shadow root.** The root is `.ribbon` (`role="region"`), the QAT `.qat` (`role="toolbar"`, named by
+    its `aria-label`). Page CSS reaches the internals; `::part()` hooks are gone. Every tab's
+    `aria-controls` now resolves to its panel in the same tree. Item sizes are derived in CSS from the
+    group's resolved size and the layout, so items no longer have their `size` attribute rewritten.
+  - **`appAccent` is removed.** Set the `--bs-ribbon-accent` custom property on the ribbon or any
+    ancestor (`.excel { --bs-ribbon-accent: #217346; }`).
+  - **Contextual tab sets:** `hidden` is replaced by `visible` (default `true`):
+    `<bs-ribbon-contextual-tab-set [visible]="pictureSelected()">`.
+  - **Events** are lowercased like every compiled component: Angular `(itemclick)`, `(mainaction)`,
+    `(menuselect)`, `(galleryselect)`, `(tabchange)`, `(dialoglauncherclick)`; React `onItemClick`,
+    `onTabChange`, … receiving the payload rather than a `CustomEvent`; Vue `@itemclick`, `@tabchange`, ….
+    The value events are replaced by two-way models: `pressed` (toggle button, was `toggle`), `checked`
+    (check box, was `check-change`), `value` (combo box), `color` (colour picker), `selectedValue` (group
+    button, was `group-select` with `value`), `minimized` (was `minimize-toggle`) and `activeTabId`.
+    Angular `[(pressed)]` / `[(ngModel)]`, React `pressed` + `onPressedChange`, Vue `v-model:pressed`.
+  - **Icons:** `slot="icon"` is replaced by the `iconTemplate` slot: Angular `*bsRibbonButtonIconTemplate`
+    (one directive per item), React `iconTemplate={<svg …/>}`, Vue `<template #iconTemplate>`, Lit
+    `slot="iconTemplate"`. The `.ribbon-icon-*` utility classes are gone; the icon is sized from the size
+    the item renders at.
+  - **Tell me:** `slot="tell-me"` is replaced by the `tellMe` slot: Angular `<ng-template bsRibbonTellMe>`,
+    React `tellMe={…}`, Vue `<template #tellMe>`.
+  - The ribbon types come from `@mintplayer/ui-core/ribbon` and every front re-exports them.
+- **Scheduler is generated from one source in every front, its grid server-rendered (issue #437).** It is
+  written once in `@mintplayer/ui-core/scheduler` (`schedulerCore`; the state manager, drag, geometry and
+  keyboard-grid modules moved there from `@mintplayer/web-components/scheduler`) and compiled into all four
+  fronts. The hand-written `bs-scheduler` Angular, React and Vue wrappers around `<mp-scheduler>` are gone;
+  the Lit element keeps the `mp-scheduler` tag.
+  - **Server-rendered grid.** Every view (year, month, week, day, timeline) is a static grid with events
+    positioned by custom properties in slot units, so the server HTML is the whole grid, inert until the
+    scheduler is live. The root carries `data-mp-hydrated` once it is.
+  - **No shadow root.** The root is `.scheduler` (a `div` in React and Vue, the host in Angular and Lit).
+    Page CSS reaches the internals; `::part()` hooks are gone. The day popover, row panel and event editor
+    are native popovers; the editor composes the datetime picker.
+  - **Two-way models:** `view`, `date`, `selectedEvent` and `selectedRange`. Angular `[(view)]`,
+    `[(selectedRange)]`; React `view` + `onViewChange`; Vue `v-model:view`, `v-model:selectedRange`; Lit writes
+    the property back. Clear a range by setting `selectedRange` to `null`.
+  - **Events** are lowercased like every compiled component and carry named detail types
+    (`SchedulerEventCreateDetail`, `SchedulerEventUpdateDetail`, …): Angular `(eventcreate)`,
+    `(eventupdate)`, `(eventdelete)`, `(eventselected)`, …; React `onEventCreate`, … receiving the payload;
+    Vue `@eventcreate`, …. `selectionChange` is renamed `selectionChanged`.
+  - **Attribute hooks:** event buttons carry `data-start` / `data-end` (ISO), like the cells.
+  - `slotDuration` outside an integer 60..86400 seconds falls back to the default rather than hanging.
+  - The scheduler types come from `@mintplayer/ui-core/scheduler` and every front re-exports them.
+- **The Lit SSR machinery is gone (issue #437).** Every framework front now renders its own HTML on the
+  server and installs its sheets itself, so nothing is injected after the render:
+  - `@mintplayer/web-components/light-dom/ssr` (`injectMpLightStyles`, `MP_LIGHT_STYLE_TAGS`) is removed.
+    Drop it from your server; the Angular fronts write their sheets into `DOCUMENT.head` during the render,
+    and React / Vue servers emit `collectScopedStyles()` from `@mintplayer/ui-core/scoped-styles`.
+  - `@mintplayer/web-components/overlay` (`OverlayController`, the overlay portal) is removed. Popups use
+    native `popover` placed by `trackPopovers` from `@mintplayer/ui-core/overlay`.
+  - React and Vue servers need no Lit DOM shim and clients no `lit-element-hydrate-support`.
+- **Peer dependencies (issue #437).** `@mintplayer/react-bootstrap` no longer peers on `@lit/react` or
+  `@mintplayer/web-components`, `@mintplayer/vue-bootstrap` no longer on `@mintplayer/web-components`, and
+  `@mintplayer/ng-bootstrap` no longer on `lit` (it keeps `@mintplayer/web-components` for
+  `theming/color-mode.css`).
+- **Navbar dropdown's label slot is `labelTemplate` (issue #437).** It shared its name with the `label`
+  input, which made React and Vue pass the slot in place of the label. Angular: `*bsNavbarDropdownLabelTemplate`
+  (`BsNavbarDropdownLabelTemplateDirective`); React `labelTemplate`; Vue `#labelTemplate`.
+- **Compiled Lit elements refuse an unknown enum attribute (issue #437).** A string input typed as a union
+  of literals ignores an attribute naming none of them and keeps its default (`orientation="sideways"` on
+  `mp-splitter` stays `horizontal`), as the hand-written elements did.
+- **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
+  all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until
+  it is live.
+  - **Every front:** the root is `.hierarchy-chart` (a `div` in React and Vue, the host in Angular and Lit).
+    There is no shadow root; style the `.hierarchy-chart` classes and the `--mp-hierarchy-chart-*` custom
+    properties. `--mp-hierarchy-chart-transition-duration` is written on the inner `.chart`.
+  - **Events:** `hierarchy-zoom` / `hierarchy-node-select` / `hierarchy-node-hover` /
+    `hierarchy-node-load-error` are now `zoom` / `nodeSelect` / `nodeHover` / `nodeLoadError`, plus
+    `rootIdChange`: Angular `(zoom)`, `(nodeselect)`, `(nodehover)`, `(nodeloaderror)`; Lit the same
+    lowercased names; React `onZoom`, `onNodeSelect`, `onNodeHover`, `onNodeLoadError`, `onRootIdChange`
+    (the payload, not a `CustomEvent`); Vue `@zoom`, `@nodeselect`, … and `v-model:rootId`.
+  - **Lit element:** `zoomLevel` is a method (`el.zoomLevel()`), and `root-id` no longer reflects; read
+    `el.rootId`. `maxDepth`, `zoomGestures` and `zoomHintLabel` return what was set, not the resolved value.
+  - **Vue:** numeric inputs are typed numbers; bind them (`:color-min="60"`, not `color-min="60"`).
+  - The `HierarchyNode` / layout / event types come from `@mintplayer/ui-core/charts/hierarchy` and every
+    front re-exports them.
+- **Compiled Lit elements read their attributes the way the hand-written ones did (issue #437).** Removing an
+  attribute restores the input's default instead of leaving `null` behind (a removed `color-start` crashed the
+  hierarchy chart), a non-numeric number attribute keeps the default rather than becoming `NaN`, and a boolean
+  attribute set to `"false"` is false, so `show-labels="false"` can switch a default-true input off. Lit's own
+  `Boolean` reads any present attribute as true.
+- **The Lit bridge follows a consumer `aria-label` set after the element connects (issue #437).** It was
+  read once, on connect.
+- **Carousel is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/carousel` (`carouselCore`, `connectCarousel`) and compiled into all four fronts. The
+  server HTML is the complete deck in every framework: one radio per slide holds the index, so indicators,
+  prev/next (with wrap-around) and the radio-group arrow keys work with JavaScript off. The Declarative Shadow
+  DOM chrome, `injectMpCarouselDsd` and `@mintplayer/web-components/carousel/ssr` are gone.
+  - **Slides are items:** wrap each slide in `bs-carousel-item` (Angular), `BsCarouselItem` (React, Vue) or
+    `mp-carousel-item` (Lit). The parent counts them on the server.
+  - **Every front:** the root is `.carousel` (a `div` in React and Vue, the host in Angular and Lit). There is
+    no shadow root; style the Bootstrap carousel classes. With JS the viewport follows the current slide's height (the tallest in vertical mode), measured by a ResizeObserver; with JS off it is as tall as the tallest slide.
+  - **The `play-pause` slot is gone.** The built-in button is the only play/pause control.
+  - **Events:** `slide-change` is `slideChange` and `paused-change` is `pausedChange`, which carries the
+    boolean: Angular `(slidechange)` / `[(paused)]`, Lit `slidechange` / `pausedchange`, React
+    `onSlideChange` / `onPausedChange` (the payload, not a `CustomEvent`), Vue `@slidechange` /
+    `v-model:paused`. New `animationStart` / `animationEnd` outputs.
+  - **Methods:** `previous()`, `next()`, `goto(index)`, `play()`, `pause()` and `togglePaused()`.
+  - The animation, orientation and event types come from `@mintplayer/ui-core/carousel` and every front
+    re-exports them. `CarouselPausedChangeEventDetail` is gone.
+- **Treeview is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/treeview` (`treeviewCore`, `connectTreeview`) and compiled into all four fronts. The rows
+  are a flat list of treeitems carrying `aria-level` / `aria-setsize` / `aria-posinset` (the APG's flat tree), so
+  the server HTML already shows every expanded level in every framework.
+  - **The root** is `.treeview` (a `div` in React and Vue, the host in Angular and Lit); the role, the name and
+    the consumer's `aria-*` / `id` land on the inner `ul.treeview-tree`. `hide-borders` is the
+    `.treeview-borderless` class. There is no `li[role=none]` / `ul[role=group]` nesting any more.
+  - **Node template:** the `node` slot gets `{ node, ctx }` (`ctx` is the `TreeNodeRenderContext`): Angular
+    `*bsTreeviewNode="let node = node"` (`BsTreeviewNodeTemplateDirective` is `BsTreeviewNodeDirective`), React
+    `node={({ node, ctx }) => …}`, Vue `#node="{ node, ctx }"`, Lit `nodeRenderer: ({ node, ctx }) => …` (it was
+    `(node, ctx)`).
+  - **Events:** `tree-node-select` / `-expand` / `-collapse` are `nodeSelect` / `nodeExpand` / `nodeCollapse`,
+    plus `nodeLoadError` (was `tree-node-load-error`): Angular `(nodeselect)`, Lit `nodeselect`, React
+    `onNodeSelect` (the payload, not a `CustomEvent`), Vue `@nodeselect`. `expandedIds` and `selectedIds` are
+    two-way in every front (React: `onExpandedIdsChange` / `onSelectedIdsChange`).
+  - **Lazy loading** (`loadChildren`) works in every front, and the loaded children show without the consumer
+    writing them back into `items` (once `items` carries them, those win). Its announcements are the `labels`
+    input. `selectionMode: 'none'` no longer clears ids set from outside; it only stops the user selecting.
+  - `mp-treeview.focus()` no longer forwards to the roving row; focus `[role=treeitem][tabindex="0"]`.
+  - The types come from `@mintplayer/ui-core/treeview`, re-exported by every front. `TreeNodeRenderer` is gone.
+- **Tree-select is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/tree-select` (`treeSelectCore`, `connectTreeSelect`) on top of the treeview's tree
+  controller, and compiled into all four fronts, so the control and the panel render on the server.
+  - **The root** is `.tree-select` (a `div` in React and Vue, the host in Angular and Lit), and the consumer's
+    attributes land there. `aria-label` names the combobox. `bs-tree-select` no longer has to sit inside a
+    `<bs-form>`.
+  - **The panel** is a native `popover="auto"`, positioned under the control and matched to its width.
+    `scroll-height` is `panel-scroll-height` (`panelScrollHeight`), carried as `--mp-tree-select-panel-max-height`.
+  - **Selection state:** multiple mode marks rows `aria-selected` in an `aria-multiselectable` tree; checkbox mode
+    marks them `aria-checked` (`mixed` for a partial branch). The per-row checkbox `input.ts-node-check` is a
+    decorative `span.ts-node-check[data-state]`. In both multi modes, clicking a leaf row or a check glyph
+    toggles the node and clicking a folder row only expands it. A cascaded parent also checks children that are
+    loaded later.
+  - **Templates are slots:** `item`, `suggestion`, `button`, `header`, `footer`, `noResults`, `enterSearchTerm`.
+    Angular `*bsTreeSelectItem="let node = node"` and so on, React `item={({ node, query }) => …}`, Vue
+    `#item="{ node, query }"`, Lit `itemRenderer` / `suggestionRenderer` / `buttonRenderer` (they were
+    `itemTemplate` / `suggestionTemplate` / `buttonTemplate`) and `slot="header"` children.
+  - **Events:** `valueChange` (two-way `value` in every front; React `onValueChange(value)`, not a
+    `CustomEvent`; Vue `v-model:value`), `selectionChange`, `openChange`, `search` and `loadError`. Methods are
+    `open()` and `close()`.
+  - Angular keeps its `ControlValueAccessor` (`BsTreeSelectValueAccessor`, a host directive).
+  - The types and `InMemoryTreeSelectProvider` come from `@mintplayer/ui-core/tree-select`, re-exported by every
+    front.
+- **The datatable is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/datatable` (`datatableCore`, `connectDatatable`) and compiled into all four fronts, so the
+  table, the pager and the filter row render on the server.
+  - **The root** is `div.datatable` (the host in Angular and Lit). An `aria-label` names the `<table>`.
+  - **Columns are data in every front.** `DatatableColumnDef` keeps the name, label, flags and filter config;
+    `format(row, rowIndex)` gives a cell's text. `cellRenderer`, `headerRenderer` and `filterRenderer` (functions
+    returning a DOM `Node`) are gone.
+  - **Templates are slots:** `header {column}`, `cell {row, column, rowIndex}`, `row {row, rowIndex, ctx}` (all of
+    a row's data cells) and `filter {column, ctx}`. Angular `<ng-template bsDatatableRow let-row="row">` and so on,
+    React `cell={({ row, column }) => …}`, Vue `#cell="{ row, column }"`, Lit `cellRenderer` / `headerRenderer` /
+    `rowRenderer` / `filterRenderer` taking the slot's arguments. A slot renders every column; return
+    `cellText(row, column, rowIndex)` for the columns you leave alone.
+  - **Angular:** `*bsDatatableColumn`, `*bsRowTemplate`, `*bsDatatableFilterPanel`, `DatatableSettings`,
+    `[(settings)]`, `[(selection)]`, `isResponsive` and `BsDatatableFetch` are gone. Use `[columns]`,
+    `[(sortColumns)]`, `[(page)]`, `[(perPage)]`, `[perPageOptions]`, `pagination`, `[(selectedIds)]` (row keys;
+    `(selectionchange)` also carries the rows) and `DatatableFetch` (`(req) => Promise<{ data, totalRecords }>`).
+  - **Two-way inputs** are `sortColumns`, `page`, `perPage`, `selectedIds` and `expandedIds` (an array, no longer a
+    `Set`). React reports them through `on<Name>Change(value)`. Outputs hand over the payload, not a `CustomEvent`,
+    and are lowercased in Angular, Vue and Lit (`rowclick`, `selectionchange`, `filterchange`).
+  - **A custom filter panel is per column:** `filterMode: 'custom'` renders the `filter` slot for that column, while
+    the others keep their built-in `values` or `comparison` panels. The slot's `FilterContext` is a snapshot
+    (`values`, `loading`, `selection`, `term`) plus the `search`, `apply`, `compare`, `clear` and `close` commands.
+  - **Filter and resize panels are native `popover="auto"`**, opened by their trigger's `popovertarget`. They are no
+    longer portalled into the document-root overlay.
+  - The types come from `@mintplayer/ui-core/datatable`, re-exported by every front.
+- **The query builder is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/query-builder` (`queryBuilderCore`, `connectQueryBuilder`) and compiled into all four
+  fronts, so the toolbar, the tree and the preview render on the server.
+  - **One element.** `mp-query-group`, `mp-query-condition` and `mp-query-subquery` are gone: the tree renders as
+    nested lists (`li.qb-row` with `data-row-id`, a group's children in its own `ul.qb-rows`) inside one
+    `div.query-builder` root (the host in Angular and Lit). Nesting carries the depth, so `aria-level` and
+    `--qb-depth` are gone; a nested `ul.qb-rows` indents and draws the guide line. An `aria-label` names the root.
+  - **`view.rows` is `view.tree`.** The core's view is a tree of `QueryBuilderNode` (`kind`, `item`, `group`,
+    `condition`, `subquery`, `note`, `text`, `list`, `children`), replacing the flat `QueryBuilderRow` list.
+    **Migration**: walk `children` instead of reading `rows`.
+  - **Custom value editors are a slot.** Mark a field `editor: 'custom'` in the schema and the condition's value
+    renders through the `editor` slot with an `EditorContext` (`field`, `operator`, `value`, `disabled`,
+    `onChange`). Angular `<ng-template bsQueryBuilderEditor let-ctx="ctx">`, React `editor={({ ctx }) => …}`,
+    Vue `#editor="{ ctx }"`. Switch on `ctx.field.name` for several fields.
+  - **Removed:** `editorRegistry`, `EditorRegistry`, `EditorFactory`, `EditorHandle`, the Angular
+    `*bsQueryBuilderEditor="'field'"` structural directive, `operatorOverrides` on the element, the Lit
+    contexts, and the `part=` attributes.
+  - **Two-way inputs** are `query`, `rootEntity`, `selectedFields` and `sortBy`. React reports them through
+    `on<Name>Change(value)` and Vue through `v-model:<name>`. Outputs hand over the payload, not a `CustomEvent`
+    with a `tree` field, and are lowercased in Angular, Vue and Lit (`savequery`, `loadquery`, `deletequery`).
+  - Angular keeps its `ControlValueAccessor` (`BsQueryBuilderValueAccessor`, a host directive).
+  - The model, `renderExpression`, `visitTree` and `DragController` moved to `@mintplayer/ui-core/query-builder`,
+    re-exported by every front.
+- **`mp-input-group` is a light element (issue #437).** Like `bs-input-group`, the host is the
+  `.input-group` itself: no shadow root, no slot, and its children are the group's items. It no longer
+  writes `size` onto `mp-*` children, because a control in a group reads the group's classes and the
+  `--mp-group-radius-*` properties itself. `part="group"` is gone. A control that renders its own `.input-group` (the date, time and phone pickers)
+  takes the outer group's `sm`/`lg` size and has its two ends paired with its neighbours.
+- **Code snippet is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/code-snippet` (`codeSnippetCore`, `connectCodeSnippet`) and compiled into all four
+  fronts, so it is server-rendered everywhere. With JS off it shows the escaped source: line-numbered,
+  selectable, and linkable when `lineHref` is set. Highlighting follows hydration, and the copy button is
+  disabled until then.
+  - **Every front:** the root is `.code-snippet` (a `div` in React and Vue, the host in Angular and Lit),
+    and consumer attributes land there. The markup is light DOM, so `::part()` is gone:
+    - an annotation's `kind` is the row class `annotation-<kind>` (`.coverage .annotation-uncovered`);
+    - Angular needs `::ng-deep` for it, Vue `:deep()`.
+  - **`theme` and `wrap`** are written on the root as `data-theme` and `data-wrap`.
+  - **Strings:** `copyLabel`, `lineLabel`, `regionLabel`, `copiedLabel`, `copiedAnnouncement` and
+    `keymapHint` are one `labels` input (`Partial<CodeSnippetLabels>`, defaults in `CODE_SNIPPET_LABELS`).
+    The copy button's visible text is `labels.copyText`.
+  - **Events:**
+    - `lineActivate` carries a `CodeLineActivation` (`{ line, preventDefault() }`) instead of a cancelable DOM
+      event. Angular emits it as `(lineactivate)`; React passes it to `onLineActivate`.
+    - The language event is `languageDetected` with the language as its payload: Angular
+      `(languagedetected)`, React `onLanguageDetected`, Lit `languagedetected`.
+  - **Methods:** `scrollToLine(line)` and the new `whenHighlighted()` are on every front.
+  - **Removed:** source passed as slot or children content (pass `code`).
+  - **Moved:** `registerLanguage`, `canHighlight` and `CodeLineAnnotation` now come from ui-core, and every
+    front re-exports them. `highlight.js` is now an optional peer of `@mintplayer/ui-core`, not of
+    `@mintplayer/web-components`.
+  - **Lit:** `mp-code-snippet` renders in the light DOM. Row ids are per instance (`<id>-L<n>`), since
+    `L<n>` would repeat across snippets on one page.
+- **Theme toggle is generated from one source in every front (issue #437).** It is written once in
+  `@mintplayer/ui-core/theming` (`themeToggleCore`, `normaliseModes`, `toggleEntries`) and compiled into
+  all four fronts, so it is server-rendered everywhere. With JS off it renders disabled at its final size,
+  and hydration enables it without moving it.
+  - **Every front:** the root is `.theme-toggle` (a `span` in React and Vue, the host in Angular and Lit), and
+    consumer attributes land there. The icon is a single `<path>`; a multi-path icon is joined into one.
+    Invalid `modes` entries now warn once per list, not on every assignment.
+  - **`color-mode.css`** reserves the box through `.theme-toggle[data-mps=theme-toggle]` instead of
+    `mp-theme-toggle:not(:defined)`.
+  - **Lit:** `mp-theme-toggle` renders in the light DOM (no shadow root, no `delegatesFocus`). `modes` is a
+    plain property that keeps what you assign; the normalised list is no longer read back from it.
+  - **Angular, React, Vue:** the `theming` entries import from `@mintplayer/ui-core/theming` rather than
+    `@mintplayer/web-components/theming`, so they no longer pull in the Lit element.
+
+
+
 - **Tile manager rebuilt on a headless core, and responsive (issue #440).** `@mintplayer/web-components`
   **3.0.0**, `@mintplayer/ui-core` 1.1.0 (new `tile-manager` entry), `@mintplayer/ng-bootstrap` 22.27.0,
   `@mintplayer/react-bootstrap` 19.26.0, `@mintplayer/vue-bootstrap` 3.27.0. `mp-tile-manager` now runs on
@@ -190,6 +847,14 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Added
 
+- **The component compiler nests templates (issue #437).** A D10 template may call **partials**: recursive sibling
+  `.view.vue` files with no manifest, folded into each front. It may also **compose** another generated element
+  (`<mp-x>`) of any group, its own included, with inputs, outputs, `v-model:x` (a `ModelBinding<T>` from
+  `@mintplayer/ui-core/component`) and slot content in Vue syntax. A view reaches its core for those handlers
+  through `ViewArgs.api()`. The compiler options `entryModule` (per front) and `registry` decide how a composed
+  child is imported. The compiler refuses an output named like a native DOM event, a cycle between groups, and a tag
+  claimed twice. See `docs/prd/component-compiler-nesting-437.md`.
+
 - **Typeahead in every framework, from one headless core (issue #436).** `@mintplayer/ui-core/typeahead`
   (`TypeaheadMachine`, `connect()`, `inMemoryTypeaheadProvider`) drives `bs-typeahead` (Angular), `BsTypeahead`
   (React: `renderItem`, controlled `value` + `onValueChange`), `BsTypeahead.vue` (`#item` slot, `v-model`) and
@@ -291,6 +956,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     applyFetchState })`.
 
 ### Fixed
+
+- **Angular SSR renders a generated component's bound two-way inputs (issue #437).** A generated Angular
+  component used to seed its core from its inputs in the constructor, before Angular had bound them. On the client
+  the next change detection corrected that, but the server rendered the default (`[(count)]="5"` rendered `0`) and
+  the client then patched it after hydration. Seeding now happens at the first change detection, so the server
+  renders the bound value.
 
 - **`<bs-badge>` text contrasts with its background (issue #434).**
   - The badge painted `bg-{color}`, which sets only the background, so its text stayed `.badge`'s white: 1.63:1 on

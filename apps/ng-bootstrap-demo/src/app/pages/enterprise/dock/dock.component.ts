@@ -3,7 +3,8 @@ import { Component, isDevMode, signal, viewChild, ChangeDetectionStrategy} from 
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import {
   BsDockManagerComponent,
-  BsDockPaneComponent,
+  BsDockManagerPaneDirective,
+  DockLayoutInput,
   DockLayoutSnapshot,
 } from '@mintplayer/ng-bootstrap/dock';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -15,7 +16,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-dock',
   templateUrl: './dock.component.html',
   styleUrls: ['./dock.component.scss'],
-  imports: [CommonModule, BsButtonTypeDirective, BsDockManagerComponent, BsDockPaneComponent, BsBadgeComponent, BsCodeSnippetComponent],
+  imports: [CommonModule, BsButtonTypeDirective, BsDockManagerComponent, BsDockManagerPaneDirective, BsBadgeComponent, BsCodeSnippetComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DockComponent {
@@ -24,7 +25,7 @@ export class DockComponent {
   readonly Color = Color;
   readonly isDevMode = isDevMode();
 
-  layout = signal<DockLayoutSnapshot>({
+  layout = signal<DockLayoutInput>({
     root: {
       kind: 'split',
       direction: 'horizontal',
@@ -96,30 +97,27 @@ export class DockComponent {
     this.savedLayout.set(this.dockManager()!.captureLayout());
   }
 
-  onLayoutSnapshot(snapshot: DockLayoutSnapshot): void {
-    this.liveLayout.set(snapshot);
+  readonly layoutError = signal<string | null>(null);
+
+  /** Restores a layout from JSON, e.g. one captured above. */
+  applyLayout(json: string): void {
+    try {
+      this.layout.set(JSON.parse(json));
+      this.layoutError.set(null);
+    } catch (error) {
+      this.layoutError.set(error instanceof Error ? error.message : String(error));
+    }
   }
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-dock-manager
-      [layout]="layout()"
-      (layoutChange)="$event && layout.set($event)">
-      <bs-dock-pane name="panel-1">
-        <div class="p-3">
-          <h3>Panel 1</h3>
-          <p>Content projected through a named slot.</p>
-        </div>
-      </bs-dock-pane>
-      <bs-dock-pane name="panel-2">
-        <div class="p-3">
-          <h3>Panel 2</h3>
-        </div>
-      </bs-dock-pane>
-      <bs-dock-pane name="panel-3">
-        <div class="p-3">
-          <h3>Panel 3</h3>
-        </div>
-      </bs-dock-pane>
+    <bs-dock-manager [(layout)]="layout">
+      <ng-template bsDockManagerPane let-pane="pane">
+        @switch (pane) {
+          @case ('panel-1') { <div class="p-3"><h3>Panel 1</h3></div> }
+          @case ('panel-2') { <div class="p-3"><h3>Panel 2</h3></div> }
+          @case ('panel-3') { <div class="p-3"><h3>Panel 3</h3></div> }
+        }
+      </ng-template>
     </bs-dock-manager>
   `;
 
@@ -127,17 +125,17 @@ export class DockComponent {
     import { Component, signal } from '@angular/core';
     import {
       BsDockManagerComponent,
-      BsDockPaneComponent,
-      DockLayoutSnapshot,
+      BsDockManagerPaneDirective,
+      DockLayoutInput,
     } from '@mintplayer/ng-bootstrap/dock';
 
     @Component({
       selector: 'my-workspace',
       templateUrl: './my-workspace.component.html',
-      imports: [BsDockManagerComponent, BsDockPaneComponent],
+      imports: [BsDockManagerComponent, BsDockManagerPaneDirective],
     })
     export class MyWorkspaceComponent {
-      layout = signal<DockLayoutSnapshot>({
+      layout = signal<DockLayoutInput>({
         root: {
           kind: 'split',
           direction: 'horizontal',
@@ -160,8 +158,8 @@ export class DockComponent {
   protected readonly snippetFloatingTs = dedent`
     // Floating panes are tear-off windows positioned in screen pixels.
     // Drag a tab out of its stack — or press M then F on a focused tab —
-    // and the WC emits a layout with the pane moved into the floating[] array.
-    layout = signal<DockLayoutSnapshot>({
+    // and the dock writes back a layout with the pane moved into the floating[] array.
+    layout = signal<DockLayoutInput>({
       root: {
         kind: 'stack',
         panes: ['main'],

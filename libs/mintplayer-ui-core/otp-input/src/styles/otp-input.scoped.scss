@@ -1,0 +1,145 @@
+// The one-time-code input's stylesheet, shared by all four fronts (PRD #437
+// wave B). Rescoped at build time: every compound gains `[data-mps=otp-input]`.
+//
+// Bootstrap itself (.form-control for the no-JS field, .invalid-feedback) comes
+// from the page baseline. No partial that emits rules is imported here.
+
+// The wrapper: the bs-otp-input / mp-otp-input host, or a div in React and Vue.
+.mp-otp-input {
+  display: inline-flex;
+  // The validation message (width: 100%) drops onto its own line under the boxes.
+  flex-wrap: wrap;
+  position: relative;
+  box-sizing: border-box;
+  --bs-otp-input-box-bg: var(--bs-body-bg, #fff);
+  --bs-otp-input-box-color: var(--bs-body-color, #212529);
+  --bs-otp-input-box-border: var(--bs-border-color, #ced4da);
+  --bs-otp-input-box-border-active: var(--bs-primary, #0d6efd);
+  --bs-otp-input-box-border-invalid: var(--bs-danger, #dc3545);
+  --bs-otp-input-box-shadow-focus: 0 0 0 0.25rem rgba(var(--bs-primary-rgb, 13, 110, 253), 0.25);
+  --bs-otp-input-box-shadow-invalid: 0 0 0 0.25rem rgba(var(--bs-danger-rgb, 220, 53, 69), 0.25);
+  --bs-otp-input-radius: var(--bs-border-radius, 0.375rem);
+  --bs-otp-input-gap: 0.5rem;
+  --bs-otp-input-min-box-size: 2.875rem;
+  --bs-otp-input-font-size: 1.25rem;
+  --bs-otp-input-padding-y: 0.375rem;
+  --bs-otp-input-padding-x: 0.5rem;
+}
+
+.mp-otp-input-sm {
+  --bs-otp-input-min-box-size: 2.25rem;
+  --bs-otp-input-font-size: 1rem;
+  --bs-otp-input-gap: 0.375rem;
+  --bs-otp-input-padding-y: 0.25rem;
+  --bs-otp-input-padding-x: 0.4rem;
+}
+
+.mp-otp-input-lg {
+  --bs-otp-input-min-box-size: 3.5rem;
+  --bs-otp-input-font-size: 1.5rem;
+  --bs-otp-input-gap: 0.625rem;
+  --bs-otp-input-padding-y: 0.5rem;
+  --bs-otp-input-padding-x: 0.625rem;
+}
+
+.mp-otp-input-disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.otp-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--bs-otp-input-gap);
+}
+
+// The no-JS field: wide enough for the whole code, in the boxes' monospace face.
+.otp-plain-input {
+  font-family: var(--bs-font-monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  letter-spacing: 0.125rem;
+}
+
+// Once hydrated the real input covers the whole row of boxes, transparent: it
+// keeps focus, paste, IME and SMS autofill, and any tap on a box lands in it.
+.otp-hidden-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: var(--bs-otp-input-font-size);
+  text-shadow: none;
+  z-index: 1;
+  // The focus indicator is the active box's ring.
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.otp-box {
+  // A one-cell grid stack: the spacer reserves the width, the content overlays it,
+  // so a multi-character box keeps its width whether empty or full.
+  position: relative;
+  display: inline-grid;
+  grid-template-areas: 'stack';
+  align-items: center;
+  justify-items: center;
+  min-width: var(--bs-otp-input-min-box-size);
+  height: var(--bs-otp-input-min-box-size);
+  padding: var(--bs-otp-input-padding-y) var(--bs-otp-input-padding-x);
+  background: var(--bs-otp-input-box-bg);
+  color: var(--bs-otp-input-box-color);
+  border: 1px solid var(--bs-otp-input-box-border);
+  border-radius: var(--bs-otp-input-radius);
+  font-size: var(--bs-otp-input-font-size);
+  font-weight: 500;
+  line-height: 1;
+  font-family: var(--bs-font-monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  letter-spacing: 0.125rem;
+  user-select: none;
+  white-space: pre;
+  transition: border-color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.otp-box-spacer,
+.otp-box-content {
+  grid-area: stack;
+  line-height: 1;
+  white-space: pre;
+}
+
+.otp-box-spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.otp-box-active {
+  border-color: var(--bs-otp-input-box-border-active);
+  box-shadow: var(--bs-otp-input-box-shadow-focus);
+}
+
+.otp-box-invalid {
+  border-color: var(--bs-otp-input-box-border-invalid);
+}
+
+.otp-box-invalid.otp-box-active {
+  box-shadow: var(--bs-otp-input-box-shadow-invalid);
+}
+
+// High-contrast mode drops box-shadow: keep the active box visible by its border.
+@media (forced-colors: active) {
+  .otp-box-active {
+    outline: 2px solid Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otp-box {
+    transition: none;
+  }
+}

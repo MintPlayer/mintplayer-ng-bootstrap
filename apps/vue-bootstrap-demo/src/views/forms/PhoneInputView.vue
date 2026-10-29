@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import { BsPhoneInput } from '@mintplayer/vue-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/vue-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+import type { PhoneChangeEventDetail } from '@mintplayer/vue-bootstrap/phone-input';
 
 // v-model is the E.164 string, or null while empty.
 const phone = ref<string | null>(null);
@@ -17,8 +17,8 @@ const SOURCE = `<BsPhoneInput
   @phone-change="detail = $event"
 />`;
 
-const GROUP_SOURCE = `<!-- The group joins controls that keep their own shadow
-     root, which Bootstrap's own CSS cannot reach. -->
+const GROUP_SOURCE = `<!-- The group joins a whole phone input: its outer
+     corners pair with the addon. -->
 <BsInputGroup>
   <span class="addon">Tel</span>
   <BsPhoneInput default-country="be" />
@@ -43,7 +43,7 @@ const GROUP_SOURCE = `<!-- The group joins controls that keep their own shadow
         v-model="phone"
         default-country="be"
         input-label="Phone number"
-        :locale="locale || undefined"
+        :locale="locale || null"
         @phone-change="detail = $event"
       />
       <p class="mt-2 mb-1">Value: <code>{{ phone ?? 'null' }}</code></p>

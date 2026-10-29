@@ -1,15 +1,14 @@
-export { BsTimeline } from './BsTimeline';
-export type { BsTimelineProps } from './BsTimeline';
-export { BsTimelineItem } from './BsTimelineItem';
-
+// The timeline is generated from @mintplayer/ui-core/timeline (PRD #437 D10).
+export * from './generated';
 export type {
-  TimelineItem,
-  TimelineOrientation,
   TimelineAlign,
-  TimelineSide,
-  TimelineSelectable,
-  TimelineItemContext,
   TimelineConnectorContext,
+  TimelineItem,
   TimelineItemClickDetail,
+  TimelineItemContext,
+  TimelineOrientation,
+  TimelineSelectable,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
+  TimelineSide,
+} from '@mintplayer/ui-core/timeline';
+export { resolveSides } from '@mintplayer/ui-core/timeline';

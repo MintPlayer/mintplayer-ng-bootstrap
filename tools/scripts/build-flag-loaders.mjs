@@ -44,7 +44,7 @@ export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..
 
 /** Every path this script reads or writes, derived from the repo root. */
 export function flagPaths(repoRoot = REPO_ROOT) {
-  const flagsSrc = join(repoRoot, 'libs/mintplayer-web-components/flags/src');
+  const flagsSrc = join(repoRoot, 'libs/mintplayer-ui-core/flags/src');
   return {
     flagsSrc,
     assetsDir: join(flagsSrc, 'assets'),

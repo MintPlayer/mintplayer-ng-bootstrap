@@ -6,3 +6,4 @@ export * from './overlay-focus/overlay-focus.directive';
 export * from './live-announcer/live-announcer.service';
 export * from './overlay-stack/overlay-stack.service';
 export * from './control-validity/control-validity.directive';
+export * from './host-aria/take-host-aria';

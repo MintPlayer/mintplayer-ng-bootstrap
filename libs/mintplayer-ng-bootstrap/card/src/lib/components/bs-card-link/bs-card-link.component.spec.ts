@@ -6,7 +6,7 @@ import { BsCardLinkComponent } from './bs-card-link.component';
 describe('BsCardLinkComponent', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('renders an inner <a class="card-link"> with the projected content', () => {
+  it('puts .card-link on the host and renders an inner <a> with the projected content', () => {
     @Component({
       imports: [BsCardLinkComponent],
       template: `<bs-card-link href="/x">Click</bs-card-link>`,
@@ -17,7 +17,7 @@ describe('BsCardLinkComponent', () => {
     fixture.detectChanges();
     const a = fixture.nativeElement.querySelector('bs-card-link a') as HTMLAnchorElement;
     expect(a).not.toBeNull();
-    expect(a.classList.contains('card-link')).toBe(true);
+    expect(a.parentElement!.classList.contains('card-link')).toBe(true);
     expect(a.getAttribute('href')).toBe('/x');
     expect(a.textContent?.trim()).toBe('Click');
   });

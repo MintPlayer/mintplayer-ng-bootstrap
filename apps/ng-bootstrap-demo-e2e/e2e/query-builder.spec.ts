@@ -62,21 +62,17 @@ test('query-builder demo: schema fetch + search round-trip', async ({ page }) =>
   });
 
   // The bs-query-builder host renders inside the page.
-  const qb = page.locator('bs-query-builder');
+  const qb = page.locator('bs-query-builder').first();
   await expect(qb).toBeVisible();
 
   // bs-datatable fires its fetch on mount, so the initial state already shows
   // "2 matches" (the mocked response). No need to assert an empty state — we
   // only care that Search after editing the tree fires another fetch round.
 
-  // Add a condition by clicking the "+ Add condition" button (inside the WC's shadow root).
-  // The button text is composed from messages.addCondition default.
-  await page.locator('mp-query-builder').evaluate((el) => {
-    // The query-builder family is light-DOM (Tier L): its internals are ordinary
-    // descendants, so the whole tree is reachable from the host in one query.
-    const btn = el.querySelector('mp-query-group .qb-add-condition') as HTMLButtonElement;
-    btn.click();
-  });
+  // Add a condition: the root group's "+ Add condition" button. The tree is
+  // flat rows (#437), so the new condition is one more li.qb-row-condition.
+  await qb.locator('.qb-add-condition').first().click();
+  await expect(qb.locator('li.qb-row-condition')).toHaveCount(1);
 
   // Search.
   await page.getByRole('button', { name: 'Search' }).click();

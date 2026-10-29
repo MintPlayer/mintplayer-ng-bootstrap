@@ -8,7 +8,7 @@
   overridden with a structural template directive
   (<code>*bsTimelineMarker</code>, <code>*bsTimelineContent</code>,
   <code>*bsTimelineTimestamp</code>). Items can also be authored declaratively
-  as <code>&lt;mp-timeline-item&gt;</code> children.
+  as <code>&lt;bs-timeline-item&gt;</code> children.
 </p>
 
 <h2>Playground</h2>
@@ -81,15 +81,15 @@
     [align]="align()"
     [reverse]="reverse()"
     [selectable]="selectable()"
-    [(selection)]="selected"
-    (itemClick)="onItemClick($event)">
+    [(selectedIds)]="selected"
+    (itemclick)="onItemClick($event)">
     @if (customMarkers()) {
-      <span *bsTimelineMarker="let item" class="tl-marker">
+      <span *bsTimelineMarker="let item = item" class="tl-marker">
         <i [class]="item.icon" aria-hidden="true"></i>
       </span>
     }
     @if (cardContent()) {
-      <bs-card *bsTimelineContent="let item">
+      <bs-card *bsTimelineContent="let item = item">
         <bs-card-header>{{ item.title }}</bs-card-header>
         <bs-card-body>
           <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>
@@ -97,7 +97,7 @@
         <bs-card-footer><small class="text-body-secondary">{{ item.time }}</small></bs-card-footer>
       </bs-card>
     }
-    <small *bsTimelineTimestamp="let item">{{ item.time }}</small>
+    <small *bsTimelineTimestamp="let item = item">{{ item.time }}</small>
   </bs-timeline>
 </div>
 
@@ -119,34 +119,34 @@
 
 <p>
   Instead of binding <code>[items]</code>, drop
-  <code>&lt;mp-timeline-item&gt;</code> children directly inside
+  <code>&lt;bs-timeline-item&gt;</code> children directly inside
   <code>&lt;bs-timeline&gt;</code> and project into the named slots
-  (<code>opposite</code>, <code>content</code>). Handy when each item's markup
+  (<code>*bsTimelineItemOpposite</code>; the item's own content is its body). Handy when each item's markup
   is bespoke rather than uniform.
 </p>
 
 <div class="timeline-container mb-3">
   <bs-timeline align="alternate">
-    <mp-timeline-item item-id="kickoff" color="#6c757d">
-      <small slot="opposite">2026-01-10</small>
-      <bs-card slot="content">
+    <bs-timeline-item itemId="kickoff" color="#6c757d">
+      <small *bsTimelineItemOpposite>2026-01-10</small>
+      <bs-card>
         <bs-card-header>Kickoff</bs-card-header>
         <bs-card-body>
           <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
         </bs-card-body>
         <bs-card-footer><small class="text-body-secondary">2026-01-10</small></bs-card-footer>
       </bs-card>
-    </mp-timeline-item>
-    <mp-timeline-item item-id="ship" color="#198754">
-      <small slot="opposite">2026-05-01</small>
-      <bs-card slot="content">
+    </bs-timeline-item>
+    <bs-timeline-item itemId="ship" color="#198754">
+      <small *bsTimelineItemOpposite>2026-05-01</small>
+      <bs-card>
         <bs-card-header>Shipped v1</bs-card-header>
         <bs-card-body>
           <bs-card-text class="mb-0">First public release.</bs-card-text>
         </bs-card-body>
         <bs-card-footer><small class="text-body-secondary">2026-05-01</small></bs-card-footer>
       </bs-card>
-    </mp-timeline-item>
+    </bs-timeline-item>
   </bs-timeline>
 </div>
 

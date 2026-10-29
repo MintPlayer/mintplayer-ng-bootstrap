@@ -1,0 +1,57 @@
+// The theme toggle's stylesheet, shared by all four fronts (PRD #437, dark-mode D7).
+// Rescoped at build time: every compound gains `[data-mps=theme-toggle]`.
+// `.visually-hidden` is global Bootstrap.
+//
+// color-mode.css gives `.theme-toggle[data-mps=theme-toggle]` the same 1.5em box
+// before this sheet is installed, so installing it causes no layout shift.
+// Keep the two in lockstep: size, display, vertical-align and line-height.
+//
+// Nothing here animates, so there is nothing for prefers-reduced-motion to turn
+// off. Keep it that way: an icon swap on a theme change must stay instant.
+
+// The bs-theme-toggle / mp-theme-toggle host, or a span in React and Vue.
+.theme-toggle {
+  display: inline-block;
+  position: relative;
+  inline-size: 1.5em;
+  block-size: 1.5em;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.theme-toggle-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--bs-border-radius-sm, 0.25rem);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  // Removed only because :focus-visible below replaces it.
+  outline: none;
+
+  &:focus-visible {
+    // currentColor keeps the ring at the text's contrast in light, dark and
+    // forced-colors modes alike (a translucent focus-ring colour would not).
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+svg {
+  display: block;
+  inline-size: 1.5em;
+  block-size: 1.5em;
+  fill: currentColor;
+}

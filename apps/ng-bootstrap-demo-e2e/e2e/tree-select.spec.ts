@@ -2,84 +2,32 @@ import { test, expect, type Page } from '@playwright/test';
 
 // E2E coverage for the tree-select demo page (/basic/tree-select).
 //
-// The page renders four <mp-tree-select> instances in order:
+// The page renders tree-selects in order:
 //   [0] single   — HTTP provider (needs the backend; not asserted here)
 //   [1] multiple — InMemoryTreeSelectProvider (no backend)
 //   [2] checkbox — InMemoryTreeSelectProvider (no backend)
 //   [3] button   — InMemoryTreeSelectProvider (no backend)
 //
 // We assert against the in-memory demos only, so the spec is independent of the
-// .NET backend. The panel lives in the WC's own shadow DOM and is revealed by a
-// `[data-menu-open]` host attribute (.ts-panel is display:none otherwise).
+// .NET backend. The component is a generated Angular front (#437): its markup is
+// light DOM, the root bag on the `bs-tree-select.tree-select` host, and the panel is a native popover.
 
-// Open the dropdown for the Nth <mp-tree-select> by clicking its anchor, then
-// wait for the host to report open + the panel to be visible. mp-tree-select and
-// mp-treeview are light-DOM (Tier L), so their internals are ordinary
-// descendants — no shadow hop.
+const select = (page: Page, index: number) => page.locator('bs-tree-select.tree-select[data-mp-hydrated]').nth(index);
+
 async function openTreeSelect(page: Page, index: number) {
-  await page.evaluate((i) => {
-    const els = document.querySelectorAll('mp-tree-select');
-    const wc = els[i];
-    const anchor = wc?.querySelector<HTMLElement>('.ts-anchor');
-    if (!anchor) throw new Error(`anchor for tree-select #${i} not found`);
-    anchor.click();
-  }, index);
-
-  await expect
-    .poll(async () =>
-      page.evaluate((i) => {
-        const els = document.querySelectorAll('mp-tree-select');
-        return els[i]?.hasAttribute('data-menu-open') ?? false;
-      }, index),
-    )
-    .toBe(true);
+  const ts = select(page, index);
+  await ts.locator('.ts-control').click();
+  await expect(ts.locator('.ts-panel')).toBeVisible();
+  await expect(ts.locator('input.ts-search')).toHaveAttribute('aria-expanded', 'true');
 }
 
-// Read the visible option labels rendered in the open panel's nested treeview.
-async function readOptionLabels(page: Page, index: number) {
-  return page.evaluate((i) => {
-    const els = document.querySelectorAll('mp-tree-select');
-    // Inlined deliberately: page.evaluate serialises this callback, so it cannot
-    // close over helpers defined in the test file's Node scope.
-    const root = els[i]?.querySelector('.ts-panel mp-treeview') ?? els[i]?.querySelector('.ts-panel');
-    if (!root) return [];
-    return Array.from(root.querySelectorAll('.treeview-label')).map(
-      (n) => (n.textContent ?? '').trim(),
-    );
-  }, index);
-}
+const row = (page: Page, index: number, label: string) =>
+  select(page, index).locator('[role="treeitem"]', { hasText: label }).first();
 
-// Toggle the checkbox for an option. In multiple/checkbox modes the inner
-// treeview runs with selectionMode="none" and selection is driven by the
-// per-row checkbox (.ts-node-check) — clicking the label only expands folders.
-async function toggleCheckbox(page: Page, index: number, label: string) {
-  await page.evaluate(
-    ({ i, lbl }) => {
-      const els = document.querySelectorAll('mp-tree-select');
-      const root = els[i]?.querySelector('.ts-panel mp-treeview') ?? els[i]?.querySelector('.ts-panel');
-      if (!root) throw new Error('panel/treeview not found');
-      const labelEl = Array.from(root.querySelectorAll('.treeview-label')).find(
-        (n) => (n.textContent ?? '').trim() === lbl,
-      );
-      const cb = labelEl?.closest('.ts-node')?.querySelector('input.ts-node-check') as
-        | HTMLInputElement
-        | null;
-      if (!cb) throw new Error(`checkbox for "${lbl}" not found`);
-      cb.checked = !cb.checked;
-      cb.dispatchEvent(new Event('change', { bubbles: true }));
-    },
-    { i: index, lbl: label },
-  );
-}
+// In multiple/checkbox modes the check glyph toggles a node; a folder's row only expands.
+const toggle = (page: Page, index: number, label: string) => row(page, index, label).locator('.ts-node-check').click();
 
-// Count rendered chips in the trigger of the Nth tree-select.
-async function chipLabels(page: Page, index: number) {
-  return page.evaluate((i) => {
-    const els = document.querySelectorAll('mp-tree-select');
-    const chips = els[i]?.querySelectorAll('.ts-chip .ts-chip-label') ?? [];
-    return Array.from(chips).map((c) => (c.textContent ?? '').trim());
-  }, index);
-}
+const chipLabels = (page: Page, index: number) => select(page, index).locator('.ts-chip .ts-chip-label');
 
 test.describe('tree-select demo', () => {
   test.beforeEach(async ({ page }) => {
@@ -87,40 +35,40 @@ test.describe('tree-select demo', () => {
     await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
-    // Ensure the custom elements have upgraded before reaching into shadow DOM.
-    await page.waitForFunction(() => {
-      const els = document.querySelectorAll('mp-tree-select');
-      // Light DOM: wait for the element to have RENDERED, not for a shadow root.
-      return els.length >= 4 && !!els[1]?.querySelector('.ts-anchor');
-    });
+    await expect(page.locator('bs-tree-select.tree-select')).toHaveCount(6);
   });
 
   test('opening the multiple dropdown reveals the panel with root options', async ({ page }) => {
     await openTreeSelect(page, 1);
-    await expect.poll(async () => readOptionLabels(page, 1)).toContain('Fruit');
-    const labels = await readOptionLabels(page, 1);
-    expect(labels).toContain('Vegetables');
+    await expect(row(page, 1, 'Fruit')).toBeVisible();
+    await expect(row(page, 1, 'Vegetables')).toBeVisible();
   });
 
   test('selecting nodes in the multiple demo adds chips', async ({ page }) => {
     await openTreeSelect(page, 1);
-    await expect.poll(async () => readOptionLabels(page, 1)).toContain('Fruit');
-
-    await toggleCheckbox(page, 1, 'Fruit');
-    await expect.poll(async () => chipLabels(page, 1)).toContain('Fruit');
-
-    await toggleCheckbox(page, 1, 'Vegetables');
-    await expect.poll(async () => (await chipLabels(page, 1)).length).toBe(2);
-    expect(await chipLabels(page, 1)).toEqual(expect.arrayContaining(['Fruit', 'Vegetables']));
+    await toggle(page, 1, 'Fruit');
+    await expect(chipLabels(page, 1)).toHaveText(['Fruit']);
+    await toggle(page, 1, 'Vegetables');
+    await expect(chipLabels(page, 1)).toHaveText(['Fruit', 'Vegetables']);
+    await expect(row(page, 1, 'Fruit')).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('checkbox + cascade demo opens and toggling a parent cascades to children', async ({ page }) => {
+  test('checkbox + cascade demo cascades a checked parent to its loaded children', async ({ page }) => {
     await openTreeSelect(page, 2);
-    await expect.poll(async () => readOptionLabels(page, 2)).toContain('Fruit');
+    await row(page, 2, 'Vegetables').locator('[data-tree-chevron]').click();
+    await expect(row(page, 2, 'Carrot')).toBeVisible();
+    await toggle(page, 2, 'Vegetables');
+    await expect(row(page, 2, 'Carrot')).toHaveAttribute('aria-checked', 'true');
+    await expect.poll(async () => chipLabels(page, 2).count()).toBeGreaterThan(1);
+  });
 
-    // Toggle the "Fruit" checkbox; the selection surfaces as chips on the
-    // trigger (mode=checkbox renders chips too).
-    await toggleCheckbox(page, 2, 'Fruit');
-    await expect.poll(async () => (await chipLabels(page, 2)).length).toBeGreaterThan(0);
+  test('keyboard: ArrowDown opens the panel and moves focus into the tree', async ({ page }) => {
+    const input = select(page, 1).locator('input.ts-search');
+    await input.focus();
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ArrowDown');
+    await expect(select(page, 1).locator('.ts-panel')).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await expect(row(page, 1, 'Fruit')).toBeFocused();
   });
 });

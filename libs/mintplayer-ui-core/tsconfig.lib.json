@@ -5,7 +5,7 @@
     "declaration": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src/**/*.ts", "*/src/**/*.ts", "*/index.ts"],
+  "include": ["src/**/*.ts", "*/src/**/*.ts", "*/index.ts", "*/*/src/**/*.ts", "*/*/index.ts"],
   "exclude": [
     "vite.config.ts",
     "vite.config.mts",

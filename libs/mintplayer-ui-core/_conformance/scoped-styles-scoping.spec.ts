@@ -41,6 +41,19 @@ describe.each(SHEETS)('scoped sheet "$scope"', ({ scope, css }) => {
     expect(rules.length).toBeGreaterThan(0);
   });
 
+  // PRD #437 C1-C2: the order statement first, then every rule in mp.components,
+  // so the sheet ranks above the Bootstrap baseline whichever reaches the page first.
+  it('declares the layer order first and keeps every rule in @layer mp.components', () => {
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+    const top = Array.from(style.sheet!.cssRules);
+    style.remove();
+    expect(top.map((rule) => rule.constructor.name)).toEqual(['CSSLayerStatementRule', 'CSSLayerBlockRule']);
+    expect((top[0] as CSSLayerStatementRule).nameList).toEqual(['mp.bootstrap', 'mp.components']);
+    expect((top[1] as CSSLayerBlockRule).name).toBe('mp.components');
+  });
+
   it('every compound of every selector carries the scope attribute (or is the component\'s own tag)', () => {
     const hostTag = `mp-${scope}`;
     const offenders = rules

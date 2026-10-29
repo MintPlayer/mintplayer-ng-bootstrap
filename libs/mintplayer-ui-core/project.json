@@ -5,7 +5,9 @@
   "projectType": "library",
   "release": {
     "version": {
-      "manifestRootsToUpdate": ["dist/{projectRoot}"],
+      "manifestRootsToUpdate": [
+        "dist/{projectRoot}"
+      ],
       "currentVersionResolver": "git-tag",
       "fallbackCurrentVersionResolver": "disk"
     }
@@ -19,23 +21,53 @@
     },
     "codegen": {
       "executor": "nx:run-commands",
-      "outputs": ["{projectRoot}/**/*.scoped.styles.ts"],
+      "outputs": [
+        "{projectRoot}/**/*.scoped.styles.ts",
+        "{projectRoot}/styles/bootstrap.css",
+        "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
+        "{projectRoot}/phone-core/src/metadata/*.generated.ts",
+        "{projectRoot}/code-snippet/src/hljs-loaders.generated.ts",
+        "{projectRoot}/flags/src/flag-loaders.generated.ts",
+        "{projectRoot}/flags/src/all-flags.generated.ts"
+      ],
       "inputs": [
         "{projectRoot}/**/*.scss",
-        "{workspaceRoot}/libs/mintplayer-ng-bootstrap/_bootstrap.scss",
         "{workspaceRoot}/tools/scripts/build-web-components.mjs",
-        "{workspaceRoot}/tools/scripts/lib/*.mjs"
+        "{workspaceRoot}/tools/scripts/lib/*.mjs",
+        "{workspaceRoot}/tools/scripts/build-phone-metadata.mjs",
+        "{workspaceRoot}/tools/scripts/build-hljs-loaders.mjs",
+        "{projectRoot}/flags/src/assets/*.svg",
+        "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
+        {
+          "externalDependencies": [
+            "libphonenumber-js",
+            "highlight.js"
+          ]
+        }
       ],
       "cache": true,
       "options": {
-        "command": "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core"
-      }
+        "parallel": false,
+        "commands": [
+          "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core",
+          "node tools/scripts/build-phone-metadata.mjs",
+          "node tools/scripts/build-hljs-loaders.mjs",
+          "node tools/scripts/build-flag-loaders.mjs"
+        ]
+      },
+      "dependsOn": [
+        "compile-components"
+      ]
     },
     "build": {
       "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
-      "dependsOn": ["codegen"],
+      "dependsOn": [
+        "codegen"
+      ],
       "options": {
         "outputPath": "dist/libs/mintplayer-ui-core"
       },
@@ -50,14 +82,45 @@
     },
     "test": {
       "executor": "@nx/vitest:test",
-      "dependsOn": ["codegen"],
-      "outputs": ["{options.reportsDirectory}"],
+      "dependsOn": [
+        "codegen",
+        "typecheck-views"
+      ],
+      "outputs": [
+        "{options.reportsDirectory}"
+      ],
       "options": {
         "reportsDirectory": "coverage/libs/mintplayer-ui-core"
       }
     },
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "typecheck-views": {
+      "dependsOn": [
+        "codegen"
+      ],
+      "executor": "nx:run-commands",
+      "cache": true,
+      "inputs": [
+        "{projectRoot}/tsconfig*.json",
+        "{projectRoot}/views.d.ts",
+        "{projectRoot}/**/*.view.vue",
+        "{projectRoot}/**/*.ts",
+        "!{projectRoot}/**/*.spec.ts",
+        {
+          "externalDependencies": [
+            "vue-tsc",
+            "vue"
+          ]
+        }
+      ],
+      "options": {
+        "command": "vue-tsc --noEmit -p {projectRoot}/tsconfig.views.json"
+      },
+      "metadata": {
+        "description": "Type-check the component compiler view templates as Vue (what an editor's Vue language service sees)."
+      }
     }
   }
 }

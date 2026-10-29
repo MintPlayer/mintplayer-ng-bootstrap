@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
 
-// The no-JS guarantee for the WC navbar: the bar, its hamburger toggle and the
-// collapsible region are server-rendered as Declarative Shadow DOM and the
-// collapse is driven by a pure-CSS state machine — a <label for> flips an
-// in-shadow <input type=checkbox>, and `.navbar-toggle:checked ~ .navbar-collapse`
-// (see navbar.styles.scss) reveals it. `mp-navbar` is never defined or upgraded.
-// This spec runs the real Angular SSR server (the e2e `webServer`) with scripting
-// off, so the navbar has to work from the parse-time DSD alone.
+// The no-JS guarantee for the navbar (#437): Angular SSR renders the whole
+// bar as plain HTML (no shadow DOM, no upgrade). The collapse is a CSS state
+// machine (a <label for> flips an <input type=checkbox>, and
+// `.navbar-toggle:checked ~ .navbar-collapse` reveals it), and every dropdown
+// is a native <details>. This spec runs the real Angular SSR server (the e2e
+// `webServer`) with scripting off, so the navbar has to work from the HTML alone.
 test.use({ javaScriptEnabled: false });
 
-// Below `lg` (the app shell's breakpoint) the bar is in its collapsed small mode,
-// so the hamburger + checkbox state machine is what's under test.
+// Below the app shell's breakpoint the bar is in its collapsed small mode, so
+// the hamburger + checkbox state machine is what's under test.
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: 600, height: 900 });
   await page.goto('/');
@@ -19,46 +18,38 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('the navbar DSD attaches server-side (no JS, no upgrade)', async ({ page }) => {
-  const navbar = page.locator('mp-navbar').first();
+test('the navbar is server-rendered HTML (no shadow root, no upgrade)', async ({ page }) => {
+  const navbar = page.locator('bs-navbar').first();
   await expect(navbar).toBeVisible();
-
-  // Playwright pierces open shadow roots with CSS — finding the shadow chrome at
-  // all confirms the DSD attached at parse time, with no client upgrade. (With
-  // JS disabled `page.evaluate`/computed-style reads are unavailable, so every
-  // assertion here is locator/native-state based.)
+  await expect(navbar).toHaveAttribute('role', 'navigation');
   await expect(navbar.locator('.navbar-collapse')).toHaveCount(1);
   await expect(navbar.locator('label.navbar-toggler')).toBeVisible();
-
-  // The slotted nav content is server-rendered too (light DOM projected into the
-  // collapse), so links exist and are navigable with no JS.
-  await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveCount(1);
+  // Script-only ARIA state is absent rather than frozen at a lie.
+  await expect(navbar.locator('input.navbar-toggle')).not.toHaveAttribute('aria-expanded', /.*/);
+  // The nav content is server-rendered too, so links exist and are navigable
+  // (behind the closed collapse at this width: hidden until the hamburger opens it).
+  await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveCount(0);
+  await navbar.locator('label.navbar-toggler').click();
+  await expect(page.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
 });
 
-test('nested dropdowns are marked data-submenu server-side (no-JS styling parity)', async ({ page }) => {
-  // `data-submenu` gates every submenu-specific shadow style (the
-  // dropdown-item trigger padding, right caret, 0.5rem panel inset) but is
-  // normally set by connectedCallback — JS. The SSR injector must mark
-  // structurally-nested dropdowns itself, or a no-JS submenu trigger falls
-  // back to first-level nav-link padding and renders flush-left (the
-  // "Forms glued to the left" regression).
-  const nested = page.locator('mp-dropdown-menu mp-navbar-dropdown');
-  const marked = page.locator('mp-navbar-dropdown[data-submenu]');
+test('nested dropdowns are submenus server-side (no-JS styling parity)', async ({ page }) => {
+  // The submenu shape (dropdown-item trigger, inline-end caret, 0.5rem inset)
+  // hangs off `.dropdown-submenu`, which the core writes from the depth: the
+  // server output must already carry it, on exactly the nested dropdowns.
+  const nested = page.locator('bs-navbar details.dropdown details.dropdown');
+  const marked = page.locator('bs-navbar details.dropdown-submenu');
   expect(await nested.count()).toBeGreaterThan(0);
-  expect(await marked.count()).toBe(await nested.count()); // every nested one is marked…
-  expect(await page.locator('mp-dropdown-menu mp-navbar-dropdown:not([data-submenu])').count()).toBe(0);
-  // …and only nested ones (first-level dropdowns exist and stay unmarked).
-  expect(await page.locator('mp-navbar-dropdown').count()).toBeGreaterThan(await marked.count());
+  expect(await marked.count()).toBe(await nested.count());
+  expect(await page.locator('bs-navbar details.dropdown').count()).toBeGreaterThan(await marked.count());
 });
 
 test('the hamburger toggles the collapse via the native checkbox (CSS only)', async ({ page }) => {
-  const navbar = page.locator('mp-navbar').first();
-  // The in-shadow checkbox is the no-JS state holder; `:checked ~ .navbar-collapse`
-  // slides the menu open. Its checked state is a NATIVE toggle (no script), so it
-  // is observable with JS disabled — unlike the grid reveal, which is a paint-clip
-  // (`overflow:hidden` + row `0fr→1fr`) that leaves bounding boxes unchanged and so
-  // can't be measured geometrically. Asserting the checkbox is the honest proxy for
-  // the CSS reveal it drives.
+  const navbar = page.locator('bs-navbar').first();
+  // The checkbox's checked state is a NATIVE toggle (no script), so it is
+  // observable with JS disabled — unlike the grid reveal, which is a paint-clip
+  // (`overflow:hidden` + row `0fr→1fr`) that leaves bounding boxes unchanged.
+  // Asserting the checkbox is the honest proxy for the CSS reveal it drives.
   const toggle = navbar.locator('input.navbar-toggle');
   const toggler = navbar.locator('label.navbar-toggler');
 
@@ -67,4 +58,18 @@ test('the hamburger toggles the collapse via the native checkbox (CSS only)', as
   await expect(toggle).toBeChecked(); // <label for> flipped it → menu slides open
   await toggler.click();
   await expect(toggle).not.toBeChecked(); // real two-way toggle, not one-shot
+});
+
+test('a dropdown opens natively with no script', async ({ page }) => {
+  const navbar = page.locator('bs-navbar').first();
+  await navbar.locator('label.navbar-toggler').click();
+  const basic = navbar.locator('details.dropdown', { has: page.locator(':scope > summary', { hasText: 'Basic' }) }).first();
+  await expect(basic).not.toHaveAttribute('open', /.*/);
+  // Focus + Enter, not a second click: Chromium with JS off intermittently hangs
+  // the actionability stability wait when a test switches click targets
+  // (accordion and carousel suites). Enter on a summary is the native toggle too.
+  await basic.locator(':scope > summary').focus();
+  await page.keyboard.press('Enter');
+  await expect(basic).toHaveAttribute('open', '');
+  await expect(basic.getByRole('link', { name: 'Alert', exact: true })).toBeVisible();
 });

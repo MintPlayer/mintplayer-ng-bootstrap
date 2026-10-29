@@ -1,14 +1,17 @@
-export { MpTreeSelect } from './components';
-export type { NodeTemplate, ValueTemplate, PanelTemplate } from './components';
+// The tree-select is generated from @mintplayer/ui-core/tree-select (PRD #437 D10).
+export * from './generated';
+export { InMemoryTreeSelectProvider } from '@mintplayer/ui-core/tree-select';
 export type {
-  TreeSelectMode,
-  TreeSelectVariant,
+  InMemoryProviderOptions,
   NodePage,
   NodeRequest,
-  TreeSelectProvider,
-  TreeSelectChangeEventDetail,
   TreeNode,
-} from './types';
-export { InMemoryTreeSelectProvider } from './providers/in-memory-provider';
-export type { InMemoryProviderOptions } from './providers/in-memory-provider';
-export { treeSelectLightStyles } from './styles';
+  TreeSelectChangeEventDetail,
+  TreeSelectLabels,
+  TreeSelectLoadErrorEventDetail,
+  TreeSelectMode,
+  TreeSelectProvider,
+  TreeSelectSearchEventDetail,
+  TreeSelectValue,
+  TreeSelectVariant,
+} from '@mintplayer/ui-core/tree-select';

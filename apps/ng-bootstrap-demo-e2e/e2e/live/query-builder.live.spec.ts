@@ -19,7 +19,7 @@ test('live API: schema endpoint responds and the WC mounts', async ({ page, requ
   await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
     /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
   });
-  await expect(page.locator('bs-query-builder')).toBeVisible();
+  await expect(page.locator('bs-query-builder').first()).toBeVisible();
 });
 
 test('live API: empty-tree search returns a non-empty paged result', async ({ page }) => {

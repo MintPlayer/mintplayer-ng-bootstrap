@@ -85,8 +85,8 @@ export interface HostAriaOptions {
    * Which node it must be is determined by where the role is, and getting it wrong
    * produces a name nothing announces. Two shapes exist in this library:
    *
-   * - The host carries the role via `internals.role` (`mp-datatable`,
-   *   `mp-timeline`). Omit this — references go on `ElementInternals`.
+   * - The host carries the role via `internals.role` (`mp-timeline`). Omit
+   *   this — references go on `ElementInternals`.
    * - The role belongs to a real focusable element inside the shadow root, because
    *   it is a native control (`mp-select`'s `<select>`, `mp-checkbox`'s `<input>`).
    *   Return that element. Naming the host instead would either be ignored, or

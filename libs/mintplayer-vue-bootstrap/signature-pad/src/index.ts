@@ -1,2 +1,2 @@
-export { default as BsSignaturePad } from './BsSignaturePad.vue';
-export type { Point, Signature, Stroke } from '@mintplayer/web-components/signature-pad';
+export * from './generated';
+export type { Point, Signature, SignaturePadLabels, Stroke } from '@mintplayer/ui-core/signature-pad';

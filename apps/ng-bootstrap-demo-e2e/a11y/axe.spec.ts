@@ -9,7 +9,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/forms/radio',
     interact: async (page) => {
-      await page.locator('mp-radio-group[name="fruitTemplate"] input[type="radio"]').first().click();
+      await page.locator('input[type="radio"][name="fruitTemplate"]').first().click();
     },
   },
   {
@@ -17,7 +17,7 @@ axeAuditSuite(test, expect, [
     // Open the picker: the closed control and the 244-option listbox are
     // different DOM, and only the second exercises the rich-option markup.
     interact: async (page) => {
-      await page.locator('mp-phone-input').first().click();
+      await page.locator('.phone-input select').first().click();
     },
   },
   {
@@ -26,7 +26,7 @@ axeAuditSuite(test, expect, [
     // the part with roles and names worth auditing.
     path: '/advanced/code-snippet',
     interact: async (page) => {
-      await page.locator('mp-code-snippet .line-number').first().waitFor();
+      await page.locator('bs-code-snippet .line-number').first().waitFor();
     },
   },
   { path: '/basic/forms/checkbox' },
@@ -36,7 +36,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/containers/tab-control',
     interact: async (page) => {
-      await page.locator('mp-tab-control').first().locator('[role="tab"]').nth(1).click();
+      await page.locator('.tab-control[data-mps="tab-control"]').first().locator('[role="tab"]').nth(1).click();
     },
   },
   { path: '/basic/containers/card' },
@@ -48,82 +48,47 @@ axeAuditSuite(test, expect, [
   { path: '/basic/rating' },
   {
     path: '/enterprise/accordion',
-    ready: async (page) => {
-      await page.waitForFunction(() => !!document.querySelector('mp-accordion')?.hasAttribute('data-js'));
-    },
     interact: async (page) => {
-      await page.locator('mp-accordion').first().locator('summary').first().click();
+      await page.locator('[data-mps="accordion"]').first().locator('summary').first().click();
     },
   },
   {
     path: '/enterprise/datatables',
     ready: async (page) => {
-      await page.waitForSelector('mp-datatable');
+      // The root bag lands on the host in Angular; hydrated means the core is attached.
+      await page.waitForSelector('bs-datatable.datatable[data-mp-hydrated]');
     },
   },
   {
     path: '/enterprise/dock',
     ready: async (page) => {
-      await page.waitForSelector('mint-dock-manager');
+      await page.waitForSelector('.dock[data-mp-hydrated]');
     },
   },
   {
     path: '/enterprise/scheduler',
     ready: async (page) => {
-      await page.waitForSelector('mp-scheduler');
+      await page.waitForSelector('bs-scheduler[data-mp-hydrated]');
     },
     // Select an event so the audit sees the SELECTED state — the revealed
     // resize glyphs/strips are gated on it (wcag22aa target-size applies).
     // Then move to the TIMELINE and open a row's actions panel: the trigger
     // (aria-haspopup/-expanded inside a rowheader) and the panel itself
     // (role=dialog owning a native colour input) are the surfaces this gate
-    // previously never reached, because it only ever scanned week view.
+    // previously never reached, because it only ever scanned week view. The
+    // demo starts with the resource tree editable, so the trigger is there.
     interact: async (page) => {
       await page.getByRole('button', { name: 'Load Sample Data' }).click();
       await page.getByRole('button', { name: /Lunch & Learn/ }).click();
-
-      await page.evaluate(() => {
-        const sched = document.querySelector('mp-scheduler') as HTMLElement & {
-          options?: unknown;
-        };
-        sched.shadowRoot!
-          .querySelector<HTMLElement>('.scheduler-view-switcher button[data-view="timeline"]')
-          ?.click();
-        // The resource-tree capabilities are off by default, and the trigger is
-        // absent without them — grant them so there is a panel to audit.
-        sched.options = {
-          permissions: {
-            createResource: true,
-            createGroup: true,
-            updateResource: true,
-            deleteResource: true,
-          },
-        };
-      });
-      await page.waitForFunction(
-        () =>
-          !!document
-            .querySelector('mp-scheduler')!
-            .shadowRoot!.querySelector('.scheduler-row-menu-button'),
-      );
-      await page.evaluate(() => {
-        document
-          .querySelector('mp-scheduler')!
-          .shadowRoot!.querySelector<HTMLElement>('.scheduler-row-menu-button')!
-          .click();
-      });
-      await page.waitForFunction(
-        () =>
-          !!document
-            .querySelector('mp-scheduler')!
-            .shadowRoot!.querySelector('.scheduler-row-panel'),
-      );
+      await page.locator('bs-scheduler .scheduler-view-switcher button[data-view="timeline"]').click();
+      await page.locator('bs-scheduler .scheduler-row-menu-button').first().click();
+      await page.waitForSelector('bs-scheduler .scheduler-row-panel');
     },
   },
   {
     path: '/enterprise/file-manager',
     ready: async (page) => {
-      await page.waitForSelector('mp-file-manager');
+      await page.waitForSelector('.file-manager[data-mp-hydrated]');
     },
   },
   {
@@ -142,7 +107,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/charts',
     ready: async (page) => {
-      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+      await page.waitForSelector('.hierarchy-chart [role="tree"]');
     },
     // The three hierarchy layouts are different DOM (svg paths vs positioned
     // divs) and the zoomed-in state adds the enabled zoom-out control, so the
@@ -152,22 +117,22 @@ axeAuditSuite(test, expect, [
     // lands on the <svg> rather than the arc.
     interact: async (page) => {
       await page.getByRole('button', { name: 'icicle' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page.waitForSelector('.hierarchy-chart .icicle');
       await page
-        .locator('mp-hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
+        .locator('.hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
         .first()
         .click();
       await page.getByRole('button', { name: 'treemap' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .treemap');
+      await page.waitForSelector('.hierarchy-chart .treemap');
       // Back to the sunburst, now zoomed in: this is the state with an enabled
       // zoom-out control, which the root state never shows.
       await page.getByRole('button', { name: 'sunburst' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+      await page.waitForSelector('.hierarchy-chart .center-control:not([disabled])');
       // Magnified: geometric zoom reveals many more labels and moves the
       // centre control, so audit that state too (roles must be unchanged).
-      await page.evaluate(() =>
-        (document.querySelector('mp-hierarchy-chart') as unknown as { setZoomLevel(z: number): void })
-          .setZoomLevel(4));
+      // Four + presses: about 5x (1.5 per step), the keyboard path to the same view.
+      await page.locator('.hierarchy-chart [role="treeitem"]').first().focus();
+      for (const _ of [1, 2, 3, 4]) await page.keyboard.press('+');
     },
   },
   { path: '/overlays/shell' },

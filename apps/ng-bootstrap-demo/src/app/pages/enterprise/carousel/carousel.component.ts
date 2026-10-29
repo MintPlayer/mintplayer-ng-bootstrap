@@ -4,14 +4,14 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
-import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
+import { BsCarouselComponent, BsCarouselItemComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-carousel',
   templateUrl: './carousel.component.html',
   styleUrls: ['./carousel.component.scss'],
-  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent],
+  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective, BsSelectComponent, BsCarouselComponent, BsCarouselItemComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CarouselComponent {
@@ -25,34 +25,34 @@ export class CarouselComponent {
 
   protected readonly snippetBasicHtml = dedent`
     <bs-carousel [indicators]="true" [interval]="4000" aria-label="Animal photos">
-      <img src="/assets/resized/deer.png" alt="A deer">
-      <img src="/assets/resized/duck.png" alt="A duck">
-      <img src="/assets/resized/lion.png" alt="A lion">
+      <bs-carousel-item><img src="/assets/resized/deer.png" alt="A deer"></bs-carousel-item>
+      <bs-carousel-item><img src="/assets/resized/duck.png" alt="A duck"></bs-carousel-item>
+      <bs-carousel-item><img src="/assets/resized/lion.png" alt="A lion"></bs-carousel-item>
     </bs-carousel>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { BsCarouselComponent } from '@mintplayer/ng-bootstrap/carousel';
+    import { BsCarouselComponent, BsCarouselItemComponent } from '@mintplayer/ng-bootstrap/carousel';
 
     @Component({
       selector: 'my-carousel-demo',
       templateUrl: './my-carousel-demo.component.html',
-      imports: [BsCarouselComponent],
+      imports: [BsCarouselComponent, BsCarouselItemComponent],
     })
     export class MyCarouselDemoComponent {}
   `;
 
   protected readonly snippetNestedHtml = dedent`
     <bs-carousel orientation="vertical" [indicators]="true" aria-label="Outer vertical">
-      <img src="/assets/resized/deer.png" alt="A deer">
-      <div>
+      <bs-carousel-item><img src="/assets/resized/deer.png" alt="A deer"></bs-carousel-item>
+      <bs-carousel-item>
         <bs-carousel animation="slide" [indicators]="true" aria-label="Inner horizontal">
-          <img src="/assets/resized/duck.png" alt="A duck">
-          <img src="/assets/resized/leopard.png" alt="A leopard">
+          <bs-carousel-item><img src="/assets/resized/duck.png" alt="A duck"></bs-carousel-item>
+          <bs-carousel-item><img src="/assets/resized/leopard.png" alt="A leopard"></bs-carousel-item>
         </bs-carousel>
-      </div>
-      <img src="/assets/resized/lion.png" alt="A lion">
+      </bs-carousel-item>
+      <bs-carousel-item><img src="/assets/resized/lion.png" alt="A lion"></bs-carousel-item>
     </bs-carousel>
   `;
 }

@@ -13,13 +13,12 @@ const DISHES: Dish[] = [
   { id: 3, name: 'Lasagna' },
 ];
 
-// `<mp-select>`'s value-space is string only — to bind objects, encode the
-// selection via the option's `id` and look up the object on change. The
-// Angular wrapper does this for you via the BsSelectValueAccessor's
-// `optionMap`; React (no two-way ngModel) wires it explicitly.
+// A native <select>: its value space is strings. To bind objects, encode the
+// selection as the option's id and look the object up on change (Angular's
+// [ngValue] does this for you).
 const SOURCE = `<BsSelect aria-label="Dish"
           value={String(selected?.id ?? '')}
-          onValueChange={e => setSelected(DISHES.find(d => d.id === Number(e.detail.value)) ?? null)}>
+          onValueChange={({ value }) => setSelected(DISHES.find(d => d.id === Number(value)) ?? null)}>
   <option value="">Choose a dish</option>
   {DISHES.map(d => <option key={d.id} value={String(d.id)}>{d.name}</option>)}
 </BsSelect>`;
@@ -32,10 +31,10 @@ export function SelectPage() {
     <div className="demo-page">
       <h1>Select</h1>
       <p className="text-body-secondary">
-        A Bootstrap-styled <code>&lt;select&gt;</code> wrapped as a web
-        component. Project <code>&lt;option&gt;</code> children declaratively
-        — the WC mirrors them into its shadow <code>&lt;select&gt;</code>.
-        Listen to <code>onValueChange</code> for the string value.
+        A native <code>&lt;select class="form-select"&gt;</code>: it opens,
+        picks and submits with JavaScript off. Pass <code>options</code>, or put
+        <code>&lt;option&gt;</code> children inside. <code>onValueChange</code>
+        receives <code>{"{ value, values }"}</code>.
       </p>
 
       <section>
@@ -43,8 +42,8 @@ export function SelectPage() {
         <BsSelect
           aria-label="Dish"
           value={String(selected?.id ?? '')}
-          onValueChange={(e) =>
-            setSelected(DISHES.find((d) => d.id === Number(e.detail.value)) ?? null)
+          onValueChange={({ value }) =>
+            setSelected(DISHES.find((d) => d.id === Number(value)) ?? null)
           }
         >
           <option value="">Choose a dish</option>

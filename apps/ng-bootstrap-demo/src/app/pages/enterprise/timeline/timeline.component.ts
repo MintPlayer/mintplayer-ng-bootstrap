@@ -20,6 +20,8 @@ import {
 } from '@mintplayer/ng-bootstrap/card';
 import {
   BsTimelineComponent,
+  BsTimelineItemComponent,
+  BsTimelineItemOppositeDirective,
   BsTimelineMarkerDirective,
   BsTimelineContentDirective,
   BsTimelineTimestampDirective,
@@ -48,6 +50,8 @@ import { dedent } from 'ts-dedent';
     BsCardTextComponent,
     BsCardFooterComponent,
     BsTimelineComponent,
+    BsTimelineItemComponent,
+    BsTimelineItemOppositeDirective,
     BsTimelineMarkerDirective,
     BsTimelineContentDirective,
     BsTimelineTimestampDirective,
@@ -78,9 +82,11 @@ export class TimelineComponent {
   protected readonly alignments: TimelineAlign[] = ['start', 'end', 'alternate', 'alternate-reverse'];
   protected readonly selectables: TimelineSelectable[] = ['none', 'single', 'multiple'];
 
-  /** Two-way bound selection, surfaced below the playground. */
-  protected readonly selected = model<TimelineItem[]>([]);
-  protected readonly selectedTitles = computed(() => this.selected().map((m) => m.title ?? '(untitled)'));
+  /** Two-way bound selection (item ids), surfaced below the playground. */
+  protected readonly selected = model<readonly string[]>([]);
+  protected readonly selectedTitles = computed(() =>
+    this.milestones().filter((m) => this.selected().includes(String(m.id))).map((m) => m.title ?? '(untitled)'),
+  );
 
   protected onItemClick(detail: TimelineItemClickDetail): void {
     console.log('Timeline item clicked:', detail.item.title);
@@ -96,20 +102,20 @@ export class TimelineComponent {
     if (this.reverse()) attrs.push('[reverse]="true"');
     if (this.selectable() !== 'none') {
       attrs.push(`selectable="${this.selectable()}"`);
-      attrs.push('[(selection)]="selected"');
+      attrs.push('[(selectedIds)]="selected"');
     }
 
     const inner: string[] = [];
     if (this.customMarkers()) {
       inner.push(
-        '  <span *bsTimelineMarker="let item" class="tl-marker">',
+        '  <span *bsTimelineMarker="let item = item" class="tl-marker">',
         '    <i [class]="item.icon" aria-hidden="true"></i>',
         '  </span>',
       );
     }
     if (this.cardContent()) {
       inner.push(
-        '  <bs-card *bsTimelineContent="let item">',
+        '  <bs-card *bsTimelineContent="let item = item">',
         '    <bs-card-header>{{ item.title }}</bs-card-header>',
         '    <bs-card-body>',
         '      <bs-card-text class="mb-0">{{ item.description }}</bs-card-text>',
@@ -118,7 +124,7 @@ export class TimelineComponent {
         '  </bs-card>',
       );
     }
-    inner.push('  <small *bsTimelineTimestamp="let item">{{ item.time }}</small>');
+    inner.push('  <small *bsTimelineTimestamp="let item = item">{{ item.time }}</small>');
 
     const open = attrs.length === 1 ? `<bs-timeline ${attrs[0]}>` : `<bs-timeline\n  ${attrs.join('\n  ')}>`;
     return `${open}\n${inner.join('\n')}\n</bs-timeline>`;
@@ -133,7 +139,7 @@ export class TimelineComponent {
       from '@mintplayer/ng-bootstrap/card';
     import {
       BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
-      BsTimelineTimestampDirective, type TimelineItem,
+      BsTimelineTimestampDirective, BsTimelineItemComponent, BsTimelineItemOppositeDirective, type TimelineItem,
     } from '@mintplayer/ng-bootstrap/timeline';
 
     @Component({
@@ -143,7 +149,7 @@ export class TimelineComponent {
         FormsModule, BsCheckboxComponent, BsSelectComponent, BsSelectOption,
         BsCardComponent, BsCardHeaderComponent, BsCardBodyComponent, BsCardTextComponent, BsCardFooterComponent,
         BsTimelineComponent, BsTimelineMarkerDirective, BsTimelineContentDirective,
-        BsTimelineTimestampDirective,
+        BsTimelineTimestampDirective, BsTimelineItemComponent, BsTimelineItemOppositeDirective,
       ],
     })
     export class MyRoadmapComponent {
@@ -156,33 +162,33 @@ export class TimelineComponent {
       align = model<'start' | 'end' | 'alternate' | 'alternate-reverse'>('start');
       selectable = model<'none' | 'single' | 'multiple'>('none');
       reverse = model(false);
-      selected = model<TimelineItem[]>([]);
+      selected = model<readonly string[]>([]);
     }
   `;
 
   protected readonly snippetCardDeclarativeHtml = dedent`
-    <!-- Declarative: <mp-timeline-item> children with named slots, no [items] -->
+    <!-- Declarative: <bs-timeline-item> children, no [items] -->
     <bs-timeline align="alternate">
-      <mp-timeline-item item-id="kickoff" color="#6c757d">
-        <small slot="opposite">2026-01-10</small>
-        <bs-card slot="content">
+      <bs-timeline-item itemId="kickoff" color="#6c757d">
+        <small *bsTimelineItemOpposite>2026-01-10</small>
+        <bs-card>
           <bs-card-header>Kickoff</bs-card-header>
           <bs-card-body>
             <bs-card-text class="mb-0">Project scoping and team assembly.</bs-card-text>
           </bs-card-body>
           <bs-card-footer><small class="text-body-secondary">2026-01-10</small></bs-card-footer>
         </bs-card>
-      </mp-timeline-item>
-      <mp-timeline-item item-id="ship" color="#198754">
-        <small slot="opposite">2026-05-01</small>
-        <bs-card slot="content">
+      </bs-timeline-item>
+      <bs-timeline-item itemId="ship" color="#198754">
+        <small *bsTimelineItemOpposite>2026-05-01</small>
+        <bs-card>
           <bs-card-header>Shipped v1</bs-card-header>
           <bs-card-body>
             <bs-card-text class="mb-0">First public release.</bs-card-text>
           </bs-card-body>
           <bs-card-footer><small class="text-body-secondary">2026-05-01</small></bs-card-footer>
         </bs-card>
-      </mp-timeline-item>
+      </bs-timeline-item>
     </bs-timeline>
   `;
 }

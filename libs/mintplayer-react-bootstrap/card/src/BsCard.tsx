@@ -1,14 +1,24 @@
 import * as React from 'react';
-import { createComponent } from '@lit/react';
-import { MpCardElement } from '@mintplayer/web-components/card';
+import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+import { cardColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+
+const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
+
+export interface BsCardProps extends HTMLAttributes<HTMLDivElement> {
+  /** Card colour; filled by default, border-only with `outline`. */
+  color?: CardColor;
+  /** Colour the border only. */
+  outline?: boolean;
+}
+
 /**
- * React wrapper for `<mp-card>`. Side-effect-registers the WC via
- * the import above. Typed props/events extend off MpCardElement;
- * hand-edit this file to add an `events: { onXxx: 'xxx' as EventName<...> }`
- * block if you need typed event listeners.
+ * The card root (PRD #437 wave A): a plain `div.card`, no custom element and
+ * no core, so SSR emits the finished card and the page baseline styles it.
+ * Merges an incoming `className` and spreads remaining props.
  */
-export const BsCard = createComponent({
-  react: React,
-  tagName: 'mp-card',
-  elementClass: MpCardElement,
-});
+export const BsCard = forwardRef<HTMLDivElement, PropsWithChildren<BsCardProps>>(
+  ({ className, color, outline = false, ...rest }, ref) => (
+    <div ref={ref} className={cx('card', ...cardColorClasses(color, outline), className)} {...rest} />
+  ),
+);
+BsCard.displayName = 'BsCard';

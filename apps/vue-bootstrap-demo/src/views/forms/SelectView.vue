@@ -14,10 +14,9 @@ const DISHES: Dish[] = [
   { id: 3, name: 'Lasagna' },
 ];
 
-// `<mp-select>`'s value-space is string only. We bind `selectedId` (a
-// stringified Dish.id) via `v-model` and derive the full object via a
-// computed — same pattern the Angular wrapper hides behind its
-// `BsSelectValueAccessor` optionMap.
+// A native <select>: its value space is strings. We bind selectedId (a
+// stringified Dish.id) with v-model:value and derive the object in a computed;
+// Angular's [ngValue] does that mapping for you.
 const selectedId = ref<string | null>('');
 const selected = computed(() =>
   DISHES.find((d) => String(d.id) === selectedId.value) ?? null,
@@ -25,7 +24,7 @@ const selected = computed(() =>
 
 const size = ref<'sm' | 'md' | 'lg'>('md');
 
-const SOURCE = `<BsSelect v-model="selectedId" aria-label="Dish">
+const SOURCE = `<BsSelect v-model:value="selectedId" aria-label="Dish">
   <option value="">Choose a dish</option>
   <option v-for="d in DISHES" :key="d.id" :value="String(d.id)">{{ d.name }}</option>
 </BsSelect>`;
@@ -35,15 +34,16 @@ const SOURCE = `<BsSelect v-model="selectedId" aria-label="Dish">
   <div class="demo-page">
     <h1>Select</h1>
     <p class="text-body-secondary">
-      A Bootstrap-styled <code>&lt;select&gt;</code> wrapped as a web
-      component. Project <code>&lt;option&gt;</code> children declaratively
-      — the WC mirrors them into its shadow <code>&lt;select&gt;</code>.
-      Bind the string value with <code>v-model</code>.
+      A native <code>&lt;select class="form-select"&gt;</code>: it opens, picks
+      and submits with JavaScript off. Pass <code>options</code>, or put
+      <code>&lt;option&gt;</code> children inside. Bind the string value with
+      <code>v-model:value</code> (<code>v-model:values</code> when
+      <code>multiple</code>).
     </p>
 
     <section>
       <h2>Basic usage</h2>
-      <BsSelect v-model="selectedId" aria-label="Dish">
+      <BsSelect v-model:value="selectedId" aria-label="Dish">
         <option value="">Choose a dish</option>
         <option v-for="d in DISHES" :key="d.id" :value="String(d.id)">{{ d.name }}</option>
       </BsSelect>

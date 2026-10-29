@@ -1,12 +1,14 @@
 <h1 class="text-center">Pagination</h1>
 
 <p>
-    The <code>&lt;bs-pagination&gt;</code> component renders a Lit
-    <code>&lt;mp-pagination&gt;</code> primitive under the hood. The visible
-    budget is capped by <code>[numberOfBoxes]</code> (which includes the
-    prev/next arrows) and is further clamped to whatever fits the host width
-    so the same paginator renders correctly on mobile and desktop. Below are
-    targeted examples that exercise the growth algorithm.
+    The <code>&lt;bs-pagination&gt;</code> component renders Bootstrap's
+    <code>.pagination</code> markup in its own template, so server-rendered
+    output is the real control. The visible budget is capped by
+    <code>[numberOfBoxes]</code> (which includes the prev/next arrows).
+    Pass <code>[hrefFor]</code> to render every page as a link that works
+    with JavaScript off, and <code>[labels]</code> to localize the
+    accessible names. Below are targeted examples that exercise the growth
+    algorithm.
 </p>
 
 <h2>Basic usage</h2>

@@ -17,7 +17,7 @@ async function mockArtistApi(page: Page) {
   await mockArtistQuery(page, artists);
 }
 
-const TABLE = '.resize-table mp-datatable';
+const TABLE = 'bs-datatable.resize-table';
 const handle = (page: Page, column: string) =>
   page.locator(`${TABLE} thead tr:first-child th[data-column="${column}"] .resize-handle`);
 /**
@@ -38,7 +38,7 @@ async function open(page: Page) {
 
 /** Overflow of every datatable scroller on the page, plus whether its columns fit. */
 async function overflows(page: Page) {
-  return page.locator('mp-datatable .datatable-scroll').evaluateAll((scrollers) =>
+  return page.locator('bs-datatable .datatable-scroll').evaluateAll((scrollers) =>
     scrollers.map((s) => {
       const ths = [...s.querySelectorAll<HTMLElement>('thead tr:first-child th')];
       const natural = ths.reduce((sum, th) => sum + th.getBoundingClientRect().width, 0);
@@ -105,10 +105,10 @@ test.describe('datatable column resize', () => {
     await page.mouse.move(x + 40, y, { steps: 5 });
     await page.mouse.up();
     expect(await headerWidth(page, 'Name')).toBeGreaterThan(before + 30);
-    await expect(page.locator('.resize-panel')).toHaveCount(0);
+    await expect(page.locator('.resize-panel:popover-open')).toHaveCount(0);
 
     await handle(page, 'Name').click();
-    await expect(page.locator('.resize-panel')).toBeVisible();
+    await expect(page.locator('.resize-panel:popover-open')).toBeVisible();
   });
 
   test('the rendered column edge follows the pointer 1:1, in both directions', async ({ page }) => {

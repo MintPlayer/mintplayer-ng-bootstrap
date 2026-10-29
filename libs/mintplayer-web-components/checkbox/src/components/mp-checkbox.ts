@@ -417,8 +417,6 @@ export class MpCheckbox extends FormAssociatedMixin(LitElement) {
         aria-describedby=${error.id}
         name=${this._name ?? nothing}
         value=${this._value ?? nothing}
-        role="button"
-        aria-pressed=${this._checked ? 'true' : 'false'}
         aria-label=${ifDefined(ariaLabel)}
         @change=${this.onInputChange}
       />

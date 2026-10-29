@@ -107,21 +107,21 @@ const buttonValue = ref<TreeNode | TreeNode[] | null>(null);
 // ─── source snippets ─────────────────────────────────────────────────────────
 
 const SINGLE_SOURCE = `<BsTreeSelect
-  v-model="value"
+  v-model:value="value"
   :provider="httpProvider"
   mode="single"
   placeholder="Search departments…"
 />`;
 
 const MULTIPLE_SOURCE = `<BsTreeSelect
-  v-model="value"
+  v-model:value="value"
   :provider="inMemoryProvider"
   mode="multiple"
   placeholder="Pick teams…"
 />`;
 
 const CHECKBOX_SOURCE = `<BsTreeSelect
-  v-model="value"
+  v-model:value="value"
   :provider="inMemoryProvider"
   mode="checkbox"
   :cascade-select="true"
@@ -129,7 +129,7 @@ const CHECKBOX_SOURCE = `<BsTreeSelect
 />`;
 
 const BUTTON_SOURCE = `<BsTreeSelect
-  v-model="value"
+  v-model:value="value"
   :provider="inMemoryProvider"
   mode="single"
   variant="button"
@@ -174,7 +174,7 @@ const BUTTON_SOURCE = `<BsTreeSelect
         <code>/api/treeItems</code>. Type to search server-side.
       </p>
       <BsTreeSelect
-        v-model="singleValue"
+        v-model:value="singleValue"
         :provider="httpProvider"
         mode="single"
         placeholder="Search departments…"
@@ -193,7 +193,7 @@ const BUTTON_SOURCE = `<BsTreeSelect
         Backed by an in-memory sample tree.
       </p>
       <BsTreeSelect
-        v-model="multipleValue"
+        v-model:value="multipleValue"
         :provider="inMemoryProvider"
         mode="multiple"
         placeholder="Pick teams…"
@@ -213,7 +213,7 @@ const BUTTON_SOURCE = `<BsTreeSelect
         indeterminate when only some children are selected.
       </p>
       <BsTreeSelect
-        v-model="checkboxValue"
+        v-model:value="checkboxValue"
         :provider="inMemoryProvider"
         mode="checkbox"
         :cascade-select="true"
@@ -234,7 +234,7 @@ const BUTTON_SOURCE = `<BsTreeSelect
         selected.
       </p>
       <BsTreeSelect
-        v-model="buttonValue"
+        v-model:value="buttonValue"
         :provider="inMemoryProvider"
         mode="single"
         variant="button"

@@ -12,19 +12,40 @@ test('datepicker selects a date and updates the display', async ({ page }) => {
   const initial = (await dateDisplay.textContent())?.trim();
   expect(initial).toBeTruthy();
 
-  // Click the calendar trigger inside mp-datepicker (shadow DOM is pierced).
-  await page.getByRole('button', { name: 'Choose date' }).click();
+  const picker = page.locator('bs-datepicker').first();
+  const trigger = picker.getByRole('button', { name: 'Choose date' });
+  await trigger.click();
 
-  // The mp-calendar grid is visible inside the popup.
-  const calendar = page.locator('mp-calendar');
-  await expect(calendar).toBeVisible();
+  // The grid opens in a native popover and takes focus (APG date picker dialog).
+  const dialog = page.getByRole('dialog', { name: 'Choose date' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('[role=gridcell]:focus')).toHaveCount(1);
 
   // Navigate to next month so the chosen day is guaranteed to differ from today.
-  await calendar.getByRole('button', { name: 'Next month' }).click();
+  await dialog.getByRole('button', { name: 'Next month' }).click();
 
-  // Click day 7 — odd, so the demo's even-day disable rule lets it through.
-  // Cell ids look like `mp-cal-N-cell-YYYY-M-7`.
-  await calendar.locator('td[id$="-7"]').first().click();
+  // Day 7 is odd, so the demo's even-day disable rule lets it through.
+  await dialog.locator('td[data-date$="-07"]:not(.calendar-day-outside)').click();
 
   await expect(dateDisplay).not.toHaveText(initial!);
+  await expect(dialog).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(picker.locator('input.datepicker-input')).not.toHaveValue('');
+});
+
+test('datepicker closes on Escape and keeps the date', async ({ page }) => {
+  await page.goto('/basic/forms/datepicker');
+  const picker = page.locator('bs-datepicker').first();
+  const field = picker.locator('input.datepicker-input');
+  // The server field is a native date input (ISO value, the no-JS path); the
+  // trigger appears with hydration, which reformats the value to the locale.
+  const trigger = picker.getByRole('button', { name: 'Choose date' });
+  await expect(trigger).toBeVisible();
+  const before = await field.inputValue();
+  await trigger.click();
+  const dialog = page.getByRole('dialog', { name: 'Choose date' });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(field).toHaveValue(before);
 });

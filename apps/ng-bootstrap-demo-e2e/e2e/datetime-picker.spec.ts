@@ -14,15 +14,15 @@ test.describe('bs-datetime-picker', () => {
     const dateTrigger = picker.getByRole('button', { name: 'Choose date' });
     await dateTrigger.click();
 
-    // mp-calendar is rendered inside the date popup.
-    const calendar = picker.locator('mp-calendar');
+    // The month grid is rendered inside the date popover.
+    const calendar = picker.locator('.datetime-picker-popup-date');
     await expect(calendar).toBeVisible();
 
     // Click a day in the visible month (15 is always present).
-    await calendar.locator('td[id$="-15"]').first().click();
+    await calendar.locator('td[data-date$="-15"]').first().click();
 
-    // Selecting a date does NOT close the date popup (per Phase 6 value-flow).
-    // But the displayed value updates.
+    // Selecting a date closes the date popup and returns focus to its trigger.
+    // The displayed value updates.
     const input = picker.locator('input.form-control');
     await expect(input).not.toHaveValue('');
   });
@@ -30,7 +30,7 @@ test.describe('bs-datetime-picker', () => {
   test('opens time popup from the 🕐 trigger and selects a slot', async ({ page }) => {
     const picker = page.locator('bs-datetime-picker').first();
     await picker.getByRole('button', { name: 'Choose time' }).click();
-    const timeList = picker.locator('mp-time-list');
+    const timeList = picker.locator('.datetime-picker-popup-time');
     await expect(timeList).toBeVisible();
 
     // Pick 09:00 (any locale formatting that includes "9").
@@ -44,26 +44,26 @@ test.describe('bs-datetime-picker', () => {
   test('mutual exclusion — opening time closes date', async ({ page }) => {
     const picker = page.locator('bs-datetime-picker').first();
     await picker.getByRole('button', { name: 'Choose date' }).click();
-    await expect(picker.locator('mp-calendar')).toBeVisible();
+    await expect(picker.locator('.datetime-picker-popup-date')).toBeVisible();
     await picker.getByRole('button', { name: 'Choose time' }).click();
-    await expect(picker.locator('mp-time-list')).toBeVisible();
+    await expect(picker.locator('.datetime-picker-popup-time')).toBeVisible();
     // The date popup's content is no longer shown.
-    await expect(picker.locator('mp-calendar')).toBeHidden();
+    await expect(picker.locator('.datetime-picker-popup-date')).toBeHidden();
   });
 
   test('Esc closes the open popup', async ({ page }) => {
     const picker = page.locator('bs-datetime-picker').first();
     await picker.getByRole('button', { name: 'Choose date' }).click();
-    await expect(picker.locator('mp-calendar')).toBeVisible();
+    await expect(picker.locator('.datetime-picker-popup-date')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(picker.locator('mp-calendar')).toBeHidden();
+    await expect(picker.locator('.datetime-picker-popup-date')).toBeHidden();
   });
 
   test('clear button removes the value', async ({ page }) => {
     const picker = page.locator('bs-datetime-picker').first();
     // First, select something so the clear button appears.
     await picker.getByRole('button', { name: 'Choose time' }).click();
-    const slot = picker.locator('mp-time-list').getByRole('option').first();
+    const slot = picker.locator('.datetime-picker-popup-time').getByRole('option').first();
     await slot.click();
     const input = picker.locator('input.form-control');
     await expect(input).not.toHaveValue('');
@@ -80,7 +80,7 @@ test.describe('bs-datetime-picker', () => {
 
     // Open time and pick a slot to trigger valueChanges + markAsDirty.
     await picker.getByRole('button', { name: 'Choose time' }).click();
-    await picker.locator('mp-time-list').getByRole('option').first().click();
+    await picker.locator('.datetime-picker-popup-time').getByRole('option').first().click();
 
     // `FormControl.dirty` is inside <code>; the value lives in the surrounding
     // text node ("<code>FormControl.dirty</code>: {{ value }}"). Assert against
@@ -102,6 +102,6 @@ test.describe('bs-datetime-picker', () => {
     const picker = page.locator('bs-datetime-picker').first();
     await picker.getByRole('button', { name: 'Choose date' }).focus();
     await page.keyboard.press('ArrowDown');
-    await expect(picker.locator('mp-calendar')).toBeVisible();
+    await expect(picker.locator('.datetime-picker-popup-date')).toBeVisible();
   });
 });

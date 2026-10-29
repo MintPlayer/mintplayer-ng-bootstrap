@@ -11,7 +11,7 @@ async function mount(html: string): Promise<{ host: MpToggleButton; input: HTMLI
   document.body.innerHTML = html;
   const host = document.querySelector('mp-toggle-button') as MpToggleButton;
   await host.updateComplete;
-  return { host, input: host.shadowRoot!.querySelector('input') as HTMLInputElement };
+  return { host, input: host.querySelector('input') as HTMLInputElement };
 }
 
 describe('mp-toggle-button naming', () => {
@@ -36,11 +36,25 @@ describe('mp-toggle-button naming', () => {
     expect(input.hasAttribute('aria-label')).toBe(false);
   });
 
-  it('does NOT copy IDREF strings into the shadow root', async () => {
+  it('copies host IDREFs onto the input — light DOM, so they resolve in the same tree', async () => {
     const { input } = await mount(
-      '<span id="outer">Bold</span><mp-toggle-button aria-labelledby="outer"></mp-toggle-button>',
+      '<span id="outer">Bold</span><span id="hint">Hint</span>'
+        + '<mp-toggle-button aria-labelledby="outer" aria-describedby="hint"></mp-toggle-button>',
     );
-    expect(input.hasAttribute('aria-labelledby')).toBe(false);
+    expect(input.getAttribute('aria-labelledby')).toBe('outer');
+    expect(input.getAttribute('aria-describedby')).toBe('hint');
+  });
+
+  it('renders in the light DOM: the children become the label, the label names the input', async () => {
+    const { host, input } = await mount('<mp-toggle-button><b>Bold</b></mp-toggle-button>');
+    const label = host.querySelector('label')!;
+    expect(host.shadowRoot).toBeNull();
+    expect(label.querySelector('b')?.textContent).toBe('Bold');
+    expect(label.htmlFor).toBe(input.id);
+    // A native checkbox: its checked state is announced with or without JS.
+    expect(input.hasAttribute('role')).toBe(false);
+    expect(input.hasAttribute('aria-pressed')).toBe(false);
+    expect(input.hasAttribute('name')).toBe(false);
   });
 
   it('removes the override cleanly rather than freezing it', async () => {
@@ -61,7 +75,7 @@ describe('mp-toggle-button error-text', () => {
   });
 
   const feedback = (host: MpToggleButton) =>
-    host.shadowRoot!.querySelector('.invalid-feedback');
+    host.querySelector('.invalid-feedback');
 
   it('renders no message and no references while the control is valid', async () => {
     const { host, input } = await mount(
@@ -72,7 +86,7 @@ describe('mp-toggle-button error-text', () => {
     expect(input.hasAttribute('aria-describedby')).toBe(false);
   });
 
-  it('renders the message and BOTH references when invalid, resolving in this shadow root', async () => {
+  it('renders the message and BOTH references when invalid, resolving in the document', async () => {
     const { host, input } = await mount(
       '<mp-toggle-button invalid error-text="Pick at least one.">Bold</mp-toggle-button>',
     );
@@ -80,7 +94,7 @@ describe('mp-toggle-button error-text', () => {
 
     expect(id).toBeTruthy();
     expect(input.getAttribute('aria-describedby')).toBe(id);
-    expect(host.shadowRoot!.getElementById(id!)).toBe(feedback(host));
+    expect(document.getElementById(id!)).toBe(feedback(host));
     expect(feedback(host)!.textContent).toBe('Pick at least one.');
   });
 

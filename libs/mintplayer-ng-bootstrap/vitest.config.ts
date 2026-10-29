@@ -22,7 +22,6 @@ export default defineConfig({
         ...coverageConfigDefaults.exclude,
         '**/*.d.ts',
         '**/test-setup.ts',
-        '_spike-lit-context/**',
         // Codegen output (gitignored build artifacts), not authored source —
         // same list web-components carries. Without these, the generated
         // `.element.template.ts` files enter the report, and because they are
@@ -31,6 +30,8 @@ export default defineConfig({
         '**/*.styles.ts',
         '**/*.element.template.ts',
         '**/*.generated.ts',
+        // D10 fronts compiled by mintplayer-ui-core:compile-components (#437).
+        '**/src/generated/**',
       ],
       reporter: ['lcov'],
       reportsDirectory: '../../coverage/libs/mintplayer-ng-bootstrap',

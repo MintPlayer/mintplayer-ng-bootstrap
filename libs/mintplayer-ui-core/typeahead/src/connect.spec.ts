@@ -6,6 +6,7 @@ const base: TypeaheadState<{ text: string }> = {
   items: [{ text: 'A' }, { text: 'B' }],
   status: 'ready',
   open: true,
+  side: 'below',
   activeIndex: 1,
   selectedItem: null,
   announcement: '2 results found',
@@ -61,6 +62,11 @@ describe('connect()', () => {
     expect(api.input['aria-errormessage']).toBe('ta-error');
     expect(api.input['aria-invalid']).toBe('true');
     expect(api.error).toEqual({ attrs: { 'data-mps': 'typeahead', id: 'ta-error' }, text: 'Pick a street' });
+  });
+
+  it('writes the readiness mark on the root only once the front has hydrated', () => {
+    expect(connect(base, 'ta').root['data-mp-hydrated']).toBeNull();
+    expect(connect(base, 'ta', { hydrated: true }).root['data-mp-hydrated']).toBe(true);
   });
 
   it('disabled reaches the input', () => {

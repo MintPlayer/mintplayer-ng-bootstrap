@@ -136,7 +136,8 @@ describe('mp-checkbox naming', () => {
       '<mp-checkbox type="toggle_button" input-label="Bold"></mp-checkbox>',
     );
     expect(input.getAttribute('aria-label')).toBe('Bold');
-    expect(input.getAttribute('role')).toBe('button');
+    // A native checkbox: no role overlay, so its checked state is what AT reads.
+    expect(input.hasAttribute('role')).toBe(false);
   });
 
   it('keeps the name when type switches, which replaces the <input>', async () => {

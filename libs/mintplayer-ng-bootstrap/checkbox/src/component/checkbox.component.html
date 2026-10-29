@@ -1,3 +1,13 @@
-<mp-checkbox bsForwardAria #checkbox (change)="onChange($event)">
-    <ng-content></ng-content>
-</mp-checkbox>
+@if (classes().root; as rootClass) {
+  <label [class]="rootClass">
+    <input #input type="checkbox" [class]="classes().input" [mpProps]="bags().input" [checked]="checked()" [attr.checked]="checked() ? '' : null" (change)="onChange($event)">
+    <span [class]="classes().label"><ng-container [ngTemplateOutlet]="content"></ng-container></span>
+  </label>
+} @else {
+  <input #input type="checkbox" [class]="classes().input" [mpProps]="bags().input" [checked]="checked()" [attr.checked]="checked() ? '' : null" (change)="onChange($event)">
+  <label [class]="classes().label" [attr.for]="bags().labelFor"><ng-container [ngTemplateOutlet]="content"></ng-container></label>
+}
+@if (bags().feedback; as feedback) {
+  <div [mpProps]="feedback.attrs">{{ feedback.text }}</div>
+}
+<ng-template #content><ng-content></ng-content></ng-template>

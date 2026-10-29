@@ -1,9 +1,3 @@
-export { BsNavbar } from './BsNavbar';
-export type { BsNavbarProps } from './BsNavbar';
-export { BsNavbarItem } from './BsNavbarItem';
-export type { BsNavbarItemProps } from './BsNavbarItem';
-export { BsNavbarBrand } from './BsNavbarBrand';
-export type { BsNavbarBrandProps } from './BsNavbarBrand';
-export { BsNavbarDropdown } from './BsNavbarDropdown';
-export type { BsNavbarDropdownProps } from './BsNavbarDropdown';
-export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail } from '@mintplayer/web-components/navbar';
+// The navbar components are generated from @mintplayer/ui-core/navbar (PRD #437 D10).
+export * from './generated';
+export type { NavbarBreakpoint, NavbarExpandedChangeEventDetail, NavbarLabels } from '@mintplayer/ui-core/navbar';

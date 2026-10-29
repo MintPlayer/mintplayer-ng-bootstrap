@@ -1,22 +1,33 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { BsRibbon } from '@mintplayer/vue-bootstrap/ribbon';
-// Side-effect import: registers all the ribbon sub-element custom elements
-// (mp-ribbon-tab, mp-ribbon-group, mp-ribbon-button, mp-ribbon-split-button,
-// mp-ribbon-dropdown-button, mp-ribbon-menu-item, mp-ribbon-menu-separator,
-// mp-ribbon-toggle-button, mp-ribbon-check-box, mp-ribbon-combo-box,
-// mp-ribbon-color-picker, mp-ribbon-group-button, mp-ribbon-gallery,
-// mp-ribbon-gallery-item, mp-quick-access-toolbar, mp-ribbon-contextual-tab-set).
-// The Vue compiler treats unknown `mp-*` tags as native HTML thanks to
-// `compilerOptions.isCustomElement` in vite.config.mts.
-import '@mintplayer/vue-bootstrap/ribbon';
+import {
+  BsQuickAccessToolbar,
+  BsRibbon,
+  BsRibbonButton,
+  BsRibbonCheckBox,
+  BsRibbonColorPicker,
+  BsRibbonComboBox,
+  BsRibbonContextualTabSet,
+  BsRibbonDropdownButton,
+  BsRibbonGallery,
+  BsRibbonGalleryItem,
+  BsRibbonGroup,
+  BsRibbonGroupButton,
+  BsRibbonMenuItem,
+  BsRibbonMenuSeparator,
+  BsRibbonSplitButton,
+  BsRibbonTab,
+  BsRibbonToggleButton,
+} from '@mintplayer/vue-bootstrap/ribbon';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type {
   RibbonComboBoxOption,
   RibbonGroupButtonOption,
   RibbonGroupSize,
+  RibbonItemClickEventDetail,
   RibbonReduceStep,
-} from '@mintplayer/web-components/ribbon';
+  RibbonTabChangeEventDetail,
+} from '@mintplayer/vue-bootstrap/ribbon';
 
 type RibbonVersion = 'office-2007' | 'office-2010' | 'office-2013' | 'office-2016';
 type ColorScheme = 'light' | 'dark' | 'auto';
@@ -39,7 +50,7 @@ const activeTab = ref<string>('home');
 const minimized = ref(false);
 const layout = ref<'classic' | 'simplified'>('classic');
 const version = ref<RibbonVersion>('office-2016');
-const appAccent = ref<string>('#2B579A');
+const appAccent = ref<string>('word');
 const colorScheme = ref<ColorScheme>('auto');
 const touchMode = ref<TouchMode>('auto');
 const direction = ref<Direction>('ltr');
@@ -80,12 +91,12 @@ const touchModes: TouchMode[] = ['on', 'off', 'auto'];
 const directions: Direction[] = ['ltr', 'rtl'];
 
 const appAccents: AppAccentOption[] = [
-  { label: 'Word', value: '#2B579A' },
-  { label: 'Excel', value: '#217346' },
-  { label: 'PowerPoint', value: '#B7472A' },
-  { label: 'Outlook', value: '#0078D4' },
-  { label: 'OneNote', value: '#7719AA' },
-  { label: 'Access', value: '#A4373A' },
+  { label: 'Word', value: 'word' },
+  { label: 'Excel', value: 'excel' },
+  { label: 'PowerPoint', value: 'powerpoint' },
+  { label: 'Outlook', value: 'outlook' },
+  { label: 'OneNote', value: 'onenote' },
+  { label: 'Access', value: 'access' },
 ];
 
 // ============== FR-6: Home reduce / ideal-sizes ==============
@@ -116,14 +127,14 @@ const layoutLabel = computed(
 );
 
 // ============== Handlers ==============
-function onItemClick(event: Event) {
+function onItemClick(detail: unknown) {
   // eslint-disable-next-line no-console
-  console.log('Item clicked:', event);
+  console.log('Item clicked:', detail);
 }
 
-function onTabChange(event: Event) {
+function onTabChange(detail: RibbonTabChangeEventDetail) {
   // eslint-disable-next-line no-console
-  console.log('Tab changed:', event);
+  console.log('Tab changed:', detail);
 }
 
 function toggleMinimized() {
@@ -138,18 +149,13 @@ function togglePictureTools() {
   pictureToolsVisible.value = !pictureToolsVisible.value;
 }
 
-function onShapeSelect(event: Event) {
-  const detail = (event as CustomEvent<{ itemId: string }>).detail;
-  if (detail) {
-    selectedShape.value = detail.itemId;
-    // eslint-disable-next-line no-console
-    console.log('Shape selected:', detail.itemId);
-  }
+function onShapeSelect(detail: RibbonItemClickEventDetail) {
+  selectedShape.value = detail.itemId;
+  // eslint-disable-next-line no-console
+  console.log('Shape selected:', detail.itemId);
 }
 
-function onPasteModeSelect(event: Event) {
-  const detail = (event as CustomEvent<{ itemId: string }>).detail;
-  if (!detail) return;
+function onPasteModeSelect(detail: { itemId: string }) {
   const modes: Record<string, PasteMode> = {
     paste: { id: 'paste', label: 'Paste', icon: '📋' },
     'paste-values': { id: 'paste-values', label: 'Paste Values', icon: '123' },
@@ -159,97 +165,90 @@ function onPasteModeSelect(event: Event) {
   if (next) pasteMode.value = next;
 }
 
-// ============== Snippets (Vue templates — BsRibbon SFC wrapper for the
-// top-level shell, native custom elements for everything else) ==============
-const snippetMinimal = `<BsRibbon v-model="activeTab" :minimized="minimized"
-          @minimize-toggle="(e) => minimized = e.detail.minimized">
-  <mp-ribbon-tab tab-id="home" label="Home">
-    <mp-ribbon-group group-id="clipboard" label="Clipboard"
+// ============== Snippets ==============
+const snippetMinimal = `<BsRibbon v-model:active-tab-id="activeTab" v-model:minimized="minimized">
+  <BsRibbonTab tab-id="home" label="Home">
+    <BsRibbonGroup group-id="clipboard" label="Clipboard"
                      dialog-launcher="Clipboard Dialog">
-      <mp-ribbon-button item-id="paste" label="Paste" icon="📋"
+      <BsRibbonButton item-id="paste" label="Paste" icon="📋"
                         size="large" tooltip="Paste (Ctrl+V)"
-                        @item-click="onPaste" />
-      <mp-ribbon-button item-id="cut"  label="Cut"  icon="✂️" size="small"
-                        @item-click="onCut" />
-      <mp-ribbon-button item-id="copy" label="Copy" icon="📄" size="small"
-                        @item-click="onCopy" />
-    </mp-ribbon-group>
-  </mp-ribbon-tab>
+                        @itemclick="onPaste" />
+      <BsRibbonButton item-id="cut"  label="Cut"  icon="✂️" size="small"
+                        @itemclick="onCut" />
+      <BsRibbonButton item-id="copy" label="Copy" icon="📄" size="small"
+                        @itemclick="onCopy" />
+    </BsRibbonGroup>
+  </BsRibbonTab>
 </BsRibbon>`;
 
-const snippetSplitButton = `<mp-ribbon-split-button
+const snippetSplitButton = `<BsRibbonSplitButton
   :item-id="pasteMode.id"
   :label="pasteMode.label"
   :icon="pasteMode.icon"
   size="large"
-  @main-action="onPaste">
-  <mp-ribbon-menu-item item-id="paste" label="Paste" icon="📋"
-                       @menu-select="onPasteModeSelect" />
-  <mp-ribbon-menu-item item-id="paste-values" label="Paste Values" icon="123"
-                       @menu-select="onPasteModeSelect" />
-  <mp-ribbon-menu-separator />
-  <mp-ribbon-menu-item item-id="paste-special" label="Paste Special…"
-                       @menu-select="onPasteSpecial" />
-</mp-ribbon-split-button>`;
+  @mainaction="onPaste">
+  <BsRibbonMenuItem item-id="paste" label="Paste" icon="📋"
+                       @menuselect="onPasteModeSelect" />
+  <BsRibbonMenuItem item-id="paste-values" label="Paste Values" icon="123"
+                       @menuselect="onPasteModeSelect" />
+  <BsRibbonMenuSeparator />
+  <BsRibbonMenuItem item-id="paste-special" label="Paste Special…"
+                       @menuselect="onPasteSpecial" />
+</BsRibbonSplitButton>`;
 
 const snippetValueItems = `<!-- Vue: bind the prop + listen for the matching event.
      boldOn / fontFamily / fontColor are refs(). -->
-<mp-ribbon-toggle-button item-id="bold" label="Bold" icon="B" size="small"
-                         :pressed="boldOn"
-                         @toggle="(e) => boldOn = e.detail.pressed" />
+<BsRibbonToggleButton item-id="bold" label="Bold" icon="B" size="small"
+                         v-model:pressed="boldOn" />
 
-<mp-ribbon-combobox item-id="font-family" label="Font Family" size="medium"
+<BsRibbonComboBox item-id="font-family" label="Font Family" size="medium"
                     :options="fontFamilyOptions"
-                    :value="fontFamily"
-                    @value-change="(e) => fontFamily = String(e.detail.value)" />
+                    v-model:value="fontFamily" />
 
-<mp-ribbon-color-picker item-id="font-color" label="Font Color" size="small"
-                        :color="fontColor"
-                        @color-change="(e) => fontColor = e.detail.color" />`;
+<BsRibbonColorPicker item-id="font-color" label="Font Color" size="small"
+                        v-model:color="fontColor" />`;
 
-const snippetContextual = `<mp-ribbon-contextual-tab-set
+const snippetContextual = `<BsRibbonContextualTabSet
   label="Picture Tools"
   color="#F2C744"
-  :hidden="!pictureSelected">
-  <mp-ribbon-tab tab-id="picture-format" label="Format">
-    <mp-ribbon-group group-id="picture-styles" label="Picture Styles">
+  :visible="pictureSelected">
+  <BsRibbonTab tab-id="picture-format" label="Format">
+    <BsRibbonGroup group-id="picture-styles" label="Picture Styles">
       …
-    </mp-ribbon-group>
-  </mp-ribbon-tab>
-</mp-ribbon-contextual-tab-set>`;
+    </BsRibbonGroup>
+  </BsRibbonTab>
+</BsRibbonContextualTabSet>`;
 
-const snippetQat = `<mp-quick-access-toolbar label="Quick Access Toolbar"
-                         :touch-mode="touchMode"
-                         :app-accent="appAccent">
-  <mp-ribbon-button item-id="save" label="Save" icon="💾" size="small"
-                    @item-click="onSave" />
-  <mp-ribbon-button item-id="undo" label="Undo" icon="↶" size="small"
-                    @item-click="onUndo" />
-</mp-quick-access-toolbar>
+const snippetQat = `<BsQuickAccessToolbar aria-label="Quick Access Toolbar"
+                         :touch-mode="touchMode">
+  <BsRibbonButton item-id="save" label="Save" icon="💾" size="small"
+                    @itemclick="onSave" />
+  <BsRibbonButton item-id="undo" label="Undo" icon="↶" size="small"
+                    @itemclick="onUndo" />
+</BsQuickAccessToolbar>
 
 <BsRibbon …> … </BsRibbon>`;
 
-const snippetTheming = `<BsRibbon
+const snippetTheming = `<!-- .excel { --bs-ribbon-accent: #217346; } -->
+<BsRibbon
   version="office-2016"
-  app-accent="#217346"
+  class="excel"
   color-scheme="auto"
   touch-mode="auto">
   …
 </BsRibbon>`;
 
-const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i> from an icon font,
-     images, whatever. The host auto-sizes it from the item's size,
-     or use one of the .ribbon-icon-large / -medium / -small utility
-     classes for an explicit override. -->
-<mp-ribbon-button item-id="save" label="Save" size="large"
-                  @item-click="onSave">
-  <i slot="icon" class="bi bi-save"></i>
-</mp-ribbon-button>
+const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-font <i>, an image.
+     It is sized from the size the item renders at. -->
+<BsRibbonButton item-id="save" label="Save" size="large"
+                @itemclick="onSave">
+  <template #iconTemplate><i class="bi bi-save"></i></template>
+</BsRibbonButton>
 
-<mp-ribbon-button item-id="copy" label="Copy" size="small"
-                  @item-click="onCopy">
-  <svg slot="icon" class="ribbon-icon-small" viewBox="0 0 16 16">…</svg>
-</mp-ribbon-button>`;
+<BsRibbonButton item-id="copy" label="Copy" size="small"
+                @itemclick="onCopy">
+  <template #iconTemplate><svg viewBox="0 0 16 16">…</svg></template>
+</BsRibbonButton>`;
 </script>
 
 <template>
@@ -274,7 +273,7 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
         App accent
         <select v-model="appAccent">
           <option v-for="a in appAccents" :key="a.value" :value="a.value">
-            {{ a.label }} ({{ a.value }})
+            {{ a.label }}
           </option>
         </select>
       </label>
@@ -298,303 +297,294 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
       </label>
     </div>
 
-    <div class="ribbon-rtl-wrapper" :dir="direction">
-      <mp-quick-access-toolbar
-        label="Quick Access Toolbar"
+    <div class="ribbon-rtl-wrapper" :dir="direction" :data-accent="appAccent">
+      <BsQuickAccessToolbar
+        aria-label="Quick Access Toolbar"
         :touch-mode="touchMode"
-        :app-accent="appAccent"
       >
-        <mp-ribbon-button item-id="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" @item-click="onItemClick" />
-        <mp-ribbon-button item-id="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" @item-click="onItemClick" />
-        <mp-ribbon-button item-id="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" @item-click="onItemClick" />
-      </mp-quick-access-toolbar>
+        <BsRibbonButton item-id="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" @itemclick="onItemClick" />
+        <BsRibbonButton item-id="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" @itemclick="onItemClick" />
+        <BsRibbonButton item-id="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" @itemclick="onItemClick" />
+      </BsQuickAccessToolbar>
 
       <BsRibbon
-        v-model="activeTab"
-        :minimized="minimized"
+        v-model:active-tab-id="activeTab"
+        v-model:minimized="minimized"
         :layout="layout"
         :version="version"
         :color-scheme="colorScheme"
         :touch-mode="touchMode"
-        :app-accent="appAccent"
-        @minimize-toggle="(e: CustomEvent<{ minimized: boolean }>) => (minimized = e.detail.minimized)"
-        @tab-change="onTabChange"
+        @tabchange="onTabChange"
       >
         <!-- ============ Tell Me slot (FR-24) ============ -->
-        <input
-          slot="tell-me"
-          type="search"
-          class="demo-tell-me"
-          placeholder="🔍 Tell me what you want to do…"
-          aria-label="Tell me what you want to do"
-        />
+        <template #tellMe>
+          <input
+            type="search"
+            class="demo-tell-me"
+            placeholder="🔍 Tell me what you want to do…"
+            aria-label="Tell me what you want to do"
+          />
+        </template>
 
         <!-- ============ Home tab ============ -->
-        <mp-ribbon-tab
+        <BsRibbonTab
           tab-id="home"
           label="Home"
           :ideal-sizes="homeIdealSizes"
           :reduce-order="homeReduceOrder"
         >
-          <mp-ribbon-group group-id="clipboard" label="Clipboard" dialog-launcher="Clipboard Dialog">
-            <mp-ribbon-split-button
+          <BsRibbonGroup group-id="clipboard" label="Clipboard" dialog-launcher="Clipboard Dialog">
+            <BsRibbonSplitButton
               :item-id="pasteMode.id"
               :label="pasteMode.label"
               :icon="pasteMode.icon"
               size="large"
               tooltip="Paste (Ctrl+V)"
-              @main-action="onItemClick"
+              @mainaction="onItemClick"
             >
-              <mp-ribbon-menu-item
+              <BsRibbonMenuItem
                 item-id="paste"
                 label="Paste"
                 icon="📋"
-                @menu-select="(e: Event) => { onPasteModeSelect(e); onItemClick(e); }"
+                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
-              <mp-ribbon-menu-item
+              <BsRibbonMenuItem
                 item-id="paste-values"
                 label="Paste Values"
                 icon="123"
-                @menu-select="(e: Event) => { onPasteModeSelect(e); onItemClick(e); }"
+                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
-              <mp-ribbon-menu-item
+              <BsRibbonMenuItem
                 item-id="paste-formatting"
                 label="Paste Formatting"
                 icon="🎨"
-                @menu-select="(e: Event) => { onPasteModeSelect(e); onItemClick(e); }"
+                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
-              <mp-ribbon-menu-separator />
-              <mp-ribbon-menu-item item-id="paste-special" label="Paste Special…" @menu-select="onItemClick" />
-            </mp-ribbon-split-button>
-            <mp-ribbon-button item-id="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="format-painter" label="Format Painter" icon="🖌️" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
+              <BsRibbonMenuSeparator />
+              <BsRibbonMenuItem item-id="paste-special" label="Paste Special…" @menuselect="onItemClick" />
+            </BsRibbonSplitButton>
+            <BsRibbonButton item-id="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="format-painter" label="Format Painter" icon="🖌️" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="font" label="Font" dialog-launcher="Font Dialog">
-            <mp-ribbon-combo-box
+          <BsRibbonGroup group-id="font" label="Font" dialog-launcher="Font Dialog">
+            <BsRibbonComboBox
               item-id="font-family"
               label="Font Family"
               size="medium"
               tooltip="Font Family"
               :options="fontFamilyOptions"
-              :value="fontFamily"
-              @value-change="(e: CustomEvent<{ value: unknown }>) => (fontFamily = String(e.detail.value))"
+              v-model:value="fontFamily"
             />
-            <mp-ribbon-toggle-button
+            <BsRibbonToggleButton
               item-id="bold"
               label="Bold"
               icon="B"
               size="small"
               tooltip="Bold (Ctrl+B)"
-              :pressed="boldOn"
-              @toggle="(e: CustomEvent<{ pressed: boolean }>) => (boldOn = e.detail.pressed)"
+              v-model:pressed="boldOn"
             />
-            <mp-ribbon-toggle-button
+            <BsRibbonToggleButton
               item-id="italic"
               label="Italic"
               icon="I"
               size="small"
               tooltip="Italic (Ctrl+I)"
-              :pressed="italicOn"
-              @toggle="(e: CustomEvent<{ pressed: boolean }>) => (italicOn = e.detail.pressed)"
+              v-model:pressed="italicOn"
             />
-            <mp-ribbon-toggle-button
+            <BsRibbonToggleButton
               item-id="underline"
               label="Underline"
               icon="U"
               size="small"
               tooltip="Underline (Ctrl+U)"
-              :pressed="underlineOn"
-              @toggle="(e: CustomEvent<{ pressed: boolean }>) => (underlineOn = e.detail.pressed)"
+              v-model:pressed="underlineOn"
             />
-            <mp-ribbon-button item-id="strikethrough" label="Strikethrough" icon="S̶" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="subscript" label="Subscript" icon="X₂" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="superscript" label="Superscript" icon="X²" size="small" @item-click="onItemClick" />
-            <mp-ribbon-color-picker
+            <BsRibbonButton item-id="strikethrough" label="Strikethrough" icon="S̶" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="subscript" label="Subscript" icon="X₂" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="superscript" label="Superscript" icon="X²" size="small" @itemclick="onItemClick" />
+            <BsRibbonColorPicker
               item-id="font-color"
               label="Font Color"
               size="small"
-              :color="fontColor"
-              @color-change="(e: CustomEvent<{ color: string }>) => (fontColor = e.detail.color)"
+              v-model:color="fontColor"
             />
-          </mp-ribbon-group>
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="paragraph" label="Paragraph" dialog-launcher="Paragraph Dialog">
-            <mp-ribbon-dropdown-button item-id="bullets" label="Bullets" icon="•≡" size="small" tooltip="Bullet list">
-              <mp-ribbon-menu-item item-id="bullet-disc" label="Disc" icon="●" @menu-select="onItemClick" />
-              <mp-ribbon-menu-item item-id="bullet-circle" label="Circle" icon="○" @menu-select="onItemClick" />
-              <mp-ribbon-menu-item item-id="bullet-square" label="Square" icon="■" @menu-select="onItemClick" />
-              <mp-ribbon-menu-separator />
-              <mp-ribbon-menu-item item-id="define-new-bullet" label="Define New Bullet…" @menu-select="onItemClick" />
-            </mp-ribbon-dropdown-button>
-            <mp-ribbon-button item-id="numbering" label="Numbering" icon="1≡" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="indent-decrease" label="Decrease Indent" icon="⇤" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="indent-increase" label="Increase Indent" icon="⇥" size="small" @item-click="onItemClick" />
-            <mp-ribbon-group-button
+          <BsRibbonGroup group-id="paragraph" label="Paragraph" dialog-launcher="Paragraph Dialog">
+            <BsRibbonDropdownButton item-id="bullets" label="Bullets" icon="•≡" size="small" tooltip="Bullet list">
+              <BsRibbonMenuItem item-id="bullet-disc" label="Disc" icon="●" @menuselect="onItemClick" />
+              <BsRibbonMenuItem item-id="bullet-circle" label="Circle" icon="○" @menuselect="onItemClick" />
+              <BsRibbonMenuItem item-id="bullet-square" label="Square" icon="■" @menuselect="onItemClick" />
+              <BsRibbonMenuSeparator />
+              <BsRibbonMenuItem item-id="define-new-bullet" label="Define New Bullet…" @menuselect="onItemClick" />
+            </BsRibbonDropdownButton>
+            <BsRibbonButton item-id="numbering" label="Numbering" icon="1≡" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="indent-decrease" label="Decrease Indent" icon="⇤" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="indent-increase" label="Increase Indent" icon="⇥" size="small" @itemclick="onItemClick" />
+            <BsRibbonGroupButton
               item-id="alignment"
               label="Alignment"
               size="small"
               :buttons="alignmentOptions"
-              :value="alignment"
-              @group-select="(e: CustomEvent<{ value: unknown }>) => (alignment = String(e.detail.value))"
+              v-model:selected-value="alignment"
             />
-          </mp-ribbon-group>
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="styles" label="Styles" dialog-launcher="Styles">
-            <mp-ribbon-button item-id="style-normal" label="Normal" icon="¶" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="style-h1" label="Heading 1" icon="H1" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="style-h2" label="Heading 2" icon="H2" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="style-title" label="Title" icon="T" size="medium" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="styles" label="Styles" dialog-launcher="Styles">
+            <BsRibbonButton item-id="style-normal" label="Normal" icon="¶" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="style-h1" label="Heading 1" icon="H1" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="style-h2" label="Heading 2" icon="H2" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="style-title" label="Title" icon="T" size="medium" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="editing" label="Editing">
-            <mp-ribbon-button item-id="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="select" label="Select" icon="☐" size="small" @item-click="onItemClick" />
-            <mp-ribbon-check-box
+          <BsRibbonGroup group-id="editing" label="Editing">
+            <BsRibbonButton item-id="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="select" label="Select" icon="☐" size="small" @itemclick="onItemClick" />
+            <BsRibbonCheckBox
               item-id="match-case"
               label="Match case"
               size="small"
-              :checked="matchCase"
-              @check-change="(e: CustomEvent<{ checked: boolean }>) => (matchCase = e.detail.checked)"
+              v-model:checked="matchCase"
             />
-          </mp-ribbon-group>
-        </mp-ribbon-tab>
+          </BsRibbonGroup>
+        </BsRibbonTab>
 
         <!-- ============ Insert tab ============ -->
-        <mp-ribbon-tab tab-id="insert" label="Insert">
-          <mp-ribbon-group group-id="pages" label="Pages" icon="📑">
-            <mp-ribbon-button item-id="cover-page" label="Cover Page" icon="📑" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="blank-page" label="Blank Page" icon="📄" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" @item-click="onItemClick" />
-          </mp-ribbon-group>
+        <BsRibbonTab tab-id="insert" label="Insert">
+          <BsRibbonGroup group-id="pages" label="Pages" icon="📑">
+            <BsRibbonButton item-id="cover-page" label="Cover Page" icon="📑" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="blank-page" label="Blank Page" icon="📄" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="tables" label="Tables" icon="▦" :priority="10">
-            <mp-ribbon-button item-id="table" label="Table" icon="▦" size="large" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="tables" label="Tables" icon="▦" :priority="10">
+            <BsRibbonButton item-id="table" label="Table" icon="▦" size="large" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="shape-gallery" label="Shape Gallery" icon="⬡">
-            <mp-ribbon-gallery item-id="shapes" label="Shapes" size="medium" :columns="3">
-              <mp-ribbon-gallery-item item-id="rect" icon="▭" label="Rectangle" :selected="selectedShape === 'rect'" @gallery-select="onShapeSelect" />
-              <mp-ribbon-gallery-item item-id="circle" icon="●" label="Circle" :selected="selectedShape === 'circle'" @gallery-select="onShapeSelect" />
-              <mp-ribbon-gallery-item item-id="triangle" icon="▲" label="Triangle" :selected="selectedShape === 'triangle'" @gallery-select="onShapeSelect" />
-              <mp-ribbon-gallery-item item-id="diamond" icon="◆" label="Diamond" :selected="selectedShape === 'diamond'" @gallery-select="onShapeSelect" />
-              <mp-ribbon-gallery-item item-id="star" icon="★" label="Star" :selected="selectedShape === 'star'" @gallery-select="onShapeSelect" />
-              <mp-ribbon-gallery-item item-id="arrow" icon="➤" label="Arrow" :selected="selectedShape === 'arrow'" @gallery-select="onShapeSelect" />
-            </mp-ribbon-gallery>
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="shape-gallery" label="Shape Gallery" icon="⬡">
+            <BsRibbonGallery item-id="shapes" label="Shapes" size="medium" :columns="3">
+              <BsRibbonGalleryItem item-id="rect" icon="▭" label="Rectangle" :selected="selectedShape === 'rect'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="circle" icon="●" label="Circle" :selected="selectedShape === 'circle'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="triangle" icon="▲" label="Triangle" :selected="selectedShape === 'triangle'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="diamond" icon="◆" label="Diamond" :selected="selectedShape === 'diamond'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="star" icon="★" label="Star" :selected="selectedShape === 'star'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="arrow" icon="➤" label="Arrow" :selected="selectedShape === 'arrow'" @galleryselect="onShapeSelect" />
+            </BsRibbonGallery>
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="illustrations" label="Illustrations" icon="🖼️">
-            <mp-ribbon-button item-id="pictures" label="Pictures" icon="🖼️" size="large" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="shapes" label="Shapes" icon="⬡" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="icons" label="Icons" icon="★" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="chart" label="Chart" icon="📊" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="smartart" label="SmartArt" icon="🧩" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="screenshot" label="Screenshot" icon="📸" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="illustrations" label="Illustrations" icon="🖼️">
+            <BsRibbonButton item-id="pictures" label="Pictures" icon="🖼️" size="large" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="shapes" label="Shapes" icon="⬡" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="icons" label="Icons" icon="★" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="chart" label="Chart" icon="📊" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="smartart" label="SmartArt" icon="🧩" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="screenshot" label="Screenshot" icon="📸" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="links" label="Links" icon="🔗">
-            <mp-ribbon-button item-id="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="bookmark" label="Bookmark" icon="🔖" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="cross-reference" label="Cross-reference" icon="↗" size="medium" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="links" label="Links" icon="🔗">
+            <BsRibbonButton item-id="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="bookmark" label="Bookmark" icon="🔖" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="cross-reference" label="Cross-reference" icon="↗" size="medium" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="header-footer" label="Header &amp; Footer" icon="▤">
-            <mp-ribbon-button item-id="header" label="Header" icon="▔" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="footer" label="Footer" icon="▁" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="page-number" label="Page Number" icon="#" size="medium" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="header-footer" label="Header &amp; Footer" icon="▤">
+            <BsRibbonButton item-id="header" label="Header" icon="▔" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="footer" label="Footer" icon="▁" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="page-number" label="Page Number" icon="#" size="medium" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="text" label="Text" icon="🆎">
-            <mp-ribbon-button item-id="text-box" label="Text Box" icon="🆎" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="wordart" label="WordArt" icon="🅰️" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="date-time" label="Date &amp; Time" icon="📅" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="symbol" label="Symbol" icon="Ω" size="medium" @item-click="onItemClick" />
-          </mp-ribbon-group>
-        </mp-ribbon-tab>
+          <BsRibbonGroup group-id="text" label="Text" icon="🆎">
+            <BsRibbonButton item-id="text-box" label="Text Box" icon="🆎" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="wordart" label="WordArt" icon="🅰️" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="date-time" label="Date &amp; Time" icon="📅" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="symbol" label="Symbol" icon="Ω" size="medium" @itemclick="onItemClick" />
+          </BsRibbonGroup>
+        </BsRibbonTab>
 
         <!-- ============ Picture Tools (contextual) ============ -->
-        <mp-ribbon-contextual-tab-set label="Picture Tools" color="#F2C744" :hidden="!pictureToolsVisible">
-          <mp-ribbon-tab tab-id="picture-format" label="Format">
-            <mp-ribbon-group group-id="picture-styles" label="Picture Styles">
-              <mp-ribbon-button item-id="picture-border" label="Picture Border" icon="▢" size="medium" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-effects" label="Picture Effects" icon="✨" size="medium" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-layout" label="Picture Layout" icon="🖼️" size="medium" @item-click="onItemClick" />
-            </mp-ribbon-group>
-            <mp-ribbon-group group-id="picture-arrange" label="Arrange">
-              <mp-ribbon-button item-id="picture-position" label="Position" icon="⤧" size="small" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-wrap-text" label="Wrap Text" icon="↩" size="small" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-rotate" label="Rotate" icon="↻" size="small" @item-click="onItemClick" />
-            </mp-ribbon-group>
-            <mp-ribbon-group group-id="picture-size" label="Size">
-              <mp-ribbon-button item-id="picture-crop" label="Crop" icon="✂" size="large" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-width" label="Width" icon="↔" size="small" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-height" label="Height" icon="↕" size="small" @item-click="onItemClick" />
-            </mp-ribbon-group>
-          </mp-ribbon-tab>
-          <mp-ribbon-tab tab-id="picture-effects" label="Effects">
-            <mp-ribbon-group group-id="picture-adjust" label="Adjust">
-              <mp-ribbon-button item-id="picture-brightness" label="Brightness" icon="🔆" size="medium" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-contrast" label="Contrast" icon="◐" size="medium" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-saturation" label="Saturation" icon="🎨" size="medium" @item-click="onItemClick" />
-            </mp-ribbon-group>
-            <mp-ribbon-group group-id="picture-artistic" label="Artistic">
-              <mp-ribbon-button item-id="picture-blur" label="Blur" icon="◌" size="small" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-sharpen" label="Sharpen" icon="◇" size="small" @item-click="onItemClick" />
-              <mp-ribbon-button item-id="picture-grayscale" label="Grayscale" icon="◑" size="small" @item-click="onItemClick" />
-            </mp-ribbon-group>
-          </mp-ribbon-tab>
-        </mp-ribbon-contextual-tab-set>
+        <BsRibbonContextualTabSet label="Picture Tools" color="#F2C744" :visible="pictureToolsVisible">
+          <BsRibbonTab tab-id="picture-format" label="Format">
+            <BsRibbonGroup group-id="picture-styles" label="Picture Styles">
+              <BsRibbonButton item-id="picture-border" label="Picture Border" icon="▢" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-effects" label="Picture Effects" icon="✨" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-layout" label="Picture Layout" icon="🖼️" size="medium" @itemclick="onItemClick" />
+            </BsRibbonGroup>
+            <BsRibbonGroup group-id="picture-arrange" label="Arrange">
+              <BsRibbonButton item-id="picture-position" label="Position" icon="⤧" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-wrap-text" label="Wrap Text" icon="↩" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-rotate" label="Rotate" icon="↻" size="small" @itemclick="onItemClick" />
+            </BsRibbonGroup>
+            <BsRibbonGroup group-id="picture-size" label="Size">
+              <BsRibbonButton item-id="picture-crop" label="Crop" icon="✂" size="large" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-width" label="Width" icon="↔" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-height" label="Height" icon="↕" size="small" @itemclick="onItemClick" />
+            </BsRibbonGroup>
+          </BsRibbonTab>
+          <BsRibbonTab tab-id="picture-effects" label="Effects">
+            <BsRibbonGroup group-id="picture-adjust" label="Adjust">
+              <BsRibbonButton item-id="picture-brightness" label="Brightness" icon="🔆" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-contrast" label="Contrast" icon="◐" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-saturation" label="Saturation" icon="🎨" size="medium" @itemclick="onItemClick" />
+            </BsRibbonGroup>
+            <BsRibbonGroup group-id="picture-artistic" label="Artistic">
+              <BsRibbonButton item-id="picture-blur" label="Blur" icon="◌" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-sharpen" label="Sharpen" icon="◇" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-grayscale" label="Grayscale" icon="◑" size="small" @itemclick="onItemClick" />
+            </BsRibbonGroup>
+          </BsRibbonTab>
+        </BsRibbonContextualTabSet>
 
         <!-- ============ Design tab ============ -->
-        <mp-ribbon-tab tab-id="design" label="Design">
-          <mp-ribbon-group group-id="document-formatting" label="Document Formatting">
-            <mp-ribbon-button item-id="themes" label="Themes" icon="🎨" size="large" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="colors" label="Colors" icon="🌈" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="fonts" label="Fonts" icon="🔤" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="effects" label="Effects" icon="✨" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="set-default" label="Set as Default" icon="✓" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
+        <BsRibbonTab tab-id="design" label="Design">
+          <BsRibbonGroup group-id="document-formatting" label="Document Formatting">
+            <BsRibbonButton item-id="themes" label="Themes" icon="🎨" size="large" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="colors" label="Colors" icon="🌈" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="fonts" label="Fonts" icon="🔤" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="effects" label="Effects" icon="✨" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="set-default" label="Set as Default" icon="✓" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="page-background" label="Page Background">
-            <mp-ribbon-button item-id="watermark" label="Watermark" icon="💧" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="page-color" label="Page Color" icon="🎨" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="page-borders" label="Page Borders" icon="▢" size="medium" @item-click="onItemClick" />
-          </mp-ribbon-group>
-        </mp-ribbon-tab>
+          <BsRibbonGroup group-id="page-background" label="Page Background">
+            <BsRibbonButton item-id="watermark" label="Watermark" icon="💧" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="page-color" label="Page Color" icon="🎨" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="page-borders" label="Page Borders" icon="▢" size="medium" @itemclick="onItemClick" />
+          </BsRibbonGroup>
+        </BsRibbonTab>
 
         <!-- ============ Layout tab ============ -->
-        <mp-ribbon-tab tab-id="layout" label="Layout">
-          <mp-ribbon-group group-id="page-setup" label="Page Setup" dialog-launcher="Page Setup">
-            <mp-ribbon-button item-id="margins" label="Margins" icon="▭" size="large" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="orientation" label="Orientation" icon="🔄" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="size" label="Size" icon="📏" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="columns" label="Columns" icon="▥" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="breaks" label="Breaks" icon="⤓" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="line-numbers" label="Line Numbers" icon="№" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="hyphenation" label="Hyphenation" icon="‐" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
+        <BsRibbonTab tab-id="layout" label="Layout">
+          <BsRibbonGroup group-id="page-setup" label="Page Setup" dialog-launcher="Page Setup">
+            <BsRibbonButton item-id="margins" label="Margins" icon="▭" size="large" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="orientation" label="Orientation" icon="🔄" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="size" label="Size" icon="📏" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="columns" label="Columns" icon="▥" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="breaks" label="Breaks" icon="⤓" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="line-numbers" label="Line Numbers" icon="№" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="hyphenation" label="Hyphenation" icon="‐" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="paragraph-layout" label="Paragraph" dialog-launcher="Paragraph">
-            <mp-ribbon-button item-id="indent-left" label="Indent Left" icon="⇥" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="indent-right" label="Indent Right" icon="⇤" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="space-before" label="Space Before" icon="↑≡" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="space-after" label="Space After" icon="↓≡" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
+          <BsRibbonGroup group-id="paragraph-layout" label="Paragraph" dialog-launcher="Paragraph">
+            <BsRibbonButton item-id="indent-left" label="Indent Left" icon="⇥" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="indent-right" label="Indent Right" icon="⇤" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="space-before" label="Space Before" icon="↑≡" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="space-after" label="Space After" icon="↓≡" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
 
-          <mp-ribbon-group group-id="arrange" label="Arrange">
-            <mp-ribbon-button item-id="position" label="Position" icon="⤧" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="wrap-text" label="Wrap Text" icon="↩" size="medium" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="bring-forward" label="Bring Forward" icon="⬆" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="send-backward" label="Send Backward" icon="⬇" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="selection-pane" label="Selection Pane" icon="☰" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="align" label="Align" icon="⊟" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="group" label="Group" icon="⊞" size="small" @item-click="onItemClick" />
-            <mp-ribbon-button item-id="rotate" label="Rotate" icon="↻" size="small" @item-click="onItemClick" />
-          </mp-ribbon-group>
-        </mp-ribbon-tab>
+          <BsRibbonGroup group-id="arrange" label="Arrange">
+            <BsRibbonButton item-id="position" label="Position" icon="⤧" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="wrap-text" label="Wrap Text" icon="↩" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="bring-forward" label="Bring Forward" icon="⬆" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="send-backward" label="Send Backward" icon="⬇" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="selection-pane" label="Selection Pane" icon="☰" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="align" label="Align" icon="⊟" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="group" label="Group" icon="⊞" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="rotate" label="Rotate" icon="↻" size="small" @itemclick="onItemClick" />
+          </BsRibbonGroup>
+        </BsRibbonTab>
       </BsRibbon>
     </div>
 
@@ -700,19 +690,17 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
       <h3 id="ribbon-snippets-heading">Code samples</h3>
       <p class="snippets-intro">
         Copy-paste starting points for the most common ribbon shapes. The
-        top-level shell uses the <code>&lt;BsRibbon&gt;</code> SFC wrapper for
-        <code>v-model</code> on <code>activeTab</code>; sub-elements are
-        addressed directly as native custom elements
-        (<code>&lt;mp-ribbon-*&gt;</code>) — Vue forwards object/array props
-        like <code>:options</code> and <code>:ideal-sizes</code> as JS
-        properties on the underlying class.
+        ribbon and every item are Vue components: <code>v-model:active-tab-id</code>
+        and <code>v-model:minimized</code> on <code>&lt;BsRibbon&gt;</code>,
+        <code>v-model:pressed</code> / <code>:value</code> / <code>:color</code> /
+        <code>:checked</code> / <code>:selected-value</code> on the value items.
       </p>
 
       <article class="snippet-card">
         <h4>1. Minimal ribbon — one tab, one group, three buttons</h4>
         <BsCodeSnippet :code="snippetMinimal" language="html" />
         <p class="snippet-note">
-          <code>[(minimized)]</code> two-way binds the minimize state — Ctrl+F1
+          <code>v-model:minimized</code> two-way binds the minimize state — Ctrl+F1
           and double-clicking a tab will update your signal.
         </p>
       </article>
@@ -742,9 +730,8 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
         <h4>4. Contextual tab set</h4>
         <BsCodeSnippet :code="snippetContextual" language="html" />
         <p class="snippet-note">
-          Toggling <code>[hidden]</code> on the set fires
-          <code>contextual-visibility-change</code>; the ribbon re-processes its
-          slot and announces "Picture Tools, contextual, now available / hidden"
+          Toggling <code>:visible</code> on the set adds or removes its tabs; the ribbon
+          announces "Picture Tools, contextual, now available / hidden"
           via the live region.
         </p>
       </article>
@@ -765,7 +752,8 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
         <p class="snippet-note">
           <code>version</code> picks one of <code>office-2007</code> /
           <code>2010</code> / <code>2013</code> / <code>2016</code>.
-          <code>appAccent</code> drives the brand colour (Word
+          The <code>--bs-ribbon-accent</code> custom property, set on the
+          ribbon or any ancestor, drives the brand colour (Word
           <code>#2B579A</code>, Excel <code>#217346</code>, etc.).
           <code>colorScheme="auto"</code> follows
           <code>prefers-color-scheme</code> and ancestor
@@ -774,17 +762,14 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
       </article>
 
       <article class="snippet-card">
-        <h4>7. Slot-based icons (FR-16)</h4>
+        <h4>7. Element icons (FR-16)</h4>
         <BsCodeSnippet :code="snippetSlotIcons" language="html" />
         <p class="snippet-note">
-          Every item exposes a <code>&lt;slot name="icon"&gt;</code> alongside
-          the existing <code>icon</code> string attribute. The host's
-          <code>size</code> attribute auto-sizes slotted icons via
-          <code>::slotted</code> rules; consumers wanting an explicit override
-          apply <code>.ribbon-icon-large</code> / <code>-medium</code> /
-          <code>-small</code> directly on the projected element. The
-          <code>icon=""</code> attribute remains supported as the fallback —
-          consumers can mix-and-match.
+          Every item takes an <code>#iconTemplate</code> slot alongside the
+          <code>icon</code> string prop. The element is sized from the size the
+          item renders at, so it follows the ribbon as groups collapse. The
+          <code>icon</code> string remains the fallback — consumers can
+          mix-and-match.
         </p>
       </article>
     </section>
@@ -807,6 +792,14 @@ const snippetSlotIcons = `<!-- Project any element with slot="icon" — SVGs, <i
 .demo-ribbon .ribbon-rtl-wrapper {
   display: block;
 }
+
+/* The app accent: the ribbon reads --bs-ribbon-accent from any ancestor. */
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='word'] { --bs-ribbon-accent: #2b579a; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='excel'] { --bs-ribbon-accent: #217346; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='powerpoint'] { --bs-ribbon-accent: #b7472a; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='outlook'] { --bs-ribbon-accent: #0078d4; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='onenote'] { --bs-ribbon-accent: #7719aa; }
+.demo-ribbon .ribbon-rtl-wrapper[data-accent='access'] { --bs-ribbon-accent: #a4373a; }
 
 .demo-ribbon .demo-tell-me {
   width: 220px;

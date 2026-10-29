@@ -2,6 +2,7 @@ import * as React from 'react';
 import { describe, expect, it } from 'vitest';
 
 import {
+  BsCard,
   BsCardBody,
   BsCardFooter,
   BsCardGroup,
@@ -15,13 +16,12 @@ import {
 import { render, renderEl } from './harness';
 
 /**
- * The card helpers are the only React wrappers with logic of their own: they do
- * not wrap a web component, they render the light-DOM `div`/`img`/`a` that
- * `<mp-card>` slots and its card-anchored document sheet styles. Each one owns a class
- * contract (the Bootstrap class, a consumer's `className` merged in, a
- * `text-bg-{color}` modifier) and forwards its ref to the element it renders.
- * `BsCardHeader` additionally promotes a nested nav to `card-header-tabs` /
- * `card-header-pills`, re-applying when `navStyle` or the children change.
+ * The card has no machine and no custom element (PRD #437 wave A): every
+ * helper renders plain Bootstrap markup that the page baseline styles. Each
+ * one owns a class contract (the Bootstrap class, a consumer's `className`
+ * merged in, the colour classes from ui-core/card) and forwards its ref to the
+ * element it renders. A nav in a header takes `card-header-tabs` /
+ * `card-header-pills` itself.
  */
 
 const PLAIN = [
@@ -86,55 +86,24 @@ describe('React card helpers — contextual color', () => {
   });
 });
 
-describe('React BsCardHeader — navStyle', () => {
-  const header = (navStyle?: 'tabs' | 'pills') => (
-    <BsCardHeader navStyle={navStyle}>
-      <ul className="nav">
-        <li>Tab</li>
-      </ul>
-    </BsCardHeader>
-  );
+describe('React BsCard — root', () => {
+  it('is a plain div.card, not a custom element', async () => {
+    const host = await render(<BsCard>x</BsCard>);
 
-  it('promotes the nested nav to card-header-tabs', async () => {
-    const host = await render(header('tabs'));
-
-    expect(host.querySelector('ul')!.classList.contains('card-header-tabs')).toBe(true);
-    expect(host.querySelector('ul')!.classList.contains('card-header-pills')).toBe(false);
+    expect(host.querySelector('mp-card')).toBeNull();
+    expect(host.querySelector('div.card')!.textContent).toBe('x');
   });
 
-  it('promotes the nested nav to card-header-pills', async () => {
-    const host = await render(header('pills'));
+  it('fills with the colour and its border, keeping a consumer className', async () => {
+    const el = await renderEl(<BsCard color="primary" className="h-100" />, '.card');
 
-    expect(host.querySelector('ul')!.classList.contains('card-header-pills')).toBe(true);
+    expect([...el.classList]).toEqual(['card', 'text-bg-primary', 'border-primary', 'h-100']);
   });
 
-  it('switches from tabs to pills when navStyle changes, dropping the old class', async () => {
-    await render(header('tabs'));
-    const host = await render(header('pills'));
-    const nav = host.querySelector('ul')!;
+  it('colours only the border when outline is set', async () => {
+    const el = await renderEl(<BsCard color="danger" outline />, '.card');
 
-    expect(nav.classList.contains('card-header-tabs')).toBe(false);
-    expect(nav.classList.contains('card-header-pills')).toBe(true);
-  });
-
-  it('removes the promotion when navStyle is cleared', async () => {
-    await render(header('tabs'));
-    const host = await render(header(undefined));
-    const nav = host.querySelector('ul')!;
-
-    expect(nav.classList.contains('card-header-tabs')).toBe(false);
-    expect(nav.classList.contains('card-header-pills')).toBe(false);
-  });
-
-  it('applies to a nav that arrives in later children', async () => {
-    await render(<BsCardHeader navStyle="tabs">Plain</BsCardHeader>);
-    const host = await render(
-      <BsCardHeader navStyle="tabs">
-        <nav>links</nav>
-      </BsCardHeader>,
-    );
-
-    expect(host.querySelector('nav')!.classList.contains('card-header-tabs')).toBe(true);
+    expect([...el.classList]).toEqual(['card', 'bg-transparent', 'border-danger']);
   });
 
   it('forwards a callback ref as well as an object ref', async () => {

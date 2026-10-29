@@ -29,8 +29,8 @@ async function mockArtistApi(page: Page) {
   await mockArtistQuery(page, artists);
 }
 
-const FILTER_TABLE = '.filter-table mp-datatable';
-const PANEL = '.mp-overlay-pane .filter-panel';
+const FILTER_TABLE = 'bs-datatable.filter-table';
+const PANEL = '.filter-panel:popover-open';
 
 const trigger = (page: Page, column: string) =>
   page.locator(`${FILTER_TABLE} tr.filter-row th[data-column="${column}"] .filter-trigger`);
@@ -183,8 +183,9 @@ test.describe('bs-datatable filter panel', () => {
             p.left >= 0 &&
             p.bottom <= window.innerHeight + 1 &&
             p.right <= window.innerWidth + 1,
-          // Not a descendant of the table at all.
-          outsideTable: !document.querySelector(tableSel)!.contains(panel),
+          // In the top layer: a popover escapes every overflow clip while staying
+          // in the table's tree, which is what keeps it hydratable and scoped.
+          inTopLayer: panel.matches(':popover-open'),
         };
       },
       { panelSel: PANEL, tableSel: FILTER_TABLE },
@@ -192,7 +193,7 @@ test.describe('bs-datatable filter panel', () => {
 
     expect(escapes).not.toBeNull();
     expect(escapes!.hasSize).toBe(true);
-    expect(escapes!.outsideTable).toBe(true);
+    expect(escapes!.inTopLayer).toBe(true);
     expect(escapes!.escapesScroller).toBe(true);
     expect(escapes!.insideViewport).toBe(true);
   });
@@ -365,7 +366,7 @@ test.describe('bs-datatable filter panel', () => {
   test('a partial number survives in the comparison operand box', async ({ page }) => {
     await openPanel(page, 'yearStarted');
 
-    const operand = page.locator('.mp-overlay-pane .filter-operand');
+    const operand = page.locator('.filter-panel:popover-open .filter-operand');
     await operand.click();
     await operand.pressSequentially('19');
     await expect(operand).toHaveValue('19');
@@ -380,7 +381,7 @@ test.describe('bs-datatable filter panel', () => {
   test('the built-in value list filters the table and the trigger reports it', async ({ page }) => {
     await openPanel(page, 'name');
 
-    const firstOption = page.locator('.mp-overlay-pane .filter-option').first();
+    const firstOption = page.locator('.filter-panel:popover-open .filter-option').first();
     const chosen = (await firstOption.innerText()).trim();
     await firstOption.locator('input').check();
 

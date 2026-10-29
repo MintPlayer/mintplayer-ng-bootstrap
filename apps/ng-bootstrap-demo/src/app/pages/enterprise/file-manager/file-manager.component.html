@@ -81,8 +81,8 @@
     [conflictResolver]="activeConflictResolver()"
     [loadChildren]="activeLoadChildren()"
     (operation)="onOperation($event, fm)"
-    (uploadRequest)="onUpload($event, fm)"
-    (errorReported)="onError($event)">
+    (uploadrequest)="onUpload($event, fm)"
+    (errorreported)="onError($event)">
   </bs-file-manager>
 </div>
 
@@ -122,7 +122,7 @@
       “previous”. In <strong>details</strong> view row focus is the datatable's own
       <kbd>↑</kbd> / <kbd>↓</kbd> handling, not the file manager's.
     </li>
-    <li><kbd>Enter</kbd> — same as double-click: navigate into a folder, or emit <code>mp-node-open</code> for a file</li>
+    <li><kbd>Enter</kbd> — same as double-click: navigate into a folder, or emit <code>(nodeopen)</code> for a file</li>
     <li><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+click — toggle one item, and <kbd>Shift</kbd>+click — extend from the last-selected item. Both need <strong>Selection</strong> set to <code>multiple</code>; <kbd>Shift</kbd>+click only ever adds to the selection, it never trims it.</li>
     <li><kbd>F2</kbd> — rename, but only with <em>exactly one</em> item selected</li>
     <li><kbd>Del</kbd> — delete the selection after a confirmation dialog; does nothing on an empty selection</li>
@@ -154,13 +154,13 @@
   payload. The component is fire-and-forget — your handler runs the
   backend call, optionally marks the affected rows as <em>pending</em>,
   and reports failures through <code>reportError()</code> (which re-fires
-  <code>(errorReported)</code> for your toast bus).
+  <code>(errorreported)</code> for your toast bus).
 </p>
 <bs-code-snippet [language]="'ts'" [code]="snippetOperationHandler"></bs-code-snippet>
 
 <h3 class="h5 mt-4">2. Upload pipeline with progress</h3>
 <p>
-  Drag-drop and the touch upload button both fire <code>(uploadRequest)</code>
+  Drag-drop and the touch upload button both fire <code>(uploadrequest)</code>
   carrying pre-registered <code>UploadEntry</code> IDs. Drive your real
   upload (XHR / fetch / S3 SDK), then push percentage updates into the
   component via <code>reportUploadProgress(id, pct, status?)</code>. The
@@ -187,7 +187,7 @@
   conflict. Returning <code>'skip'</code> filters the source out of the
   operation; <code>'rename'</code> includes the consumer's chosen
   <code>newName</code> in the resulting <code>(operation)</code> /
-  <code>(uploadRequest)</code> payload. Unset = silent replace
+  <code>(uploadrequest)</code> payload. Unset = silent replace
   (preserves the v1 behaviour).
 </p>
 <bs-code-snippet [language]="'ts'" [code]="snippetConflictResolver"></bs-code-snippet>
@@ -226,7 +226,7 @@
 <p>
   Failures from your backend never need to reach into the component's
   UI directly. Call <code>fm.reportError(message, nodeId?)</code> from
-  your handler and listen on <code>(errorReported)</code> at the
+  your handler and listen on <code>(errorreported)</code> at the
   template level — that's where you wire the toast / snackbar.
 </p>
 <bs-code-snippet [language]="'ts'" [code]="snippetErrorBridge"></bs-code-snippet>
@@ -234,7 +234,7 @@
 <h3 class="h5 mt-4">Checklist for production</h3>
 <ul>
   <li><strong>Backend wiring</strong> — handle every <code>kind</code> in <code>onOperation</code> + the upload pipeline.</li>
-  <li><strong>Toasts</strong> — listen on <code>(errorReported)</code>; route to your snackbar.</li>
+  <li><strong>Toasts</strong> — listen on <code>(errorreported)</code>; route to your snackbar.</li>
   <li><strong>Dialogs</strong> — wire <code>dialogResolver</code> to <code>bs-modal</code> if you don't want native browser dialogs.</li>
   <li><strong>Conflicts</strong> — wire <code>conflictResolver</code> if "silent overwrite" isn't your spec.</li>
   <li><strong>Permissions</strong> — surface per-node <code>allowOperations</code> from your auth layer.</li>

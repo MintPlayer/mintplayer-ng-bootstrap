@@ -1,0 +1,5 @@
+// The page-level Bootstrap baseline, in @layer mp.bootstrap (PRD #437 §6).
+// Linked from index.html ahead of styles.css, so it is a real stylesheet with
+// JavaScript disabled. A published consumer @uses @mintplayer/ui-core/styles/bootstrap
+// (or links the prebuilt @mintplayer/ui-core/styles/bootstrap.css) instead.
+@use '../../../libs/mintplayer-ui-core/styles/bootstrap';

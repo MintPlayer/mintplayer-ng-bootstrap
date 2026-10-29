@@ -1,0 +1,1218 @@
+// The ribbon family's stylesheet, shared by all four fronts (#437). Rescoped at build
+// time: every compound gains `[data-mps=ribbon]`, so only nodes a front stamped are
+// matched. Consumer content (an icon slot, a template item's body, the tell-me area)
+// is never stamped and keeps the page's own styles.
+//
+// Geometry the core computes travels as custom properties:
+//   --ribbon-keytip-left / --ribbon-keytip-top   (a KeyTip badge's viewport position)
+//   --bs-ribbon-contextual-color / --ribbon-contextual-text   (a contextual band)
+//   --ribbon-gallery-columns                     (a gallery's grid)
+//   --mp-popover-left / --mp-popover-top         (every popover, from trackPopovers)
+//
+// Item size: an item declares `data-size`; the reflow writes `data-resolved-size` on its
+// group, and a tab's `idealSizes` arrive as the group's `data-ideal-size`. The rules below
+// derive what an item actually renders from those, through the --ribbon-item-* properties.
+
+// ---------------------------------------------------------------------------
+// Theme tokens.
+
+.ribbon {
+  // The UA picks the matching scheme for native form controls inside the ribbon.
+  color-scheme: light dark;
+  --bs-ribbon-app-accent: var(--bs-ribbon-accent, var(--bs-primary, #0d6efd));
+  --bs-ribbon-app-accent-on-dark: color-mix(in oklab, var(--bs-ribbon-app-accent) 55%, white 45%);
+  --bs-ribbon-font-family: inherit;
+  --bs-ribbon-container-bg: var(--bs-body-bg, #fafafa);
+  --bs-ribbon-container-border: var(--bs-border-color, #e0e0e0);
+  --bs-ribbon-tabstrip-bg: var(--bs-tertiary-bg, #f5f5f5);
+  --bs-ribbon-tabstrip-border: var(--bs-border-color, #d0d0d0);
+  --bs-ribbon-tab-idle-color: inherit;
+  --bs-ribbon-tab-hover-bg: var(--bs-secondary-bg, #f0f0f0);
+  --bs-ribbon-tab-active-bg: transparent;
+  --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-active-indicator-width: 2px;
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tab-padding: 10px 16px;
+  --bs-ribbon-tabpanel-bg: var(--bs-body-bg, #fff);
+  --bs-ribbon-group-separator: var(--bs-border-color, #e0e0e0);
+  --bs-ribbon-group-separator-inset: 0px;
+  --bs-ribbon-group-label-color: var(--bs-secondary-color, #6c757d);
+  --bs-ribbon-item-hover-bg: var(--bs-secondary-bg, #e9ecef);
+  --bs-ribbon-item-hover-border: var(--bs-border-color, #ced4da);
+  --bs-ribbon-item-pressed-bg: var(--bs-secondary-bg, #dee2e6);
+  --bs-ribbon-item-radius: 3px;
+  display: block;
+  position: relative;
+}
+
+// Office 2007: glossy blue gradient, honey hover.
+.ribbon[data-version='office-2007'] {
+  --bs-ribbon-font-family: 'Segoe UI', Tahoma, sans-serif;
+  --bs-ribbon-container-bg: linear-gradient(#f4f8fd, #dce7f5);
+  --bs-ribbon-container-border: #5c85b6;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#c7defd, #a4c5f4);
+  --bs-ribbon-tabstrip-border: #5c85b6;
+  --bs-ribbon-tab-idle-color: #1f3a5f;
+  --bs-ribbon-tab-hover-bg: linear-gradient(#ffe8a1, #ffc759);
+  --bs-ribbon-tab-active-bg: linear-gradient(#f4f8fd, #dce7f5);
+  --bs-ribbon-tab-active-color: #1f3a5f;
+  --bs-ribbon-tab-active-indicator-color: transparent;
+  --bs-ribbon-tab-active-indicator-width: 0px;
+  --bs-ribbon-tab-radius: 6px 6px 0 0;
+  --bs-ribbon-tabpanel-bg: linear-gradient(#f4f8fd, #dce7f5);
+  --bs-ribbon-group-separator: rgba(0, 0, 0, 0.18);
+  --bs-ribbon-group-separator-inset: 0px;
+  --bs-ribbon-group-label-color: #3b5a82;
+  --bs-ribbon-item-hover-bg: linear-gradient(#ffe8a1, #ffc759);
+  --bs-ribbon-item-hover-border: #d9a03c;
+  --bs-ribbon-item-pressed-bg: linear-gradient(#f5b23a, #e08a1a);
+  --bs-ribbon-item-radius: 2px;
+}
+
+// Office 2010: neutral silver, soft cream hover.
+.ribbon[data-version='office-2010'] {
+  --bs-ribbon-font-family: 'Segoe UI', Calibri, sans-serif;
+  --bs-ribbon-container-bg: #f2f4f6;
+  --bs-ribbon-container-border: #b8bdc2;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#e8ecef, #d6dbe0);
+  --bs-ribbon-tabstrip-border: #b8bdc2;
+  --bs-ribbon-tab-idle-color: #2d2d2d;
+  --bs-ribbon-tab-hover-bg: linear-gradient(#fff6d8, #ffeab0);
+  --bs-ribbon-tab-active-bg: #f2f4f6;
+  --bs-ribbon-tab-active-color: #2d2d2d;
+  --bs-ribbon-tab-active-indicator-color: transparent;
+  --bs-ribbon-tab-active-indicator-width: 0px;
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tabpanel-bg: #f2f4f6;
+  --bs-ribbon-group-separator: #c8cdd2;
+  --bs-ribbon-group-separator-inset: 0px;
+  --bs-ribbon-group-label-color: #5e6770;
+  --bs-ribbon-item-hover-bg: #ffefb7;
+  --bs-ribbon-item-hover-border: #e8c46a;
+  --bs-ribbon-item-pressed-bg: #f5dc8a;
+  --bs-ribbon-item-radius: 2px;
+}
+
+// Office 2013: flat white panel, app-tinted strip.
+.ribbon[data-version='office-2013'] {
+  --bs-ribbon-app-accent: var(--bs-ribbon-accent, #2b579a);
+  --bs-ribbon-font-family: 'Segoe UI', sans-serif;
+  --bs-ribbon-container-bg: #fff;
+  --bs-ribbon-container-border: #d2d2d2;
+  --bs-ribbon-tabstrip-bg: color-mix(in srgb, var(--bs-ribbon-app-accent) 18%, #fff);
+  --bs-ribbon-tabstrip-border: color-mix(in srgb, var(--bs-ribbon-app-accent) 40%, #fff);
+  --bs-ribbon-tab-idle-color: #444;
+  --bs-ribbon-tab-hover-bg: rgba(0, 0, 0, 0.04);
+  --bs-ribbon-tab-active-bg: #fff;
+  --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-active-indicator-color: transparent;
+  --bs-ribbon-tab-active-indicator-width: 0px;
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tabpanel-bg: #fff;
+  --bs-ribbon-group-separator: #d2d2d2;
+  --bs-ribbon-group-separator-inset: 8px;
+  --bs-ribbon-group-label-color: #666;
+  --bs-ribbon-item-hover-bg: #eaeaea;
+  --bs-ribbon-item-hover-border: transparent;
+  --bs-ribbon-item-pressed-bg: #d6d6d6;
+  --bs-ribbon-item-radius: 0;
+}
+
+// Office 2016: full app-accent strip, white panel.
+.ribbon[data-version='office-2016'] {
+  --bs-ribbon-app-accent: var(--bs-ribbon-accent, #2b579a);
+  --bs-ribbon-font-family: 'Segoe UI', sans-serif;
+  --bs-ribbon-container-bg: #fff;
+  --bs-ribbon-container-border: #d2d2d2;
+  --bs-ribbon-tabstrip-bg: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tabstrip-border: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.85);
+  --bs-ribbon-tab-hover-bg: rgba(255, 255, 255, 0.15);
+  --bs-ribbon-tab-active-bg: #fff;
+  --bs-ribbon-tab-active-color: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent);
+  --bs-ribbon-tab-active-indicator-width: 2px;
+  --bs-ribbon-tab-radius: 0;
+  --bs-ribbon-tabpanel-bg: #fff;
+  --bs-ribbon-group-separator: #d2d2d2;
+  --bs-ribbon-group-separator-inset: 8px;
+  --bs-ribbon-group-label-color: #666;
+  --bs-ribbon-item-hover-bg: #e6e6e6;
+  --bs-ribbon-item-hover-border: transparent;
+  --bs-ribbon-item-pressed-bg: #ccc;
+  --bs-ribbon-item-radius: 0;
+}
+
+// Dark mode. office-2013 is Microsoft's "Dark Gray", office-2016 its "Black"; 2007 and
+// 2010 are reconstructed from their Black schemes. Each block sets only the tokens that
+// differ from its light counterpart, and exists twice: for colorScheme="dark", and under
+// the media query for colorScheme="auto" (equal specificity either way).
+@mixin dark-2007 {
+  color: rgba(255, 255, 255, 0.87);
+  --bs-ribbon-container-bg: linear-gradient(#2b2f38, #1e2024);
+  --bs-ribbon-container-border: #15171a;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#252830, #15171a);
+  --bs-ribbon-tabstrip-border: #15171a;
+  --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+  --bs-ribbon-tab-hover-bg: #3a3a3a;
+  --bs-ribbon-tab-active-bg: linear-gradient(#2b2f38, #1e2024);
+  --bs-ribbon-tab-active-color: #fff;
+  --bs-ribbon-tabpanel-bg: linear-gradient(#2b2f38, #1e2024);
+  --bs-ribbon-group-separator: rgba(255, 255, 255, 0.1);
+  --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.6);
+  --bs-ribbon-item-hover-bg: #3f3f3f;
+  --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+  --bs-ribbon-item-pressed-bg: #4a4a4a;
+}
+
+@mixin dark-2010 {
+  color: rgba(255, 255, 255, 0.87);
+  --bs-ribbon-container-bg: #2a2c2f;
+  --bs-ribbon-container-border: #1a1a1a;
+  --bs-ribbon-tabstrip-bg: linear-gradient(#34373b, #25282b);
+  --bs-ribbon-tabstrip-border: #1a1a1a;
+  --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+  --bs-ribbon-tab-hover-bg: #3a3a3a;
+  --bs-ribbon-tab-active-bg: #2a2c2f;
+  --bs-ribbon-tab-active-color: #fff;
+  --bs-ribbon-tabpanel-bg: #2a2c2f;
+  --bs-ribbon-group-separator: rgba(255, 255, 255, 0.1);
+  --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.6);
+  --bs-ribbon-item-hover-bg: #3f3f3f;
+  --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+  --bs-ribbon-item-pressed-bg: #4a4a4a;
+}
+
+@mixin dark-2013 {
+  color: rgba(255, 255, 255, 0.87);
+  --bs-ribbon-container-bg: #444;
+  --bs-ribbon-container-border: #2b2b2b;
+  --bs-ribbon-tabstrip-bg: #2b2b2b;
+  --bs-ribbon-tabstrip-border: #1f1f1f;
+  --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.7);
+  --bs-ribbon-tab-hover-bg: #525252;
+  --bs-ribbon-tab-active-bg: #444;
+  --bs-ribbon-tab-active-color: #fff;
+  --bs-ribbon-tab-active-indicator-color: transparent;
+  --bs-ribbon-tabpanel-bg: #444;
+  --bs-ribbon-group-separator: rgba(255, 255, 255, 0.08);
+  --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.55);
+  --bs-ribbon-item-hover-bg: #5a5a5a;
+  --bs-ribbon-item-hover-border: transparent;
+  --bs-ribbon-item-pressed-bg: #6a6a6a;
+}
+
+@mixin dark-2016 {
+  color: rgba(255, 255, 255, 0.87);
+  --bs-ribbon-container-bg: #262626;
+  --bs-ribbon-container-border: #1a1a1a;
+  --bs-ribbon-tabstrip-bg: #1f1f1f;
+  --bs-ribbon-tabstrip-border: #1a1a1a;
+  --bs-ribbon-tab-idle-color: rgba(255, 255, 255, 0.78);
+  --bs-ribbon-tab-hover-bg: #3a3a3a;
+  --bs-ribbon-tab-active-bg: #363636;
+  --bs-ribbon-tab-active-color: #fff;
+  --bs-ribbon-tab-active-indicator-color: var(--bs-ribbon-app-accent-on-dark);
+  --bs-ribbon-tabpanel-bg: #363636;
+  --bs-ribbon-group-separator: rgba(255, 255, 255, 0.1);
+  --bs-ribbon-group-label-color: rgba(255, 255, 255, 0.6);
+  --bs-ribbon-item-hover-bg: #3f3f3f;
+  --bs-ribbon-item-hover-border: rgba(255, 255, 255, 0.15);
+  --bs-ribbon-item-pressed-bg: #4a4a4a;
+}
+
+// The contextual band ignores the luminance-computed text colour in dark mode: the hue is
+// darkened so it does not punch through dark chrome, and the text is always white.
+@mixin dark-band {
+  background: color-mix(in oklab, var(--bs-ribbon-contextual-color) 40%, #1f1f1f 60%);
+  color: #fff;
+}
+
+@mixin dark-keytip {
+  background: #2a2a2a;
+  border-color: #6e6e6e;
+  color: #f2f2f2;
+}
+
+.ribbon[data-color-scheme='dark'][data-version='office-2007'] { @include dark-2007; }
+.ribbon[data-color-scheme='dark'][data-version='office-2010'] { @include dark-2010; }
+.ribbon[data-color-scheme='dark'][data-version='office-2013'] { @include dark-2013; }
+.ribbon[data-color-scheme='dark'][data-version='office-2016'] { @include dark-2016; }
+.ribbon[data-color-scheme='dark'] .ribbon-contextual-group-band { @include dark-band; }
+.ribbon[data-color-scheme='dark'] .keytip-badge { @include dark-keytip; }
+
+@media (prefers-color-scheme: dark) {
+  .ribbon[data-color-scheme='auto'][data-version='office-2007'] { @include dark-2007; }
+  .ribbon[data-color-scheme='auto'][data-version='office-2010'] { @include dark-2010; }
+  .ribbon[data-color-scheme='auto'][data-version='office-2013'] { @include dark-2013; }
+  .ribbon[data-color-scheme='auto'][data-version='office-2016'] { @include dark-2016; }
+  .ribbon[data-color-scheme='auto'] .ribbon-contextual-group-band { @include dark-band; }
+  .ribbon[data-color-scheme='auto'] .keytip-badge { @include dark-keytip; }
+}
+
+// ---------------------------------------------------------------------------
+// Shared.
+
+// An author `display` beats the UA's [hidden] rule; the ribbon toggles `hidden` on panels.
+[hidden] {
+  display: none !important;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+// Every popup is a native popover in the top layer, placed by trackPopovers. Tokens still
+// inherit from the DOM parent, so the panel matches the ribbon's theme.
+@mixin popup-panel {
+  position: fixed;
+  inset: auto;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  margin: 0;
+  background: var(--bs-ribbon-tabpanel-bg, #fff);
+  color: var(--bs-body-color, inherit);
+  border: 1px solid var(--bs-ribbon-container-border, #d0d0d0);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  font-family: var(--bs-ribbon-font-family, inherit);
+  max-width: calc(100vw - 16px);
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--bs-ribbon-app-accent, #0d6efd);
+  outline-offset: -2px;
+}
+
+@mixin flat-button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+  cursor: pointer;
+  color: inherit;
+  font-size: 12px;
+  font-family: inherit;
+}
+
+@mixin hover-surface {
+  background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+  border-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+@mixin disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+// ---------------------------------------------------------------------------
+// Container and tab strip.
+
+.ribbon-container {
+  border: 1px solid var(--bs-ribbon-container-border);
+  background: var(--bs-ribbon-container-bg);
+  font-family: var(--bs-ribbon-font-family);
+}
+
+// Wraps the tablist and the tell-me area, so the search box sits at the trailing edge
+// without becoming a child of role=tablist (whose only allowed children are tabs).
+.ribbon-tabstrip {
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--bs-ribbon-tabstrip-border);
+  background: var(--bs-ribbon-tabstrip-bg);
+}
+
+.ribbon-tablist {
+  display: flex;
+  align-items: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ribbon-tell-me {
+  flex: 0 0 auto;
+  padding-inline: 6px;
+  align-self: center;
+  display: flex;
+  align-items: center;
+}
+
+.ribbon-tell-me:empty {
+  display: none;
+}
+
+.ribbon-tab {
+  flex: 0 0 auto;
+  padding: var(--bs-ribbon-tab-padding);
+  background: transparent;
+  border: none;
+  border-bottom: var(--bs-ribbon-tab-active-indicator-width) solid transparent;
+  border-radius: var(--bs-ribbon-tab-radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--bs-ribbon-tab-idle-color);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ribbon-tab:hover {
+  background: var(--bs-ribbon-tab-hover-bg);
+}
+
+.ribbon-tab.active {
+  background: var(--bs-ribbon-tab-active-bg);
+  border-bottom-color: var(--bs-ribbon-tab-active-indicator-color);
+  color: var(--bs-ribbon-tab-active-color);
+  font-weight: 500;
+}
+
+.ribbon-tab:focus-visible {
+  @include focus-ring;
+}
+
+// Inert until hydrated: the tab looks like a tab, not like a disabled control.
+.ribbon-tab:disabled {
+  cursor: default;
+}
+
+.ribbon-contextual-group {
+  display: inline-flex;
+  flex-direction: column;
+  align-self: flex-end;
+}
+
+.ribbon-contextual-group-band {
+  background: var(--bs-ribbon-contextual-color, #f0af84);
+  color: var(--ribbon-contextual-text, #262626);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
+  padding: 5px 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ribbon-contextual-group-tabs {
+  display: flex;
+  align-self: stretch;
+}
+
+.ribbon-contextual-group-tabs > .ribbon-tab {
+  flex: 1 0 auto;
+  text-align: center;
+}
+
+// The set's own host is transparent in the layout: its tabs render in the ribbon's strip.
+.ribbon-contextual-tab-set {
+  display: contents;
+}
+
+// Touch mode: tabs at least 44px tall (WCAG target size).
+@mixin touch-tab {
+  min-height: 44px;
+  padding: 12px 18px;
+}
+
+.ribbon[data-touch-mode='on'] .ribbon-tab {
+  @include touch-tab;
+}
+
+@media (pointer: coarse) {
+  .ribbon[data-touch-mode='auto'] .ribbon-tab {
+    @include touch-tab;
+  }
+}
+
+.ribbon-content {
+  background: var(--bs-ribbon-tabpanel-bg);
+  overflow: hidden;
+}
+
+// KeyTips: one fixed badge per tab or item, at the position the core measured.
+.keytip-badge {
+  position: fixed;
+  left: var(--ribbon-keytip-left);
+  top: var(--ribbon-keytip-top);
+  z-index: 1100;
+  min-width: 18px;
+  padding: 1px 5px;
+  background: #fff;
+  border: 1px solid #919191;
+  color: #444;
+  font-size: 11px;
+  font-family: var(--bs-ribbon-font-family, 'Segoe UI', sans-serif);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  pointer-events: none;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.15);
+}
+
+// ---------------------------------------------------------------------------
+// Tab panel and the Simplified layout's overflow menu.
+
+.ribbon-tabpanel {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.ribbon-tabpanel-groups {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ribbon-tabpanel-groups > * {
+  flex: 0 0 auto;
+}
+
+// Simplified: the row scrolls, and the chevron lists what does not fit (the keyboard and
+// screen-reader path to the same commands).
+.ribbon[data-layout='simplified'] .ribbon-tabpanel-groups {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.overflow-trigger {
+  @include flat-button;
+  display: none;
+  align-self: center;
+  flex: 0 0 auto;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  background: var(--bs-ribbon-tabpanel-bg, #fff);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ribbon[data-layout='simplified'] .ribbon-tabpanel[data-has-overflow] > .overflow-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overflow-trigger:hover {
+  @include hover-surface;
+}
+
+.overflow-trigger:focus-visible {
+  @include focus-ring;
+}
+
+.overflow-panel {
+  @include popup-panel;
+  padding: 4px 0;
+  min-width: 200px;
+  max-width: min(360px, calc(100vw - 16px));
+}
+
+.overflow-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.overflow-entry:hover,
+.overflow-entry:focus-visible {
+  background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+  outline: none;
+}
+
+// The hover background alone is not a focus indicator.
+.overflow-entry:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--bs-ribbon-app-accent, #0d6efd);
+}
+
+.overflow-entry-icon {
+  width: 18px;
+  flex: 0 0 auto;
+  text-align: center;
+}
+
+@media (pointer: coarse) {
+  .overflow-entry {
+    min-height: 44px;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Group.
+
+.ribbon-group-host {
+  display: inline-flex;
+  position: relative;
+}
+
+.ribbon-group-host::after {
+  content: '';
+  position: absolute;
+  top: var(--bs-ribbon-group-separator-inset, 0px);
+  bottom: var(--bs-ribbon-group-separator-inset, 0px);
+  inset-inline-end: 0;
+  width: 1px;
+  background: var(--bs-ribbon-group-separator, rgba(0, 0, 0, 0.12));
+  pointer-events: none;
+}
+
+.ribbon-group {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 6px 0;
+  min-width: 64px;
+}
+
+// Collapsed: the body is a popover behind the trigger. Only while open, since a display
+// value on the closed popover would show it.
+.ribbon-group-host[data-resolved-size='popup'] > .ribbon-group {
+  @include popup-panel;
+  display: none;
+  padding: 4px 6px;
+  min-width: 200px;
+}
+
+.ribbon-group-host[data-resolved-size='popup'] > .ribbon-group:popover-open {
+  display: flex;
+}
+
+.ribbon-group-items {
+  display: grid;
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  column-gap: 4px;
+  row-gap: 0;
+  align-items: center;
+  flex: 1;
+}
+
+.ribbon-group-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 0;
+  position: relative;
+}
+
+.ribbon-group-label {
+  font-size: 11px;
+  line-height: 1;
+  color: var(--bs-ribbon-group-label-color, #6c757d);
+}
+
+.ribbon-dialog-launcher {
+  position: absolute;
+  inset-inline-end: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--bs-ribbon-group-label-color, #6c757d);
+}
+
+.ribbon-dialog-launcher:hover {
+  color: var(--bs-ribbon-app-accent, #0d6efd);
+}
+
+.ribbon-dialog-launcher:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-popup-trigger {
+  @include flat-button;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  min-width: 56px;
+}
+
+.ribbon-group-host[data-resolved-size='popup'] > .ribbon-popup-trigger {
+  display: flex;
+}
+
+.ribbon-popup-trigger:hover {
+  @include hover-surface;
+}
+
+.ribbon-popup-trigger:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-popup-trigger-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.ribbon-popup-trigger-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.ribbon-chevron {
+  font-size: 9px;
+  opacity: 0.6;
+}
+
+// Simplified: groups are flat rows with no label footer and no separator; the tab's
+// shared chevron, not a per-group popup, is the overflow story.
+.ribbon[data-layout='simplified'] .ribbon-group-host::after,
+.ribbon[data-layout='simplified'] .ribbon-group-footer,
+.ribbon[data-layout='simplified'] .ribbon-popup-trigger {
+  display: none;
+}
+
+.ribbon[data-layout='simplified'] .ribbon-group {
+  flex-direction: row;
+  align-items: center;
+  padding: 4px 8px;
+  min-width: 0;
+  min-height: 36px;
+}
+
+.ribbon[data-layout='simplified'] .ribbon-group-items {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+// ---------------------------------------------------------------------------
+// Item size. Each state sets the --ribbon-item-* properties the controls read.
+
+@mixin item-large {
+  --ribbon-item-direction: column;
+  --ribbon-item-padding: 6px 10px;
+  --ribbon-item-min-width: 56px;
+  --ribbon-item-icon-size: 28px;
+  --ribbon-item-justify: center;
+  --ribbon-item-width: auto;
+  --ribbon-split-divider-inline: 0px;
+  --ribbon-split-divider-block: 1px;
+  --ribbon-split-padding: 2px 0;
+  --ribbon-split-min-width: 0;
+  --ribbon-swatch-width: 36px;
+  --ribbon-swatch-height: 28px;
+  grid-row: 1 / -1;
+  align-self: stretch;
+  justify-self: center;
+  display: inline-flex;
+  width: auto;
+}
+
+// The properties the large state changes, back at their row values.
+@mixin item-row {
+  --ribbon-split-divider-inline: 1px;
+  --ribbon-split-divider-block: 0px;
+  --ribbon-split-padding: 0 4px;
+  --ribbon-split-min-width: 16px;
+  --ribbon-swatch-width: 22px;
+  --ribbon-swatch-height: 16px;
+}
+
+@mixin item-medium {
+  @include item-row;
+  --ribbon-item-direction: row;
+  --ribbon-item-padding: 4px 8px;
+  --ribbon-item-min-width: 28px;
+  --ribbon-item-icon-size: 16px;
+  --ribbon-item-justify: center;
+  --ribbon-item-width: auto;
+  grid-row: 1 / -1;
+  align-self: stretch;
+  justify-self: center;
+  display: inline-flex;
+  width: auto;
+}
+
+@mixin item-small {
+  @include item-row;
+  --ribbon-item-direction: row;
+  --ribbon-item-padding: 4px 6px;
+  --ribbon-item-min-width: 28px;
+  --ribbon-item-icon-size: 14px;
+  --ribbon-item-justify: flex-start;
+  --ribbon-item-width: 100%;
+  grid-row: span 1;
+  align-self: center;
+  justify-self: stretch;
+  display: flex;
+  width: 100%;
+}
+
+// A flat row (Simplified, the quick access toolbar): small items that size to content.
+@mixin item-inline {
+  @include item-small;
+  --ribbon-item-width: auto;
+  grid-row: auto;
+  justify-self: auto;
+  display: inline-flex;
+  width: auto;
+}
+
+.ribbon-item {
+  @include item-large;
+}
+
+.ribbon-item[data-size='medium'] {
+  @include item-medium;
+}
+
+.ribbon-item[data-size='small'] {
+  @include item-small;
+}
+
+// The reflow (or a tab's idealSizes) steps large items down to medium...
+.ribbon-group-host[data-resolved-size='medium'] .ribbon-item[data-size='large'],
+.ribbon-group-host:not([data-resolved-size])[data-ideal-size='medium'] .ribbon-item[data-size='large'] {
+  @include item-medium;
+}
+
+// ...and every item down to small.
+.ribbon-group-host[data-resolved-size='small'] .ribbon-item,
+.ribbon-group-host:not([data-resolved-size])[data-ideal-size='small'] .ribbon-item {
+  @include item-small;
+}
+
+.ribbon[data-layout='simplified'] .ribbon-item,
+.qat .ribbon-item {
+  @include item-inline;
+}
+
+// ---------------------------------------------------------------------------
+// Items.
+
+.ribbon-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: var(--ribbon-item-icon-size, 16px);
+}
+
+// A slotted icon (an <img>, an <svg>, an icon font element) is sized by its wrapper.
+/*! @mps-global */
+.ribbon-button-icon[data-mps='ribbon'] > * {
+  font-size: var(--ribbon-item-icon-size, 16px);
+  width: var(--ribbon-item-icon-size, 16px);
+  height: var(--ribbon-item-icon-size, 16px);
+  line-height: 1;
+}
+
+.ribbon-button-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+// Button, toggle button, dropdown button, a split button's main half.
+.ribbon-button {
+  @include flat-button;
+  display: inline-flex;
+  flex-direction: var(--ribbon-item-direction, column);
+  align-items: center;
+  justify-content: var(--ribbon-item-justify, center);
+  gap: 4px;
+  padding: var(--ribbon-item-padding, 4px 6px);
+  min-width: var(--ribbon-item-min-width, 28px);
+  width: var(--ribbon-item-width, auto);
+}
+
+.ribbon-button:hover:not(:disabled):not(.pressed) {
+  @include hover-surface;
+}
+
+.ribbon-button:active:not(:disabled),
+.ribbon-toggle-button.pressed {
+  background: var(--bs-ribbon-item-pressed-bg, #dee2e6);
+  border-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+.ribbon-button:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-button:disabled {
+  @include disabled;
+}
+
+// A dropdown's label and arrow share a row even when the button stacks.
+.ribbon-dropdown-button .ribbon-button-label {
+  flex: 0 1 auto;
+}
+
+.ribbon-item[data-size='small'] .ribbon-dropdown-button .ribbon-button-label {
+  flex: 1;
+  justify-content: space-between;
+}
+
+// Split button: a main half and an arrow half in one frame; stacked when large.
+.ribbon-split-button-host {
+  position: relative;
+}
+
+.ribbon-split-button {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: stretch;
+  border: 1px solid transparent;
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+  overflow: hidden;
+  width: var(--ribbon-item-width, auto);
+}
+
+.ribbon-split-button:hover {
+  border-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+.ribbon-split-button > .ribbon-split-button-main {
+  border: none;
+  border-radius: 0;
+  flex: 1 1 auto;
+}
+
+.ribbon-split-button-dropdown {
+  @include flat-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0;
+  border-inline-start: 1px solid transparent;
+  padding: 0 4px;
+  min-width: 16px;
+}
+
+.ribbon-split-button-dropdown:hover:not(:disabled) {
+  background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+}
+
+.ribbon-split-button-main:hover:not(:disabled) + .ribbon-split-button-dropdown {
+  border-inline-start-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+.ribbon-split-button-dropdown:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-split-button-dropdown:disabled {
+  @include disabled;
+}
+
+// Stacked whenever the item renders large: the divider moves from the inline start to the
+// top, through the --ribbon-split-* properties the size state sets.
+.ribbon-split-button-host > .ribbon-split-button {
+  flex-direction: var(--ribbon-item-direction, row);
+}
+
+.ribbon-split-button-host .ribbon-split-button-dropdown {
+  border-inline-start-width: var(--ribbon-split-divider-inline, 1px);
+  border-top: var(--ribbon-split-divider-block, 0px) solid transparent;
+  padding: var(--ribbon-split-padding, 0 4px);
+  min-width: var(--ribbon-split-min-width, 16px);
+}
+
+.ribbon-split-button-main:hover:not(:disabled) + .ribbon-split-button-dropdown {
+  border-top-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+// Dropdown and split button menus.
+.menu-panel {
+  @include popup-panel;
+  padding: 4px 0;
+  min-width: 180px;
+  max-width: min(320px, calc(100vw - 16px));
+}
+
+.ribbon-menu-item {
+  display: block;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  font-size: 13px;
+  font-family: inherit;
+  width: 100%;
+  text-align: start;
+  white-space: nowrap;
+}
+
+.menu-item:hover:not(:disabled),
+.menu-item:focus-visible {
+  background: var(--bs-ribbon-item-hover-bg, #e9ecef);
+  outline: none;
+}
+
+.menu-item:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--bs-ribbon-app-accent, #0d6efd);
+}
+
+.menu-item:disabled {
+  @include disabled;
+}
+
+@media (pointer: coarse) {
+  .menu-item {
+    min-height: 44px;
+    padding: 10px 14px;
+  }
+}
+
+.menu-item-check {
+  width: 14px;
+  flex: 0 0 auto;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.menu-item-icon {
+  width: 16px;
+  flex: 0 0 auto;
+  text-align: center;
+  line-height: 1;
+}
+
+.menu-item-label {
+  flex: 1;
+}
+
+.ribbon-menu-separator {
+  display: block;
+  height: 1px;
+  background: var(--bs-ribbon-group-separator, rgba(0, 0, 0, 0.12));
+  margin: 4px 0;
+}
+
+// Checkbox and colour picker: a native input inside the label that names it.
+.ribbon-checkbox,
+.ribbon-color-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+  cursor: pointer;
+  color: inherit;
+  font-size: 12px;
+  font-family: inherit;
+  user-select: none;
+  width: var(--ribbon-item-width, auto);
+}
+
+.ribbon-color-picker {
+  flex-direction: var(--ribbon-item-direction, row);
+}
+
+.ribbon-checkbox:hover:not(.disabled),
+.ribbon-color-picker:hover:not(.disabled) {
+  @include hover-surface;
+}
+
+.ribbon-checkbox.disabled,
+.ribbon-color-picker.disabled {
+  @include disabled;
+}
+
+.ribbon-checkbox-input {
+  margin: 0;
+  cursor: inherit;
+  accent-color: var(--bs-ribbon-app-accent, #0d6efd);
+}
+
+.ribbon-checkbox-input:focus-visible,
+.ribbon-color-picker-input:focus-visible {
+  outline: 2px solid var(--bs-ribbon-app-accent, #0d6efd);
+  outline-offset: 1px;
+}
+
+.ribbon-color-picker-input {
+  width: var(--ribbon-swatch-width, 22px);
+  height: var(--ribbon-swatch-height, 16px);
+  padding: 0;
+  border: 1px solid var(--bs-ribbon-item-hover-border, #ced4da);
+  border-radius: 2px;
+  cursor: inherit;
+  background: transparent;
+  flex: 0 0 auto;
+}
+
+.ribbon-field-label {
+  white-space: nowrap;
+}
+
+// Combo box: a native select.
+.ribbon-combobox-host {
+  align-items: center;
+}
+
+.ribbon-combobox-select {
+  background: var(--bs-ribbon-tabpanel-bg, #fff);
+  color: inherit;
+  border: 1px solid var(--bs-ribbon-item-hover-border, #ced4da);
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+  padding: 3px 4px;
+  font-size: 12px;
+  font-family: inherit;
+  min-width: 100px;
+  max-width: 200px;
+}
+
+.ribbon-combobox-select:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-combobox-select:disabled {
+  @include disabled;
+}
+
+// Group button: a radio group of flat buttons.
+.ribbon-group-button {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+}
+
+.ribbon-group-button-item {
+  @include flat-button;
+  border-radius: 0;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ribbon-group-button-item:hover:not(:disabled):not(.selected) {
+  @include hover-surface;
+}
+
+.ribbon-group-button-item.selected {
+  background: var(--bs-ribbon-item-pressed-bg, #dee2e6);
+  border-color: var(--bs-ribbon-item-hover-border, #ced4da);
+}
+
+.ribbon-group-button-item:focus-visible {
+  @include focus-ring;
+}
+
+.ribbon-group-button-item:disabled {
+  @include disabled;
+}
+
+.ribbon-group-button-icon {
+  line-height: 1;
+}
+
+.ribbon-group-button-label {
+  white-space: nowrap;
+}
+
+// Gallery: a listbox grid of options.
+.ribbon-gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--ribbon-gallery-columns, 1), auto);
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--bs-ribbon-item-hover-border, #ced4da);
+  border-radius: var(--bs-ribbon-item-radius, 3px);
+  background: var(--bs-ribbon-tabpanel-bg, #fff);
+}
+
+.ribbon-gallery-item {
+  display: inline-flex;
+}
+
+.gallery-item {
+  @include flat-button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 2px;
+  font-size: 14px;
+}
+
+.gallery-item:hover:not(:disabled):not(.selected) {
+  @include hover-surface;
+}
+
+.gallery-item.selected {
+  background: var(--bs-ribbon-item-pressed-bg, #dee2e6);
+  border-color: var(--bs-ribbon-app-accent, #0d6efd);
+}
+
+.gallery-item:focus-visible {
+  @include focus-ring;
+}
+
+.gallery-item:disabled {
+  @include disabled;
+}
+
+// ---------------------------------------------------------------------------
+// Quick access toolbar: its own tokens, since it usually sits outside the ribbon.
+
+.qat {
+  color-scheme: light dark;
+  --bs-ribbon-app-accent: var(--bs-ribbon-accent, var(--bs-primary, #0d6efd));
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--bs-ribbon-tabstrip-bg, var(--bs-ribbon-app-accent));
+  border: 1px solid var(--bs-ribbon-tabstrip-border, transparent);
+  color: var(--bs-ribbon-tab-idle-color, #fff);
+  font-family: var(--bs-ribbon-font-family, inherit);
+  font-size: 12px;
+  min-height: 28px;
+}
+
+// ---------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-tab {
+    transition: none;
+  }
+}

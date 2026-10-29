@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
-import type { AccordionTabToggleDetail } from '@mintplayer/web-components/accordion';
+import type { AccordionTabToggle } from '@mintplayer/react-bootstrap/accordion';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './AccordionPage.css';
 
 const SOURCE = `<BsAccordion multi highlightActiveTab
-  onTabToggle={(e) => console.log(e.detail.index, e.detail.active)}>
+  onTabToggle={({ index, active }) => console.log(index, active)}>
   <BsAccordionItem header="Profile">Profile content</BsAccordionItem>
   <BsAccordionItem header="Sign in">Sign-in content</BsAccordionItem>
 </BsAccordion>`;
@@ -23,10 +23,10 @@ export function AccordionPage() {
     <div className="demo-page">
       <h1>Accordion</h1>
       <p>
-        <code>BsAccordion</code> wraps the framework-agnostic{' '}
-        <code>&lt;mp-accordion&gt;</code> web component. Headers and bodies are contributed by{' '}
-        <code>BsAccordionItem</code>, which renders them as siblings so the element can place
-        each one in its own slot.
+        <code>BsAccordion</code> renders Bootstrap&apos;s accordion markup itself, from the
+        framework-neutral <code>@mintplayer/ui-core/accordion</code> core. Each{' '}
+        <code>BsAccordionItem</code> is one row: its <code>header</code> goes in the row&apos;s
+        summary, its children in the collapsible region.
       </p>
       <p>
         The accordion is built on native <code>&lt;details name&gt;</code> / <code>&lt;summary&gt;</code>,
@@ -39,8 +39,8 @@ export function AccordionPage() {
         <h2>Single-open</h2>
         <BsAccordion
           highlightActiveTab
-          onTabToggle={(event: CustomEvent<AccordionTabToggleDetail>) =>
-            setLastToggle(`tab ${event.detail.index} → ${event.detail.active ? 'open' : 'closed'}`)
+          onTabToggle={({ index, active }: AccordionTabToggle) =>
+            setLastToggle(`tab ${index} → ${active ? 'open' : 'closed'}`)
           }>
           {SECTIONS.map((section) => (
             <BsAccordionItem key={section.title} header={section.title}>

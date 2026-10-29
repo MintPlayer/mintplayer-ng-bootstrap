@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/react-bootstrap",
   "version": "0.0.0-PLACEHOLDER",
-  "description": "React 19 wrappers around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed React components via @lit/react's createComponent.",
+  "description": "React 19 Bootstrap components. Each sub-entry renders its own JSX over a framework-neutral core from @mintplayer/ui-core, so it server-renders real HTML and defines no custom elements.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -30,9 +30,7 @@
   "peerDependencies": {
     "@mintplayer/ui-core": "^1.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@lit/react": "^1.0.0",
-    "@mintplayer/web-components": "^3.1.0"
+    "react-dom": "^19.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

@@ -35,24 +35,24 @@ export class MpPropsDirective {
   private applied: PropBag = {};
 
   constructor() {
-    effect(() => this.apply(this.mpProps() ?? {}));
+    effect(() => (this.applied = applyPropBag(this.renderer, this.element, this.applied, this.mpProps() ?? {})));
   }
+}
 
-  private apply(next: PropBag): void {
-    const previous = this.applied;
-    Object.keys(previous)
-      .filter((name) => !(name in next) || next[name] === null || next[name] === undefined || next[name] === false)
-      .forEach((name) => this.renderer.removeAttribute(this.element, name));
-    Object.entries(next)
-      .filter(([name, value]) => value !== null && value !== undefined && value !== false)
-      .filter(([name]) => {
-        if (isRefused(name)) {
-          throw new Error(`[mpProps] refuses to set "${name}"; bind it explicitly in the template.`);
-        }
-        return true;
-      })
-      .filter(([name, value]) => !Object.is(previous[name], value))
-      .forEach(([name, value]) => this.renderer.setAttribute(this.element, name, value === true ? '' : String(value)));
-    this.applied = next;
-  }
+/** Write `next` onto `element`, removing what `previous` set and `next` drops. Returns `next`. */
+export function applyPropBag(renderer: Renderer2, element: Element, previous: PropBag, next: PropBag): PropBag {
+  Object.keys(previous)
+    .filter((name) => !(name in next) || next[name] === null || next[name] === undefined || next[name] === false)
+    .forEach((name) => renderer.removeAttribute(element, name));
+  Object.entries(next)
+    .filter(([, value]) => value !== null && value !== undefined && value !== false)
+    .filter(([name]) => {
+      if (isRefused(name)) {
+        throw new Error(`[mpProps] refuses to set "${name}"; bind it explicitly in the template.`);
+      }
+      return true;
+    })
+    .filter(([name, value]) => !Object.is(previous[name], value))
+    .forEach(([name, value]) => renderer.setAttribute(element, name, value === true ? '' : String(value)));
+  return next;
 }

@@ -19,7 +19,7 @@
             <h5 class="card-title">
                 <span bsPlaceholderField class="d-block text-center">Featured</span>
             </h5>
-            <p class="card-text">
+            <div class="card-text">
                 <bs-grid>
                     <div bsRow>
                         <span bsPlaceholderField [xxs]="7" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[0] }}</span>
@@ -37,7 +37,7 @@
                         <span bsPlaceholderField [xxs]="8" class="d-inline-block">{{ isLoading ? '&nbsp;' : lines[4] }}</span>
                     </div>
                 </bs-grid>
-            </p>
+            </div>
         </bs-placeholder>
     </bs-card-body>
 </bs-card>

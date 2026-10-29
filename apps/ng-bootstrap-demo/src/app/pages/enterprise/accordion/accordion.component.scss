@@ -18,43 +18,28 @@
     vertical-align: middle;
 }
 
-// The accordion chrome lives in the web component's shadow root, so the old
-// `::ng-deep .accordion-button` rules no longer match anything. Theming goes
-// through Bootstrap's custom properties and the parts the element exposes.
-//
-// Both selectors below must name `mp-accordion` itself, NOT the `bs-accordion`
-// wrapper the class sits on:
-//   - the element declares the Bootstrap defaults on `:host`, i.e. ON itself,
-//     and a value set directly on an element always beats one inherited from
-//     an ancestor — so `.multi-level { --bs-accordion-btn-bg: … }` alone is
-//     silently ignored. A light-DOM rule matching the host does win (an outer
-//     tree context outranks the shadow's `:host`), which is why this works.
-//   - `::part()` only applies to the element that owns the shadow root, and
-//     `bs-accordion` is a plain Angular component with no shadow root at all.
-// React and Vue put the consumer's class straight onto `<mp-accordion>`, so
-// only Angular needs the extra descendant step — and `::ng-deep` with it,
-// because `<mp-accordion>` is emitted by the WRAPPER's template and so carries
-// the wrapper's emulated-encapsulation attribute, not this page's.
-.multi-level ::ng-deep mp-accordion {
-    --bs-accordion-btn-bg: #333;
-    --bs-accordion-btn-color: #fff;
-    --bs-accordion-active-bg: #444;
-    --bs-accordion-active-color: #fff;
-    // Replaces the old `::ng-deep .multi-level bs-accordion-tab { border-width: 0 }`.
-    --bs-accordion-border-width: 0;
-    // No chevron-colour override needed: the element masks the icon with
-    // currentColor, so it follows --bs-accordion-btn-color automatically.
+// Bootstrap declares the --bs-accordion-* properties on every .accordion,
+// in a lower cascade layer than page CSS, so a plain rule on the accordion
+// wins — and a nested accordion needs its own rule, or it re-declares the
+// defaults.
+.multi-level,
+.multi-level .accordion {
+  --bs-accordion-btn-bg: #333;
+  --bs-accordion-btn-color: #fff;
+  --bs-accordion-active-bg: #444;
+  --bs-accordion-active-color: #fff;
+  --bs-accordion-border-width: 0;
+}
 
-    &::part(content) {
-        background-color: var(--bs-secondary-bg);
-    }
+// Each nesting level gets a lighter header.
+.multi-level .accordion {
+  --bs-accordion-btn-bg: #666;
+}
 
-    // Each nesting level gets a lighter header.
-    mp-accordion {
-        --bs-accordion-btn-bg: #666;
+.multi-level .accordion .accordion {
+  --bs-accordion-btn-bg: #999;
+}
 
-        mp-accordion {
-            --bs-accordion-btn-bg: #999;
-        }
-    }
+.multi-level ::ng-deep .accordion-content {
+  background-color: var(--bs-secondary-bg);
 }

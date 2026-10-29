@@ -57,7 +57,6 @@ export default defineConfig(() => {
           // A declared dependency: the registry and the cores are shared with the framework fronts.
           /^@mintplayer\/ui-core(\/.*)?$/,
           'tslib',
-          /^highlight\.js(\/.*)?$/,
           // Declared `dependencies`, so consumers resolve them from their own
           // node_modules: an app that also uses libphonenumber-js ships one copy
           // instead of two, and `import('libphonenumber-js/max')` stays a bare
@@ -97,7 +96,8 @@ export default defineConfig(() => {
           '**/*.styles.ts',
           '**/*.element.template.ts',
           '**/*.generated.ts',
-          'phone-core/src/metadata/**',
+          // D10 fronts compiled by mintplayer-ui-core:compile-components (#437).
+          '**/src/generated/**',
         ],
         // Without this, Vitest's default reporters apply and no lcov.info is
         // written — clover/json aren't parsed server-side.

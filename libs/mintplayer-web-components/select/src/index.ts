@@ -1,2 +1,3 @@
-export { MpSelect } from './components';
-export type { MpSelectSize, MpSelectOption, MpSelectOptgroup, MpSelectItem, MpSelectOptionRenderer, SelectChangeEventDetail } from './components';
+// The select element is generated from @mintplayer/ui-core/select (PRD #437 D10).
+export * from './generated';
+export type { SelectChangeEventDetail, SelectItem, SelectOptgroup, SelectOption, SelectSize } from '@mintplayer/ui-core/select';

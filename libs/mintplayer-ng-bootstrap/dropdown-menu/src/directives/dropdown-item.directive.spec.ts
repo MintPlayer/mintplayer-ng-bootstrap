@@ -1,11 +1,8 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { DropdownSelectEventDetail } from '@mintplayer/web-components/dropdown-menu';
+import type { DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown-menu';
 import { BsDropdownMenuComponent } from '../dropdown-menu/dropdown-menu.component';
 import { BsDropdownItemDirective } from './dropdown-item.directive';
-// Register <mp-dropdown-menu> eagerly: the wrapper only imports it after render,
-// and the value only reaches the select event once the menu handles the click.
-import '@mintplayer/web-components/dropdown-menu';
 
 @Component({
   selector: 'bs-dropdown-item-value-test',

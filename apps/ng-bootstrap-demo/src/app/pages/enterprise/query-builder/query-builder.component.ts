@@ -1,13 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import {
   BsDatatableComponent,
-  BsRowTemplateDirective,
-  BsDatatableFetch,
-  DatatableSettings,
+  BsDatatableRowDirective,
+  type DatatableColumnDef,
+  type DatatableFetch,
+  type DatatableFetchRequest,
+  type SortColumn,
 } from '@mintplayer/ng-bootstrap/datatable';
 import { BsQueryBuilderComponent, BsQueryBuilderEditorDirective } from '@mintplayer/ng-bootstrap/query-builder';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -42,29 +45,39 @@ const SAVED_QUERIES_KEY = 'mp-qb-demo:savedQueries';
   selector: 'demo-query-builder',
   templateUrl: './query-builder.component.html',
   styleUrls: ['./query-builder.component.scss'],
-  imports: [
+  imports: [ReactiveFormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, DemoFormStateComponent, 
     BsQueryBuilderComponent, BsQueryBuilderEditorDirective,
-    BsDatatableComponent, BsRowTemplateDirective,
+    BsDatatableComponent, BsDatatableRowDirective,
     FormsModule,
     BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QueryBuilderDemoComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<Expression>(emptyGroup('and'));
+  protected readonly formsControl = new FormControl<Expression>(emptyGroup('and'), { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-query-builder [schema]="schema()" [(ngModel)]="value"></bs-query-builder>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-query-builder [schema]="schema()" [formControl]="control"></bs-query-builder>
+  `;
+
   private http = inject(HttpClient);
 
   schema = signal<EntitySchema[]>([]);
   rootEntity = signal<string>('orders');
   query = signal<Expression>(emptyGroup('and'));
 
-  // Phase-2 signals: drive the new toolbar widgets in mp-query-builder.
+  // Phase-2 signals: drive the query builder toolbar widgets.
   selectedFields = signal<string[]>([]);
   sortBy = signal<SortDescriptor[]>([]);
 
-  settings = signal(new DatatableSettings({
-    perPage: { values: [10, 20, 50, 100], selected: 20 },
-    page: { values: [1], selected: 1 },
-  }));
+  sortColumns = signal<SortColumn[]>([]);
+
+  private readonly table = viewChild(BsDatatableComponent);
 
   busy = signal(false);
   error = signal<string | null>(null);
@@ -80,7 +93,7 @@ export class QueryBuilderDemoComponent {
    * Empty `selectedFields()` is treated as "show everything" so the demo is
    * never blank.
    */
-  datatableColumns = computed(() => {
+  datatableColumns = computed<DatatableColumnDef[]>(() => {
     const entity = this.schema().find((s) => s.name === this.rootEntity());
     if (!entity) return [];
     const projectable = entity.fields.filter((f) => f.type !== 'relation');
@@ -91,7 +104,7 @@ export class QueryBuilderDemoComponent {
     return visible.map((f) => ({ name: f.name, label: f.label, sortable: true }));
   });
 
-  fetchRows: BsDatatableFetch<Record<string, unknown>> = async (req: PaginationRequest) => {
+  fetchRows: DatatableFetch<Record<string, unknown>> = async (req: DatatableFetchRequest) => {
     this.busy.set(true);
     this.error.set(null);
     try {
@@ -110,22 +123,14 @@ export class QueryBuilderDemoComponent {
       const url = `${environment.apiBase}/api/${this.rootEntity()}/search`;
       const r = await firstValueFrom(this.http.post<PagedResult<Record<string, unknown>>>(url, body));
       this.lastTotal.set(r.totalCount);
-      return <PaginationResponse<Record<string, unknown>>>{
-        data: r.items,
-        totalRecords: r.totalCount,
-        totalPages: Math.max(1, Math.ceil(r.totalCount / r.pageSize)),
-        page: r.page,
-        perPage: r.pageSize,
-      };
+      return { data: r.items, totalRecords: r.totalCount };
     } catch (err) {
       const detail = (err as HttpErrorResponse).error as { code?: string; detail?: string } | undefined;
       this.error.set(detail?.code
         ? `${detail.code}${detail.detail ? `: ${detail.detail}` : ''}`
         : 'Request failed');
       this.lastTotal.set(0);
-      return <PaginationResponse<Record<string, unknown>>>{
-        data: [], totalRecords: 0, totalPages: 1, page: req.page, perPage: req.perPage,
-      };
+      return { data: [], totalRecords: 0 };
     } finally {
       this.busy.set(false);
     }
@@ -140,31 +145,24 @@ export class QueryBuilderDemoComponent {
         this.query.set(emptyGroup('and'));
         this.selectedFields.set([]);
         this.sortBy.set([]);
-        this.settings.set(new DatatableSettings({
-          sortColumns: [],
-          perPage: this.settings().perPage,
-          page: { values: this.settings().page.values, selected: 1 },
-        }));
+        this.sortColumns.set([]);
+        this.table()?.reload({ resetPage: true });
       });
     });
 
     effect(() => {
       const sort = this.sortBy();
-      const current = untracked(() => this.settings());
+      const current = untracked(() => this.sortColumns());
       const nextSortColumns = sort.map((s) => ({
         property: s.field,
         direction: (s.direction === 'asc' ? 'ascending' : 'descending') as 'ascending' | 'descending',
       }));
-      if (sortColumnsEqual(current.sortColumns, nextSortColumns)) return;
-      this.settings.set(new DatatableSettings({
-        sortColumns: nextSortColumns,
-        perPage: current.perPage,
-        page: current.page,
-      }));
+      if (sortColumnsEqual(current, nextSortColumns)) return;
+      this.sortColumns.set(nextSortColumns);
     });
 
     effect(() => {
-      const cols = this.settings().sortColumns;
+      const cols = this.sortColumns();
       const current = untracked(() => this.sortBy());
       const next = cols.map((c) => ({
         field: c.property,
@@ -177,18 +175,14 @@ export class QueryBuilderDemoComponent {
 
   refreshSchema(): void {
     this.http.get<EntitySchema[]>(`${environment.apiBase}/api/${this.rootEntity()}/schema`).subscribe({
-      next: (s) => this.schema.set(s),
+      // orderDate opts into the custom editor (the bsQueryBuilderEditor template).
+      next: (s) => this.schema.set(s.map((e) => ({ ...e, fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)) }))),
       error: () => this.error.set('Could not fetch schema. Is apps/api running?'),
     });
   }
 
   search(): void {
-    const s = this.settings();
-    this.settings.set(new DatatableSettings({
-      sortColumns: s.sortColumns,
-      perPage: s.perPage,
-      page: { values: s.page.values, selected: 1 },
-    }));
+    this.table()?.reload({ resetPage: true });
   }
 
   onSaveQuery(e: { name: string; tree: Expression }): void {
@@ -293,16 +287,19 @@ export class QueryBuilderDemoComponent {
   `;
 
   protected readonly snippetCustomEditorHtml = dedent`
-    <!-- Project a custom editor for a specific field via *bsQueryBuilderEditor.
-         The ctx exposes value, disabled, and an onChange callback. -->
+    <!-- Every field with editor: 'custom' renders its value through the
+         bsQueryBuilderEditor template; switch on ctx.field.name for several.
+         The ctx exposes field, operator, value, disabled and onChange. -->
     <bs-query-builder [schema]="schema()" [(query)]="query">
-      <input
-        *bsQueryBuilderEditor="'orderDate'; let ctx"
-        type="date"
-        class="form-control form-control-sm"
-        [value]="ctx.value ?? ''"
-        [disabled]="ctx.disabled"
-        (input)="ctx.onChange($any($event.target).value || null)" />
+      <ng-template bsQueryBuilderEditor let-ctx="ctx">
+        <input
+          type="date"
+          class="form-control form-control-sm"
+          [attr.aria-label]="ctx.field.label"
+          [value]="$any(ctx.value) ?? ''"
+          [disabled]="ctx.disabled"
+          (input)="ctx.onChange($any($event.target).value || null)" />
+      </ng-template>
     </bs-query-builder>
   `;
 

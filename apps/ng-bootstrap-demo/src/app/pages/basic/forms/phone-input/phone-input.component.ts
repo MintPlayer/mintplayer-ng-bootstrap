@@ -1,6 +1,7 @@
+import { DemoFormStateComponent } from '../../../../components/form-state/form-state.component';
 import { JsonPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, model, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
@@ -8,13 +9,13 @@ import { BsInputGroupComponent } from '@mintplayer/ng-bootstrap/input-group';
 import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
-import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+import type { PhoneChangeEventDetail } from '@mintplayer/ng-bootstrap/phone-input';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-phone-input',
   templateUrl: './phone-input.component.html',
-  imports: [
+  imports: [ReactiveFormsModule, DemoFormStateComponent, 
     JsonPipe,
     FormsModule,
     BsCodeSnippetComponent,
@@ -31,6 +32,17 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PhoneInputComponent {
+  /** Angular forms: the same control bound template-driven and reactive. */
+  protected readonly formsValue = signal<string | null>(null);
+  protected readonly formsControl = new FormControl<string | null>(null, { nonNullable: true });
+  protected readonly snippetFormsHtml = dedent`
+    <!-- template-driven (FormsModule) -->
+    <bs-phone-input [(ngModel)]="value" defaultCountry="be"></bs-phone-input>
+
+    <!-- reactive (ReactiveFormsModule): control = new FormControl(...) -->
+    <bs-phone-input [formControl]="control" defaultCountry="be"></bs-phone-input>
+  `;
+
   readonly phone = model<string | null>(null);
   readonly disabled = model(false);
   readonly required = model(false);
@@ -53,7 +65,7 @@ export class PhoneInputComponent {
     <bs-form>
       <bs-phone-input [(ngModel)]="phone" name="phone"
                       defaultCountry="be"
-                      (phoneChange)="onPhoneChange($event)" />
+                      (phonechange)="onPhoneChange($event)" />
     </bs-form>
   `;
 
@@ -62,7 +74,7 @@ export class PhoneInputComponent {
     import { FormsModule } from '@angular/forms';
     import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
     import { BsPhoneInputComponent } from '@mintplayer/ng-bootstrap/phone-input';
-    import type { PhoneChangeEventDetail } from '@mintplayer/web-components/phone-input';
+    import type { PhoneChangeEventDetail } from '@mintplayer/ng-bootstrap/phone-input';
 
     @Component({
       selector: 'my-phone-demo',
@@ -90,8 +102,8 @@ export class PhoneInputComponent {
   `;
 
   protected readonly snippetGroupHtml = dedent`
-    <!-- bs-input-group joins any mix of controls, including ones that keep
-         their own shadow root: the corners pair and the borders collapse.
+    <!-- bs-input-group joins any mix of controls, including a whole phone
+         input: the corners pair and the borders collapse.
          Below ~6rem per control the row wraps instead of crushing them;
          override --mp-group-min-item-width for a denser toolbar. -->
     <bs-input-group>
@@ -101,10 +113,9 @@ export class PhoneInputComponent {
   `;
 
   protected readonly snippetValidationTs = dedent`
-    // error-text is mirrored inward by BsControlValidityDirective, which the
-    // wrapper applies automatically — the message is rendered INSIDE the
-    // component's shadow root and referenced by aria-errormessage, because an
-    // IDREF from the real input cannot reach a node in your template.
+    // The control's errors reach the field through BsControlValidityDirective,
+    // which the component applies itself: the message renders under the field,
+    // referenced by aria-errormessage from the number input.
     <bs-phone-input [(ngModel)]="phone" name="phone" required
                     [errorMessages]="{ required: 'A phone number is required.' }" />
   `;

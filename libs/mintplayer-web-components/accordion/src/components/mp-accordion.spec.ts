@@ -148,7 +148,6 @@ describe('mp-accordion projection', () => {
 
     const content = item.querySelector('.accordion-content');
     expect(content).toBeTruthy();
-    expect(content!.getAttribute('part')).toBe('content');
     expect(content!.querySelector('slot')?.getAttribute('name')).toBe('c0');
 
     // The pre-D1 machinery must be gone entirely.
@@ -220,7 +219,7 @@ describe('mp-accordion open/close', () => {
 
   it('single-open renders a name group; multi renders none', async () => {
     const single = await make();
-    items(single).forEach((d) => expect(d.getAttribute('name')).toBe('acc'));
+    items(single).forEach((d) => expect(d.getAttribute('name')).toBe('acc-group'));
 
     const multi = await make({ attrs: { multi: '' } });
     items(multi).forEach((d) => expect(d.hasAttribute('name')).toBe(false));
@@ -351,13 +350,13 @@ describe('mp-accordion accessibility', () => {
   it('exposes native disclosure structure: summary controls a labelled region', async () => {
     const el = await make();
     summaries(el).forEach((summary, index) => {
-      expect(summary.id).toBe(`h${index}`);
-      expect(summary.getAttribute('aria-controls')).toBe(`c${index}`);
+      expect(summary.id).toBe(`acc-h${index}`);
+      expect(summary.getAttribute('aria-controls')).toBe(`acc-c${index}`);
     });
     [...shadow(el).querySelectorAll('.accordion-content')].forEach((region, index) => {
       expect(region.getAttribute('role')).toBe('region');
-      expect(region.getAttribute('aria-labelledby')).toBe(`h${index}`);
-      expect(region.id).toBe(`c${index}`);
+      expect(region.getAttribute('aria-labelledby')).toBe(`acc-h${index}`);
+      expect(region.id).toBe(`acc-c${index}`);
     });
     // The D1 trade, asserted so it is a decision rather than an accident:
     // headers are no longer headings (details/summary owns expand/collapse
@@ -396,51 +395,10 @@ describe('mp-accordion accessibility', () => {
   });
 });
 
-describe('mp-accordion SSR handoff', () => {
-  it('renders tab-count rows when there is no light DOM to measure', async () => {
-    const el = document.createElement('mp-accordion') as MpAccordion;
-    el.setAttribute('tab-count', '3');
-    document.body.appendChild(el);
-    await flush(el);
-
-    expect(items(el)).toHaveLength(3);
-    expect(summaries(el)).toHaveLength(3);
-  });
-
-  it('adopts the pre-upgrade open state from server-rendered chrome', async () => {
-    const el = build({ active: [] });
-    // Stand in for the DSD the SSR injector spliced in: tab 1 was left open
-    // by the user before hydration (details carries UA-owned state).
-    const template = document.createElement('template');
-    template.innerHTML = `
-      <div class="accordion-root">
-        <details class="accordion-item" name="acc"><summary class="accordion-button">a</summary></details>
-        <details class="accordion-item" name="acc" open><summary class="accordion-button">b</summary></details>
-        <details class="accordion-item" name="acc"><summary class="accordion-button">c</summary></details>
-      </div>`;
-    el.attachShadow({ mode: 'open' }).appendChild(template.content.cloneNode(true));
-
-    document.body.appendChild(el);
-    await flush(el);
-
-    expect(el.activeIndexes).toEqual([1]);
-    // …and the server chrome is replaced by a clean client render.
-    expect(items(el)).toHaveLength(3);
-    expect(items(el)[1].open).toBe(true);
-  });
-
-  it('sets data-js as the observable hydration marker', async () => {
-    // No styling hangs off it since D1; e2e readiness predicates key on it
-    // (lit-ssr never runs connectedCallback, so the DSD chrome lacks it).
-    const el = await make();
-    expect(el.hasAttribute('data-js')).toBe(true);
-  });
-});
-
 describe('mp-accordion configuration', () => {
   it('keeps multi and highlight-active-tab attribute-only', async () => {
     // @lit/react drops props that match a prototype accessor from the
-    // server-rendered HTML, which would silently change the SSR chrome.
+    // server-rendered HTML, so config stays attribute-only.
     expect('multi' in MpAccordion.prototype).toBe(false);
     expect('highlightActiveTab' in MpAccordion.prototype).toBe(false);
     const el = await make({ attrs: { multi: '' } });

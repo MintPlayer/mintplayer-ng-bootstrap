@@ -1,43 +1,36 @@
-export { MpDatatable } from './components';
+// The datatable is generated from @mintplayer/ui-core/datatable (PRD #437 D10).
+export * from './generated';
+export { DEFAULT_DATATABLE_LABELS, cellText, computeNextSort, sortRows } from '@mintplayer/ui-core/datatable';
 export type {
-  DatatableSelectionMode,
-  RowEventDetail,
-  SortChangeEventDetail,
-  SelectionChangeEventDetail,
-  DatatableFetchState,
-  DatatableReloadOptions,
-} from './components';
-export type {
+  ComparisonFilterChangeDetail,
   DatatableColumnDef,
-  CellContent,
-  CellRenderer,
-  HeaderRenderer,
-  FilterRenderer,
-  RowKey,
-  RowRenderer,
-  RowRenderContext,
-  TreeIdKey,
-  TreeSelectionStrategy,
+  DatatableDistincts,
+  DatatableFetch,
   DatatableFetchRequest,
   DatatableFetchResponse,
-  DatatableFetch,
-  TreeRowExpandDetail,
-  TreeExpandedIdsChangeDetail,
+  DatatableHrefFor,
+  DatatableHrefState,
+  DatatableLabels,
+  DatatableLoadErrorDetail,
+  DatatableReloadOptions,
+  DatatableSelectionMode,
   DistinctValue,
   DistinctValues,
   DistinctsRequest,
-  DatatableDistincts,
-  FilterSelection,
-  FilterContext,
   FilterChangeDetail,
-  ValuesFilterChangeDetail,
-  ComparisonFilterChangeDetail,
+  FilterContext,
+  FilterInputType,
   FilterMode,
   FilterOperator,
-  FilterInputType,
-} from './types';
-export type { DatatableLabels } from './types';
-export { DEFAULT_DATATABLE_LABELS } from './types';
-export type { SortColumn, SortDirection } from './sort';
-export { computeNextSort, sortRows } from './sort';
-export { datatableLightStyles } from './styles';
+  FilterSelection,
+  RowEventDetail,
+  RowKey,
+  RowRenderContext,
+  SelectionChangeEventDetail,
+  SortColumn,
+  SortDirection,
+  TreeIdKey,
+  TreeRowExpandDetail,
+  TreeSelectionStrategy,
+  ValuesFilterChangeDetail,
+} from '@mintplayer/ui-core/datatable';

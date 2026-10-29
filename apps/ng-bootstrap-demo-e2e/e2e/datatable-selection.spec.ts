@@ -23,7 +23,7 @@ async function mockArtistApi(page: Page) {
 
 /** The 'checkbox'-mode demo table, by its named hook — never by position. */
 function table(page: Page): Locator {
-  return page.locator('bs-datatable.selection-table mp-datatable');
+  return page.locator('bs-datatable.selection-table');
 }
 
 /** A body row by its key (tier L: rows are ordinary light-DOM descendants). */
@@ -41,9 +41,9 @@ async function tickViaCellPadding(page: Page, key: string) {
 }
 
 async function goToPage(page: Page, n: number) {
-  // mp-pagination keeps its buttons in an open shadow root; locators pierce it.
+  // The pager's items are labelled "Page N" (core bags, server-rendered).
   await table(page)
-    .locator('mp-pagination.datatable-pagination')
+    .locator('nav.datatable-pagination')
     .getByRole('button', { name: `Page ${n}`, exact: true })
     .click();
 }

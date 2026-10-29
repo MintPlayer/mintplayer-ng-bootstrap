@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "jsx": "preserve",
+    "types": ["node", "vite/client"],
+    // $slots.header in a template is the idiom; the lib's flag would demand $slots['header'].
+    "noPropertyAccessFromIndexSignature": false
+  },
+  // The component compiler's view templates (PRD #437 D10). Nothing builds them
+  // as Vue, so without this project an editor's Vue language service finds no
+  // tsconfig that includes them and cannot resolve @mintplayer/ui-core/*.
+  // Type-checked by the views-typecheck target. Composed <mp-*> children and
+  // recursive partials are the compiler's, so templates are not strict about
+  // unknown components; views.d.ts declares the dialect's attributes.
+  "include": ["views.d.ts", "*/src/templates/*.view.vue", "*/*/src/templates/*.view.vue", "*/src/**/*.ts", "*/*/src/**/*.ts", "*/index.ts", "*/*/index.ts"],
+  "exclude": ["**/*.spec.ts", "**/*.test.ts"]
+}

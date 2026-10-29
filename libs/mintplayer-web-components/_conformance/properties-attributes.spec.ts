@@ -16,6 +16,7 @@ import {
   publicFields,
   reflectedAttribute,
   representative,
+  scanInterfaceMembers,
   scanLiteralAliases,
 } from './cem-properties';
 
@@ -55,12 +56,7 @@ const MANIFEST = resolve(LIB_ROOT, 'custom-elements.json');
 /* ------------------------------------------------------------------ */
 
 /** Manifest declarations that are not a mountable tag. Asserted to be exactly these. */
-const NOT_MOUNTABLE: Record<string, string> = {
-  MpDropdownElement: 'abstract base of mp-dropdown-menu, never defined as a tag',
-  MpNavbarElement: 'abstract base of the navbar family, never defined as a tag',
-  MpRibbonItemBase: 'abstract base of the ribbon items; its members are exercised through every concrete item',
-  MpOverlayContainer: 'module-private portal host (not exported); OverlayController creates it',
-};
+const NOT_MOUNTABLE: Record<string, string> = {};
 
 interface Override {
   /** Why this case departs from the generic rule. Required on every entry. */
@@ -92,32 +88,49 @@ const OVERRIDES: Record<string, Override> = {
   'mp-timepicker@step': { value: '30', reason: SLOW_STEP },
   'mp-datetime-picker@step': { value: '30', reason: SLOW_STEP },
   'mp-otp-input.value': { value: '482193', reason: 'the default numeric type strips non-digits' },
-  'mp-carousel.index': { expect: 0, reason: 'clamped to the slide count; a carousel with no slides only has index 0' },
   'mp-radio-group.value': { expect: null, reason: 'a value must name a child mp-radio; the bare group has none, so it is refused' },
-  'mp-hierarchy-chart.zoomGestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },
-  'mp-hierarchy-chart@zoom-gestures': { value: 'wheel', reason: 'a space-separated gesture list; unknown tokens are dropped' },
-  'mp-hierarchy-chart@max-depth': { value: '3', expect: 3, reason: 'typed as a string attribute but parsed as a number (or "auto")' },
   'mp-tab-control@tabs-position': { value: 'bottom', reason: 'enum read straight from the attribute: top | bottom' },
   'mp-tab-control@border': { value: 'top', reason: 'enum read straight from the attribute: full | top | false' },
-  'mp-tree-select@scroll-height': {
-    prop: 'panelScrollHeight',
-    value: '120px',
-    reason: 'backs panelScrollHeight, because HTMLElement.scrollHeight is read-only',
+  'mp-otp-input@value': {
+    value: '482193',
+    restored: '',
+    reason: 'the default numeric type strips non-digits; a removed value is the empty code, written back by the model',
   },
+  'mp-checkbox@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
+  'mp-toggle-button@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
+  'mp-radio@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
+  'mp-radio@type': { value: 'toggle_button', reason: 'enum: radio | toggle_button; unknown values are refused' },
+  'mp-pagination@size': { value: 'large', reason: 'enum: small | medium | large; unknown values are refused' },
+  'mp-timeline@orientation': { value: 'horizontal', reason: 'enum: vertical | horizontal; unknown values are refused' },
+  'mp-timeline@align': { value: 'end', reason: 'enum: start | end | alternate | alternate-reverse; unknown values are refused' },
+  'mp-timeline@selectable': { value: 'single', reason: 'enum: none | single | multiple; unknown values are refused' },
   'mp-scheduler@view': {
+    value: 'year',
     restored: 'year',
-    reason: 'the view is navigation state the toolbar also changes; the attribute is a one-way command, so removing it keeps the current view',
+    reason: 'a two-way model over navigation state: removing the attribute is not a command, so the core keeps the view it shows and writes it back',
   },
-  'mp-scheduler@date': {
-    restored: new Date('2024-01-15T09:30:00'),
-    reason: 'the date is navigation state the toolbar also changes; removing the attribute keeps the current date',
+  'mp-file-manager@view-mode': { value: 'icons', reason: 'a two-way model: list | icons; the core writes unknown values back as list' },
+  'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
+  'mp-calendar.currentMonth': { expect: new Date(2024, 0, 1), reason: 'a two-way model the core normalises to the first of the month' },
+  'mp-datepicker.currentMonth': { expect: new Date(2024, 0, 1), reason: 'a two-way model the core normalises to the first of the month' },
+  'mp-multi-range.value': {
+    skip: true,
+    reason: 'a two-way model: the core writes back one value per thumb, so an assigned null never reads back',
   },
   'mp-phone-input.value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
+  'mp-datatable@page': {
+    restored: 1,
+    reason: 'page is a model: removing the attribute returns to the first page, written back by the model',
+  },
+  'mp-datatable@per-page': {
+    restored: 20,
+    reason: 'perPage is a model: removing the attribute returns to the default page size, written back by the model',
+  },
   'mp-phone-input@country': {
     value: 'be',
-    restored: 'be',
-    reason: 'a phone input always has a country; removing the attribute keeps the current one',
+    restored: null,
+    reason: 'country is a model: removing the attribute clears the explicit pick, and the picker falls back to defaultCountry',
   },
 };
 
@@ -232,7 +245,10 @@ function typedFromAttribute(domain: Domain, value: string): unknown {
 
 const MANIFEST_PRESENT = existsSync(MANIFEST);
 const DECLS = MANIFEST_PRESENT ? manifestElements(readFileSync(MANIFEST, 'utf8')) : [];
-const ALIASES = scanLiteralAliases(LIB_ROOT);
+// The D10 elements' inputs are typed by their cores, in ui-core (#437).
+const UI_CORE_ROOT = resolve(LIB_ROOT, '..', 'mintplayer-ui-core');
+const ALIASES = new Map([...scanLiteralAliases(UI_CORE_ROOT), ...scanLiteralAliases(LIB_ROOT)]);
+const MEMBERS = scanInterfaceMembers([UI_CORE_ROOT, LIB_ROOT]);
 const RESOLVED = await Promise.all(DECLS.map(resolveElement));
 const MOUNTABLE = RESOLVED.filter((r): r is Required<Resolved> => r.tag !== undefined && r.ctor !== undefined);
 
@@ -291,7 +307,7 @@ MOUNTABLE.map(({ decl, tag, ctor }) => {
     const override: Partial<Override> = OVERRIDES[id] ?? {};
     if (override.skip) return skipped.push({ id, reason: override.reason ?? '' });
     if (field.readonly) return skipped.push({ id, reason: 'readonly in the manifest' });
-    const domain = domainOf(field.type?.text, ALIASES);
+    const domain = domainOf(field.type?.text, ALIASES, MEMBERS);
     if (domain.kind === 'unsupported' && override.value === undefined) {
       return skipped.push({ id, reason: domain.reason });
     }
@@ -320,7 +336,7 @@ MOUNTABLE.map(({ decl, tag, ctor }) => {
     }
     const initial = probe[prop];
     const typeText = attr.type?.text || fieldByName.get(prop)?.type?.text;
-    const declared = domainOf(typeText, ALIASES);
+    const declared = domainOf(typeText, ALIASES, MEMBERS);
     const domain: Domain =
       declared.kind !== 'unsupported'
         ? declared
@@ -404,7 +420,9 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    expect(propertyCases.length).toBeGreaterThanOrEqual(250);
+    // 205 before #437: D10 elements expose their inputs only, not the hand-written getters
+    // (the dock alone dropped from a dozen accessors to its three inputs).
+    expect(propertyCases.length).toBeGreaterThanOrEqual(150);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {
@@ -475,7 +493,7 @@ describe('custom-elements.json property / attribute table', () => {
   });
 
   describe('pinned: the time-list step can never stall the slot loop', () => {
-    const slotCount = (el: Host) => (el.shadowRoot ?? el).querySelectorAll('button.slot').length;
+    const slotCount = (el: Host) => (el.shadowRoot ?? el).querySelectorAll('button.time-slot').length;
 
     it.each([
       ['removed', null],

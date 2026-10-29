@@ -1,23 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, effectScope, h, nextTick } from 'vue';
 
-import BsThemeToggle from '../../theming/src/BsThemeToggle.vue';
+import { BsThemeToggle } from '../../theming/src/generated';
 import { useBsTheme, type UseBsThemeResult } from '../../theming/src/useBsTheme';
 import {
   __resetBsThemeStoreForTests,
-  BS_THEME_DEFAULT_MODES,
   getBsThemeStore,
   type BsThemeToggleMode,
-  type MpThemeToggle,
-} from '@mintplayer/web-components/theming';
+} from '@mintplayer/ui-core/theming';
 
-import { mountEl, mountWrapper } from './harness';
-import { installFakeBroadcastChannel } from '@mintplayer/web-components/theming/src/testing/fake-broadcast-channel';
+import { mountWrapper } from './harness';
+import { installFakeBroadcastChannel } from '@mintplayer/ui-core/theming/src/testing/fake-broadcast-channel';
 
 /**
  * `useBsTheme()` mirrors the shared browser store into `shallowRef`s and
- * `BsThemeToggle` forwards attributes and a `modes` array to
- * `<mp-theme-toggle>`. The store itself has its own spec in the WC lib; what
+ * `BsThemeToggle` renders the generated toggle, driven by a `modes` array
+ * prop. The store itself has its own spec in ui-core; what
  * fails silently here is the adapter plumbing:
  *
  *  - a subscription that outlives its scope keeps writing into refs nobody
@@ -163,37 +161,39 @@ describe('useBsTheme', () => {
 });
 
 describe('BsThemeToggle', () => {
-  it('forwards consumer attributes to <mp-theme-toggle>', () => {
-    const { el } = mountEl(BsThemeToggle, 'mp-theme-toggle', {
+  const button = (el: Element) => el.querySelector('button') as HTMLButtonElement;
+  // The generated toggle has no host element: its root span is the wrapper's element.
+  const rootOf = (wrapper: ReturnType<typeof mountWrapper>) => wrapper.element as HTMLElement;
+
+  it('forwards consumer attributes to its root', () => {
+    const el = rootOf(mountWrapper(BsThemeToggle, {
       attrs: { 'aria-label': 'Colour mode', id: 'theme' },
-    });
+    }));
     expect(el.getAttribute('aria-label')).toBe('Colour mode');
     expect(el.getAttribute('id')).toBe('theme');
   });
 
-  it('assigns modes as a property, not an attribute', () => {
+  it('cycles the default modes through the store', async () => {
+    const el = rootOf(mountWrapper(BsThemeToggle));
+    await nextTick();
+    expect(button(el).getAttribute('aria-label')).toBe('Switch to light theme');
+    button(el).click();
+    await nextTick();
+    expect(getBsThemeStore().getMode()).toBe('light');
+    expect(button(el).getAttribute('aria-label')).toBe('Switch to dark theme');
+  });
+
+  it('follows a changed modes prop, never as an attribute, and the default when it is cleared', async () => {
     const modes: readonly BsThemeToggleMode[] = [
-      ...BS_THEME_DEFAULT_MODES,
-      { mode: 'sepia', label: 'Sepia', announcement: 'Sepia mode', icon: 'sepia' },
+      { mode: 'auto', label: 'Go auto', announcement: 'Auto', icon: 'M0 0h1v1z' },
+      { mode: 'sepia', label: 'Go sepia', announcement: 'Sepia', icon: 'M0 0h1v1z' },
     ];
-    const { el } = mountEl<MpThemeToggle>(BsThemeToggle, 'mp-theme-toggle', { props: { modes } });
-    expect(el.modes).toEqual(modes);
-    expect(el.hasAttribute('modes')).toBe(false);
-  });
-
-  it('falls back to the default modes', () => {
-    const { el } = mountEl<MpThemeToggle>(BsThemeToggle, 'mp-theme-toggle');
-    expect(el.modes).toEqual(BS_THEME_DEFAULT_MODES);
-  });
-
-  it('pushes a changed modes prop and restores the default when it is cleared', async () => {
-    const modes = BS_THEME_DEFAULT_MODES.slice(0, 2);
-    const { wrapper, el } = mountEl<MpThemeToggle>(BsThemeToggle, 'mp-theme-toggle');
-
+    const wrapper = mountWrapper(BsThemeToggle);
+    const el = rootOf(wrapper);
     await wrapper.setProps({ modes });
-    expect(el.modes).toEqual(modes);
-
-    await wrapper.setProps({ modes: undefined });
-    expect(el.modes).toEqual(BS_THEME_DEFAULT_MODES);
+    expect(button(el).getAttribute('aria-label')).toBe('Go sepia');
+    expect(el.hasAttribute('modes')).toBe(false);
+    await wrapper.setProps({ modes: null });
+    expect(button(el).getAttribute('aria-label')).toBe('Switch to light theme');
   });
 });

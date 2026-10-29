@@ -1,17 +1,14 @@
-import '@mintplayer/web-components/timeline';
-
-export { default as BsTimeline } from './BsTimeline.vue';
-export { default as BsTimelineItem } from './BsTimelineItem.vue';
-
-export { MpTimeline, MpTimelineItem } from '@mintplayer/web-components/timeline';
+// The timeline is generated from @mintplayer/ui-core/timeline (PRD #437 D10).
+export * from './generated';
 export type {
-  TimelineItem,
-  TimelineOrientation,
   TimelineAlign,
-  TimelineSide,
-  TimelineSelectable,
-  TimelineItemContext,
   TimelineConnectorContext,
+  TimelineItem,
   TimelineItemClickDetail,
+  TimelineItemContext,
+  TimelineOrientation,
+  TimelineSelectable,
   TimelineSelectionChangeDetail,
-} from '@mintplayer/web-components/timeline-core';
+  TimelineSide,
+} from '@mintplayer/ui-core/timeline';
+export { resolveSides } from '@mintplayer/ui-core/timeline';

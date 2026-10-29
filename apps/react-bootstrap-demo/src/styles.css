@@ -1,11 +1,10 @@
 /* Global styles, loaded as a real <link rel="stylesheet"> from index.html (not
  * via a JS import) so the page is fully styled even with JavaScript disabled —
- * the no-JS SSR requirement. Bootstrap is pulled in here via @import so it is
- * part of that one linked stylesheet; Vite inlines + url()-rebases these in dev
- * and bundles them into a hashed stylesheet in the production build. */
-@import 'bootstrap/dist/css/bootstrap.min.css';
+ * the no-JS SSR requirement. Bootstrap itself is the layered baseline linked
+ * just before this file (src/bootstrap.scss); these rules are unlayered, so they
+ * win over it and over every component sheet. */
 /* --mp-color-mode, the token the components' dark icons query (PRD dark-mode D6).
- * Stock bootstrap.min.css does not declare it. */
+ * Bootstrap does not declare it. */
 @import '@mintplayer/web-components/theming/color-mode.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
@@ -91,17 +90,17 @@ body {
   gap: 0.25rem 1rem;
 }
 
-/* <mp-shell> is the full-viewport layout root: a top bar over a sidebar/content
+/* The shell is the full-viewport layout root: a top bar over a sidebar/content
  * row. A BOUNDED height (not min-height) makes the shell exactly viewport-tall,
  * so the top bar + sidebar stay put and the content/sidebar scroll internally
  * (the shell handles that via flexbox — no position:fixed, no body padding).
- * Style the top bar via its shadow ::part so the bar chrome (border + bg) spans
- * the full width including under the hamburger. */
+ * The top bar is the shell's own light-DOM .topbar, so the bar chrome (border +
+ * bg) spans the full width including under the hamburger. */
 .app-shell {
   height: 100dvh;
 }
 
-.app-shell::part(topbar) {
+.app-shell > .topbar {
   border-bottom: 1px solid var(--bs-border-color);
   background-color: var(--bs-tertiary-bg);
 }

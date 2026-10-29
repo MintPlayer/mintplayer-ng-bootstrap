@@ -27,14 +27,16 @@ const selectable = ref<TimelineSelectable>('none');
 const reverse = ref(false);
 const customMarkers = ref(false);
 const cardContent = ref(false);
-const selected = ref<TimelineItem[]>([]);
+const selected = ref<readonly string[]>([]);
 
 // <BsSelect> takes a JS `options` array of { value, label }.
 const orientationOptions = (['vertical', 'horizontal'] as const).map((v) => ({ value: v, label: v }));
 const alignOptions = (['start', 'end', 'alternate', 'alternate-reverse'] as const).map((v) => ({ value: v, label: v }));
 const selectableOptions = (['none', 'single', 'multiple'] as const).map((v) => ({ value: v, label: v }));
 
-const selectedTitles = computed(() => selected.value.map((m) => m.title ?? '(untitled)'));
+const selectedTitles = computed(() =>
+  milestones.filter((m) => selected.value.includes(String(m.id))).map((m) => m.title ?? '(untitled)'),
+);
 
 // Keep the copyable snippet in sync with the live controls.
 const playgroundSource = computed(() => {
@@ -44,7 +46,7 @@ const playgroundSource = computed(() => {
   if (reverse.value) attrs.push(':reverse="true"');
   if (selectable.value !== 'none') {
     attrs.push(`selectable="${selectable.value}"`);
-    attrs.push('v-model:selection="selected"');
+    attrs.push('v-model:selectedIds="selected"');
   }
 
   const slots: string[] = [];
@@ -79,24 +81,24 @@ const playgroundSource = computed(() => {
 
 const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
   <BsTimelineItem item-id="kickoff" color="#6c757d">
-    <BsCard slot="content">
+    <BsCard>
       <BsCardHeader>Kickoff</BsCardHeader>
       <BsCardBody>
         <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
       </BsCardBody>
       <BsCardFooter><small class="text-body-secondary">2026-01-10</small></BsCardFooter>
     </BsCard>
-    <small slot="opposite" class="text-body-secondary">2026-01-10</small>
+    <template #opposite><small class="text-body-secondary">2026-01-10</small></template>
   </BsTimelineItem>
   <BsTimelineItem item-id="ship" color="#198754">
-    <BsCard slot="content">
+    <BsCard>
       <BsCardHeader>Shipped v1</BsCardHeader>
       <BsCardBody>
         <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
       </BsCardBody>
       <BsCardFooter><small class="text-body-secondary">2026-05-01</small></BsCardFooter>
     </BsCard>
-    <small slot="opposite" class="text-body-secondary">2026-05-01</small>
+    <template #opposite><small class="text-body-secondary">2026-05-01</small></template>
   </BsTimelineItem>
 </BsTimeline>`;
 </script>
@@ -126,9 +128,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Orientation</label>
           <BsSelect
             aria-label="Orientation"
-            :model-value="orientation"
+            :value="orientation"
             :options="orientationOptions"
-            @update:model-value="orientation = $event as TimelineOrientation"
+            @update:value="orientation = $event as TimelineOrientation"
           />
         </div>
 
@@ -136,9 +138,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Alignment</label>
           <BsSelect
             aria-label="Alignment"
-            :model-value="align"
+            :value="align"
             :options="alignOptions"
-            @update:model-value="align = $event as TimelineAlign"
+            @update:value="align = $event as TimelineAlign"
           />
         </div>
 
@@ -146,9 +148,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
           <label class="form-label mb-1">Selectable</label>
           <BsSelect
             aria-label="Selectable"
-            :model-value="selectable"
+            :value="selectable"
             :options="selectableOptions"
-            @update:model-value="selectable = $event as TimelineSelectable"
+            @update:value="selectable = $event as TimelineSelectable"
           />
         </div>
 
@@ -183,7 +185,7 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
         :align="align"
         :reverse="reverse"
         :selectable="selectable"
-        v-model:selection="selected"
+        v-model:selectedIds="selected"
       >
         <template v-if="customMarkers" #marker="{ item }">
           <span class="timeline-dot" :class="`timeline-dot--${item.id}`">
@@ -215,29 +217,29 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
       <p class="text-body-secondary">
         Instead of binding <code>:items</code>, drop
         <code>&lt;BsTimelineItem&gt;</code> children directly inside
-        <code>&lt;BsTimeline&gt;</code> and project into the named slots. Handy
+        <code>&lt;BsTimeline&gt;</code>: their content is the body, and the <code>#opposite</code> / <code>#heading</code> / <code>#marker</code> slots take the rest. Handy
         when each item's markup is bespoke rather than uniform.
       </p>
       <BsTimeline align="alternate">
         <BsTimelineItem item-id="kickoff" color="#6c757d">
-          <BsCard slot="content">
+          <BsCard>
             <BsCardHeader>Kickoff</BsCardHeader>
             <BsCardBody>
               <BsCardText class="small text-body-secondary mb-0">Project scoping and team assembly.</BsCardText>
             </BsCardBody>
             <BsCardFooter><small class="text-body-secondary">2026-01-10</small></BsCardFooter>
           </BsCard>
-          <small slot="opposite" class="text-body-secondary">2026-01-10</small>
+          <template #opposite><small class="text-body-secondary">2026-01-10</small></template>
         </BsTimelineItem>
         <BsTimelineItem item-id="ship" color="#198754">
-          <BsCard slot="content">
+          <BsCard>
             <BsCardHeader>Shipped v1</BsCardHeader>
             <BsCardBody>
               <BsCardText class="small text-body-secondary mb-0">First public release.</BsCardText>
             </BsCardBody>
             <BsCardFooter><small class="text-body-secondary">2026-05-01</small></BsCardFooter>
           </BsCard>
-          <small slot="opposite" class="text-body-secondary">2026-05-01</small>
+          <template #opposite><small class="text-body-secondary">2026-05-01</small></template>
         </BsTimelineItem>
       </BsTimeline>
       <BsCodeSnippet :code="DECLARATIVE_SOURCE" language="html" />

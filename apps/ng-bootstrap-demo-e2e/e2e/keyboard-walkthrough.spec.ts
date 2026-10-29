@@ -58,10 +58,10 @@ test.describe('pagination — activation does not relabel or strand focus', () =
   test('Enter on a page button keeps focus on a page button', async ({ page }) => {
     await page.goto('/basic/pagination');
     await page.waitForLoadState('networkidle');
-    const target = page.locator('mp-pagination').first();
+    const target = page.locator('bs-pagination nav').first();
     await expect(target).toBeVisible();
     await target.evaluate((el) => {
-      const btn = el.shadowRoot?.querySelectorAll<HTMLButtonElement>('button:not([disabled])')[1];
+      const btn = el.querySelectorAll<HTMLButtonElement>('button:not([disabled])')[1];
       btn?.focus();
     });
     await page.keyboard.press('Enter');
@@ -75,9 +75,9 @@ test.describe('treeview — arrow navigation', () => {
   test('ArrowDown moves focus between rows', async ({ page }) => {
     await page.goto('/basic/treeview');
     await page.waitForLoadState('networkidle');
-    const tree = page.locator('mp-treeview').first();
+    const tree = page.locator('bs-treeview').first();
     await tree.evaluate((el) => {
-      // mp-treeview is light-DOM (Tier L): its roving tab stop is a descendant
+      // The treeview front renders in the light DOM: its roving tab stop is a descendant
       // of the host, not of a shadow root.
       (el.shadowRoot ?? el).querySelector<HTMLElement>('[tabindex="0"]')?.focus();
     });
@@ -197,14 +197,15 @@ test.describe('signature-pad — typed alternative is the keyboard path', () => 
   test('input, Undo, Clear are consecutive tab stops and typing lands on the model', async ({ page }) => {
     await page.goto('/advanced/signature-pad');
     await page.waitForLoadState('networkidle');
-    const pad = page.locator('mp-signature-pad').first();
-    await pad.evaluate((el) => (el as HTMLElement).focus());
+    const field = page.locator('bs-signature-pad input.signature-pad-text').first();
+    // Disabled until hydrated: the pad is inert without JavaScript.
+    await expect(field).toBeEnabled();
+    await field.focus();
     let active = await deepActive(page);
     expect(active.tag).toBe('input');
 
     await page.keyboard.type('Ada');
-    const text = await pad.evaluate((el) => (el as HTMLElement & { signature: { text?: string } }).signature.text);
-    expect(text).toBe('Ada');
+    await expect(field).toHaveValue('Ada');
 
     await page.keyboard.press('Tab');
     active = await deepActive(page);
@@ -219,10 +220,10 @@ test.describe('scheduler — month event chips are focusable and activatable', (
   test('a month-view event chip takes focus and Enter does not strand it', async ({ page }) => {
     await page.goto('/enterprise/scheduler');
     await page.waitForLoadState('networkidle');
-    const scheduler = page.locator('mp-scheduler').first();
+    const scheduler = page.locator('bs-scheduler').first();
     await expect(scheduler).toBeVisible();
     const focused = await scheduler.evaluate((el) => {
-      const chip = el.shadowRoot?.querySelector<HTMLElement>('[role="button"][tabindex], .event[tabindex]');
+      const chip = el.querySelector<HTMLElement>('[role="button"][data-event-id][tabindex]');
       chip?.focus();
       return chip !== null && chip !== undefined;
     });
@@ -241,28 +242,23 @@ test.describe('composite widgets are exactly ONE tab stop', () => {
 
   test('file-manager icon grid keeps a single tabbable card', async ({ page }) => {
     await page.goto('/enterprise/file-manager');
-    // Upgrade is lazy with route-level code-splitting — wait for the shadow
-    // root, not just the tag.
-    await page.waitForFunction(() => !!document.querySelector('mp-file-manager')?.shadowRoot);
-    const counts = await page.locator('mp-file-manager').first().evaluate(async (el) => {
-      el.setAttribute('view-mode', 'icons');
-      await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
-      const cards = [...el.shadowRoot!.querySelectorAll<HTMLElement>('.icon-card')];
-      return {
-        cards: cards.length,
-        stops: cards.filter((c) => c.tabIndex === 0).length,
-      };
-    });
-    expect(counts.cards).toBeGreaterThan(1);
-    expect(counts.stops).toBe(1);
+    // Server-rendered, so wait for the live (hydrated) component before switching views.
+    await page.waitForSelector('.file-manager[data-mp-hydrated]');
+    await page.getByRole('button', { name: 'Icons view' }).click();
+    const cards = page.locator('.file-manager .icon-card');
+    await expect(cards.first()).toBeVisible();
+    const tabIndexes = await cards.evaluateAll((els) => els.map((c) => (c as HTMLElement).tabIndex));
+    expect(tabIndexes.length).toBeGreaterThan(1);
+    expect(tabIndexes.filter((t) => t === 0)).toHaveLength(1);
   });
 
   test('datetime-picker time list keeps a single tabbable option', async ({ page }) => {
     await page.goto('/basic/forms/datetime-picker');
-    await page.waitForSelector('mp-datetime-picker');
-    const counts = await page.locator('mp-datetime-picker mp-time-list').first().evaluate(async (el) => {
-      await (el as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
-      const options = [...el.shadowRoot!.querySelectorAll<HTMLElement>('[role="option"], button.slot')];
+    // The list lives in the closed popup: present in the DOM, not visible. The
+    // roving tabindex is written on hydration, so wait for a -1 option.
+    await page.waitForSelector('bs-datetime-picker .mp-time-list [role="option"][tabindex="-1"]', { state: 'attached' });
+    const counts = await page.locator('bs-datetime-picker .mp-time-list').first().evaluate((el) => {
+      const options = [...el.querySelectorAll<HTMLElement>('[role="option"]')];
       return {
         options: options.length,
         stops: options.filter((o) => o.tabIndex === 0).length,

@@ -10,7 +10,7 @@
 <p>
     Validation rules are loaded <em>per calling code</em> on first interaction, so
     a field costs about 20&nbsp;kB gzip when the user reaches it and nothing before
-    that. <code>(phoneChange)</code> reports <code>valid</code> as
+    that. <code>(phonechange)</code> reports <code>valid</code> as
     <code>undefined</code> until those rules arrive — deliberately, rather than
     claiming a number is valid before anything has checked it.
 </p>
@@ -29,7 +29,7 @@
                     [disabled]="disabled()"
                     [required]="required()"
                     [errorMessages]="errorMessages"
-                    (phoneChange)="onPhoneChange($event)"></bs-phone-input>
+                    (phonechange)="onPhoneChange($event)"></bs-phone-input>
             </bs-form>
         </div>
         <div [sm]="6">
@@ -41,7 +41,7 @@
         <div [col]>
             <p class="mb-1">Bound value (E.164):</p>
             <pre class="text-start"><code>{{ phone() ?? 'null' }}</code></pre>
-            <p class="mb-1">Last <code>(phoneChange)</code> detail:</p>
+            <p class="mb-1">Last <code>(phonechange)</code> detail:</p>
             <pre class="text-start"><code>{{ lastDetail() | json }}</code></pre>
         </div>
     </div>
@@ -103,8 +103,8 @@
 
 <p>
     <code>bs-input-group</code> joins any mix of controls into one continuous
-    field — including components that keep their own shadow root, which Bootstrap's
-    own CSS cannot reach. The corners pair and the borders collapse either way.
+    field, including a whole phone input: its outer corners pair with the
+    neighbouring addon and the borders collapse.
 </p>
 
 <bs-grid>
@@ -123,10 +123,10 @@
 <h2 class="mt-4">Validation</h2>
 
 <p>
-    Tick <em>Required</em> above and blur the empty field. The message is rendered
-    <em>inside</em> the component's shadow root and referenced by
-    <code>aria-errormessage</code> from the real input — a message in your own
-    template could not be, because an IDREF does not cross a shadow boundary.
+    Tick <em>Required</em> above and blur the empty field. The message from
+    <code>errorMessages</code> is rendered under the field and referenced by
+    <code>aria-errormessage</code> and <code>aria-describedby</code> from the
+    number input, so a screen reader reads it with the field.
 </p>
 
 <bs-code-snippet [code]="snippetValidationTs" [language]="'html'"></bs-code-snippet>
@@ -139,3 +139,24 @@
     <li>In the number field: <kbd>Backspace</kbd>/<kbd>Delete</kbd> always remove a <em>digit</em>, never a space or bracket, so one keypress is never swallowed by the formatter.</li>
     <li>Pasting or typing <code>+44&nbsp;…</code> switches the country and strips the dial code.</li>
 </ul>
+
+<h2 class="mt-4">Angular forms</h2>
+<p>
+  Template-driven <code>[(ngModel)]</code> and reactive <code>[formControl]</code> both bind through the
+  component's <code>ControlValueAccessor</code>: the value, the disabled state, and touched when focus leaves.
+</p>
+<bs-grid>
+  <div bsRow>
+    <div [md]="6">
+      <h3 class="h5">Template-driven</h3>
+      <bs-phone-input [(ngModel)]="formsValue" #tdModel="ngModel" defaultCountry="be"></bs-phone-input>
+      <demo-form-state [control]="tdModel.control"></demo-form-state>
+    </div>
+    <div [md]="6">
+      <h3 class="h5">Reactive</h3>
+      <bs-phone-input [formControl]="formsControl" defaultCountry="be"></bs-phone-input>
+      <demo-form-state [control]="formsControl"></demo-form-state>
+    </div>
+  </div>
+</bs-grid>
+<bs-code-snippet [code]="snippetFormsHtml" [language]="'html'"></bs-code-snippet>

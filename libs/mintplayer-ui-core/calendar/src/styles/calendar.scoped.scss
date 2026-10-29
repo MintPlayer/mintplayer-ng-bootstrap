@@ -1,0 +1,141 @@
+// The month grid's stylesheet, shared by all four fronts and by the pickers
+// that render the same grid (PRD #437). Rescoped at build time: every compound
+// gains `[data-mps=calendar]`. Bootstrap's reboot and `.visually-hidden` are
+// global and reach the light DOM, so they are not restated here.
+
+$cell-size: 40px;
+
+// The wrapper: the bs-calendar / mp-calendar host, or a div in React and Vue.
+.mp-calendar {
+  display: inline-block;
+  box-sizing: border-box;
+  color: var(--bs-body-color);
+}
+
+.calendar-grid {
+  border-collapse: collapse;
+  border: 1px solid var(--bs-border-color);
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+  margin-bottom: 0;
+  width: auto;
+
+  td,
+  th {
+    width: $cell-size;
+    height: $cell-size;
+    text-align: center;
+    cursor: default;
+    padding: 0;
+  }
+
+  th {
+    background-color: var(--bs-tertiary-bg);
+    font-weight: bolder;
+  }
+
+  [role='columnheader'] {
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+
+  .calendar-week-number {
+    border-inline-end: 1px solid var(--bs-border-color);
+  }
+}
+
+.calendar-day-number {
+  white-space: nowrap;
+}
+
+// A day the user can choose. Before hydration no cell has a tabindex, and the
+// grid stays a plain, inert month.
+.calendar-day[tabindex]:not(.calendar-day-disabled) {
+  cursor: pointer;
+}
+
+.calendar-day-disabled {
+  color: var(--bs-secondary-color);
+}
+
+.calendar-day-selected {
+  background-color: var(--bs-primary);
+  color: var(--bs-white, #fff);
+}
+
+.calendar-day:focus {
+  outline: none;
+}
+
+.calendar-day:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
+// The toolbar above the table, a day cell high: an opaque background (it shows
+// through inside a dropdown otherwise), and the table's side borders continued
+// up. The table's top border draws the separator.
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  min-height: $cell-size;
+  padding: 0 0.25rem;
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  border-bottom: 0;
+}
+
+.calendar-month-label {
+  flex: 1 1 auto;
+  text-align: center;
+  font-weight: bolder;
+}
+
+// A day-cell-sized square; the chevron is a masked pseudo-element in the
+// button's own colour, mirrored in RTL so it points along the reading order.
+.calendar-chevron {
+  flex: 0 0 $cell-size;
+  width: $cell-size;
+  height: $cell-size;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    background-color: currentColor;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+}
+
+.calendar-chevron-next::before {
+  transform: scaleX(-1);
+}
+
+.calendar-chevron-previous:dir(rtl)::before {
+  transform: scaleX(-1);
+}
+
+.calendar-chevron-next:dir(rtl)::before {
+  transform: none;
+}

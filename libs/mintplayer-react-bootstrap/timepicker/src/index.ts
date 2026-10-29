@@ -1,2 +1,2 @@
-export { BsTimepicker } from './BsTimepicker';
-export { BsTimeList } from './BsTimeList';
+export * from './generated';
+export type { Hour12Mode, TimeListLabels, TimepickerLabels, TimeStep } from '@mintplayer/ui-core/timepicker';

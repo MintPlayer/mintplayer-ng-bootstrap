@@ -1,0 +1,343 @@
+// The carousel's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=carousel]`.
+//
+// The page ships Bootstrap's carousel partial globally (controls, icons,
+// indicators, the --bs-carousel-* tokens), so it is NOT imported here; this
+// sheet adds the deck model and undoes the partial's slide machinery
+// (`.carousel-item { display: none; float: left; margin-right: -100% }`).
+//
+// Every rule reaches its nodes through child combinators from the root or a
+// radio: a carousel nested in a slide must not match its outer deck's rules.
+//
+// Two tiers. Without `data-mp-hydrated` the radios and these rules are the
+// whole machine, transitions included. Once live the core animates the slides
+// in flight (`data-moving` + a transient `translate`), so the hydrated tier
+// has no transitions of its own.
+
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+
+// The stylesheet's `:checked` rules cover this many slides. Past it the live
+// deck still works (the core marks the active slide `data-active`); only the
+// no-JS tier stops at it.
+$max-slides: 30;
+
+// The controls and indicators sit over photographs, so they are WHITE IN BOTH
+// COLOUR MODES by design: the tokens are pinned to Bootstrap's light values so
+// a page-level dark swap cannot flip them. Set them on the carousel to change.
+.carousel {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100px;
+  max-width: 500px;
+  margin-inline: auto;
+  --bs-carousel-indicator-active-bg: #{$carousel-indicator-active-bg};
+  --bs-carousel-caption-color: #{$carousel-caption-color};
+  --bs-carousel-control-icon-filter: #{$carousel-control-icon-filter};
+  // Where a waiting slide parks in the no-JS slide tier.
+  --mp-carousel-before: -100% 0;
+  --mp-carousel-after: 100% 0;
+  // The measured heights are written on our own viewport; reset here so a
+  // nested carousel never inherits its parent's.
+  --mp-carousel-viewport-height: initial;
+  --mp-carousel-slide-height: initial;
+}
+
+.carousel[data-orientation="vertical"] {
+  --mp-carousel-before: 0 -100%;
+  --mp-carousel-after: 0 100%;
+}
+
+.carousel > .carousel-inner {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  // Published by the core from a ResizeObserver: the current slide's height
+  // (horizontal, fade) or the tallest (vertical). Auto until measured, and
+  // with JS off, where the grid stack makes the deck its tallest slide.
+  height: var(--mp-carousel-viewport-height, auto);
+}
+
+.carousel > .carousel-inner::after {
+  display: none;
+}
+
+.carousel > .carousel-inner:focus-visible {
+  outline: 2px solid var(--bs-primary, #0d6efd);
+  outline-offset: 2px;
+}
+
+// Grid-stacked: every slide sits in one cell. With JS off the deck is as tall
+// as its tallest slide; with JS the viewport clips it to the measured height.
+.carousel > .carousel-inner > .carousel-track {
+  display: grid;
+  // Pull-to-refresh defence: declare the axis we own so mobile APZ leaves the
+  // perpendicular gesture to the page at touchstart.
+  touch-action: pan-y;
+}
+
+.carousel[data-orientation="vertical"] > .carousel-inner > .carousel-track {
+  touch-action: pan-x;
+}
+
+.carousel > .carousel-inner > .carousel-track > .carousel-item {
+  grid-area: 1 / 1;
+  display: flex;
+  // Horizontal slide mode keeps slides flush to the top: a sliding top edge
+  // that jumps per slide is what the eye tracks. Fade and vertical centre.
+  align-items: flex-start;
+  justify-content: center;
+  min-width: 0;
+  float: none;
+  margin-right: 0;
+  backface-visibility: visible;
+  transition: none;
+  translate: none;
+  visibility: hidden;
+}
+
+.carousel[data-animation="fade"] > .carousel-inner > .carousel-track > .carousel-item,
+.carousel[data-orientation="vertical"] > .carousel-inner > .carousel-track > .carousel-item {
+  align-items: center;
+}
+
+// Shown: the active slide past the `:checked` range, and both slides in flight.
+.carousel > .carousel-inner > .carousel-track > .carousel-item[data-active],
+.carousel > .carousel-inner > .carousel-track > .carousel-item[data-moving] {
+  visibility: visible;
+}
+
+.carousel > .carousel-inner > .carousel-track > .carousel-item[data-active] {
+  z-index: 1;
+}
+
+// JS tier: a slide is as tall as its own content (not stretched to the stack),
+// pinned to the top of the viewport that is clipped to its height. Vertical
+// cells all take the tallest slide's height: it is also the travel distance.
+.carousel[data-mp-hydrated] > .carousel-inner > .carousel-track > .carousel-item {
+  align-self: start;
+}
+
+.carousel[data-mp-hydrated][data-orientation="vertical"] > .carousel-inner > .carousel-track > .carousel-item {
+  height: var(--mp-carousel-slide-height, auto);
+}
+
+// The slide's content is the consumer's: anchored on our stamped item, final form.
+/*! @mps-global */
+.carousel-item[data-mps="carousel"] > * {
+  width: 100%;
+}
+
+/*! @mps-global */
+.carousel-item[data-mps="carousel"] > img {
+  height: auto;
+}
+
+// ---------------------------------------------------------------------------
+// The no-JS tier's motion. Hiding waits for the ride (visibility 0s 0.5s) so
+// the outgoing slide stays visible in motion; the checked rule reveals at 0s.
+// ---------------------------------------------------------------------------
+
+.carousel:not([data-mp-hydrated])[data-animation="slide"] > .carousel-inner > .carousel-track > .carousel-item {
+  translate: var(--mp-carousel-before);
+  transition: translate 0.5s ease, visibility 0s 0.5s;
+}
+
+.carousel:not([data-mp-hydrated])[data-animation="fade"] > .carousel-inner > .carousel-track > .carousel-item {
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out, visibility 0s 0.4s;
+}
+
+// ---------------------------------------------------------------------------
+// Controls: one prev/next pair per slide; the checked slide's pair shows.
+// ---------------------------------------------------------------------------
+
+.carousel > .carousel-controls > .carousel-control-pair {
+  display: none;
+}
+
+.carousel > .carousel-controls > .carousel-control-pair > .carousel-control-prev,
+.carousel > .carousel-controls > .carousel-control-pair > .carousel-control-next {
+  cursor: pointer;
+  z-index: 10;
+  border: 0;
+  background: transparent;
+}
+
+.carousel > .carousel-controls > .carousel-control-pair > label:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+  opacity: 0.9;
+}
+
+.carousel[data-orientation="vertical"] > .carousel-controls > .carousel-control-pair {
+  > .carousel-control-prev,
+  > .carousel-control-next {
+    width: 100%;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: auto;
+    height: 2.5rem;
+    justify-content: center;
+    align-items: center;
+  }
+
+  > .carousel-control-next {
+    top: auto;
+    bottom: 0;
+  }
+
+  > label > .carousel-control-prev-icon,
+  > label > .carousel-control-next-icon {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    padding: 1.5rem;
+    background-size: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    transform: rotate(90deg);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Indicators
+// ---------------------------------------------------------------------------
+
+.carousel > .carousel-indicators {
+  z-index: 10;
+}
+
+.carousel > .carousel-indicators > [data-bs-target] {
+  cursor: pointer;
+}
+
+.carousel[data-orientation="vertical"] > .carousel-indicators {
+  left: 0;
+  top: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 0 0.5rem;
+  gap: 0.5rem;
+
+  > [data-bs-target] {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// The checked slide: its item, indicator and control pair (both tiers).
+// ---------------------------------------------------------------------------
+
+@for $i from 1 through $max-slides {
+  .car-radio:nth-of-type(#{$i}):checked ~ .carousel-inner > .carousel-track > .carousel-item:nth-child(#{$i}) {
+    visibility: visible;
+    z-index: 1;
+    translate: none;
+    opacity: 1;
+    transition-delay: 0s;
+  }
+
+  .carousel:not([data-mp-hydrated])[data-animation="slide"] > .car-radio:nth-of-type(#{$i}):checked ~ .carousel-inner > .carousel-track > .carousel-item:nth-child(#{$i}) ~ .carousel-item {
+    translate: var(--mp-carousel-after);
+  }
+
+  .car-radio:nth-of-type(#{$i}):checked ~ .carousel-indicators > [data-bs-target]:nth-child(#{$i}) {
+    opacity: 1;
+  }
+
+  // Focus lives on the visually hidden radio; its ring is painted on the indicator.
+  .car-radio:nth-of-type(#{$i}):focus-visible ~ .carousel-indicators > [data-bs-target]:nth-child(#{$i}) {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  .car-radio:nth-of-type(#{$i}):checked ~ .carousel-controls > .carousel-control-pair:nth-child(#{$i}) {
+    display: contents;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Play / pause (APG: an auto-rotating carousel exposes a pause control).
+// Clear of the prev control's hit zone; a translucent dark overlay in both
+// colour modes, like Bootstrap's own controls.
+// ---------------------------------------------------------------------------
+
+.carousel > .carousel-play-pause {
+  position: absolute;
+  bottom: 3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  margin: 0;
+}
+
+.carousel[data-orientation="vertical"] > .carousel-play-pause {
+  bottom: auto;
+  top: 0.5rem;
+  left: auto;
+  right: 0.5rem;
+  transform: none;
+}
+
+.carousel-play-pause-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    background-color: rgba(0, 0, 0, 0.75);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+}
+
+.carousel-play-pause-icon {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  background-repeat: no-repeat;
+  background-position: 50%;
+  background-size: 100% 100%;
+}
+
+.carousel-play-pause-paused > .carousel-play-pause-icon {
+  // A right-pointing triangle: paused, press to play.
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Cpath d='M3 1.5v13a.5.5 0 0 0 .77.42l11-6.5a.5.5 0 0 0 0-.84l-11-6.5A.5.5 0 0 0 3 1.5z'/%3E%3C/svg%3E");
+}
+
+.carousel-play-pause-playing > .carousel-play-pause-icon {
+  // Two bars: playing, press to pause.
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3E%3Cpath d='M5 2h2v12H5zM9 2h2v12H9z'/%3E%3C/svg%3E");
+}
+
+// Reduced motion: every CSS transition collapses (the live tier's own motion
+// is already dropped to 0ms by the index machine).
+@media (prefers-reduced-motion: reduce) {
+  .carousel > .carousel-inner > .carousel-track > .carousel-item,
+  .carousel-play-pause-btn {
+    transition: none !important;
+  }
+}

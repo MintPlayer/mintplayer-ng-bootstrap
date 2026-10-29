@@ -1,0 +1,83 @@
+// The select's stylesheet, shared by the fronts (PRD #437 wave B).
+//
+// `.form-select` itself comes from the page's Bootstrap baseline. This sheet
+// holds the rich-options tier: customizable select (`appearance: base-select`),
+// so an option can carry markup (a flag next to a country name) while the
+// element keeps native <select> semantics.
+//
+// Every rich rule is DOUBLY gated, and both gates are load-bearing (spike S2,
+// measured in Chromium 148 / Firefox 150 / WebKit 26.4, docs/prd/phone-input-wc.md §9.4):
+//
+//  1. @supports (appearance: base-select): feature detection, never a browser
+//     list. Ungated, the reconciliation below DELETES the dropdown arrow in an
+//     engine with no ::picker-icon.
+//  2. :has(> button): the template renders that button only while a consumer renders the option
+//     slot on a dropdown (not multiple, no number-visible, which base-select does
+//     not apply to). Without it every select in a supporting engine would change
+//     rendering mode, and width: a native select sizes to its widest option, a
+//     base-select button to the SELECTED content.
+//
+// The options, the button and <selectedcontent> carry no scope, so every rule is
+// anchored on the stamped select and shipped verbatim (@mps-global).
+@import "node_modules/bootstrap/scss/functions";
+@import "node_modules/bootstrap/scss/variables";
+@import "node_modules/bootstrap/scss/variables-dark";
+@import "node_modules/bootstrap/scss/mixins";
+
+// The wrapper: the bs-select / mp-select host, or a div in React and Vue.
+.mp-select {
+  display: block;
+}
+
+// Corner pairing inside an input group. The select sits one level below the
+// group's child (the wrapper), so Bootstrap's `.input-group > .form-select`
+// misses it; the group hands the pairing down through the inherited
+// --mp-group-radius-* contract instead (ui-core/input-group). Inert on its own:
+// every longhand falls back to the size's own radius. Four corners, not two, so a
+// stacked group can round the top and square the bottom of one side.
+.form-select {
+  --mp-box-radius: var(--bs-border-radius);
+  border-start-start-radius: var(--mp-group-radius-top-start, var(--mp-group-radius-start, var(--mp-box-radius)));
+  border-start-end-radius: var(--mp-group-radius-top-end, var(--mp-group-radius-end, var(--mp-box-radius)));
+  border-end-start-radius: var(--mp-group-radius-bottom-start, var(--mp-group-radius-start, var(--mp-box-radius)));
+  border-end-end-radius: var(--mp-group-radius-bottom-end, var(--mp-group-radius-end, var(--mp-box-radius)));
+}
+
+.form-select-sm {
+  --mp-box-radius: var(--bs-border-radius-sm);
+}
+
+.form-select-lg {
+  --mp-box-radius: var(--bs-border-radius-lg);
+}
+
+// A hosted select takes the group's size, as a direct child would from Bootstrap.
+/*! @mps-global */
+.input-group-sm > * > select.form-select[data-mps=select] {
+  --mp-box-radius: var(--bs-border-radius-sm);
+  padding-top: $form-select-padding-y-sm;
+  padding-bottom: $form-select-padding-y-sm;
+  padding-left: $form-select-padding-x-sm;
+  font-size: $form-select-font-size-sm;
+}
+
+/*! @mps-global */
+.input-group-lg > * > select.form-select[data-mps=select] {
+  --mp-box-radius: var(--bs-border-radius-lg);
+  padding-top: $form-select-padding-y-lg;
+  padding-bottom: $form-select-padding-y-lg;
+  padding-left: $form-select-padding-x-lg;
+  font-size: $form-select-font-size-lg;
+}
+
+@import 'rich-select';
+
+@include rich-select('select.form-select[data-mps=select]');
+
+// The fallback face is the option's text, sized to the widest option; a capped
+// select (the phone input's country picker) reads "Bel…" instead of clipping.
+@supports not (appearance: base-select) {
+  select.form-select {
+    text-overflow: ellipsis;
+  }
+}

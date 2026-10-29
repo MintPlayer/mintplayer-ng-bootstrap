@@ -32,8 +32,11 @@ export function typeaheadSuite(test: Test, expect: Expect, { path }: TypeaheadSu
   test.describe('typeahead', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
-      // Hydrated: the input reacts once the front's machine is attached.
-      await expect(combobox(page, 'Artist, highlighted')).toBeVisible();
+      // Hydrated: the input reacts only once the front's machine is attached. The
+      // server already renders it visible, so wait on the readiness mark.
+      const hydrated = (name: string) => page.locator('.mp-typeahead[data-mp-hydrated]').filter({ has: combobox(page, name) });
+      await expect(hydrated('Artist')).toHaveCount(1);
+      await expect(hydrated('Artist, highlighted')).toHaveCount(1);
     });
 
     test('typing shows suggestions, with the custom row and the combobox state', async ({ page }) => {
@@ -68,6 +71,18 @@ export function typeaheadSuite(test: Test, expect: Expect, { path }: TypeaheadSu
       await input.press('Escape');
       await expect(input).toHaveAttribute('aria-expanded', 'false');
       await expect(input).toBeFocused();
+    });
+
+    // PRD #437 C1: component sheets live in @layer mp.components and Bootstrap in
+    // mp.bootstrap, so an UNLAYERED consumer rule wins even at lower specificity
+    // than the scoped one (.mp-typeahead[data-mps] .dropdown-item[data-mps]).
+    test('an unlayered consumer rule overrides the component and baseline layers', async ({ page }) => {
+      await page.addStyleTag({ content: '.dropdown-item { white-space: pre; padding-left: 7px; }' });
+      const input = combobox(page, 'Artist, highlighted');
+      await input.fill('mi');
+      const option = (await listboxOf(input)).getByRole('option').first();
+      await expect(option).toHaveCSS('white-space', 'pre'); // beats the component layer
+      await expect(option).toHaveCSS('padding-left', '7px'); // beats the Bootstrap layer
     });
 
     test('a superseded slow request is aborted and only the newest answer shows', async ({ page }) => {

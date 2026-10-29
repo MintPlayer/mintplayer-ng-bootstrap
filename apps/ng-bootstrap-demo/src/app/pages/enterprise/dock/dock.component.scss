@@ -47,3 +47,10 @@
   max-height: 16rem;
   overflow: auto;
 }
+
+.dock-demo__layout-json {
+  font-family: var(--bs-font-monospace);
+  padding: 0.5rem;
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.375rem;
+}

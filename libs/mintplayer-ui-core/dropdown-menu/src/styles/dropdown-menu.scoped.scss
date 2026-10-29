@@ -1,0 +1,61 @@
+// The dropdown menu's stylesheet, shared by the fronts (PRD #437 wave B). The
+// page's Bootstrap supplies `.dropdown-menu` (every --bs-dropdown-* property,
+// its dark-theme override), `.dropdown-item`, `.dropdown-divider` and
+// `.dropdown-header`; these rules only adapt them. Ported from the former
+// mp-dropdown-menu shadow sheet, minus everything the boundary used to block.
+
+// No trigger or positioning of its own: the menu flows in place, always shown,
+// and scrolls when the front caps its height. Whoever positions it (the navbar
+// dropdown, [bsDropdownMenu]'s overlay) restates position in its own sheet.
+
+// The scope of the final-form selectors below; a group that includes this sheet
+// (S15) sets its own, since its templates stamp theirs.
+$scope: dropdown-menu !default;
+.dropdown-menu {
+  position: static;
+  display: block;
+  max-height: var(--mp-dropdown-max-height, none);
+  overflow-y: auto;
+}
+
+// An item that wraps its own link or button (a router link, a consumer button)
+// is consumer DOM and carries no scope, so the rule is anchored on the stamped
+// menu and shipped verbatim. The control fills the padded item box and takes
+// its colour, so the whole row is the hit target, like a bare Bootstrap item.
+/*! @mps-global */
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item > a,
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item > button {
+  display: block;
+  width: auto;
+  margin: calc(-1 * var(--bs-dropdown-item-padding-y)) calc(-1 * var(--bs-dropdown-item-padding-x));
+  padding: var(--bs-dropdown-item-padding-y) var(--bs-dropdown-item-padding-x);
+  color: inherit;
+  text-align: inherit;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  font: inherit;
+}
+
+// The active route: routerLinkActive (and its React/Vue equivalents) classes the
+// ANCHOR, not the item. The negative-margin fill above makes it paint the row.
+/*! @mps-global */
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item > a.active,
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item > button.active {
+  color: var(--bs-dropdown-link-active-color);
+  background-color: var(--bs-dropdown-link-active-bg);
+}
+
+// Keyboard focus lands on the item's control (it carries the roving tabindex),
+// so mirror Bootstrap's hover on the item, as its own :focus rule would.
+/*! @mps-global */
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item:focus-within {
+  color: var(--bs-dropdown-link-hover-color);
+  background-color: var(--bs-dropdown-link-hover-bg);
+}
+
+/*! @mps-global */
+.dropdown-menu[data-mps=#{$scope}] .dropdown-item > :focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, rgba(13, 110, 253, 0.25));
+  outline-offset: -2px;
+}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { BsDatatable } from '@mintplayer/vue-bootstrap/datatable';
+import { BsDatatable, cellText } from '@mintplayer/vue-bootstrap/datatable';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type {
   DatatableColumnDef,
@@ -11,7 +11,7 @@ import type {
   DistinctValue,
   FilterChangeDetail,
   FilterOperator,
-} from '@mintplayer/web-components/datatable';
+} from '@mintplayer/vue-bootstrap/datatable';
 
 // Dev: /api is proxied to localhost:5000 by vite.config; prod hits the API
 // subdomain (CORS-allowed in apps/api/Program.cs).
@@ -41,38 +41,31 @@ const SIMPLE_SOURCE = `<BsDatatable :columns="COLUMNS" :data="ARTISTS" />`;
 
 // Column resizing: the actions column has an icon-only header, so `label`
 // names it in the generated strings, and `resizable: false` drops its handle.
-function actionsHeader(): Node {
-  const glyph = document.createElement('span');
-  glyph.setAttribute('aria-hidden', 'true');
-  glyph.textContent = '⋯';
-  return glyph;
-}
-
-function detailsButton(row: unknown): Node {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'btn btn-sm btn-outline-secondary';
-  button.textContent = 'Details';
-  button.setAttribute('aria-label', `Details for ${(row as Artist).name}`);
-  return button;
-}
-
 const RESIZE_COLUMNS: DatatableColumnDef[] = [
   { name: 'name',    label: 'Name' },
   { name: 'genre',   label: 'Genre' },
-  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
-    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false },
 ];
 
 const RESIZE_SOURCE = `const RESIZE_COLUMNS: DatatableColumnDef[] = [
   { name: 'name',  label: 'Name' },
   { name: 'genre', label: 'Genre' },
   // Icon-only header: label names it; resizable: false drops its handle.
-  { name: 'actions', label: 'Actions', sortable: false, resizable: false,
-    headerRenderer: actionsHeader, cellRenderer: detailsButton },
+  { name: 'actions', label: 'Actions', sortable: false, resizable: false },
 ];
 
-<BsDatatable :columns="RESIZE_COLUMNS" :data="ARTISTS" />`;
+<!-- The header and cell slots render every column; the others keep their text. -->
+<BsDatatable :columns="RESIZE_COLUMNS" :data="ARTISTS">
+  <template #header="{ column }">
+    <span v-if="column.name === 'actions'" aria-hidden="true">⋯</span>
+    <template v-else>{{ column.label }}</template>
+  </template>
+  <template #cell="{ row, column, rowIndex }">
+    <button v-if="column.name === 'actions'" type="button" class="btn btn-sm btn-outline-secondary"
+      :aria-label="'Details for ' + row.name">Details</button>
+    <template v-else>{{ cellText(row, column, rowIndex) }}</template>
+  </template>
+</BsDatatable>`;
 
 // Enough rows to overflow a tile-sized parent.
 const FILL_ROWS: Artist[] = Array.from({ length: 40 }, (_, i) => ({
@@ -85,8 +78,9 @@ const FILL_SOURCE = `<!-- The parent needs a definite height. -->
   <BsDatatable fill pagination :perPage="20" :columns="COLUMNS" :data="rows" />
 </div>`;
 
-// Enough rows that virtual scroll has something to window.
-const FILL_VIRTUAL_ROWS: Artist[] = Array.from({ length: 2000 }, (_, i) => ({
+// Enough rows that virtual scroll has something to window: 10k is the S4
+// measurement (tools/e2e-shared/virtual-window-suites.ts).
+const FILL_VIRTUAL_ROWS: Artist[] = Array.from({ length: 10_000 }, (_, i) => ({
   ...ARTISTS[i % ARTISTS.length],
   id: i + 1,
 }));
@@ -166,40 +160,16 @@ function onFilterChange(detail: FilterChangeDetail) {
   }
 }
 
-// An override panel, for the case neither built-in question fits.
-// `filterRenderer` returns a DOM Node — the same contract all three frameworks
-// see — and it must return a STABLE one: the element mounts it once per open,
-// so repainting it is this function's job.
-//
-// The classes below are styled in a NON-scoped <style> block on purpose: Vue's
-// `scoped` works by stamping `data-v-*` onto nodes it renders from the
-// template, and this node is built imperatively, so a scoped rule would match
-// nothing. Bootstrap's `.form-control` would not help either — it is only
-// styled inside `bs-*` components in this workspace.
-let genrePanel: HTMLElement | null = null;
-function genrePanelNode(): Node {
-  if (genrePanel) return genrePanel;
-  const wrap = document.createElement('div');
-  wrap.className = 'demo-filter-panel';
-  const lbl = document.createElement('label');
-  lbl.className = 'demo-filter-label';
-  lbl.textContent = 'Genre starts with';
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'demo-filter-input';
-  input.id = lbl.htmlFor = 'vue-filter-genre';
-  input.addEventListener('input', () => {
-    genreStartsWith.value = input.value;
-  });
-  wrap.append(lbl, input);
-  genrePanel = wrap;
-  return wrap;
-}
+// An override panel, for the case neither built-in question fits: the column
+// sets `filterMode: 'custom'` and the table's `filter` slot renders it, as
+// ordinary template markup (see the template). The other columns keep their
+// built-in panels. Bootstrap's `.form-control` is only styled inside `bs-*`
+// components in this workspace, so the panel's classes are the view's own.
 
 const filterColumns = computed<DatatableColumnDef[]>(() =>
   COLUMNS.map((col) => {
     if (!showFilters.value) return col;
-    // No filterRenderer and no filterMode: the built-in value list renders.
+    // No filterMode: the built-in value list renders.
     // That is the whole opt-in.
     if (col.name === 'name') {
       return {
@@ -228,19 +198,19 @@ const filterColumns = computed<DatatableColumnDef[]>(() =>
         ...col,
         filterable: true,
         filterActive: genreStartsWith.value !== '',
+        filterMode: 'custom' as const,
         filterSummary: genreStartsWith.value || undefined,
-        filterRenderer: genrePanelNode,
       };
     }
     return col;
   }),
 );
 
-const FILTER_SOURCE = `<!-- filterable is the whole opt-in: with no filterRenderer the
+const FILTER_SOURCE = `<!-- filterable is the whole opt-in: with no filterMode the
      built-in panel renders (search, include/exclude, a checkbox list of
      the column's distinct values, clear). No Vue code behind it. -->
 <BsDatatable :columns="filterColumns" :data="filteredArtists"
-  @filterChange="onFilterChange" virtualScroll :itemSize="40" />
+  @filterchange="onFilterChange" virtualScroll :itemSize="40" />
 
 <script setup lang="ts">
 const nameSelection = ref<DistinctValue[]>([]);
@@ -302,10 +272,10 @@ interface Order {
 const MATCH_ALL = { kind: 'group', id: '00000000-0000-4000-8000-000000000000', logic: 'and', children: [] };
 
 const ORDER_COLUMNS: DatatableColumnDef[] = [
-  { name: 'id',        label: 'Order',  cellRenderer: (r) => `#${(r as Order)?.id}` },
-  { name: 'total',     label: 'Total',  cellRenderer: (r) => `€${((r as Order)?.total ?? 0).toFixed(2)}` },
-  { name: 'status',    label: 'Status', cellRenderer: (r) => (r as Order)?.status ?? '' },
-  { name: 'orderDate', label: 'Date',   cellRenderer: (r) => {
+  { name: 'id',        label: 'Order',  format: (r) => `#${(r as Order)?.id}` },
+  { name: 'total',     label: 'Total',  format: (r) => `€${((r as Order)?.total ?? 0).toFixed(2)}` },
+  { name: 'status',    label: 'Status' },
+  { name: 'orderDate', label: 'Date',   format: (r) => {
     const d = (r as Order)?.orderDate;
     return d ? new Date(d).toLocaleDateString() : '';
   } },
@@ -361,7 +331,7 @@ const SELECTION_SOURCE = `<BsDatatable
   :rowKey="(row) => String(row.id)"
   :rowLabel="(row) => 'order #' + row.id"
   v-model:selectedIds="selectedIds"
-  @rowClick="(detail) => (opened = detail.row)"
+  @rowclick="(detail) => (opened = detail.row)"
 />`;
 
 // ─── Tree-mode demo ──────────────────────────────────────────────────────
@@ -383,9 +353,9 @@ interface PagedResult<T> {
 }
 
 const TREE_COLUMNS: DatatableColumnDef[] = [
-  { name: 'name',      label: 'Name',      sortable: true, cellRenderer: (r) => (r as TreeItem)?.name ?? '' },
-  { name: 'code',      label: 'Code',      sortable: true, cellRenderer: (r) => (r as TreeItem)?.code ?? '' },
-  { name: 'headcount', label: 'Headcount', sortable: true, cellRenderer: (r) => String((r as TreeItem)?.headcount ?? '') },
+  { name: 'name',      label: 'Name',      sortable: true },
+  { name: 'code',      label: 'Code',      sortable: true },
+  { name: 'headcount', label: 'Headcount', sortable: true },
 ];
 
 async function fetchTreeItems(parentId: number | null, page: number, perPage: number): Promise<PagedResult<TreeItem>> {
@@ -416,7 +386,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
   :virtualScroll="true" :itemSize="40"
   :tree="true" idKey="id" childCountKey="childCount"
   selectionMode="multiple" selectionStrategy="cascading"
-  @selectionChange="onSelectionChange"
+  @selectionchanged="onSelectionChange"
 />`;
 </script>
 
@@ -462,7 +432,17 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         <li><kbd>&larr;</kbd> / <kbd>&rarr;</kbd> make the column 10&nbsp;px narrower or wider.</li>
         <li><kbd>Enter</kbd> opens the resize options: narrower, wider, fit to content, reset. <kbd>Esc</kbd> closes them.</li>
       </ul>
-      <BsDatatable :columns="RESIZE_COLUMNS" :data="ARTISTS" />
+      <BsDatatable :columns="RESIZE_COLUMNS" :data="ARTISTS">
+        <template #header="{ column }">
+          <span v-if="column.name === 'actions'" aria-hidden="true">⋯</span>
+          <template v-else>{{ column.label }}</template>
+        </template>
+        <template #cell="{ row, column, rowIndex }">
+          <button v-if="column.name === 'actions'" type="button" class="btn btn-sm btn-outline-secondary"
+            :aria-label="'Details for ' + (row as Artist).name">Details</button>
+          <template v-else>{{ cellText(row, column, rowIndex) }}</template>
+        </template>
+      </BsDatatable>
       <BsCodeSnippet :code="RESIZE_SOURCE" language="ts" />
     </section>
 
@@ -483,7 +463,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         parent's height replaces the default virtual viewport, and only the
         rows in view are rendered.
       </p>
-      <div class="fill-parent border rounded">
+      <div class="fill-parent border rounded" data-demo="fill-virtual">
         <BsDatatable fill virtualScroll :itemSize="40" :columns="COLUMNS" :data="FILL_VIRTUAL_ROWS" />
       </div>
       <BsCodeSnippet :code="FILL_VIRTUAL_SOURCE" language="html" />
@@ -544,7 +524,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :rowKey="orderRowKey"
         :rowLabel="orderRowLabel"
         v-model:selectedIds="selectedOrderIds"
-        @rowClick="onOrderRowClick"
+        @rowclick="onOrderRowClick"
       />
 
       <p class="text-body-secondary">
@@ -568,7 +548,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         The same single <code>fetch</code> callback, branching on
         <code>req.parentId</code> for roots vs. children. The WC paginates roots
         lazily and loads children on expand; selected row objects arrive on
-        <code>@selectionChange</code> as <code>detail.selectedRows</code>.
+        <code>@selectionChanged</code> as <code>detail.selectedRows</code>.
       </p>
 
       <BsDatatable
@@ -583,7 +563,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :rowKey="rowKey"
         selectionMode="multiple"
         selectionStrategy="cascading"
-        @selectionChange="onSelectionChange"
+        @selectionchanged="onSelectionChange"
       />
       <small v-if="selectedRows.length" class="text-body-secondary">
         Selected {{ selectedRows.length }} item(s).
@@ -630,19 +610,15 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         guess would be wrong about half the time.
       </p>
       <p>
-        When neither built-in question fits, give the column a
-        <code>filterRenderer</code> &mdash; <em>Genre</em> does. It returns a DOM
-        <code>Node</code> (the same contract all three frameworks see) and must
-        return a <strong>stable</strong> one: the element mounts it once per
-        open, so repainting it is the renderer's job.
-        <strong>That markup is yours, so you style it</strong> &mdash; and in Vue
-        it needs a <em>non-scoped</em> rule, because an imperatively built node
-        never gets the <code>data-v-*</code> attribute <code>scoped</code>
-        matches on.
+        When neither built-in question fits, set <code>filterMode: 'custom'</code>
+        on the column and render the panel in the table's <code>#filter</code>
+        slot &mdash; <em>Genre</em> does. The slot receives the column and a
+        context with the loaded values and the search, apply and clear commands.
+        <strong>That markup is yours, so you style it.</strong>
       </p>
       <p>
-        The panel opens in an overlay at the document root, so it is not clipped
-        by the scroll container and not hidden behind the sticky header &mdash;
+        The panel is a native popover in the top layer, so it is not clipped by
+        the scroll container and not hidden behind the sticky header &mdash;
         this demo runs in virtual-scroll mode, where both would otherwise
         happen.
       </p>
@@ -673,8 +649,15 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         virtualScroll
         :itemSize="40"
         :rowKey="artistRowKey"
-        @filterChange="onFilterChange"
-      />
+        @filterchange="onFilterChange"
+      >
+        <template #filter="{ column }">
+          <div v-if="column.name === 'genre'" class="demo-filter-panel">
+            <label class="demo-filter-label" for="vue-filter-genre">Genre starts with</label>
+            <input id="vue-filter-genre" v-model="genreStartsWith" type="text" class="demo-filter-input" />
+          </div>
+        </template>
+      </BsDatatable>
       <small class="text-body-secondary">
         Showing {{ filteredArtists.length }} of {{ ARTISTS.length }} artists.
       </small>

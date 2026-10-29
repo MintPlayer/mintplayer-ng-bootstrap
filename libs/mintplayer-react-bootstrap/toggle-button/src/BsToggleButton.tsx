@@ -1,16 +1,13 @@
-import * as React from 'react';
-import { createComponent, type EventName } from '@lit/react';
-import { MpToggleButton, type ToggleChangeEventDetail } from '@mintplayer/web-components/toggle-button';
+import { forwardRef } from 'react';
+import { BsCheckbox, type BsCheckboxProps } from '../../checkbox/src/BsCheckbox';
+
+export type BsToggleButtonProps = Omit<BsCheckboxProps, 'type' | 'indeterminate'>;
+
 /**
- * React wrapper for `<mp-toggle-button>`. Side-effect-registers the WC via
- * the import above. The WC fires a native-style `change` CustomEvent with
- * `{ checked, value }` detail; surface it as a typed `onChange` React prop.
+ * A single Bootstrap on/off button: `<BsCheckbox type="toggle_button">`, an
+ * `input.btn-check` + `label.btn`, a native checkbox that keeps its role
+ * (#437). Controlled with `checked` + `onCheckedChange`; the ref is the input.
  */
-export const BsToggleButton = createComponent({
-  react: React,
-  tagName: 'mp-toggle-button',
-  elementClass: MpToggleButton,
-  events: {
-    onChange: 'change' as EventName<CustomEvent<ToggleChangeEventDetail>>,
-  },
+export const BsToggleButton = forwardRef<HTMLInputElement, BsToggleButtonProps>(function BsToggleButton(props, ref) {
+  return <BsCheckbox {...props} ref={ref} type="toggle_button" />;
 });

@@ -111,7 +111,7 @@ describe('mp-accordion naming channel', () => {
     await settle(el);
 
     expect([...shadow(el).querySelectorAll('[aria-labelledby]')].every(
-      (node) => node.getAttribute('aria-labelledby')!.startsWith('h'),
+      (node) => node.getAttribute('aria-labelledby')!.startsWith('acc-h'),
     )).toBe(true);
     expect(shadow(el).querySelector('[aria-describedby]')).toBeNull();
   });
@@ -211,9 +211,9 @@ describe('mp-accordion IDREF integrity', () => {
     await settle(el);
 
     expect(summaries(el)).toHaveLength(3);
-    expect(summaries(el)[2].id).toBe('h2');
-    expect(summaries(el)[2].getAttribute('aria-controls')).toBe('c2');
-    expect(controlledRegion(el, 2)?.getAttribute('aria-labelledby')).toBe('h2');
+    expect(summaries(el)[2].id).toBe('acc-h2');
+    expect(summaries(el)[2].getAttribute('aria-controls')).toBe('acc-c2');
+    expect(controlledRegion(el, 2)?.getAttribute('aria-labelledby')).toBe('acc-h2');
   });
 
   it('leaves no dangling aria-controls after a tab is removed', async () => {
@@ -226,10 +226,10 @@ describe('mp-accordion IDREF integrity', () => {
 
     expect(summaries(el)).toHaveLength(2);
     expect(summaries(el).map((_, index) => controlledRegion(el, index) !== null)).toEqual([true, true]);
-    expect(shadow(el).querySelector('#c2')).toBeNull();
+    expect(shadow(el).querySelector('#acc-c2')).toBeNull();
   });
 
-  it('resolves the reused h0 / c0 IDREFs inside each accordion\'s OWN shadow root when nested', async () => {
+  it('resolves the reused acc-h0 / acc-c0 IDREFs inside each accordion\'s OWN shadow root when nested', async () => {
     const outer = build({ tabs: ['Outer'], active: [0] });
     const inner = build({ tabs: ['Inner'], active: [0] });
     const innerHost = document.createElement('bs-accordion');
@@ -241,23 +241,11 @@ describe('mp-accordion IDREF integrity', () => {
 
     // Same strings in both roots; an IDREF is scoped to its own tree, so each
     // summary must land on the region of its own accordion.
-    expect(summaries(outer)[0].getAttribute('aria-controls')).toBe('c0');
-    expect(summaries(inner)[0].getAttribute('aria-controls')).toBe('c0');
+    expect(summaries(outer)[0].getAttribute('aria-controls')).toBe('acc-c0');
+    expect(summaries(inner)[0].getAttribute('aria-controls')).toBe('acc-c0');
     expect(controlledRegion(outer, 0)!.getRootNode()).toBe(shadow(outer));
     expect(controlledRegion(inner, 0)!.getRootNode()).toBe(shadow(inner));
     expect(controlledRegion(outer, 0)).not.toBe(controlledRegion(inner, 0));
   });
 
-  it('wires the same region semantics on tab-count-only rows (the SSR chrome shape)', async () => {
-    const el = document.createElement('mp-accordion') as MpAccordion;
-    el.setAttribute('tab-count', '2');
-    document.body.appendChild(el);
-    await flush(el);
-
-    expect(summaries(el).map((summary) => summary.getAttribute('aria-controls'))).toEqual(['c0', 'c1']);
-    expect(summaries(el).map((_, index) => controlledRegion(el, index)?.getAttribute('aria-labelledby')))
-      .toEqual(['h0', 'h1']);
-    // No light DOM means no marker can be disabled — so no row may claim it is.
-    expect(summaries(el).some((summary) => summary.hasAttribute('aria-disabled'))).toBe(false);
-  });
 });

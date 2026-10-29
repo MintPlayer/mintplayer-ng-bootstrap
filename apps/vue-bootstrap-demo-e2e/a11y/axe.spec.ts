@@ -18,7 +18,7 @@ axeAuditSuite(test, expect, [
     // Open the picker: the closed control and the 244-option listbox are
     // different DOM, and only the second exercises the rich-option markup.
     interact: async (page) => {
-      await page.locator('mp-phone-input').first().click();
+      await page.locator('.phone-input select').first().click();
     },
   },
   { path: '/basic/forms/select' },
@@ -28,13 +28,13 @@ axeAuditSuite(test, expect, [
   {
     path: '/basic/radio',
     interact: async (page) => {
-      await page.locator('mp-radio-group[name="color"] input[type="radio"]').first().click();
+      await page.locator('input[type="radio"][name="color"]').first().click();
     },
   },
   {
     path: '/basic/tab-control',
     interact: async (page) => {
-      await page.locator('mp-tab-control').first().locator('[role="tab"]').nth(1).click();
+      await page.locator('.tab-control[data-mps="tab-control"]').first().locator('[role="tab"]').nth(1).click();
     },
   },
   { path: '/basic/toggle-button' },
@@ -43,31 +43,28 @@ axeAuditSuite(test, expect, [
   { path: '/basic/treeview' },
   {
     path: '/enterprise/accordion',
-    ready: async (page) => {
-      await page.waitForFunction(() => !!document.querySelector('mp-accordion')?.hasAttribute('data-js'));
-    },
     interact: async (page) => {
-      await page.locator('mp-accordion').first().locator('summary').first().click();
+      await page.locator('[data-mps="accordion"]').first().locator('summary').first().click();
     },
   },
   { path: '/enterprise/datatables' },
   {
     path: '/enterprise/dock',
     ready: async (page) => {
-      await page.waitForSelector('mint-dock-manager');
+      await page.waitForSelector('.dock[data-mp-hydrated]');
     },
   },
   {
     path: '/enterprise/file-manager',
     ready: async (page) => {
-      await page.waitForSelector('mp-file-manager');
+      await page.waitForSelector('.file-manager[data-mp-hydrated]');
     },
   },
   { path: '/enterprise/query-builder' },
   {
     path: '/enterprise/charts',
     ready: async (page) => {
-      await page.waitForSelector('mp-hierarchy-chart [role="tree"]');
+      await page.waitForSelector('.hierarchy-chart [role="tree"]');
     },
     // The three hierarchy layouts are different DOM (svg paths vs positioned
     // divs) and the zoomed-in state adds the enabled zoom-out control, so the
@@ -77,23 +74,23 @@ axeAuditSuite(test, expect, [
     // lands on the <svg> rather than the arc.
     interact: async (page) => {
       await page.getByRole('button', { name: 'icicle' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .icicle');
+      await page.waitForSelector('.hierarchy-chart .icicle');
       await page
-        .locator('mp-hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
+        .locator('.hierarchy-chart div[role="treeitem"][aria-expanded="true"]:not(.focus-cell)')
         .first()
         .click();
       await page.getByRole('button', { name: 'treemap' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .treemap');
+      await page.waitForSelector('.hierarchy-chart .treemap');
       // Back to the sunburst, now zoomed in: this is the state with an enabled
       // zoom-out control, which the root state never shows.
       await page.getByRole('button', { name: 'sunburst' }).click();
-      await page.waitForSelector('mp-hierarchy-chart .center-control:not([disabled])');
+      await page.waitForSelector('.hierarchy-chart .center-control:not([disabled])');
     },
   },
   {
     path: '/enterprise/scheduler',
     ready: async (page) => {
-      await page.waitForSelector('mp-scheduler');
+      await page.waitForSelector('.scheduler[data-mp-hydrated]');
     },
     // Select an event so the audit sees the SELECTED state — the revealed
     // resize glyphs/strips are gated on it (wcag22aa target-size applies).

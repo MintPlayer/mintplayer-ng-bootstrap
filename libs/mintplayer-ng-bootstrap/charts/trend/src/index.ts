@@ -1,7 +1,11 @@
-export * from './trend-chart/trend-chart.component';
+// The trend chart is generated from @mintplayer/ui-core/charts/trend (PRD #437 D10).
+export * from './generated';
 export type {
-  TrendSeries,
+  TrendHoverEventDetail,
   TrendPoint,
   TrendPointEventDetail,
-  TrendHoverEventDetail,
-} from '@mintplayer/web-components/charts/trend';
+  TrendSeries,
+  TrendSummaryFormatter,
+  TrendTooltipFormatter,
+  PlacedPoint,
+} from '@mintplayer/ui-core/charts/trend';

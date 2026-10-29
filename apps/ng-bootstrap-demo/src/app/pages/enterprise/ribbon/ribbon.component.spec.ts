@@ -37,6 +37,15 @@ describe('RibbonComponent', () => {
     expect(allTabs.length - contextualTabs.length).toBe(4);
   });
 
+  it('renders the tab strip from its content, the hidden contextual set excluded', () => {
+    const labels = () => [...fixture.nativeElement.querySelectorAll('[role=tab]')].map((tab: Element) => tab.textContent?.trim());
+    expect(labels()).toEqual(['Home', 'Insert', 'Design', 'Layout']);
+
+    component.togglePictureTools();
+    fixture.detectChanges();
+    expect(labels()).toEqual(['Home', 'Insert', 'Format', 'Effects', 'Design', 'Layout']);
+  });
+
   it('should toggle minimized state', () => {
     expect(component.minimized()).toBe(false);
     component.toggleMinimized();

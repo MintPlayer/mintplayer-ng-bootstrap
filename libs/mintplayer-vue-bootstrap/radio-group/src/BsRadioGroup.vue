@@ -1,41 +1,49 @@
 <script setup lang="ts">
-// Side-effect-registers <mp-radio-group> via the upstream WC entry.
-import '@mintplayer/web-components/radio-group';
-import {
-  MpRadioGroup,
-  type RadioGroupChangeEventDetail,
-} from '@mintplayer/web-components/radio-group';
-import { ref, watch, onMounted } from 'vue';
+/**
+ * A <div role=radiogroup> around <BsRadio>s (#437). It hands them one name,
+ * so they are native radios of one set: the browser supplies exclusivity, the
+ * single tab stop and arrow move-and-select, with JavaScript off as well.
+ * Name the group with aria-label / aria-labelledby.
+ *
+ * `v-model` is the selected radio's value (string | null).
+ */
+import { computed, provide, useId } from 'vue';
+import { connectRadioGroup, radioGroupName } from '@mintplayer/ui-core/radio';
+import { radioGroupKey } from '../../radio/src/radio-group-key';
+
 defineOptions({ inheritAttrs: false });
 
-// v-model is the selected radio's value (string | null). Put <BsRadio>
-// children inside; the WC supplies exclusivity, role="radiogroup", the
-// roving tab stop and arrow move-and-select — the coordination the per-radio
-// wrappers explicitly leave to a group. `group-change` is the one signal
-// covering both pointer AND keyboard selection (keyboard checks radios
-// programmatically, so no per-radio change ever fires).
-const modelValue = defineModel<string | null>();
-const el = ref<MpRadioGroup | null>(null);
+const props = withDefaults(
+  defineProps<{
+    /** The radios' shared name; generated when omitted, so native grouping always forms. */
+    name?: string | null;
+    disabled?: boolean;
+    required?: boolean;
+  }>(),
+  { name: null, disabled: false, required: false },
+);
 
-const syncToEl = (v: string | null | undefined) => {
-  if (el.value) el.value.value = v ?? null;
-};
+const modelValue = defineModel<string | null>({ default: null });
 
-onMounted(() => syncToEl(modelValue.value));
-watch(modelValue, syncToEl);
+// useId, not the instance uid: it matches between the server render and hydration.
+const rootId = `bs-radio-group-${useId()}`;
 
-function onGroupChange(e: Event) {
-  const detail = (e as CustomEvent<RadioGroupChangeEventDetail>).detail;
-  if (detail) modelValue.value = detail.value;
-}
+provide(radioGroupKey, {
+  name: computed(() => props.name ?? radioGroupName(rootId)),
+  value: computed(() => modelValue.value),
+  disabled: computed(() => props.disabled),
+  required: computed(() => props.required),
+  select(value: string) {
+    modelValue.value = value;
+  },
+});
+
+const groupAttrs = computed(() => connectRadioGroup({ required: props.required, disabled: props.disabled }));
 </script>
 
 <template>
-  <mp-radio-group
-    ref="el"
-    v-bind="$attrs"
-    @group-change="onGroupChange"
-  >
+  <!-- The bag goes last: radiogroup is the contract role, not a consumer choice. -->
+  <div v-bind="{ ...$attrs, ...groupAttrs }">
     <slot />
-  </mp-radio-group>
+  </div>
 </template>

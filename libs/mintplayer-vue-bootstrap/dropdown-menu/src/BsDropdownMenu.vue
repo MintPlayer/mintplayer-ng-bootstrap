@@ -1,45 +1,48 @@
 <script setup lang="ts">
-// Registers <mp-dropdown-menu> (and its sibling elements) on the client. On the
-// SSR server this import runs after the lit-ssr DOM shim is installed (see the
-// demo's entry-server.ts), so `customElements.define` doesn't throw in Node —
-// same pattern as every other @mintplayer/vue-bootstrap wrapper.
-import '@mintplayer/web-components/dropdown-menu';
-import type {
-  MpDropdownMenu,
-  DropdownSelectEventDetail,
-} from '@mintplayer/web-components/dropdown-menu';
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-// Companion light-DOM sheet (nested-link reset ::slotted can't reach). Imported
-// here so it lands in the app's static CSS bundle — present with JS disabled.
-import './dropdown-menu.css';
+import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
+import {
+  DROPDOWN_MENU_SCOPE,
+  attachDropdownMenu,
+  connectDropdownMenu,
+  dropdownMenuScopedStyles,
+  type DropdownSelectEventDetail,
+} from '@mintplayer/ui-core/dropdown-menu';
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 
-defineOptions({ inheritAttrs: false });
-
-defineProps<{
-    /** Max panel height in px before the item list scrolls. */
-    maxHeight?: number;
-    /** `id` of an external element that labels the menu (aria-labelledby). */
+/**
+ * `BsDropdownMenu` — a Bootstrap `.dropdown-menu` list rendered from the
+ * headless `@mintplayer/ui-core/dropdown-menu` core (#437). Put
+ * `BsDropdownItem` / `BsDropdownDivider` / `BsDropdownHeader` children inside.
+ * Once mounted it adds roving-tabindex keyboard navigation, and activating an
+ * enabled item emits `select` with that item's `value`.
+ */
+const props = defineProps<{
+  /** Max panel height in px before the item list scrolls. */
+  maxHeight?: number;
 }>();
 
 const emit = defineEmits<{ select: [detail: DropdownSelectEventDetail] }>();
 
-const el = ref<MpDropdownMenu | null>(null);
+installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
-function onSelect(event: Event) {
-  emit('select', (event as CustomEvent<DropdownSelectEventDetail>).detail);
-}
+const menu = useTemplateRef<HTMLUListElement>('menu');
+const hydrated = ref(false);
+const bag = computed(() => connectDropdownMenu({ hydrated: hydrated.value }));
+// Zero is a legitimate cap, so only an unset value is dropped.
+const style = computed(() =>
+  props.maxHeight === undefined ? undefined : { '--mp-dropdown-max-height': `${props.maxHeight}px` },
+);
 
-// `select` is a CustomEvent the WC dispatches; wire it up client-side only.
-onMounted(() => el.value?.addEventListener('select', onSelect));
-onBeforeUnmount(() => el.value?.removeEventListener('select', onSelect));
+let detach: (() => void) | undefined;
+onMounted(() => {
+  hydrated.value = true;
+  if (menu.value) detach = attachDropdownMenu(menu.value, { onSelect: (detail) => emit('select', detail) });
+});
+onBeforeUnmount(() => detach?.());
 </script>
 
 <template>
-  <mp-dropdown-menu
-    ref="el"
-    v-bind="$attrs"
-    :max-height="maxHeight"
-  >
+  <ul ref="menu" :data-mps="DROPDOWN_MENU_SCOPE" v-bind="bag" :style="style">
     <slot />
-  </mp-dropdown-menu>
+  </ul>
 </template>

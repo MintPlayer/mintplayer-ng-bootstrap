@@ -75,7 +75,7 @@ export class OtpInputDemoComponent {
     <bs-otp-input
       [groups]="[6, 6, 4, 4, 6, 6]"
       type="alphanumeric"
-      case="upper"
+      letterCase="upper"
       size="lg"
       [(ngModel)]="productKey">
     </bs-otp-input>

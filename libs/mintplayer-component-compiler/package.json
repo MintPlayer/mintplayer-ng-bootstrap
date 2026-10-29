@@ -1,0 +1,28 @@
+{
+  "name": "@mintplayer/nx-component-compiler",
+  "version": "0.0.0-PLACEHOLDER",
+  "description": "Write a headless component once (a core, a Vue-syntax view template, a manifest) and generate its Angular, React, Vue and Lit components. An Nx plugin: inferred compile targets plus a scaffold generator.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MintPlayer/mintplayer-ng-bootstrap",
+    "directory": "libs/mintplayer-component-compiler"
+  },
+  "type": "module",
+  "main": "./src/nx/plugin.cjs",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./plugin": "./src/nx/plugin.cjs",
+    "./package.json": "./package.json"
+  },
+  "generators": "./generators.json",
+  "bin": {
+    "component-compiler": "./bin/component-compiler.mjs"
+  },
+  "files": ["bin", "src/**/*.mjs", "src/**/*.cjs", "src/**/*.json", "generators.json", "README.md"],
+  "peerDependencies": {
+    "@nx/devkit": ">=20",
+    "@vue/compiler-sfc": "^3.5.0",
+    "@babel/parser": "^7.0.0"
+  }
+}
