@@ -229,8 +229,8 @@ Every item below is authored as a D10 component source once M3b lands.
 
 ## M8 — Docs
 
-- [ ] CLAUDE.md: rewrite the WC-authoring, SSR chrome, Bootstrap and wrapper-trap sections for the new architecture; add the Bootstrap layering rules (C1–C5)
-- [ ] CHANGELOG. No hand version bumps: since #445 every `package.json` holds `0.0.0-PLACEHOLDER` and the publish workflow plans the versions, so CHANGELOG entries name no version numbers.
+- [x] CLAUDE.md: rewrite the WC-authoring, SSR chrome, Bootstrap and wrapper-trap sections for the new architecture; add the Bootstrap layering rules (C1–C5). *As built:* the workspace map leads with ui-core and the compiler; the WC section is scoped to hand-written Lit elements; the SSR chrome section is gone; a "what a generated front looks like" section records the testing traps (host-borne root bag, lowercased outputs, Angular outputs are not DOM events, `setState` model write-back, `data-mp-hydrated`, slot naming, stale manifests); C1–C6 are a subsection; no-JS tier 2 is "server-rendered, inert until hydrated".
+- [x] CHANGELOG. No hand version bumps: since #445 every `package.json` holds `0.0.0-PLACEHOLDER` and the publish workflow plans the versions, so CHANGELOG entries name no version numbers.
 - [ ] PRD Status → Complete, with an as-built summary and deviations
 
 ## M9 — Verification (once, at the end)
