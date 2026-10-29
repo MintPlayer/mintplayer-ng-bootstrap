@@ -23,6 +23,7 @@ import {
   type ViewType,
 } from '@mintplayer/ui-core/scheduler-core';
 import type { FirstDayOfWeek } from '@mintplayer/ui-core/calendar';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import type { ModelBinding } from '@mintplayer/ui-core/component';
 import type { TimeStep } from '@mintplayer/ui-core/timepicker';
 import { formatCellAnnouncement, formatEventAriaLabel, isSlotInSelection, partGeometry, toDayKey } from './format';
@@ -84,6 +85,8 @@ export const SCHEDULER_UI_IDLE: SchedulerUi = {
 export interface SchedulerViewArgs {
   id: string;
   label: string | null;
+  /** False in server HTML and until the core attaches; drives data-mp-hydrated. */
+  hydrated: boolean;
   s: SchedulerState;
   ui: SchedulerUi;
   eventEditor: boolean;
@@ -210,6 +213,9 @@ function eventButton(s: SchedulerState, event: SchedulerEvent, className: string
     'aria-pressed': selected ? 'true' : 'false',
     'aria-describedby': null,
     'data-event-id': event.id,
+    // The event's own times, as the cells carry theirs.
+    'data-start': event.start.toISOString(),
+    'data-end': event.end.toISOString(),
   });
 }
 
@@ -1203,8 +1209,9 @@ function editorModel(id: string, s: SchedulerState, editor: NonNullable<Schedule
     firstDayOfWeek: firstDayOfWeek(options),
     hour12: resolvedHour12(options),
     step: pickerStep(options),
-    startField: scoped({ class: 'editor-field editor-start-field' }),
-    endField: scoped({ class: 'editor-field editor-end-field' }),
+    // The draft as ISO, like a slot's data-start: the field's value without reading a picker.
+    startField: scoped({ class: 'editor-field editor-start-field', 'data-value': draft.start?.toISOString() ?? null }),
+    endField: scoped({ class: 'editor-field editor-end-field', 'data-value': draft.end?.toISOString() ?? null }),
     colorLabel: msg('editorColorLabel'),
     colorInput: scoped({
       type: 'color',
@@ -1315,7 +1322,7 @@ export function connectScheduler(args: SchedulerViewArgs): SchedulerView {
   const editor = ui.editor ? editorModel(id, s, ui.editor, args) : null;
 
   return {
-    root: scoped({ class: 'scheduler', id, 'data-view': s.view }),
+    root: scoped({ class: 'scheduler', id, 'data-view': s.view, ...hydratedAttr(args.hydrated) }),
     container: scoped({ class: 'scheduler-container', 'data-narrow': ui.narrow ? '' : null }),
     header: scoped({ class: 'scheduler-header', 'data-narrow': ui.narrow ? '' : null }),
     nav: scoped({ class: 'scheduler-nav', 'aria-label': msg('navLabel') }),

@@ -1807,10 +1807,11 @@ export const schedulerCore = defineCore<
     ui: SCHEDULER_UI_IDLE,
     announcement: '',
   }),
-  view: ({ inputs, state, id, label, api }) => ({
+  view: ({ inputs, state, id, label, hydrated, api }) => ({
     view: connectScheduler({
       id,
       label,
+      hydrated,
       s: state.s,
       ui: state.ui,
       eventEditor: inputs.eventEditor !== false && state.s.options.eventEditor !== false,

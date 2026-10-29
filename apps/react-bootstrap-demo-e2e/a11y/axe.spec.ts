@@ -90,7 +90,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/scheduler',
     ready: async (page) => {
-      await page.waitForSelector('mp-scheduler');
+      await page.waitForSelector('.scheduler[data-mp-hydrated]');
     },
     // Select an event so the audit sees the SELECTED state — the revealed
     // resize glyphs/strips are gated on it (wcag22aa target-size applies).

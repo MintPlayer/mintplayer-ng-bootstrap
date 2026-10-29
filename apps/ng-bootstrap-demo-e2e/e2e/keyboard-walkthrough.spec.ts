@@ -220,10 +220,10 @@ test.describe('scheduler — month event chips are focusable and activatable', (
   test('a month-view event chip takes focus and Enter does not strand it', async ({ page }) => {
     await page.goto('/enterprise/scheduler');
     await page.waitForLoadState('networkidle');
-    const scheduler = page.locator('mp-scheduler').first();
+    const scheduler = page.locator('bs-scheduler').first();
     await expect(scheduler).toBeVisible();
     const focused = await scheduler.evaluate((el) => {
-      const chip = el.shadowRoot?.querySelector<HTMLElement>('[role="button"][tabindex], .event[tabindex]');
+      const chip = el.querySelector<HTMLElement>('[role="button"][data-event-id][tabindex]');
       chip?.focus();
       return chip !== null && chip !== undefined;
     });

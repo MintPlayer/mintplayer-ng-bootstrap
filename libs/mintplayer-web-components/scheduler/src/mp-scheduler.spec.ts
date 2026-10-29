@@ -83,6 +83,8 @@ describe('mp-scheduler', () => {
     expect(scheduler.shadowRoot).toBeNull();
     expect(root().getAttribute('data-mps')).toBe('scheduler');
     expect(root().getAttribute('data-view')).toBe('day');
+    // Never in server HTML; the core writes it once it attaches.
+    expect(root().hasAttribute('data-mp-hydrated')).toBe(true);
   });
 
   it('exposes a labelled grid, a navigation landmark and a pressed view switcher', async () => {
