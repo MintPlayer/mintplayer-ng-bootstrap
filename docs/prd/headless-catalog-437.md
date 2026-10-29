@@ -1,6 +1,6 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
-**Status:** Complete, pending the CI run (2026-10-29). Every component is a ui-core core plus four fronts; Waves A–D, the removal sweep (M7) and the docs (M8) have landed, and the local M9 verification passed. *As built:* the dropdown-menu, `mp-tab-control` and `mp-typeahead` stay hand-written (the dropdown-menu over a ui-core core; the other two slot-based or light-tier Lit); the file manager's toolbar is disabled until hydrated rather than usable with no JS. *Open:* S4 (the 10k-row frame-time measurement was not taken), S15 (group styles not built; every bag already carries `data-mps`) and S19 (a fixture-workspace publish run, the owner's call before ui-core is first published). Verdicts are in §7; the plan file tracks each item.
+**Status:** Complete, pending the CI run (2026-10-29). Every component is a ui-core core plus four fronts; Waves A–D, the removal sweep (M7) and the docs (M8) have landed, and the local M9 verification passed. *As built:* the dropdown-menu, `mp-tab-control` and `mp-typeahead` stay hand-written (the dropdown-menu over a ui-core core; the other two slot-based or light-tier Lit); the file manager's toolbar is disabled until hydrated rather than usable with no JS. S4 is measured and S19 runs as a spec (both 2026-10-29). *Open:* S15 (group styles not built; every bag already carries `data-mps`). Verdicts are in §7; the plan file tracks each item.
 **CI round 1 (2026-10-29), as built:** the first PR run surfaced defects the local sweep could not, all fixed on the branch:
 - **Angular event replay shifts hydration paths.** platform-server inserts its `__jsaction_bootstrap` script after computing the body-relative paths of projected nodes rendered outside their host (an accordion tab's body, a tab page's body), so hydration landed one node off and the page stayed inert. `useScopedStyles` removes that script before any front hydrates (`repairEventReplayBodyPaths`); `e2e/hydration.spec.ts` pins it.
 - **`v-html` in Angular** compiles to `[innerHTML] | mpTrustedHtml`: the sanitiser dropped every core-produced `<svg>` (flags, file-type and treeview icons).
@@ -394,15 +394,30 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
   - **S16: go, three of three.** The CVA is an Angular extension (`<element>.angular.ts`: the accessor and
     validity as `hostDirectives`, form state merged in `extendInputs`), first on the select, then on every form
     control.
-  - **S4: not measured.** The datatable's virtual window runs in React and Vue and its specs pass, but the
-    10k-row frame-time measurement was not taken. *Deviation.*
+  - **S4: met (2026-10-29).** `tools/e2e-shared/virtual-window-suites.ts` drives the React and Vue demo
+    datatables (10,000 rows, `fill` + virtual scroll) in Chromium: 60 steps of 400px, one per frame. The DOM
+    stays at most 80 rows and the window reaches row 10,001. Frame intervals over 5 runs each: React p50
+    16.7ms, p95 16.7-33.4ms, max <= 50ms, no long animation frame; Vue p50 16.7ms, p95 16.7-50ms, with an
+    occasional 50-98ms long frame (about one in 60 steps in half the runs: ~20ms rendering the new window
+    plus ~25ms style and layout). Vue's first window move after load also costs one ~35ms script frame (a
+    start-up cost; the suite pays it before measuring). Asserted: the median step within one frame, and no
+    frame >= 250ms (a whole-list pass). Measuring found two defects: the suite first watched
+    `.datatable-scroll`, which does not scroll in `fill` mode, and the datatable had no readiness mark, so a
+    test could scroll before the core attached. The core now writes `data-mp-hydrated`.
   - **S15: not built.** Compiler-stamped scopes would add nothing the bags do not already do: every bag
     carries `data-mps`, and a group may already share sheets (the navbar group shares two across four
     components). Per-component sheets stay. *Deviation.*
   - **S17:** the clean-tree build is CI's (every run regenerates the gitignored output from nothing). The
     cache hit is read from that run.
-  - **S19: not run.** The fixture-workspace publish check is the owner's call before `@mintplayer/ui-core` is
-    first published. *Open.*
+  - **S19: met (2026-10-29).** `libs/mintplayer-component-compiler/src/fixture.spec.ts` packs the plugin with
+    `npm pack` (only what `files` publishes) and installs it into a fixture workspace under `dist/`, with
+    another core package (`@acme/core`) and other front directories. It compiles, checks that `--check`
+    reports the output up to date, asserts no output names a path of this repo, and type-checks all four
+    fronts with `vue-tsc` (a broken core prop fails the React, Vue and Lit fronts). Two layout assumptions
+    were removed. The generator's default `--config` path is gone: it uses the workspace's only config and
+    refuses none or several (`component.generator.spec.ts`). The scoped-style registry import is no longer
+    hard-coded: it is `config.scopedStyles`, default `@mintplayer/ui-core/scoped-styles`. Runtimes are each
+    front's `runtime` option; the Angular default `@mintplayer/ng-bootstrap/machine` is a published package.
 
 ## 8. Component catalog
 

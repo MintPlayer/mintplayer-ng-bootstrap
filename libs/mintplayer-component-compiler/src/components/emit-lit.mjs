@@ -28,7 +28,7 @@ function propertyOptions(input) {
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
-export function emitLitComponent(model, { generator, runtime }) {
+export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
   const { names } = model;
   const slotNames = model.slots.map((slot) => slot.name);
   // Every slot also takes a render callback, the `<slot>Renderer` property: a composing
@@ -39,7 +39,7 @@ export function emitLitComponent(model, { generator, runtime }) {
   const lines = [
     banner(model, generator),
     `import { LitElement } from 'lit';`,
-    `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
+    `import { installLightStyles } from '${scopedStyles}';`,
     `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}${model.content.length ? 'ContentQuery, ' : ''}CoreController${slotNames.length ? ', LightChildren' : ''}${model.queried || model.wrapsContent ? ', notifyContentChange' : ''} } from '${runtime}';`,
     coreImports(model, { values: [model.core], types }),
   ];

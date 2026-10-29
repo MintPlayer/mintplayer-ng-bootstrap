@@ -30,7 +30,7 @@ Each component milestone is the same checklist, done for every component in the 
 - [x] S9 navbar dropdown CSS-only open: a native `<details>`
 - [x] S8 base-select under SSR
 - [x] S11 theme cookie SSR and code-snippet highlighting
-- [ ] S4 virtual window in React/Vue (before M5). *Deviation:* runs and is specced, but the 10k-row frame-time measurement was not taken
+- [x] S4 virtual window in React/Vue: measured 2026-10-29 by the shared virtual-window e2e suite (figures in PRD §7)
 - [x] S10 query-builder editor contract (before M5): a front-native `editor` slot; the leak spec is moot (below)
 - [x] S7 scheduler static grid: go, by building it (every view a server-rendered static grid, M6)
 - [x] S13 single template in the core, compiled into the four fronts (navbar prototype); widened into D10 / M3b
@@ -107,7 +107,7 @@ This turns S13 into the full library. Every M4–M6 component is then authored a
   - the select's CVA is resolved: `select.angular.ts` adds the accessor and validity as `hostDirectives` and merges the form state over the inputs in `extendInputs`
 - [ ] S17 clean-tree build + cache hit: read from the CI run (M9)
 - [x] S18 template type errors fail `typecheck`; decide on a VS Code extension
-- [ ] S19 fixture workspace run (publishability). *Open:* the owner decides before ui-core is first published
+- [x] S19 fixture workspace run (publishability): `fixture.spec.ts` packs, compiles and type-checks a foreign workspace
 - [x] Verdicts S14–S19 written in PRD §7
 
 ## M4 — Wave B

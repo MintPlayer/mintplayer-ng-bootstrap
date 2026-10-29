@@ -16,7 +16,7 @@ function propLine(model, input) {
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
-export function emitVueComponent(model, { generator, runtime, extension }) {
+export function emitVueComponent(model, { generator, runtime, extension, scopedStyles }) {
   const { names } = model;
   const named = model.slots.filter((slot) => slot.name !== 'default');
   const hasDefault = model.slots.some((slot) => slot.name === 'default');
@@ -26,7 +26,7 @@ export function emitVueComponent(model, { generator, runtime, extension }) {
   const script = [
     banner(model, generator),
     `import { useTemplateRef, type ComponentPublicInstance${model.inputs.length ? ', type PropType' : ''} } from 'vue';`,
-    `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
+    `import { installLightStyles } from '${scopedStyles}';`,
     `import { ${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core], types: [model.inputsType, model.methodsType].filter(Boolean) }),
   ];

@@ -7,7 +7,7 @@ import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
-export function emitReactComponent(model, { generator, runtime, extension }) {
+export function emitReactComponent(model, { generator, runtime, extension, scopedStyles }) {
   const { names } = model;
   const element = `HTMLElementTagNameMap['${model.rootTag}']`;
   const named = model.slots.filter((slot) => slot.name !== 'default');
@@ -23,7 +23,7 @@ export function emitReactComponent(model, { generator, runtime, extension }) {
     banner(model, generator),
     `import * as React from 'react';`,
     `import { forwardRef, useImperativeHandle, useRef } from 'react';`,
-    `import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';`,
+    `import { installLightStyles } from '${scopedStyles}';`,
     `import { ${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core, ...(model.provides ? [model.provides] : [])], types: [model.inputsType].filter(Boolean) }),
   ];

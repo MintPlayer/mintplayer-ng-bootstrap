@@ -95,6 +95,8 @@ export const defineConfig = (config) => config;
  * @property {string} package  The core library's package name.
  * @property {string} [templates]  Where an entry keeps its view templates (default `src/templates`).
  * @property {Partial<Record<keyof typeof FRONTS, FrontConfig>>} fronts
+ * @property {string} [scopedStyles]  The module the React, Vue and Lit fronts import `installLightStyles` from
+ *   (default `@mintplayer/ui-core/scoped-styles`).
  * @property {string[]} [registry]  Other configs (workspace paths) whose elements templates here may compose;
  *   read only, never emitted.
  */
@@ -267,7 +269,7 @@ function entryOutputs(cwd, described, registry, name, front) {
 
   if (group) {
     const outputs = models.map((model) =>
-      FRONTS[name].component({ ...model, components }, { generator: GENERATOR, runtime, extension: (file) => relativeSpecifier(file, outDir, cwd) }),
+      FRONTS[name].component({ ...model, components }, { generator: GENERATOR, runtime, scopedStyles: described.config.scopedStyles ?? '@mintplayer/ui-core/scoped-styles', extension: (file) => relativeSpecifier(file, outDir, cwd) }),
     );
     outputs.forEach((out) => files.set(join(outDir, out.file), out.text));
     const barrel = [`// GENERATED from the ${group.group} manifest by ${GENERATOR}. Do not edit.`, ...outputs.map(FRONTS[name].barrel), ''].join('\n');

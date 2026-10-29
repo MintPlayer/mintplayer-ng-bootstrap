@@ -9,11 +9,32 @@ const { formatFiles, names } = require('@nx/devkit');
 
 const exportSrc = "export * from './src';\n";
 
+/**
+ * The workspace's component-compiler config when `--config` is not given: it must
+ * be the only one. No default path, so the published plugin assumes no layout.
+ * @param {import('@nx/devkit').Tree} tree
+ */
+function onlyConfig(tree) {
+  const found = [];
+  const walk = (dir) =>
+    tree.children(dir).forEach((name) => {
+      const path = dir ? join(dir, name).replace(/\\/g, '/') : name;
+      if (name === 'node_modules' || name.startsWith('.') || name === 'dist') return;
+      if (name === 'component-compiler.config.mjs') found.push(path);
+      else if (!tree.isFile(path)) walk(path);
+    });
+  walk('');
+  if (found.length !== 1) {
+    throw new Error(`component generator: pass --config (found ${found.length} component-compiler.config.mjs files${found.length ? `: ${found.join(', ')}` : ''})`);
+  }
+  return found[0];
+}
+
 /** @param {import('@nx/devkit').Tree} tree */
 async function componentGenerator(tree, schema) {
   const n = names(schema.name);
   const entry = n.fileName;
-  const configFile = schema.config ?? 'libs/mintplayer-ui-core/component-compiler.config.mjs';
+  const configFile = schema.config ?? onlyConfig(tree);
   const { default: config } = await import(`${pathToFileURL(join(tree.root, configFile)).href}?t=${Date.now()}`);
   const core = join(config.root, entry);
   if (tree.exists(join(core, 'index.ts'))) throw new Error(`${core} already exists`);
