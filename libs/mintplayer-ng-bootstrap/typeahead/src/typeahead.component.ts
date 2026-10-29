@@ -116,6 +116,8 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
   readonly selectedItem;
 
   private readonly disabledByCva = signal(false);
+  /** Set by afterNextRender (client only), so the readiness mark is never in server HTML. */
+  private readonly hydrated = signal(false);
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
 
@@ -140,7 +142,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     });
     this.state = machineSignal(this.machine);
     this.api = computed(() => {
-      const api = connect(this.state(), this.id, { name: this.name() });
+      const api = connect(this.state(), this.id, { name: this.name(), hydrated: this.hydrated() });
       // A host aria-label / aria-labelledby wins over inputLabel (naming conformance).
       return { ...api, input: { ...api.input, ...this.hostAria } };
     });
@@ -182,6 +184,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
     afterNextRender(() => {
       const untrack = trackOpenSide(this.machine, () => this.inputRef().nativeElement, () => this.listboxRef().nativeElement);
       destroyRef.onDestroy(untrack);
+      this.hydrated.set(true);
     });
   }
 

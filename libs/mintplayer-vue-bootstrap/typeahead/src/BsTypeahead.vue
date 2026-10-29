@@ -9,7 +9,7 @@
  * the role-bearing <input>; `role` is not forwarded, the input is a combobox
  * by contract. Rows come from the `#item="{ item, term }"` slot.
  */
-import { computed, onBeforeUnmount, onMounted, useAttrs, useId, useTemplateRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue';
 import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
@@ -117,10 +117,15 @@ watch(model, (next) => {
 const inputEl = useTemplateRef<HTMLInputElement>('input');
 const listboxEl = useTemplateRef<HTMLUListElement>('listbox');
 let untrackSide = (): void => undefined;
-onMounted(() => (untrackSide = trackOpenSide(machine, () => inputEl.value, () => listboxEl.value)));
+// Mounted runs only on the client, so the readiness mark is never in server HTML.
+const hydrated = shallowRef(false);
+onMounted(() => {
+  untrackSide = trackOpenSide(machine, () => inputEl.value, () => listboxEl.value);
+  hydrated.value = true;
+});
 onBeforeUnmount(() => untrackSide());
 
-const api = computed(() => connect(state.value, id, { name: props.name }));
+const api = computed(() => connect(state.value, id, { name: props.name, hydrated: hydrated.value }));
 /** The input bag without `value` (bound as a DOM property) and with nulls dropped. */
 const inputAttrs = computed(() => {
   const { value: _value, ...bag } = api.value.input;

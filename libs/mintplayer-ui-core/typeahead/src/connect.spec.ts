@@ -64,6 +64,11 @@ describe('connect()', () => {
     expect(api.error).toEqual({ attrs: { 'data-mps': 'typeahead', id: 'ta-error' }, text: 'Pick a street' });
   });
 
+  it('writes the readiness mark on the root only once the front has hydrated', () => {
+    expect(connect(base, 'ta').root['data-mp-hydrated']).toBeNull();
+    expect(connect(base, 'ta', { hydrated: true }).root['data-mp-hydrated']).toBe(true);
+  });
+
   it('disabled reaches the input', () => {
     expect(connect({ ...base, disabled: true }, 'ta').input['disabled']).toBe(true);
   });

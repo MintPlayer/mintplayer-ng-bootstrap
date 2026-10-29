@@ -283,7 +283,8 @@ export class MpTypeahead<T = unknown> extends FormAssociatedMixin(LitElement) {
 
   protected override render() {
     const state = this.#ctl.state;
-    const api = connect(state, this.#id, { name: null }); // the host submits; the inner input carries no name
+    // A Lit element renders only on the client here, so it is always hydrated.
+    const api = connect(state, this.#id, { name: null, hydrated: true }); // the host submits; the inner input carries no name
     const { value: _value, ...inputBag } = api.input;
     const machine = this.machine;
     return html`

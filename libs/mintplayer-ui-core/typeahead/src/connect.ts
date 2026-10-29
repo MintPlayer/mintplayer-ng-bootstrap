@@ -1,3 +1,4 @@
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import type { TypeaheadState } from './types';
 
 /** An attribute bag. `null` means "attribute absent"; `true` means present and empty. */
@@ -34,7 +35,11 @@ export function typeaheadIds(id: string) {
  * Pure: same snapshot in, same bags out. This is the single place ARIA is
  * written, which is what keeps the four fronts identical (spike S3).
  */
-export function connect<T>(state: TypeaheadState<T>, id: string, extra: { name?: string | null } = {}): TypeaheadApi {
+export function connect<T>(
+  state: TypeaheadState<T>,
+  id: string,
+  extra: { name?: string | null; /** The front has mounted on the client: writes the readiness mark. */ hydrated?: boolean } = {},
+): TypeaheadApi {
   const ids = typeaheadIds(id);
   const scope = { 'data-mps': TYPEAHEAD_SCOPE };
   const activeId = state.open && state.activeIndex >= 0 ? ids.option(state.activeIndex) : null;
@@ -43,7 +48,7 @@ export function connect<T>(state: TypeaheadState<T>, id: string, extra: { name?:
 
   return {
     // Classes stay the front's business (Angular/Vue/React each manage `class`); the bag carries only the scope.
-    root: { ...scope },
+    root: { ...scope, ...hydratedAttr(extra.hydrated ?? false) },
     input: {
       ...scope,
       role: 'combobox',

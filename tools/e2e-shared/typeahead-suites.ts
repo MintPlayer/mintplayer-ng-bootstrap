@@ -32,8 +32,11 @@ export function typeaheadSuite(test: Test, expect: Expect, { path }: TypeaheadSu
   test.describe('typeahead', () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
-      // Hydrated: the input reacts once the front's machine is attached.
-      await expect(combobox(page, 'Artist, highlighted')).toBeVisible();
+      // Hydrated: the input reacts only once the front's machine is attached. The
+      // server already renders it visible, so wait on the readiness mark.
+      const hydrated = (name: string) => page.locator('.mp-typeahead[data-mp-hydrated]').filter({ has: combobox(page, name) });
+      await expect(hydrated('Artist')).toHaveCount(1);
+      await expect(hydrated('Artist, highlighted')).toHaveCount(1);
     });
 
     test('typing shows suggestions, with the custom row and the combobox state', async ({ page }) => {
