@@ -1100,7 +1100,10 @@ test.describe('scheduler — nested datetime picker in the editor (R20)', () => 
   });
 });
 
-test.describe('scheduler — editing an event moves it (B30)', () => {
+// Both zones: CI's browsers run in UTC, a developer's rarely do, and every value
+// here is a local wall-clock date.
+for (const timezoneId of ['UTC', 'Europe/Brussels']) test.describe(`scheduler — editing an event moves it (B30, ${timezoneId})`, () => {
+  test.use({ timezoneId });
   test('right-click, pick a later start, Save — the event moves and keeps its duration', async ({
     page,
   }) => {
@@ -1147,29 +1150,25 @@ test.describe('scheduler — editing an event moves it (B30)', () => {
       .toBe(true);
 
     // A real click on a real day cell of the start picker's calendar.
-    const cell = await page.evaluate(() => {
-      const picker = document.querySelector('bs-scheduler .editor-start-field')!;
-      const all = Array.from(
-        picker.querySelectorAll<HTMLElement>('.datetime-picker-popup-date td[role="gridcell"]'),
-      );
+    const days = page.locator('bs-scheduler .editor-start-field .datetime-picker-popup-date td[role="gridcell"]');
+    const target = await days.evaluateAll((all) => {
       // The day strictly AFTER the selected one: the assertion below is "later",
       // and the next day keeps the event inside the displayed week, where its
       // committed times can be read back.
       const selectedAt = all.findIndex((td) => td.classList.contains('calendar-day-selected'));
-      const cells = all
-        .slice(selectedAt + 1)
-        .filter(
-          (td) =>
-            /^\d+$/.test(td.textContent?.trim() ?? '') &&
-            td.getAttribute('aria-disabled') !== 'true',
-        );
-      const target = selectedAt < 0 ? undefined : cells[0];
-      if (!target) return null;
-      const r = target.getBoundingClientRect();
-      return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+      if (selectedAt < 0) return -1;
+      return all.findIndex(
+        (td, i) =>
+          i > selectedAt &&
+          /^\d+$/.test(td.textContent?.trim() ?? '') &&
+          td.getAttribute('aria-disabled') !== 'true',
+      );
     });
-    expect(cell).not.toBeNull();
-    await page.mouse.click(cell!.x, cell!.y);
+    expect(target).toBeGreaterThan(-1);
+    // Through the locator, not page.mouse at coordinates read a step earlier: the
+    // popover re-places as its content lays out, and a click on stale coordinates
+    // landed on the selected day (CI, UTC), so the start never moved.
+    await days.nth(target).click();
 
     // The end follows the start LIVE, before any Save — the user has to be able
     // to see what they are about to commit.
