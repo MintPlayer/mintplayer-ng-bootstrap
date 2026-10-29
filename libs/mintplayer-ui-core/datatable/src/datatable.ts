@@ -1,4 +1,5 @@
 import type { CoreBag } from '@mintplayer/ui-core/component';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import { connectPagination, type PaginationEntry } from '@mintplayer/ui-core/pagination';
 import { virtualWindow } from '@mintplayer/ui-core/virtual-window';
 import { MIN_COLUMN_WIDTH } from './column-resize';
@@ -525,6 +526,8 @@ export const datatableFilterPanelId =(id: string, column: string) => `${id}-filt
 
 export interface DatatableOptions {
   readonly id: string;
+  /** Behaviour is attached (scroll tracking, keyboard): written as the readiness mark. */
+  readonly hydrated?: boolean;
   readonly model: DatatableModel;
   readonly columns: readonly DatatableColumnDef[];
   readonly selectionMode: DatatableSelectionMode;
@@ -885,7 +888,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
   const empty = rows.length === 0;
   const stateText = o.loading ? `${labels.loading}…` : o.emptyMessage;
   return {
-    root: scoped({ class: 'datatable', 'data-fill': o.fill ? 'true' : 'false', 'data-dt-id': o.id }),
+    root: scoped({ class: 'datatable', 'data-fill': o.fill ? 'true' : 'false', 'data-dt-id': o.id, ...hydratedAttr(o.hydrated ?? false) }),
     live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
     announcement: o.announcement,
     shell: scoped({ class: 'datatable-shell' }),

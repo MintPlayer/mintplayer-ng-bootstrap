@@ -293,7 +293,7 @@ export const datatableCore = defineCore<
     filterTerm: '',
     filterLoading: false,
   }),
-  view: ({ inputs, state, id, label }) => {
+  view: ({ inputs, state, id, hydrated, label }) => {
     const model = modelOf(inputs, state);
     const mode = parseSelectionMode(inputs.selectionMode);
     const cascading = !!inputs.tree && inputs.selectionStrategy === 'cascading';
@@ -301,6 +301,7 @@ export const datatableCore = defineCore<
     return {
       view: connectDatatable({
         id,
+        hydrated,
         model,
         columns: inputs.columns ?? [],
         selectionMode: mode,

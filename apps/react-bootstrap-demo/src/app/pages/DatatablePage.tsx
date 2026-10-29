@@ -100,8 +100,9 @@ const FILL_SOURCE = `// The parent needs a definite height.
   <BsDatatable fill pagination perPage={20} columns={COLUMNS} data={rows} />
 </div>`;
 
-// Enough rows that virtual scroll has something to window.
-const FILL_VIRTUAL_ROWS: Artist[] = Array.from({ length: 2000 }, (_, i) => ({
+// Enough rows that virtual scroll has something to window: 10k is the S4
+// measurement (tools/e2e-shared/virtual-window-suites.ts).
+const FILL_VIRTUAL_ROWS: Artist[] = Array.from({ length: 10_000 }, (_, i) => ({
   ...ARTISTS[i % ARTISTS.length],
   id: i + 1,
 }));
@@ -482,7 +483,7 @@ export function DatatablePage() {
           parent's height replaces the default virtual viewport, and only the
           rows in view are rendered.
         </p>
-        <div className="fill-parent border rounded">
+        <div className="fill-parent border rounded" data-demo="fill-virtual">
           <BsDatatable fill virtualScroll itemSize={40} columns={COLUMNS} data={FILL_VIRTUAL_ROWS} />
         </div>
         <BsCodeSnippet code={FILL_VIRTUAL_SOURCE} language="tsx" />
