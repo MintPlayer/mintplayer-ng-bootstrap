@@ -84,6 +84,24 @@ interface Drag {
   preview: number[] | null;
 }
 
+/**
+ * The live sizing methods of a rendered splitter, found by its root element:
+ * how a composing core (the dock) restores stored weights, drives a divider
+ * from its own handle, or reads the measured sizes. Null before the splitter
+ * attached.
+ */
+export function splitterControl(root: Element | null | undefined): SplitterMethods | null {
+  const engine = root instanceof HTMLElement ? engines.get(root) : undefined;
+  if (!engine) return null;
+  return {
+    getPanelSizes: () => engine.sizes(),
+    setPanelSizes: (sizes) => engine.setSizes(sizes),
+    resizeDividerBy: (dividerIndex, key, fine = false) => {
+      engine.key(dividerIndex, key, fine);
+    },
+  };
+}
+
 export const splitterCore = defineCore<
   SplitterInputs,
   SplitterState,

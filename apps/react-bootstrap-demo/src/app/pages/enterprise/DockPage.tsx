@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BsDockManager } from '@mintplayer/react-bootstrap/dock';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import type { DockLayoutSnapshot } from '@mintplayer/web-components/dock';
+import type { DockLayoutInput } from '@mintplayer/react-bootstrap/dock';
 
-const INITIAL_LAYOUT: DockLayoutSnapshot = {
+const INITIAL_LAYOUT: DockLayoutInput = {
   root: {
     kind: 'split',
     direction: 'horizontal',
@@ -21,16 +21,20 @@ const INITIAL_LAYOUT: DockLayoutSnapshot = {
   },
 };
 
+const PANES: Record<string, ReactNode> = {
+  'panel-1': <div className="p-3"><h3>Panel 1</h3><p>Every pane is rendered by one function, keyed on the pane's name.</p></div>,
+  'panel-2': <div className="p-3"><h3>Panel 2</h3><p>Drag this tab to dock it elsewhere.</p></div>,
+  'panel-3': <div className="p-3"><h3>Panel 3</h3><p>Press <kbd>M</kbd> on a focused tab to enter move mode.</p></div>,
+};
+
 const SOURCE = `<BsDockManager
   layout={layout}
-  onLayoutChanged={e => setLayout(e.detail)}>
-  <div slot="panel-1" className="p-3">…</div>
-  <div slot="panel-2" className="p-3">…</div>
-  <div slot="panel-3" className="p-3">…</div>
-</BsDockManager>`;
+  onLayoutChange={setLayout}
+  pane={({ pane }) => PANES[pane]}
+/>`;
 
 export function DockPage() {
-  const [layout, setLayout] = useState<DockLayoutSnapshot>(INITIAL_LAYOUT);
+  const [layout, setLayout] = useState<DockLayoutInput>(INITIAL_LAYOUT);
 
   return (
     <div className="demo-page">
@@ -61,14 +65,11 @@ export function DockPage() {
       <section style={{ height: 480 }}>
         <h2>Basic usage</h2>
         <BsDockManager
-          {...{ layout } as React.ComponentProps<typeof BsDockManager>}
-          onLayoutChanged={(e) => setLayout(e.detail)}
-          style={{ display: 'block', height: '100%' }}
-        >
-          <div slot="panel-1" className="p-3"><h3>Panel 1</h3><p>Static content via a named slot.</p></div>
-          <div slot="panel-2" className="p-3"><h3>Panel 2</h3><p>Drag this tab to dock it elsewhere.</p></div>
-          <div slot="panel-3" className="p-3"><h3>Panel 3</h3><p>Press <kbd>M</kbd> on a focused tab to enter move mode.</p></div>
-        </BsDockManager>
+          layout={layout}
+          onLayoutChange={setLayout}
+          pane={({ pane }) => PANES[pane]}
+          style={{ height: '100%' }}
+        />
       </section>
 
       <section>

@@ -2,9 +2,9 @@
 import { ref } from 'vue';
 import { BsDockManager } from '@mintplayer/vue-bootstrap/dock';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
-import type { DockLayoutSnapshot } from '@mintplayer/web-components/dock';
+import type { DockLayoutInput } from '@mintplayer/vue-bootstrap/dock';
 
-const layout = ref<DockLayoutSnapshot>({
+const layout = ref<DockLayoutInput>({
   root: {
     kind: 'split',
     direction: 'horizontal',
@@ -23,9 +23,11 @@ const layout = ref<DockLayoutSnapshot>({
 });
 
 const SOURCE = `<BsDockManager v-model:layout="layout">
-  <div slot="panel-1" class="p-3">…</div>
-  <div slot="panel-2" class="p-3">…</div>
-  <div slot="panel-3" class="p-3">…</div>
+  <template #pane="{ pane }">
+    <div v-if="pane === 'panel-1'" class="p-3">…</div>
+    <div v-else-if="pane === 'panel-2'" class="p-3">…</div>
+    <div v-else class="p-3">…</div>
+  </template>
 </BsDockManager>`;
 </script>
 
@@ -59,11 +61,13 @@ const SOURCE = `<BsDockManager v-model:layout="layout">
       <h2>Basic usage</h2>
       <BsDockManager
         v-model:layout="layout"
-        style="display: block; height: 100%"
+        style="height: 100%"
       >
-        <div slot="panel-1" class="p-3"><h3>Panel 1</h3><p>Static content via a named slot.</p></div>
-        <div slot="panel-2" class="p-3"><h3>Panel 2</h3><p>Drag this tab to dock it elsewhere.</p></div>
-        <div slot="panel-3" class="p-3"><h3>Panel 3</h3><p>Press <kbd>M</kbd> on a focused tab to enter move mode.</p></div>
+        <template #pane="{ pane }">
+          <div v-if="pane === 'panel-1'" class="p-3"><h3>Panel 1</h3><p>Every pane is rendered by one scoped slot, switched on the pane's name.</p></div>
+          <div v-else-if="pane === 'panel-2'" class="p-3"><h3>Panel 2</h3><p>Drag this tab to dock it elsewhere.</p></div>
+          <div v-else-if="pane === 'panel-3'" class="p-3"><h3>Panel 3</h3><p>Press <kbd>M</kbd> on a focused tab to enter move mode.</p></div>
+        </template>
       </BsDockManager>
     </section>
 

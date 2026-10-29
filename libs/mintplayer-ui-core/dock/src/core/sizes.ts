@@ -1,4 +1,4 @@
-import type { DockSplitNode } from '../types/dock-layout';
+import type { DockSplitNode } from '../dock-layout';
 
 /**
  * Split weights. A `DockSplitNode.sizes` array is authored as free-form flex

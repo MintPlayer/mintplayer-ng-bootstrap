@@ -399,6 +399,28 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - `markPending` / `clearPending` / `reportError` / `reportUploadProgress` / `clearUpload` remain on the
     Angular component and the Lit element. The node, event and messages types come from
     `@mintplayer/ui-core/file-manager`, and every front re-exports them.
+- **Dock manager is generated from one source in every front, composed of the splitter (issue #437).** It
+  is written once in `@mintplayer/ui-core/dock` (`dockCore`, `connectDock`; the layout tree, geometry and
+  sizing helpers moved there from `@mintplayer/web-components/dock`) and compiled into all four fronts.
+  `<mint-dock-manager>` is replaced by `<mp-dock-manager>` (Lit) and the generated `BsDockManager`
+  components.
+  - **Pane content** comes from one `pane` slot, called with the pane's name, in place of
+    `<bs-dock-pane name>` / `slot="<pane>"` children. Angular: `<ng-template bsDockManagerPane let-pane="pane">`
+    (`BsDockPaneComponent` is gone). React: `pane={({ pane }) => …}`. Vue: `<template #pane="{ pane }">`.
+    Lit: `paneRenderer` or `slot="pane"` children. Each pane renders once into a core-owned host that the
+    dock moves between stacks, so its state survives every drag, drop and tear-off. A pane removed from
+    the layout keeps its content alive, out of sight, as an unslotted child did before. Pane content is not
+    server-rendered: the server HTML is the tabs and splits, inert until the dock is live.
+  - **Every front:** the root is `.dock` with `role="region"` (a `div` in React and Vue, the host in Angular
+    and Lit). There is no shadow root, so page CSS reaches the internals, and the tabs are plain
+    `role="tab"` buttons (`mp-tab-control` is no longer used). Accessible names come from a new `labels`
+    input (`DockLabels`, `DOCK_LABELS`, `mergeDockLabels`).
+  - **Two-way `layout`:** Angular `[(layout)]` (type `DockLayoutInput`), Vue `v-model:layout`, Lit writes
+    the property back. There is no JSON `layout` attribute any more.
+  - **Events** are lowercased like every compiled component: `layoutchange` (replaces
+    `dock-layout-changed` and Angular's `layoutSnapshotChange`) and the new `paneactivated`. React:
+    `onLayoutChange`, `onPaneActivated`, receiving the payload.
+  - `captureLayout()` remains on the Angular component, the Vue instance and the Lit element.
 - **Hierarchy chart is generated from one source in every front (issue #437).** It is written once in
   `@mintplayer/ui-core/charts/hierarchy` (`hierarchyChartCore`, `connectHierarchyChart`) and compiled into
   all four fronts. The server HTML is the finished chart at a 420px fallback scale, its controls inert until

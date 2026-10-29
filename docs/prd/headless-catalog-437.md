@@ -1,6 +1,6 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
-**Status:** In progress (updated 2026-10-28). Most of Waves A–C and the compiler nesting extension have landed (still open there: the navbar item, the spikes S2/S4/S6/S7/S9 and S15–S17/S19); Wave D has the file manager and tile manager done (plus the splitter, moved into M6), with the dock, ribbon and scheduler left. The plan file tracks each item. Spikes S1–S12 gate the design decisions marked *(spike)*.
+**Status:** In progress (updated 2026-10-29). Most of Waves A–C and the compiler nesting extension have landed (still open there: the navbar item, the spikes S2/S4/S6/S7/S9 and S15–S17/S19); Wave D has the file manager, tile manager and dock done (plus the splitter, moved into M6), with the ribbon and scheduler left. The plan file tracks each item. Spikes S1–S12 gate the design decisions marked *(spike)*.
 **Issue:** #437. **Pilot:** #436 typeahead (`docs/prd/typeahead-wc-436.md`, PR #438).
 **Plan:** `docs/prd/headless-catalog-437-plan.md`.
 **Delivery:** one pull request, per the workspace rule. Milestones are committed separately and the PR is squashed.

@@ -1,16 +1,23 @@
-:host {
+// The dock manager's stylesheet, shared by all four fronts (PRD #437 D10).
+// Rescoped at build time: every compound gains `[data-mps=dock]`.
+//
+// The composed splitter styles itself. Where this sheet sizes it, or the pane
+// content the core seats in a panel, it anchors on our own scoped element and
+// is written in final form.
+
+.dock {
+  --dock-split-gap: 0.25rem;
+
   display: block;
   position: relative;
   width: 100%;
   height: 100%;
-  contain: layout paint size style;
   box-sizing: border-box;
+  contain: layout paint size style;
   font-family: inherit;
   color: inherit;
-  --dock-split-gap: 0.25rem;
 }
 
-.dock-root,
 .dock-docked,
 .dock-split,
 .dock-stack,
@@ -18,12 +25,6 @@
   box-sizing: border-box;
   min-width: 0;
   min-height: 0;
-}
-
-.dock-root {
-  position: relative;
-  width: 100%;
-  height: 100%;
 }
 
 .dock-docked {
@@ -47,11 +48,20 @@
   z-index: 120;
 }
 
+.dock-parking {
+  display: none;
+}
+
+// The core writes the geometry as custom properties; border-box so the 1px
+// border sits inside the clamped bounds. No min size: a small host may shrink
+// a window below the comfortable minimum.
 .dock-floating {
   position: absolute;
-  // border-box: inline width/height set by the manager already accounts for
-  // the 1px border, so the pane's visual edge matches its clamped position
-  // exactly. Without this, content-box adds 2px past every host edge.
+  left: var(--dock-left, 0);
+  top: var(--dock-top, 0);
+  width: var(--dock-width, auto);
+  height: var(--dock-height, auto);
+  z-index: var(--dock-z, 10);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -61,15 +71,10 @@
   background: var(--bs-body-bg);
   box-shadow: var(--bs-box-shadow-lg);
   overflow: hidden;
-  min-width: 12rem;
-  min-height: 8rem;
 }
 
-// While a pane is being dragged out of (or while floating in) this wrapper,
-// make the wrapper transparent to elementsFromPoint so findStackAtPoint can
-// see through to the docked stack underneath and show drop zones on it.
-// The drag itself isn't affected — pointermove/pointerup listen on `window`,
-// not on the wrapper.
+// A window under a drag is transparent to hit-testing, so a drop can target
+// the stack beneath it.
 .dock-floating[data-dragging='true'] {
   pointer-events: none;
 }
@@ -80,18 +85,9 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
   cursor: move;
-  // Stop the browser from claiming a finger drag as a page scroll. Without
-  // this, on Android Chrome the pointermove that should reposition the
-  // floating window is arbitrated as scroll and pointercancel kills the drag.
+  // Android otherwise claims the drag as a scroll and cancels it.
   touch-action: none;
-  // Original was slate (rgb 148, 163, 184) — a blue-grey. --bs-secondary-bg
-  // alone reads as flat gray, so compose the gradient on --bs-primary-rgb at
-  // low alpha to keep the blue cast tied to the rest of the dock palette.
-  background: linear-gradient(
-    to bottom,
-    rgba(var(--bs-primary-rgb), 0.15),
-    rgba(var(--bs-primary-rgb), 0.05)
-  );
+  background: linear-gradient(to bottom, rgba(var(--bs-primary-rgb), 0.15), rgba(var(--bs-primary-rgb), 0.05));
   border-bottom: 1px solid var(--bs-primary-border-subtle);
   user-select: none;
   -webkit-user-select: none;
@@ -118,42 +114,42 @@
   line-height: 1;
   padding: 0 0.4rem;
   border-radius: 3px;
-  // Default flex-row baseline alignment offsets the visual centre of the ×
-  // glyph relative to the title text — re-centre with margin-top so the
-  // close button reads as a row-aligned action, not a stray drift.
   margin-top: -1px;
-  // The chrome's pointerdown initiates a window drag. The button's own
-  // pointerdown handler stops propagation, but we still want the cursor to
-  // read as clickable rather than grabby.
-  &:hover {
-    background: rgba(var(--bs-primary-rgb), 0.15);
-  }
-  &:focus-visible {
-    outline: 2px solid var(--bs-primary);
-    outline-offset: 1px;
-  }
 }
 
-.dock-floating > .dock-stack {
+.dock-floating__close:hover {
+  background: rgba(var(--bs-primary-rgb), 0.15);
+}
+
+.dock-floating__close:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: 1px;
+}
+
+.dock-floating__stack {
   flex: 1 1 auto;
-  min-width: 12rem;
-  min-height: 8rem;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
 }
 
 .dock-floating__resizer {
   position: absolute;
   pointer-events: auto;
   z-index: 2;
-  // Match the chrome's blue tint so resizer affordances stay visually
-  // tied to the floating window's identity.
   background: rgba(var(--bs-primary-rgb), 0.1);
   transition: background 120ms ease;
-  // Touch resize on Android otherwise loses pointermoves to the page scroller.
   touch-action: none;
 }
 
 .dock-floating__resizer:hover,
 .dock-floating__resizer[data-resizing='true'] {
+  background: rgba(var(--bs-primary-rgb), 0.3);
+}
+
+.dock-floating__resizer:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
   background: rgba(var(--bs-primary-rgb), 0.3);
 }
 
@@ -223,46 +219,47 @@
   cursor: se-resize;
 }
 
-// `.dock-split` is an <mp-splitter> element. Layout (flex, orientation,
-// dividers) is the splitter's own sheet. This rule just makes sure the
-// splitter fills its dock-flex parent.
+// A split fills its slot (the docked surface, a floating window or a splitter
+// pane) and hands the whole of it to the splitter it composes.
 .dock-split {
   flex: 1 1 0;
+  display: flex;
   position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+// The composed splitter: whatever element a front renders for it.
+/*! @mps-global */
+.dock-split[data-mps=dock] > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .dock-intersection-handle {
   position: absolute;
+  left: var(--dock-left, 0);
+  top: var(--dock-top, 0);
   width: 1rem;
   height: 1rem;
   margin-left: -0.5rem;
   margin-top: -0.5rem;
   border-radius: 0.375rem;
-  // Translucent primary at rest — bright enough to be visible against both
-  // light and dark dock surfaces, the alpha keeps it from competing with
-  // active content. Hover/focus escalates to a fuller fill below.
   background: rgba(var(--bs-primary-rgb), 0.4);
   border: 1px solid var(--bs-primary);
   box-shadow: var(--bs-box-shadow-sm);
   cursor: all-scroll;
   pointer-events: auto;
-  // Required so the corner-resize gesture isn't intermittently arbitrated as
-  // a page scroll on touch — `event.preventDefault()` on pointerdown alone
-  // doesn't beat the browser's compositor-thread scroll-claim on Android.
+  // preventDefault on pointerdown alone loses to the compositor's scroll claim on Android.
   touch-action: none;
-  // Visible-but-quiet at rest so users can discover the corner-drag affordance
-  // without a hover. Hover/focus/[data-resizing] escalates to opacity:1 below.
   opacity: 0.6;
   transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
 .dock-intersection-handle:hover,
 .dock-intersection-handle:focus-visible,
-.dock-intersection-handle[data-visible='true'],
 .dock-intersection-handle[data-resizing='true'] {
-  // Slightly punchier than the resting state so hover stays distinct from
-  // --bs-primary-bg-subtle. Compose on --bs-primary-rgb to keep the alpha
-  // bump from the original rgba(59, 130, 246, 0.35).
   background: rgba(var(--bs-primary-rgb), 0.35);
   border-color: var(--bs-primary);
   opacity: 1;
@@ -273,91 +270,127 @@
   outline-offset: 1px;
 }
 
-// `.dock-stack` is now an <mp-tab-control> element. Strip layout, button
-// styling, active-tab class, and pane visibility are all owned by the WC.
-// This rule just gives the host the dock's chrome (border, background) and
-// makes it fill its dock-flex parent.
 .dock-stack {
   flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
   border: 1px solid var(--bs-border-color);
   border-radius: 0.25rem;
   background: var(--bs-body-bg);
-  backdrop-filter: blur(4px);
+  overflow: hidden;
 }
 
-// `.dock-tab` is on the slotted <span slot="*-header"> the dock provides
-// for each tab; the WC projects it into the strip's <button>. We style the
-// drag-handle cursor so users see the tab is draggable. Active-tab styling
-// (background highlight) lives in the WC's shadow stylesheet (Bootstrap's
-// .nav-link.active).
-//
-// `display: block` + matching `padding`/negative `margin` extend the span's
-// hit area to cover the entire `.nav-link` button. Without this, only the
-// span's text rect is draggable — the button's own padding (the area around
-// the text) doesn't trigger dragstart, since `draggable="true"` is on the
-// span (not the button it's slotted into). Padding values mirror Bootstrap's
-// default `.nav-link` padding (0.5rem 1rem); the negative margin pulls the
-// span's box back over the button's padding so clicks anywhere on the button
-// land on the span.
+// The tablist: a nav-tabs strip that scrolls sideways when the tabs overflow
+// (a touch swipe scrolls it from JS, see the core).
+.dock-stack__strip {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.125rem;
+  padding: 0.25rem 0.25rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  border-bottom: 1px solid var(--bs-border-color);
+}
+
 .dock-tab {
+  flex: 0 0 auto;
+  appearance: none;
+  margin: 0 0 -1px;
+  padding: 0.375rem 0.875rem;
+  border: 1px solid transparent;
+  border-top-left-radius: var(--bs-border-radius, 0.375rem);
+  border-top-right-radius: var(--bs-border-radius, 0.375rem);
+  background: transparent;
+  color: var(--bs-link-color);
+  font: inherit;
+  white-space: nowrap;
   cursor: grab;
-  display: block;
-  padding: 0.5rem 1rem;
-  margin: -0.5rem -1rem;
-  // touch-action is consulted at touchstart and frozen for the lifetime of
-  // the gesture — `pan-x` cannot be promoted to "anything goes" mid-gesture
-  // even with setPointerCapture (the compositor has already arbitrated the
-  // touch). So we set `none` and own the gesture from frame 1: the browser
-  // never claims it for scroll or selection, and JS drives strip scroll
-  // programmatically during the pending window before the long-press fires.
-  // See docs/prd/dock-touch-long-press-drag.md.
+  // touch-action is frozen at touchstart: own the gesture from the first frame.
   touch-action: none;
-  // Suppress iOS magnifier loupe / text selection on long-press.
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+.dock-tab:hover {
+  border-color: var(--bs-secondary-bg) var(--bs-secondary-bg) var(--bs-border-color);
+}
+
+.dock-tab.active {
+  color: var(--bs-emphasis-color);
+  background: var(--bs-body-bg);
+  border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
 }
 
 .dock-tab:active {
   cursor: grabbing;
 }
 
-// Visual feedback during the touch long-press hold. Applied 150 ms into the
-// hold (after the initial settle), removed on any state transition out of
-// pending. The transform is small enough not to clip in the strip but large
-// enough to read as "I see your press."
+.dock-tab:focus-visible {
+  outline: 2px solid var(--bs-primary);
+  outline-offset: -2px;
+}
+
+.dock-tab:disabled {
+  cursor: default;
+}
+
+// Visual feedback during the touch long-press hold.
 .dock-tab[data-pressing='true'] {
   background-color: var(--bs-secondary-bg-subtle, rgba(0, 0, 0, 0.05));
   transform: scale(1.02);
-  transition:
-    background-color 100ms ease-out,
-    transform 100ms ease-out;
+  transition: background-color 100ms ease-out, transform 100ms ease-out;
 }
 
-// `.dock-stack__pane` is the slotted content wrapper. The WC projects it
-// into its body slot only when the tab is active, so we don't need a
-// hidden-state rule here. Just match the inherited flex layout for content.
+// The slot a dragged tab will land in: its own width, dimmed.
+.dock-tab--placeholder {
+  width: var(--dock-placeholder-width, auto);
+  box-sizing: border-box;
+  opacity: 0.5;
+  overflow: hidden;
+  cursor: grabbing;
+}
+
 .dock-stack__pane {
   position: relative;
+  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: 100%;
+}
+
+// The pane host the core seats in the panel, and the consumer's content in it.
+.dock-pane-content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/*! @mps-global */
+.dock-pane-content[data-mps=dock] > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
 }
 
 .dock-drop-indicator {
   position: absolute;
+  left: var(--dock-left, 0);
+  top: var(--dock-top, 0);
+  width: var(--dock-width, 0);
+  height: var(--dock-height, 0);
+  z-index: var(--dock-z, 100);
   pointer-events: none;
   border: 2px solid var(--bs-primary);
-  // Original was `rgba(59, 130, 246, 0.2)` — translucent so the underlying
-  // panel stays visible behind the dropzone hint. The PRD's mapping to
-  // --bs-primary-bg-subtle made it solid; compose on --bs-primary-rgb to
-  // keep the see-through fill.
   background: rgba(var(--bs-primary-rgb), 0.2);
   border-radius: 0.25rem;
   opacity: 0;
   transition: opacity 120ms ease;
-  z-index: 100;
 }
 
 .dock-drop-indicator[data-visible='true'] {
@@ -366,7 +399,10 @@
 
 .dock-drop-joystick {
   position: absolute;
-  display: grid;
+  left: var(--dock-left, 0);
+  top: var(--dock-top, 0);
+  z-index: var(--dock-z, 110);
+  display: none;
   grid-template-columns: repeat(3, min-content);
   grid-template-rows: repeat(3, min-content);
   gap: 0.125rem;
@@ -376,7 +412,10 @@
   box-shadow: var(--bs-box-shadow);
   pointer-events: none;
   transform: translate(-50%, -50%);
-  z-index: 110;
+}
+
+.dock-drop-joystick[data-visible='true'] {
+  display: grid;
 }
 
 .dock-drop-joystick__spacer {
@@ -391,6 +430,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
   border-radius: 0.375rem;
   border: 1px solid var(--bs-primary-border-subtle);
   background: var(--bs-body-bg);
@@ -420,20 +460,19 @@
   border-radius: 0.5rem;
 }
 
-::slotted(*) {
-  flex: 1 1 auto;
-  display: block;
-  min-width: 0;
-  min-height: 0;
+// The empty main area offers only the centre; the others keep their place.
+.dock-drop-joystick__button[data-hidden='true'] {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dock-floating,
   .dock-floating__resizer,
   .dock-floating__close,
   .dock-intersection-handle,
   .dock-drop-indicator,
-  .dock-drop-joystick__button {
+  .dock-drop-joystick__button,
+  .dock-tab {
     transition: none !important;
     animation: none !important;
   }

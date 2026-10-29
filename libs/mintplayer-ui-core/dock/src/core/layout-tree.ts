@@ -3,7 +3,7 @@ import type {
   DockLayoutNode,
   DockSplitNode,
   DockStackNode,
-} from '../types/dock-layout';
+} from '../dock-layout';
 import { insertWeight, normalizeSizesArray, normalizeSplitNode } from './sizes';
 import type { DockPath, DropZone } from './types';
 

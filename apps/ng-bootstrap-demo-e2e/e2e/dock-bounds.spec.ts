@@ -1,12 +1,13 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 // PRD docs/prd/dock-floating-pane-bounds.md covers issue #347.
 // These tests exercise *passive* clamping (load, ResizeObserver, intent vs
 // render) — drag-time clamping is locked by unit tests on clampBoundsToHost
-// (mint-dock-manager.element.spec.ts) plus integration via the gesture
-// handlers themselves; we don't drive low-level pointer choreography here for
-// the same reason dock.spec.ts doesn't (handlers change shape and the spec
-// would be the first thing to break).
+// (ui-core dock/src/core/geometry.spec.ts); we don't drive low-level pointer
+// choreography here for the same reason dock.spec.ts doesn't.
+//
+// The dock renders in the light DOM (#437) and its host element IS the dock
+// surface, so the floating windows are measured against bs-dock-manager.
 
 interface RectInfo {
   paneLeft: number;
@@ -23,46 +24,16 @@ interface RectInfo {
   hostHeight: number;
 }
 
-async function getPaneAndHostRects(
-  page: import('@playwright/test').Page,
-  paneId: string,
-): Promise<RectInfo | null> {
-  return await page.evaluate(async (id) => {
-    // Poll for the pane to appear — first-paint can race with the WC's render
-    // and Firefox in particular is slow on cold-start in CI. 10 s budget
-    // matches the other polls in this file.
-    for (let i = 0; i < 100; i++) {
-      const dock = document.querySelector('mint-dock-manager') as
-        | (HTMLElement & { shadowRoot: ShadowRoot | null })
-        | null;
-      if (dock?.shadowRoot) {
-        const panes = Array.from(dock.shadowRoot.querySelectorAll<HTMLElement>('.dock-floating'));
-        const hit = panes.find((p) => {
-          const labelEl = p.querySelector<HTMLElement>('.dock-floating__title');
-          return labelEl?.textContent?.trim() === id;
-        });
-        if (hit) break;
-      }
-      await new Promise((r) => setTimeout(r, 100));
-    }
+const dock = (page: Page) => page.locator('bs-dock-manager');
 
-    const dock = document.querySelector('mint-dock-manager') as
-      | (HTMLElement & { shadowRoot: ShadowRoot | null })
-      | null;
-    if (!dock || !dock.shadowRoot) return null;
-
-    const host = dock.shadowRoot.querySelector('.dock-root') as HTMLElement | null;
-    if (!host) return null;
-
-    const panes = Array.from(
-      dock.shadowRoot.querySelectorAll<HTMLElement>('.dock-floating'),
+/** The floating window titled `title`, measured against the dock surface. */
+async function getPaneAndHostRects(page: Page, title: string): Promise<RectInfo | null> {
+  return await page.evaluate((id) => {
+    const host = document.querySelector<HTMLElement>('bs-dock-manager');
+    const pane = Array.from(host?.querySelectorAll<HTMLElement>('.dock-floating') ?? []).find(
+      (p) => p.querySelector('.dock-floating__title')?.textContent?.trim() === id,
     );
-    const pane = panes.find((p) => {
-      const labelEl = p.querySelector<HTMLElement>('.dock-floating__title');
-      return labelEl?.textContent?.trim() === id;
-    });
-    if (!pane) return null;
-
+    if (!host || !pane) return null;
     const pr = pane.getBoundingClientRect();
     const hr = host.getBoundingClientRect();
     return {
@@ -79,7 +50,7 @@ async function getPaneAndHostRects(
       hostWidth: hr.width,
       hostHeight: hr.height,
     };
-  }, paneId);
+  }, title);
 }
 
 function expectPaneInsideHost(rects: RectInfo, tolerance = 1): void {
@@ -89,7 +60,24 @@ function expectPaneInsideHost(rects: RectInfo, tolerance = 1): void {
   expect(rects.paneBottom).toBeLessThanOrEqual(rects.hostBottom + tolerance);
 }
 
-test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () => {
+/** Loads the demo and waits until the core is live (tabs enable on the client). */
+async function gotoDock(page: Page): Promise<void> {
+  await page.goto('/enterprise/dock');
+  await expect(dock(page).getByRole('tab', { name: 'Panel 5', exact: true })).toBeEnabled({ timeout: 15_000 });
+}
+
+/** Reads a JSON snippet section of the demo ("Live layout" / "Captured snapshot"). */
+async function readSnapshot(page: Page, heading: string): Promise<string> {
+  return await page.evaluate((title) => {
+    const section = Array.from(document.querySelectorAll('.dock-demo__snapshot')).find(
+      (d) => d.querySelector('.dock-demo__snapshot-title')?.textContent?.includes(title),
+    );
+    const rows = section?.querySelectorAll('bs-code-snippet .line-text') ?? [];
+    return Array.from(rows, (row) => row.textContent ?? '').join('\n');
+  }, heading);
+}
+
+test.describe('bs-dock-manager — floating-pane bounds clamping (#347)', () => {
   // Firefox cold-starts the prod dev server slowly on CI runners; default 30s
   // test timeout can race the goto + first-paint. 60s gives headroom without
   // masking real hangs.
@@ -99,13 +87,9 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
     // Demo seeds Panel 5 at left:680, width:320 — right edge at x=1000.
     // Load at default viewport first so the dock attaches + renders, then
     // shrink so the ResizeObserver re-flow pulls Panel 5 inside.
-    await page.goto('/enterprise/dock');
-    await page.locator('mint-dock-manager').waitFor({ state: 'attached', timeout: 15000 });
-
+    await gotoDock(page);
     await page.setViewportSize({ width: 900, height: 700 });
 
-    // Poll on the actual invariant: pane right edge inside host right edge.
-    // Replaces a fixed waitForTimeout that raced ResizeObserver on slow CI.
     await expect
       .poll(
         async () => {
@@ -119,21 +103,18 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
     const rects = await getPaneAndHostRects(page, 'Panel 5');
     expect(rects).not.toBeNull();
     expectPaneInsideHost(rects!);
-    // Pane should be pulled toward the host's right edge — within 5px (the
-    // dock surface is narrower than the seed wanted).
+    // Pulled toward the host's right edge — the surface is narrower than the seed wanted.
     expect(rects!.paneRight).toBeGreaterThan(rects!.hostRight - 5);
   });
 
   test('shrink-then-grow returns Panel 5 to its seeded intent', async ({ page }) => {
     await page.setViewportSize({ width: 1400, height: 900 });
-    await page.goto('/enterprise/dock');
-    await page.locator('mint-dock-manager').waitFor({ state: 'attached', timeout: 15000 });
+    await gotoDock(page);
 
     const wide1 = await getPaneAndHostRects(page, 'Panel 5');
     expect(wide1).not.toBeNull();
     const seededLeftRelative = wide1!.paneLeft - wide1!.hostLeft;
 
-    // Shrink — poll until Panel 5 has actually been pulled inside the new host.
     await page.setViewportSize({ width: 800, height: 700 });
     await expect
       .poll(
@@ -148,7 +129,6 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
     expect(narrow).not.toBeNull();
     expectPaneInsideHost(narrow!);
 
-    // Grow back — poll until Panel 5 has returned to its seeded intent.
     await page.setViewportSize({ width: 1400, height: 900 });
     await expect
       .poll(
@@ -159,40 +139,16 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
         { timeout: 10_000 },
       )
       .toBeTruthy();
-    const wide2 = await getPaneAndHostRects(page, 'Panel 5');
-    expect(wide2).not.toBeNull();
-    expect(wide2!.paneLeft - wide2!.hostLeft).toBeCloseTo(seededLeftRelative, 0);
   });
 
-  test('intent is preserved across passive re-flow (out-of-bounds setter)', async ({ page }) => {
+  test('intent is preserved across passive re-flow (out-of-bounds layout)', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 });
-    await page.goto('/enterprise/dock');
-    await page.locator('mint-dock-manager').waitFor({ state: 'attached', timeout: 15000 });
+    await gotoDock(page);
 
-    const intentPreserved = await page.evaluate(async () => {
-      // Wait for the shadow root to populate before writing layout. 10 s
-      // budget — GitHub Actions runners idle for several seconds on first
-      // lazy-route load before the WC upgrades.
-      for (let i = 0; i < 100; i++) {
-        const d = document.querySelector('mint-dock-manager') as
-          | (HTMLElement & { shadowRoot: ShadowRoot | null })
-          | null;
-        if (d?.shadowRoot?.querySelector('.dock-root')) break;
-        await new Promise((r) => setTimeout(r, 100));
-      }
-
-      const dock = document.querySelector('mint-dock-manager') as
-        | (HTMLElement & { layout?: unknown; shadowRoot: ShadowRoot | null })
-        | null;
-      if (!dock || !dock.shadowRoot) return { ok: false, reason: 'no dock after 10s' };
-
-      // Inject a layout where the only floating pane is way out-of-bounds.
-      dock.layout = {
-        root: {
-          kind: 'stack',
-          panes: ['panel-1'],
-          activePane: 'panel-1',
-        },
+    // Restore a layout whose only floating pane is far out of bounds.
+    await page.getByLabel('Layout JSON').fill(
+      JSON.stringify({
+        root: { kind: 'stack', panes: ['panel-1'], activePane: 'panel-1' },
         floating: [
           {
             id: 'out-of-bounds',
@@ -202,123 +158,59 @@ test.describe('mint-dock-manager — floating-pane bounds clamping (#347)', () =
           },
         ],
         titles: { 'panel-1': 'Panel 1', ghost: 'Ghost' },
-      };
+      }),
+    );
+    await page.getByRole('button', { name: 'Apply layout JSON' }).click();
 
-      // Poll until the wrapper has rendered and the clamp has applied.
-      // 10 s budget matches the attach loop above.
-      for (let i = 0; i < 100; i++) {
-        const w = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
-        const h = dock.shadowRoot.querySelector<HTMLElement>('.dock-root');
-        if (w && h) {
-          const wr = w.getBoundingClientRect();
-          const hr = h.getBoundingClientRect();
-          if (wr.right <= hr.right + 1 && wr.bottom <= hr.bottom + 1) break;
-        }
-        await new Promise((r) => setTimeout(r, 100));
-      }
+    // The render clamps the window inside the surface...
+    await expect
+      .poll(
+        async () => {
+          const r = await getPaneAndHostRects(page, 'Ghost');
+          return (
+            !!r &&
+            r.paneLeft >= r.hostLeft - 1 &&
+            r.paneTop >= r.hostTop - 1 &&
+            r.paneRight <= r.hostRight + 1 &&
+            r.paneBottom <= r.hostBottom + 1
+          );
+        },
+        { timeout: 10_000 },
+      )
+      .toBeTruthy();
 
-      // Intent should still be {left:5000, top:5000} — render path clamps but
-      // floating.bounds is untouched.
-      const readback = (dock as unknown as { layout: { floating: { bounds: { left: number; top: number } }[] } }).layout;
-      const stored = readback.floating[0]?.bounds;
-
-      const wrapper = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
-      const host = dock.shadowRoot.querySelector<HTMLElement>('.dock-root');
-      if (!wrapper || !host) return { ok: false, reason: 'no wrapper/host' };
-      const wr = wrapper.getBoundingClientRect();
-      const hr = host.getBoundingClientRect();
-
-      return {
-        ok: true,
-        storedLeft: stored?.left,
-        storedTop: stored?.top,
-        renderedInside:
-          wr.left >= hr.left - 1 &&
-          wr.top >= hr.top - 1 &&
-          wr.right <= hr.right + 1 &&
-          wr.bottom <= hr.bottom + 1,
-      };
-    });
-
-    expect(intentPreserved.ok).toBe(true);
-    expect(intentPreserved.storedLeft).toBe(5000);
-    expect(intentPreserved.storedTop).toBe(5000);
-    expect(intentPreserved.renderedInside).toBe(true);
+    // ...but the layout keeps the intent untouched.
+    await page.getByRole('button', { name: 'Capture layout JSON' }).click();
+    await expect.poll(() => readSnapshot(page, 'Captured snapshot')).toContain('"left": 5000');
+    expect(await readSnapshot(page, 'Captured snapshot')).toContain('"top": 5000');
   });
 
   test('tiny host shrinks the pane to fit (drops the 192/128 minimum)', async ({ page }) => {
     await page.setViewportSize({ width: 1200, height: 800 });
-    await page.goto('/enterprise/dock');
-    await page.locator('mint-dock-manager').waitFor({ state: 'attached', timeout: 15000 });
+    await gotoDock(page);
+    await expect(dock(page).locator('.dock-floating').first()).toBeVisible();
 
-    // Force the dock-root to a tiny size via inline styles on the host,
-    // then poll until the wrapper has actually shrunk (ResizeObserver +
-    // render is async; a fixed wait is flaky on slow CI runners).
-    const result = await page.evaluate(async () => {
-      // Poll for the WC to upgrade AND its shadow root to populate with the
-      // floating pane. This single loop replaces the prior eager
-      // `dock.shadowRoot` bail — first-paint can race with the WC's initial
-      // render on a slow CI runner (GitHub Actions chromium/firefox sometimes
-      // idle for 5+ s on first lazy-route load), so probing shadowRoot once
-      // outside the loop fails before the WC has had a chance to attach.
-      let dock: (HTMLElement & { shadowRoot: ShadowRoot | null }) | null = null;
-      for (let i = 0; i < 100; i++) {
-        dock = document.querySelector('mint-dock-manager') as
-          | (HTMLElement & { shadowRoot: ShadowRoot | null })
-          | null;
-        if (dock?.shadowRoot?.querySelector('.dock-floating')) break;
-        await new Promise((r) => setTimeout(r, 100));
-      }
-      if (!dock || !dock.shadowRoot) {
-        return { ok: false, reason: 'no dock or shadow root after 10s' };
-      }
-      if (!dock.shadowRoot.querySelector('.dock-floating')) {
-        return { ok: false, reason: 'no .dock-floating after 10s' };
-      }
-
-      dock.style.width = '100px';
-      dock.style.height = '80px';
-
-      // Poll until the wrapper actually reflects the smaller host. Host is
-      // 100px; wrapper must end up <= 110px (10px slack for borders + flake).
-      // 10 s budget matches the attach loop above — the ResizeObserver +
-      // bounds-clamping rAF chain can take a beat on a loaded CI runner.
-      let shrunk = false;
-      for (let i = 0; i < 100; i++) {
-        const w = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
-        if (w && w.getBoundingClientRect().width <= 110) {
-          shrunk = true;
-          break;
-        }
-        await new Promise((r) => setTimeout(r, 100));
-      }
-      if (!shrunk) {
-        return { ok: false, reason: 'wrapper did not shrink to <= 110px after 10s' };
-      }
-
-      const wrapper = dock.shadowRoot.querySelector<HTMLElement>('.dock-floating');
-      const host = dock.shadowRoot.querySelector<HTMLElement>('.dock-root');
-      if (!wrapper || !host) {
-        return { ok: false, reason: 'wrapper or host gone after shrink' };
-      }
-
-      const wr = wrapper.getBoundingClientRect();
-      const hr = host.getBoundingClientRect();
-      return {
-        ok: true,
-        paneWidth: wr.width,
-        paneHeight: wr.height,
-        hostWidth: hr.width,
-        hostHeight: hr.height,
-        insideX: wr.left >= hr.left - 1 && wr.right <= hr.right + 1,
-        insideY: wr.top >= hr.top - 1 && wr.bottom <= hr.bottom + 1,
-      };
+    // Force the dock surface to a tiny size; the ResizeObserver re-clamps.
+    await dock(page).evaluate((el: HTMLElement) => {
+      el.style.width = '100px';
+      el.style.height = '80px';
+      el.style.minHeight = '0';
     });
 
-    expect(result.ok, (result as { reason?: string }).reason ?? 'no reason').toBe(true);
-    expect(result.paneWidth).toBeLessThanOrEqual(result.hostWidth! + 1);
-    expect(result.paneHeight).toBeLessThanOrEqual(result.hostHeight! + 1);
-    expect(result.insideX).toBe(true);
-    expect(result.insideY).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          const r = await getPaneAndHostRects(page, 'Panel 5');
+          return !!r && r.paneWidth <= 110;
+        },
+        { timeout: 10_000 },
+      )
+      .toBeTruthy();
+
+    const rects = await getPaneAndHostRects(page, 'Panel 5');
+    expect(rects).not.toBeNull();
+    expect(rects!.paneWidth).toBeLessThanOrEqual(rects!.hostWidth + 1);
+    expect(rects!.paneHeight).toBeLessThanOrEqual(rects!.hostHeight + 1);
+    expectPaneInsideHost(rects!);
   });
 });

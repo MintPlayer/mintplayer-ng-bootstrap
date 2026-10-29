@@ -26,52 +26,68 @@
     </ul>
   </details>
   <bs-dock-manager
-    [layout]="layout()"
+    [(layout)]="layout"
     [debugLayoutIntegrity]="isDevMode"
-    (layoutChange)="$event && layout.set($event)"
+    (layoutchange)="liveLayout.set($event)"
     class="dock-demo__surface"
-    (layoutSnapshotChange)="onLayoutSnapshot($event)"
     >
-    <bs-dock-pane name="panel-1">
-      <div class="p-3">
-        <h3 class="mb-2">Panel 1</h3>
-        <p class="mb-0">This panel demonstrates static content projected through a named slot.</p>
-      </div>
-    </bs-dock-pane>
-    <bs-dock-pane name="panel-2">
-      <div class="p-3">
-        <h3 class="mb-2">Panel 2</h3>
-        <p class="mb-0">Switch tabs to see how the dock manager preserves the layout.</p>
-      </div>
-    </bs-dock-pane>
-    <bs-dock-pane name="panel-3">
-      <div class="p-3">
-        <h3 class="mb-2">Panel 3</h3>
-        <bs-badge [type]="Color.info">Web component powered</bs-badge>
-      </div>
-    </bs-dock-pane>
-    <bs-dock-pane name="panel-4">
-      <div class="p-3">
-        <h3 class="mb-2">Panel 4</h3>
-        <p class="mb-0">Layouts can be saved as JSON using the capture button.</p>
-      </div>
-    </bs-dock-pane>
-    <bs-dock-pane name="panel-5">
-      <div class="p-3">
-        <h3 class="mb-2">Panel 5</h3>
-        <p class="mb-0">Use this panel to imagine additional tools or editors.</p>
-      </div>
-    </bs-dock-pane>
-    <bs-dock-pane name="panel-floating">
-      <div class="p-3">
-        <h3 class="mb-2">Floating tools</h3>
-        <p class="mb-0">Floating panes can host inspectors, consoles, or other auxiliary UI.</p>
-      </div>
-    </bs-dock-pane>
+    <ng-template bsDockManagerPane let-pane="pane">
+      @switch (pane) {
+        @case ('panel-1') {
+          <div class="p-3">
+            <h3 class="mb-2">Panel 1</h3>
+            <p class="mb-0">Every pane is rendered by one template, switched on the pane's name.</p>
+          </div>
+        }
+        @case ('panel-2') {
+          <div class="p-3">
+            <h3 class="mb-2">Panel 2</h3>
+            <p class="mb-0">Switch tabs to see how the dock manager preserves the layout.</p>
+          </div>
+        }
+        @case ('panel-3') {
+          <div class="p-3">
+            <h3 class="mb-2">Panel 3</h3>
+            <bs-badge [type]="Color.info">Headless core powered</bs-badge>
+          </div>
+        }
+        @case ('panel-4') {
+          <div class="p-3">
+            <h3 class="mb-2">Panel 4</h3>
+            <p class="mb-0">Layouts can be saved as JSON using the capture button.</p>
+          </div>
+        }
+        @case ('panel-5') {
+          <div class="p-3">
+            <h3 class="mb-2">Panel 5</h3>
+            <p class="mb-0">Use this panel to imagine additional tools or editors.</p>
+          </div>
+        }
+        @case ('panel-floating') {
+          <div class="p-3">
+            <h3 class="mb-2">Floating tools</h3>
+            <p class="mb-0">Floating panes can host inspectors, consoles, or other auxiliary UI.</p>
+          </div>
+        }
+      }
+    </ng-template>
   </bs-dock-manager>
 
   <div class="dock-demo__actions">
     <button [color]="Color.primary" (click)="saveLayout()">Capture layout JSON</button>
+    <label class="dock-demo__snapshot-title" for="dock-layout-json">Layout JSON</label>
+    <textarea
+      id="dock-layout-json"
+      class="dock-demo__layout-json"
+      rows="4"
+      [attr.aria-invalid]="layoutError() ? 'true' : null"
+      [attr.aria-describedby]="layoutError() ? 'dock-layout-json-error' : null"
+      #layoutJson
+    ></textarea>
+    @if (layoutError(); as error) {
+      <p id="dock-layout-json-error" class="text-danger mb-0">{{ error }}</p>
+    }
+    <button [color]="Color.secondary" (click)="applyLayout(layoutJson.value)">Apply layout JSON</button>
     <div class="dock-demo__snapshots">
       <div class="dock-demo__snapshot">
         <h4 class="dock-demo__snapshot-title">Live layout</h4>

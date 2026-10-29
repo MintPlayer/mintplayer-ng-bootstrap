@@ -1,46 +1,33 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
-// Injects a layout straight onto the <mint-dock-manager> element via its
-// `layout` property setter — Angular only writes that property once on mount,
-// so writes made afterwards stick. Returns the count of intersection handles
-// the renderer ends up emitting after the scheduler debounce settles.
-async function countHandlesForLayout(
-  page: import('@playwright/test').Page,
-  layout: unknown,
-): Promise<number> {
-  return await page.evaluate(async (l) => {
-    const el = document.querySelector('mint-dock-manager') as
-      | (HTMLElement & { layout?: unknown })
-      | null;
-    if (!el || !el.shadowRoot) return -1;
-
-    el.layout = l;
-
-    // setTimeout(5) debounce in scheduleRenderIntersectionHandles() — wait
-    // past it twice so observers triggered by the layout swap also flush.
-    await new Promise((r) => setTimeout(r, 60));
-
-    return el.shadowRoot.querySelectorAll('.dock-intersection-handle').length;
-  }, layout);
+/**
+ * Restores a layout through the demo's "Apply layout JSON" control, waits for
+ * its floating windows to render, then for the intersection handles to settle
+ * (they are measured after a short debounce, once the splitters hold their
+ * weights). Returns the number of handles the dock ends up rendering.
+ */
+async function countHandlesForLayout(page: Page, layout: { floating: unknown[] }): Promise<number> {
+  await page.getByLabel('Layout JSON').fill(JSON.stringify(layout));
+  await page.getByRole('button', { name: 'Apply layout JSON' }).click();
+  const dock = page.locator('bs-dock-manager');
+  await expect(dock.locator('.dock-floating')).toHaveCount(layout.floating.length);
+  await page.waitForTimeout(300);
+  return await dock.locator('.dock-intersection-handle').count();
 }
 
-test.describe('mint-dock-manager — cross-layer intersection-glyph regression', () => {
-  // Same readiness rule as dock-keyboard.spec.ts: wait for the shadow tree, not
-  // for the network to idle (it never does — HMR) and not for light-DOM text
-  // (the DSD chrome renders it before the element upgrades).
+test.describe('bs-dock-manager — cross-layer intersection-glyph regression', () => {
+  // Wait for an enabled tab: the network never idles (HMR), and the server
+  // render shows the tabs disabled until the core is live on the client.
   test.beforeEach(async ({ page }) => {
     await page.goto('/enterprise/dock');
-    await page.waitForFunction(() => {
-      const dock = document.querySelector('mint-dock-manager');
-      return !!dock?.shadowRoot?.querySelector('.dock-tab[data-tab-id]');
-    });
+    await expect(page.locator('bs-dock-manager').getByRole('tab', { name: 'Panel 1', exact: true })).toBeEnabled();
   });
 
   test('no intersection handle when a docked splitter and a floating-pane splitter cross-align', async ({
     page,
   }) => {
     // Docked: one vertical split (children stacked top/bottom) → 1 horizontal
-    // divider running across the docked surface at ~y=300.
+    // divider running across the docked surface.
     // Floating: one horizontal split (children side-by-side) at bounds that
     // place its single vertical divider across the docked h-divider line.
     const layout = {
@@ -77,11 +64,9 @@ test.describe('mint-dock-manager — cross-layer intersection-glyph regression',
       },
     };
 
-    const count = await countHandlesForLayout(page, layout);
-    // Pre-fix: 1 phantom handle at the cross-layer coincidence. Post-fix: 0,
-    // because neither the docked layer nor the float contains a real same-
-    // layer intersection — the only candidate pair was cross-layer.
-    expect(count).toBe(0);
+    // Neither layer contains a real same-layer intersection — the only
+    // candidate pair is cross-layer, which must not produce a handle.
+    expect(await countHandlesForLayout(page, layout)).toBe(0);
   });
 
   test('real same-layer intersection still renders alongside a cross-layer cousin', async ({
@@ -89,7 +74,7 @@ test.describe('mint-dock-manager — cross-layer intersection-glyph regression',
   }) => {
     // Docked has a REAL nested crossing (vertical-of-horizontal) → exactly one
     // valid handle. A floating pane adds a coincidental cross-layer alignment;
-    // the fix must drop that phantom but keep the real one.
+    // that phantom must be dropped but the real one kept.
     const layout = {
       root: {
         kind: 'split',
@@ -133,10 +118,6 @@ test.describe('mint-dock-manager — cross-layer intersection-glyph regression',
       },
     };
 
-    const count = await countHandlesForLayout(page, layout);
-    // Exactly one handle — the real docked-layer crossing of the outer
-    // horizontal split with its inner vertical split. Any phantoms between
-    // the float's divider and the docked dividers must be filtered out.
-    expect(count).toBe(1);
+    expect(await countHandlesForLayout(page, layout)).toBe(1);
   });
 });

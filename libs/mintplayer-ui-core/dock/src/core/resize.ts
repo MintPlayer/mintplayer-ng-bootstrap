@@ -1,4 +1,4 @@
-import type { DockFloatingPaneBounds } from '../types/dock-layout';
+import type { DockFloatingPaneBounds } from '../dock-layout';
 
 /**
  * The arithmetic of every resize gesture in the dock, separated from the events

@@ -115,6 +115,7 @@ const OVERRIDES: Record<string, Override> = {
     restored: new Date('2024-01-15T09:30:00'),
     reason: 'the date is navigation state the toolbar also changes; removing the attribute keeps the current date',
   },
+  'mp-file-manager@view-mode': { value: 'icons', reason: 'a two-way model: list | icons; the core writes unknown values back as list' },
   'mp-input-group@size': { value: 'lg', reason: 'enum read straight from the attribute: sm | md | lg (md when absent)' },
   'mp-phone-input.value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
   'mp-phone-input@value': { value: '+32470123456', reason: 'normalised to E.164 against the selected country' },
@@ -416,8 +417,9 @@ describe('custom-elements.json property / attribute table', () => {
     expect(MANIFEST_PRESENT).toBe(true);
     expect(MOUNTABLE.length).toBeGreaterThanOrEqual(60);
     expect(attributeCases.length).toBeGreaterThanOrEqual(250);
-    // 205 before #437: D10 elements expose their inputs only, not the hand-written getters.
-    expect(propertyCases.length).toBeGreaterThanOrEqual(160);
+    // 205 before #437: D10 elements expose their inputs only, not the hand-written getters
+    // (the dock alone dropped from a dozen accessors to its three inputs).
+    expect(propertyCases.length).toBeGreaterThanOrEqual(150);
   });
 
   it('cannot mount exactly the declarations listed in NOT_MOUNTABLE', () => {

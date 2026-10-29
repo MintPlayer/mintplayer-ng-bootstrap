@@ -51,7 +51,7 @@ axeAuditSuite(test, expect, [
   {
     path: '/enterprise/dock',
     ready: async (page) => {
-      await page.waitForSelector('mint-dock-manager');
+      await page.waitForSelector('.dock[data-mp-hydrated]');
     },
   },
   {

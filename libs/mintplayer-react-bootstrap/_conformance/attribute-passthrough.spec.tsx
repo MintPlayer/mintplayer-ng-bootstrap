@@ -184,7 +184,7 @@ const CASES: Case[] = [
   { ...bare('BsDatatable', 'div.datatable', BsDatatable), labelTarget: 'table' },
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),
-  bare('BsDockManager', 'mint-dock-manager', BsDockManager),
+  { ...bare('BsDockManager', 'div.dock', BsDockManager), fixedRole: 'region' },
   bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
   /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the

@@ -17,6 +17,7 @@ import '@mintplayer/web-components/code-snippet';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/datetime-picker';
+import '@mintplayer/web-components/dock';
 import '@mintplayer/web-components/dropdown-menu';
 import '@mintplayer/web-components/file-manager';
 import '@mintplayer/web-components/input-group';

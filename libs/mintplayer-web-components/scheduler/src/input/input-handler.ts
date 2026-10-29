@@ -502,7 +502,7 @@ export class InputHandler {
     // A short buzz the moment the hold pays off. The user has just waited 600ms
     // with no cursor to tell them anything is happening — the dock makes the same
     // argument for its visual cue and fires the same 10ms pulse
-    // (mint-dock-manager.element.ts). No-op on desktop and where the API is absent.
+    // (@mintplayer/ui-core/dock, dock.core.ts). No-op on desktop and where the API is absent.
     if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
       try {
         navigator.vibrate(10);

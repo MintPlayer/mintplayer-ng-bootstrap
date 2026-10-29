@@ -1,7 +1,6 @@
 import { Component, type Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
-import { BsDockManagerComponent } from '@mintplayer/ng-bootstrap/dock';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 
 /**
@@ -100,7 +99,6 @@ interface WrapperCase {
  * silently fall behind.
  */
 const WRAPPERS: WrapperCase[] = [
-  { selector: 'bs-dock-manager', tag: 'mint-dock-manager', component: BsDockManagerComponent },
   { selector: 'bs-scheduler', tag: 'mp-scheduler', component: BsSchedulerComponent },
 ];
 

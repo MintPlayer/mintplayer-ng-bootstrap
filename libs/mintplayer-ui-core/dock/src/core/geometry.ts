@@ -1,4 +1,4 @@
-import type { DockFloatingPaneBounds, DockFloatingStackLayout } from '../types/dock-layout';
+import type { DockFloatingPaneBounds, DockFloatingStackLayout } from '../dock-layout';
 
 /**
  * The arithmetic behind floating windows. Pulled out of the element because it

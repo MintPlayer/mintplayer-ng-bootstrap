@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DockLayoutNode, DockSplitNode, DockStackNode } from '../types/dock-layout';
+import type { DockLayoutNode, DockSplitNode, DockStackNode } from '../dock-layout';
 import {
   cloneLayoutNode,
   collectPaneNames,

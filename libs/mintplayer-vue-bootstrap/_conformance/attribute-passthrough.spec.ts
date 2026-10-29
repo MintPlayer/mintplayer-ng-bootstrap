@@ -116,7 +116,7 @@ const TARGETS: Record<string, string> = {
   BsDatatable: 'div.datatable',
   BsDatepicker: 'div.mp-datepicker',
   BsDatetimePicker: 'div.mp-datetime-picker',
-  BsDockManager: 'mint-dock-manager',
+  BsDockManager: 'div.dock',
   BsDropdownDivider: 'li.dropdown-divider',
   BsDropdownHeader: 'li.dropdown-header',
   BsDropdownItem: 'li.dropdown-item',

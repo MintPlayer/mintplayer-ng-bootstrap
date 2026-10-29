@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { DockSplitNode } from '../types/dock-layout';
+import type { DockSplitNode } from '../dock-layout';
 import { insertWeight, normalizeSizesArray, normalizeSplitNode } from './sizes';
 
 /**
