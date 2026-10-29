@@ -98,8 +98,13 @@ export function accordionRows(root: Element): HTMLDetailsElement[] {
   );
 }
 
+/** A row's own header. Walks children rather than `:scope >`, which jsdom's selector engine misses inside a shadow root. */
+function rowSummary(row: HTMLDetailsElement): HTMLElement | undefined {
+  return Array.from(row.children).find((child): child is HTMLElement => child.localName === 'summary');
+}
+
 function isDisabledRow(row: HTMLDetailsElement): boolean {
-  return row.querySelector(':scope > summary[aria-disabled=true]') !== null;
+  return rowSummary(row)?.getAttribute('aria-disabled') === 'true';
 }
 
 /**
@@ -166,7 +171,7 @@ export function accordionKeydown(root: Element, event: KeyboardEvent, index: num
   const target = accordionKeyTarget(event.key, index, rows.length);
   if (target === null) return false;
   event.preventDefault();
-  rows[target]?.querySelector<HTMLElement>(':scope > summary')?.focus();
+  (rows[target] && rowSummary(rows[target]))?.focus();
   return true;
 }
 

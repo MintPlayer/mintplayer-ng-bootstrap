@@ -111,7 +111,7 @@ describe('mp-accordion naming channel', () => {
     await settle(el);
 
     expect([...shadow(el).querySelectorAll('[aria-labelledby]')].every(
-      (node) => node.getAttribute('aria-labelledby')!.startsWith('h'),
+      (node) => node.getAttribute('aria-labelledby')!.startsWith('acc-h'),
     )).toBe(true);
     expect(shadow(el).querySelector('[aria-describedby]')).toBeNull();
   });

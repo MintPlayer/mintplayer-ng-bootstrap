@@ -111,6 +111,7 @@
       "dependsOn": [
         "codegen-wc",
         "cem",
+        "build",
         {
           "projects": [
             "mintplayer-ui-core"
