@@ -26,8 +26,11 @@ test('the navbar is server-rendered HTML (no shadow root, no upgrade)', async ({
   await expect(navbar.locator('label.navbar-toggler')).toBeVisible();
   // Script-only ARIA state is absent rather than frozen at a lie.
   await expect(navbar.locator('input.navbar-toggle')).not.toHaveAttribute('aria-expanded', /.*/);
-  // The nav content is server-rendered too, so links exist and are navigable.
-  await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveCount(1);
+  // The nav content is server-rendered too, so links exist and are navigable
+  // (behind the closed collapse at this width: hidden until the hamburger opens it).
+  await expect(page.getByRole('link', { name: 'Home', exact: true })).toHaveCount(0);
+  await navbar.locator('label.navbar-toggler').click();
+  await expect(page.getByRole('link', { name: 'Home', exact: true })).toBeVisible();
 });
 
 test('nested dropdowns are submenus server-side (no-JS styling parity)', async ({ page }) => {
@@ -62,7 +65,11 @@ test('a dropdown opens natively with no script', async ({ page }) => {
   await navbar.locator('label.navbar-toggler').click();
   const basic = navbar.locator('details.dropdown', { has: page.locator(':scope > summary', { hasText: 'Basic' }) }).first();
   await expect(basic).not.toHaveAttribute('open', /.*/);
-  await basic.locator(':scope > summary').click();
+  // Focus + Enter, not a second click: Chromium with JS off intermittently hangs
+  // the actionability stability wait when a test switches click targets
+  // (accordion and carousel suites). Enter on a summary is the native toggle too.
+  await basic.locator(':scope > summary').focus();
+  await page.keyboard.press('Enter');
   await expect(basic).toHaveAttribute('open', '');
   await expect(basic.getByRole('link', { name: 'Alert', exact: true })).toBeVisible();
 });

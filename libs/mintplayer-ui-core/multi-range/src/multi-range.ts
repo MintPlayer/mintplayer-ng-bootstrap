@@ -7,6 +7,8 @@
  * between thumbs and a press on the bare track.
  */
 
+import { hydratedAttr } from '@mintplayer/ui-core/store';
+
 export type MultiRangeOrientation = 'horizontal' | 'vertical';
 
 export const MULTI_RANGE_SCOPE = 'multi-range';
@@ -107,6 +109,8 @@ export interface MultiRangeOptions {
   readonly format: ((value: number) => string) | null;
   /** The thumb the user is moving: drawn on top, its tooltip shown. */
   readonly active: number | null;
+  /** The core has attached: written as the readiness mark, never in server HTML. */
+  readonly hydrated?: boolean;
 }
 
 export interface MultiRangeThumbView {
@@ -195,6 +199,7 @@ export function connectMultiRange(options: MultiRangeOptions): MultiRangeView {
       role: 'group',
       'aria-label': options.label,
       'aria-disabled': disabled ? 'true' : null,
+      ...hydratedAttr(options.hydrated ?? false),
     }),
     track: scoped({ class: 'multi-range-track' }),
     fills,

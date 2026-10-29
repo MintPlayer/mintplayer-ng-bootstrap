@@ -1,4 +1,5 @@
 import type { CoreBag } from '@mintplayer/ui-core/component';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import {
   arcLabelTransform,
   arcPath,
@@ -513,7 +514,7 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
 
   const hasTree = !!index && !!focus;
   return {
-    root: scoped({ class: 'hierarchy-chart' }),
+    root: scoped({ class: 'hierarchy-chart', ...hydratedAttr(o.live) }),
     breadcrumb: breadcrumb(),
     chart: scoped({ class: o.pinch ? 'chart pinch' : 'chart' }),
     // The cells animate through this; reduced motion kills the transition in the sheet.

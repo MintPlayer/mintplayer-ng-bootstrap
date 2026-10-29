@@ -55,9 +55,13 @@ export function placePopover(panel: HTMLElement, anchor: HTMLElement, options: P
 
 /**
  * Keep every popover under `root` next to its anchor while open: placed when
- * it opens, re-placed on scroll (any scroller, captured) and resize, batched
- * per frame. `anchorFor` names the anchor of a panel, null to leave it alone.
- * `toggle` does not bubble, so it is heard in the capture phase.
+ * it opens, re-placed on scroll (any scroller, captured), on resize, and when
+ * the panel itself changes size, batched per frame. The last matters because a
+ * core commonly renders a panel's content from the open state the `toggle`
+ * sets: measured at `toggle`, the panel is still empty, fits below anything,
+ * and would never flip once its content arrives. `anchorFor` names the anchor
+ * of a panel, null to leave it alone. `toggle` does not bubble, so it is heard
+ * in the capture phase.
  */
 export function trackPopovers(
   root: HTMLElement,
@@ -78,6 +82,7 @@ export function trackPopovers(
   const schedule = () => {
     if (!frame && view) frame = view.requestAnimationFrame(placeAll);
   };
+  const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
   const listen = (on: boolean) => {
     const method = on ? 'addEventListener' : 'removeEventListener';
     view?.[method]('scroll', schedule, true);
@@ -90,16 +95,19 @@ export function trackPopovers(
     const wasEmpty = open.size === 0;
     if ((event as ToggleEvent).newState === 'open') {
       open.add(panel);
+      resized?.observe(panel);
       placeAll();
       if (wasEmpty) listen(true);
-    } else if (open.delete(panel) && open.size === 0) {
-      listen(false);
+    } else if (open.delete(panel)) {
+      resized?.unobserve(panel);
+      if (open.size === 0) listen(false);
     }
   };
 
   root.addEventListener('toggle', onToggle, { capture: true });
   return () => {
     root.removeEventListener('toggle', onToggle, { capture: true });
+    resized?.disconnect();
     if (open.size) listen(false);
     if (frame) view?.cancelAnimationFrame(frame);
     open.clear();

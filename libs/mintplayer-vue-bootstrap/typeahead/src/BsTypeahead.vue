@@ -9,7 +9,7 @@
  * the role-bearing <input>; `role` is not forwarded, the input is a combobox
  * by contract. Rows come from the `#item="{ item, term }"` slot.
  */
-import { computed, getCurrentInstance, onBeforeUnmount, onMounted, useAttrs, useTemplateRef, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, useAttrs, useId, useTemplateRef, watch } from 'vue';
 import { trackOpenSide } from '@mintplayer/ui-core/overlay';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
@@ -63,7 +63,8 @@ const emit = defineEmits<{
 
 defineSlots<{ item?(props: { item: T; term: string }): unknown }>();
 
-const id = `bs-typeahead-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const id = `bs-typeahead-${useId()}`;
 
 const [machine, state] = useMachine(
   () =>

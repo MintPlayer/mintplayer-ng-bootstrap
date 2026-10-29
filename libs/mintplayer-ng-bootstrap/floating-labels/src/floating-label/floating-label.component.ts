@@ -6,7 +6,6 @@ let instanceCounter = 0;
 @Component({
   selector: 'bs-floating-label',
   templateUrl: './floating-label.component.html',
-  styleUrls: ['./floating-label.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFloatingLabelComponent implements AfterViewInit {

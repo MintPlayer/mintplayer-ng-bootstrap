@@ -8,7 +8,7 @@
  *
  * `v-model` is the checked state of a radio outside a group.
  */
-import { computed, getCurrentInstance, inject, useAttrs } from 'vue';
+import { computed, inject, useAttrs, useId } from 'vue';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
 import { radioGroupKey } from './radio-group-key';
@@ -44,7 +44,8 @@ const props = withDefaults(
 const ownChecked = defineModel<boolean>({ default: false });
 const group = inject(radioGroupKey, null);
 
-const rootId = `bs-radio-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const rootId = `bs-radio-${useId()}`;
 
 const checked = computed(() => group
   ? group.value.value !== null && group.value.value === props.value

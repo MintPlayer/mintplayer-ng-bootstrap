@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { afterRenderEffect, ChangeDetectionStrategy, Component, computed, contentChild, ElementRef, inject, input, model, output } from '@angular/core';
+import { afterNextRender, afterRenderEffect, ChangeDetectionStrategy, Component, computed, contentChild, ElementRef, inject, input, model, output, signal } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
@@ -39,6 +39,7 @@ import { BsShellSidebarDirective, BsShellTopbarDirective } from '../shell-sideba
     '[class.shell]': 'true',
     '[attr.data-breakpoint]': 'view().root["data-breakpoint"]',
     '[attr.data-external-toggle]': 'view().root["data-external-toggle"]',
+    '[attr.data-mp-hydrated]': 'view().root["data-mp-hydrated"]',
     '[style.--mp-shell-size]': 'size()',
     '(click)': 'onClick($event)',
   },
@@ -70,10 +71,15 @@ export class BsShellComponent {
     breakpoint: this.breakpoint(),
     externalToggle: this.externalToggle(),
     labels: this.labels(),
+    hydrated: this.hydrated(),
   }));
+
+  /** True once the listeners are attached (browser only), so e2e can wait on it. */
+  private readonly hydrated = signal(false);
 
   constructor() {
     useScopedStyles(SHELL_SCOPE, shellScopedStyles);
+    afterNextRender(() => this.hydrated.set(true));
     // The bags set the checkboxes' initial state (the `checked` attribute,
     // which is what SSR emits). A later `state` change must also reach a
     // checkbox the user already flipped, whose attribute no longer applies.

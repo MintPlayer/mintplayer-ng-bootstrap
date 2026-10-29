@@ -41,9 +41,9 @@ async function tickViaCellPadding(page: Page, key: string) {
 }
 
 async function goToPage(page: Page, n: number) {
-  // mp-pagination keeps its buttons in an open shadow root; locators pierce it.
+  // The pager's items are labelled "Page N" (core bags, server-rendered).
   await table(page)
-    .locator('mp-pagination.datatable-pagination')
+    .locator('nav.datatable-pagination')
     .getByRole('button', { name: `Page ${n}`, exact: true })
     .click();
 }

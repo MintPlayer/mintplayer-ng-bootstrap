@@ -1,6 +1,7 @@
 import { errorFeedback } from '@mintplayer/ui-core/forms';
 import { phoneCountryList, type PhoneCountryOption, type PhoneRules } from '@mintplayer/ui-core/phone-core';
 import type { FlagMap } from '@mintplayer/ui-core/flags';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 
 /**
  * The phone input (PRD #437; the field's own design is docs/prd/phone-input-wc.md):
@@ -135,7 +136,7 @@ export function connectPhoneInput(options: PhoneInputOptions): PhoneInputView {
   const value = phoneValue(options.rules, country, dialCode, options.digits);
 
   return {
-    root: scoped({ class: 'phone-input' }),
+    root: scoped({ class: 'phone-input', ...hydratedAttr(options.hydrated) }),
     group: scoped({ class: 'input-group' }),
     select: scoped({
       class: 'form-select',

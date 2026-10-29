@@ -128,6 +128,34 @@ const dialCodeOf = (api: Api, iso2 = countryOf(api)) => countriesOf(api.inputs()
 const field = (api: Api) => api.host.querySelector('input[type=tel]') as HTMLInputElement;
 const picker = (api: Api) => api.host.querySelector('select') as HTMLSelectElement;
 
+/**
+ * Keeps the closed face showing the selected option. `<selectedcontent>` is a
+ * snapshot the browser takes when the selection changes, and Chromium does not
+ * re-take it when that option's content changes later. Ours always does: the
+ * rich spans arrive with hydration and the flags with their lazy chunk, after
+ * the server-rendered selection, so the face showed a country with no flag.
+ * Re-selecting the same option re-takes the snapshot (a scripted selection
+ * fires no event). The snapshot's own mutations are ignored, so a clone that
+ * serialises differently from its option can never make the observer echo.
+ */
+function syncSelectedContent(select: HTMLSelectElement): () => void {
+  const refresh = () => {
+    const option = select.selectedOptions[0];
+    const face = select.querySelector('selectedcontent');
+    if (!option || !face || face.innerHTML === option.innerHTML) return;
+    const index = select.selectedIndex;
+    select.selectedIndex = -1;
+    select.selectedIndex = index;
+  };
+  const inFace = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('selectedcontent') != null;
+  const observer = new MutationObserver((records) => {
+    if (records.some((record) => !inFace(record.target))) refresh();
+  });
+  observer.observe(select, { childList: true, subtree: true, characterData: true });
+  refresh();
+  return () => observer.disconnect();
+}
+
 /** Parse a written value into country + national digits. */
 function parse(raw: string | null | undefined, only: readonly string[] | null): { digits: string; country: string | null } {
   const text = raw?.trim() ?? '';
@@ -361,6 +389,7 @@ export const phoneInputCore = defineCore<PhoneInputInputs, PhoneInputState, { vi
     input.addEventListener('input', onInput);
     select.addEventListener('change', onPick);
     form?.addEventListener('reset', onReset);
+    const unsyncFace = syncSelectedContent(select);
 
     // One chunk for all 244 flags (D4a): the addon shows one at once, the picker every one when opened.
     rt.flags = loadAllFlags().then((flags) => api.setState({ flags }));
@@ -381,6 +410,7 @@ export const phoneInputCore = defineCore<PhoneInputInputs, PhoneInputState, { vi
       input.removeEventListener('keydown', onKeydown);
       input.removeEventListener('input', onInput);
       select.removeEventListener('change', onPick);
+      unsyncFace();
       form?.removeEventListener('reset', onReset);
     };
   },

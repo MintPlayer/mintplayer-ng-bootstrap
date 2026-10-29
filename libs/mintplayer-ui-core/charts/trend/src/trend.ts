@@ -1,5 +1,6 @@
 import type { CoreBag } from '@mintplayer/ui-core/component';
 import { linearScale, niceDomain, niceTicks, timeTicks, type TrendPoint, type TrendSeries } from '@mintplayer/ui-core/charts/core';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 
 /**
  * The trend chart (#437): a metric over time, as one viewBox SVG. Multi-series,
@@ -209,7 +210,7 @@ export function connectTrendChart(options: TrendChartOptions): TrendChartView {
   const hovered = placed.find((p) => pointKey(p) === options.hoveredKey);
 
   return {
-    root: scoped({ class: 'trend-chart' }),
+    root: scoped({ class: 'trend-chart', ...hydratedAttr(options.live) }),
     svg: scoped({
       viewBox: `0 0 ${TREND_W} ${TREND_H}`,
       role: 'group',

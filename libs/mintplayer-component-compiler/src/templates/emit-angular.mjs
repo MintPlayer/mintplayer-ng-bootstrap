@@ -156,9 +156,13 @@ function bare(ctx, el, depth) {
     const call = /^[\w$.]+$/.test(p.exp.content.trim()) ? `${exp}($event)` : exp;
     return `(${p.arg.content})="${escapeAttr(call)}"`;
   });
-  // v-html: core-produced markup. Angular sanitises it, which keeps spans and classes.
+  // v-html: core-produced markup, trusted as the other fronts trust it (the
+  // sanitiser would drop every <svg>: flags, file-type icons).
   const html = directive(el, 'html');
-  if (html) attrs.push(`[innerHTML]="${escapeAttr(x(ctx, html.exp.content))}"`);
+  if (html) {
+    ctx.uses.add('MpTrustedHtmlPipe');
+    attrs.push(`[innerHTML]="${escapeAttr(x(ctx, html.exp.content))} | mpTrustedHtml"`);
+  }
   const ref = refName(el);
   if (ref) attrs.push(`#${ref}`);
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;

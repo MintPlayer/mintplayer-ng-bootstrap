@@ -9,7 +9,7 @@
  * `v-model` is the checked state, `v-model:indeterminate` the mixed state
  * (a user toggle clears it).
  */
-import { computed, getCurrentInstance, useAttrs, useTemplateRef, watchEffect } from 'vue';
+import { computed, useAttrs, useId, useTemplateRef, watchEffect } from 'vue';
 import {
   checkboxClasses,
   connectCheckbox,
@@ -47,7 +47,8 @@ const props = withDefaults(
 const checked = defineModel<boolean>({ default: false });
 const indeterminate = defineModel<boolean>('indeterminate', { default: false });
 
-const rootId = `bs-checkbox-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const rootId = `bs-checkbox-${useId()}`;
 
 const state = computed(() => ({
   type: props.type,

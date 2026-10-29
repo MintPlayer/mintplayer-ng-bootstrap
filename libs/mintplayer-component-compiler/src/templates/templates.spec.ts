@@ -80,7 +80,9 @@ describe('v-html', () => {
   const src = read('<div v-bind="bag"><code v-bind="bag" v-html="label"></code></div>');
 
   it('each front sets the markup its own way, as content rather than an attribute', () => {
-    expect(emitAngular(src).text).toContain('[innerHTML]="label()"');
+    const angular = emitAngular(src);
+    expect(angular.text).toContain('[innerHTML]="label() | mpTrustedHtml"');
+    expect(angular.uses).toContain('MpTrustedHtmlPipe');
     expect(emitReact(src, RUNTIME)).toContain('dangerouslySetInnerHTML={{ __html: label }}');
     const lit = emitLit(src, RUNTIME);
     expect(lit).toContain("import { unsafeHTML } from 'lit/directives/unsafe-html.js'");

@@ -40,7 +40,8 @@ async function slottedRow(page: Page, groupIndex = 0) {
 async function phoneInputInGroup(page: Page) {
   return page.evaluate(() => {
     const bs = document.querySelector('bs-input-group bs-phone-input')!;
-    const inner = bs.querySelector('.phone-input > .input-group')!;
+    // The host IS .phone-input (the root bag lands on it), so its group is a direct child.
+    const inner = bs.querySelector(':scope > .input-group')!;
     const kids = [...inner.children].map((el) => {
       const b = el.getBoundingClientRect();
       return { tag: el.tagName, y: Math.round(b.y), width: +b.width.toFixed(1) };
@@ -68,8 +69,9 @@ async function phoneInputInGroup(page: Page) {
 
 async function gotoPhoneInput(page: Page): Promise<void> {
   await page.goto('/basic/forms/phone-input');
-  // Server-rendered, so the group is there at once; the flag marks the live, hydrated field.
-  await page.waitForSelector('bs-input-group bs-phone-input .phone-input .flag svg');
+  // Server-rendered, so the group is there at once; the core marks the live field.
+  // (Not a flag: with a customizable select the addon's flag is hidden by design.)
+  await page.locator('bs-input-group bs-phone-input.phone-input[data-mp-hydrated]').waitFor({ state: 'attached' });
 }
 
 test.describe('bs-input-group joins Angular-wrapped controls', () => {

@@ -11,7 +11,7 @@
  *     …main content…
  *   </BsShell>
  */
-import { computed, getCurrentInstance, mergeProps, useAttrs, useTemplateRef, watch } from 'vue';
+import { computed, mergeProps, useAttrs, useId, useTemplateRef, watch } from 'vue';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   SHELL_SCOPE,
@@ -58,7 +58,8 @@ const emit = defineEmits<{ statechange: [change: ShellStateChange] }>();
 
 installLightStyles(SHELL_SCOPE, shellScopedStyles);
 
-const id = `bs-shell-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const id = `bs-shell-${useId()}`;
 const view = computed(() => connectShell({
   id,
   state: props.state,

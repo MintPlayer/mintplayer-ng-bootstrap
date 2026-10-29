@@ -21,13 +21,9 @@ async function goto(page: Page) {
   await page.goto('/overlays/shell');
   await expect(shellOf(page)).toBeVisible();
   // The server HTML is already the working shell; wait for hydration so the
-  // (statechange) listener is attached before the first click. The e2e dev
-  // server runs in dev mode, where the ng global resolves a hydrated component.
-  await page.waitForFunction(() => {
-    const ng = (window as unknown as { ng?: { getComponent?: (el: Element) => unknown } }).ng;
-    const host = document.querySelector('bs-shell');
-    return !!(host && ng?.getComponent?.(host));
-  });
+  // (statechange) listener is attached before the first click. The e2e server
+  // is a production build (no ng debug global), so wait on the core's marker.
+  await page.locator('bs-shell[data-mp-hydrated]').waitFor({ state: 'attached' });
   await expect(checkedRadio(page)).toHaveCount(1);
 }
 

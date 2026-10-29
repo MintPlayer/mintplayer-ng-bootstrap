@@ -107,7 +107,13 @@ mp-input-group {
   white-space: nowrap;
   background-color: $input-group-addon-bg;
   border: $input-border-width solid $input-group-addon-border-color;
-  border-radius: var(--bs-border-radius);
+  // Paired like every other item: this rule is in the components layer, so a
+  // plain radius here would beat Bootstrap's seam squaring and round the seam.
+  // Logical corners: the first child is the inline start in either direction.
+  border-start-start-radius: var(--mp-group-radius-start, var(--mp-group-item-radius));
+  border-end-start-radius: var(--mp-group-radius-start, var(--mp-group-item-radius));
+  border-start-end-radius: var(--mp-group-radius-end, var(--mp-group-item-radius));
+  border-end-end-radius: var(--mp-group-radius-end, var(--mp-group-item-radius));
 }
 
 /*! @mps-global */

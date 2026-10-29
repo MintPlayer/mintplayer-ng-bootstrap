@@ -37,8 +37,12 @@ test('datepicker closes on Escape and keeps the date', async ({ page }) => {
   await page.goto('/basic/forms/datepicker');
   const picker = page.locator('bs-datepicker').first();
   const field = picker.locator('input.datepicker-input');
+  // The server field is a native date input (ISO value, the no-JS path); the
+  // trigger appears with hydration, which reformats the value to the locale.
+  const trigger = picker.getByRole('button', { name: 'Choose date' });
+  await expect(trigger).toBeVisible();
   const before = await field.inputValue();
-  await picker.getByRole('button', { name: 'Choose date' }).click();
+  await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Choose date' });
   await expect(dialog).toBeVisible();
   await page.keyboard.press('Escape');

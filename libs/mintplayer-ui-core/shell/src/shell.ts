@@ -33,6 +33,7 @@
  * `show` / `hide` check or clear both. The hamburger still flips the current
  * mode's checkbox, and a front reports it through its `statechange` event.
  */
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 
 export type ShellState = 'auto' | 'show' | 'hide';
 export type ShellBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
@@ -62,6 +63,8 @@ export interface ShellOptions {
   /** Hides the built-in hamburger; drive the shell through `state` or `toggle`. */
   externalToggle?: boolean;
   labels?: Partial<ShellLabels> | null;
+  /** Set by the front once its listeners are attached; never true in server HTML. */
+  hydrated?: boolean;
 }
 
 export interface ShellToggleView {
@@ -109,6 +112,7 @@ export function connectShell(options: ShellOptions): ShellView {
       class: 'shell',
       'data-breakpoint': options.breakpoint ?? 'md',
       'data-external-toggle': externalToggle ? '' : null,
+      ...hydratedAttr(options.hydrated ?? false),
     },
     skip: { ...scope, class: 'skip-link' },
     skipHref: `#${contentId}`,

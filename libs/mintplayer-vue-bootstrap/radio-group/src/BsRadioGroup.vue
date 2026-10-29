@@ -7,7 +7,7 @@
  *
  * `v-model` is the selected radio's value (string | null).
  */
-import { computed, getCurrentInstance, provide } from 'vue';
+import { computed, provide, useId } from 'vue';
 import { connectRadioGroup, radioGroupName } from '@mintplayer/ui-core/radio';
 import { radioGroupKey } from '../../radio/src/radio-group-key';
 
@@ -25,7 +25,8 @@ const props = withDefaults(
 
 const modelValue = defineModel<string | null>({ default: null });
 
-const rootId = `bs-radio-group-${getCurrentInstance()?.uid ?? Math.random().toString(36).slice(2)}`;
+// useId, not the instance uid: it matches between the server render and hydration.
+const rootId = `bs-radio-group-${useId()}`;
 
 provide(radioGroupKey, {
   name: computed(() => props.name ?? radioGroupName(rootId)),

@@ -52,7 +52,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
   const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
   const usesOutlet = template.uses.includes('NgTemplateOutlet');
-  const directives = ['MpPropsDirective', 'MpTeleportDirective'].filter((d) => template.uses.includes(d));
+  const directives = ['MpPropsDirective', 'MpTeleportDirective', 'MpTrustedHtmlPipe'].filter((d) => template.uses.includes(d));
   const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
   // Composed children and the slot directives their content uses. A standalone
   // component is in its own template's scope, so composing itself imports nothing.

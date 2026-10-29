@@ -41,8 +41,9 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     test.beforeEach(async ({ page }) => {
       await page.goto(path);
       // Wait on the rendered tree rather than networkidle: the chart only has a
-      // role-bearing node once its data property has been assigned by the wrapper.
-      await page.waitForSelector('.hierarchy-chart [role="tree"]');
+      // role-bearing node once its data property has been assigned by the wrapper,
+      // and its treeitems and controls are inert until the core marks it live.
+      await page.waitForSelector('.hierarchy-chart[data-mp-hydrated] [role="tree"]');
     });
 
     test('hierarchy: clicking a folder re-roots, the center control zooms back out', async ({ page }) => {
@@ -177,7 +178,9 @@ export function chartsSuite(test: Test, expect: Expect, options: ChartsSuiteOpti
     });
 
     test('trend: points are keyboard-walkable buttons; sparkline is a named image', async ({ page }) => {
-      const trend = page.locator('.trend-chart').first();
+      // Points take a tabindex only once the chart is live, so focusing one
+      // before hydration is a silent no-op: wait for the core's readiness mark.
+      const trend = page.locator('.trend-chart[data-mp-hydrated]').first();
       await trend.locator('.point').first().focus();
       expect(await deepActive(page)).toMatchObject({ tag: 'circle', role: 'button' });
 

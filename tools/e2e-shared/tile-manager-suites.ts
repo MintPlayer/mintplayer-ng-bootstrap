@@ -153,7 +153,7 @@ export function tileManagerSuite(test: Test, expect: Expect, { path }: TileManag
 
     test('stackBelow: stacked just below the threshold, not just above it', async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.getByRole('combobox', { name: 'Stack below' }).selectOption('768');
+      await page.getByRole('combobox', { name: 'Stack below' }).selectOption({ label: '768px' }); // by label: the Angular demo binds [ngValue]
       expect(await boardAt(page, expect, 760)).toBeLessThan(768);
       await expect.poll(() => columns(page)).toBe(1);
       expect(await boardAt(page, expect, 780)).toBeGreaterThanOrEqual(768);

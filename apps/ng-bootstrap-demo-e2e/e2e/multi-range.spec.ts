@@ -46,6 +46,9 @@ test.describe('multi-range', () => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
     });
     await expect(page.locator(`${slider('RTL range')} input.multi-range-thumb`)).toHaveCount(2);
+    // The inputs work natively from the server HTML; the fill and tooltips follow
+    // them only once the core is live, which the geometry assertions depend on.
+    await page.locator(`${slider('RTL range')}[data-mp-hydrated]`).waitFor({ state: 'attached' });
   });
 
   test('thumbs flip to right-anchored positions in RTL', async ({ page }) => {

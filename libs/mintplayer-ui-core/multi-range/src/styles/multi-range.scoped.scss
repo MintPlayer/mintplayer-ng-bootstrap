@@ -40,12 +40,15 @@
 .multi-range-track {
   position: relative;
   width: 100%;
-  height: var(--bs-multi-range-thumb-size);
+  // Each thumb's input fills the track, so the track's cross size is the
+  // pointer target: at least 24px (WCAG 2.2 target size), whatever the thumb.
+  // The rail and fill stay centred in it.
+  height: max(var(--bs-multi-range-thumb-size), 1.5rem);
   touch-action: none;
 }
 
 .mp-multi-range-vertical .multi-range-track {
-  width: var(--bs-multi-range-thumb-size);
+  width: max(var(--bs-multi-range-thumb-size), 1.5rem);
   height: 100%;
   min-height: inherit;
 }

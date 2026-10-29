@@ -183,8 +183,9 @@ test.describe('bs-datatable filter panel', () => {
             p.left >= 0 &&
             p.bottom <= window.innerHeight + 1 &&
             p.right <= window.innerWidth + 1,
-          // Not a descendant of the table at all.
-          outsideTable: !document.querySelector(tableSel)!.contains(panel),
+          // In the top layer: a popover escapes every overflow clip while staying
+          // in the table's tree, which is what keeps it hydratable and scoped.
+          inTopLayer: panel.matches(':popover-open'),
         };
       },
       { panelSel: PANEL, tableSel: FILTER_TABLE },
@@ -192,7 +193,7 @@ test.describe('bs-datatable filter panel', () => {
 
     expect(escapes).not.toBeNull();
     expect(escapes!.hasSize).toBe(true);
-    expect(escapes!.outsideTable).toBe(true);
+    expect(escapes!.inTopLayer).toBe(true);
     expect(escapes!.escapesScroller).toBe(true);
     expect(escapes!.insideViewport).toBe(true);
   });

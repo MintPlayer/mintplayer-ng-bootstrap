@@ -99,12 +99,26 @@ const shownNodes = (state: Readonly<TreeSelectState>) => mergeLoaded(state.resul
 const fitValue = (mode: TreeSelectMode, value: TreeSelectValue): TreeSelectValue => valueFor(mode, valueList(value).slice(0, mode === 'single' ? 1 : undefined));
 
 /** `state.open` follows the panel's own toggle events, so it is the panel's state. */
+/**
+ * Whether the popover is showing, read from the platform. `state.open` follows
+ * it only once the `toggle` event (a queued task) lands, so a key pressed right
+ * after Escape would still see the panel as open and never reopen it.
+ */
+const panelIsOpen = (api: Api): boolean => {
+  const panel = panelOf(api);
+  if (!panel) return false;
+  try {
+    return panel.matches(':popover-open');
+  } catch {
+    return api.state().open; // an engine without the pseudo-class (jsdom)
+  }
+};
 const showPanel = (api: Api) => {
-  if (api.inputs().disabled || !api.inputs().provider || api.state().open) return;
+  if (api.inputs().disabled || !api.inputs().provider || panelIsOpen(api)) return;
   panelOf(api)?.showPopover?.();
 };
 const hidePanel = (api: Api) => {
-  if (api.state().open) panelOf(api)?.hidePopover?.();
+  if (panelIsOpen(api)) panelOf(api)?.hidePopover?.();
 };
 
 export const treeSelectCore = defineCore<
@@ -351,7 +365,7 @@ export const treeSelectCore = defineCore<
       if (ev.key !== 'ArrowDown') return;
       ev.preventDefault();
       // The first ArrowDown opens; the next hands focus to the tree's tab stop.
-      if (!api.state().open) showPanel(api);
+      if (!panelIsOpen(api)) showPanel(api);
       else controller.focusStop();
     };
 

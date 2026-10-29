@@ -67,21 +67,15 @@ test.describe('bs-datatable virtual mode', () => {
     expect(real).toBeLessThan(200);
   });
 
-  test('paginated mode renders the mp-pagination footer with the correct total pages', async ({ page }) => {
-    // Default mode is pagination. The footer now contains TWO mp-pagination
-    // instances — the rows-per-page selector first (.datatable-per-page,
-    // pageNumbers = [10, 20, 50]) and the page navigator second
-    // (.datatable-pagination, pageNumbers = [1…totalPages]). Scope the
-    // query to the navigator. With 200 records and perPage=20 we expect 10
-    // pages.
-    const totalPagesFromFooter = await page.evaluate(() => {
-      const datatable = document.querySelector('bs-datatable');
-      const pagination = datatable?.querySelector('mp-pagination.datatable-pagination') as
-        | (HTMLElement & { pageNumbers?: number[] })
-        | null;
-      return pagination?.pageNumbers?.length ?? 0;
-    });
-    expect(totalPagesFromFooter).toBe(10);
+  test('paginated mode renders the pagination footer with the correct total pages', async ({ page }) => {
+    // Default mode is pagination. The footer holds the rows-per-page selector
+    // and the page navigator (nav.datatable-pagination); with 200 records and
+    // perPage=20 the navigator ends at page 10 (the middle pages may collapse
+    // into an ellipsis, the last page never does).
+    // The first table: the one this spec's other tests measure (the page has several).
+    const nav = page.locator('bs-datatable').first().locator('nav.datatable-pagination');
+    await expect(nav.locator('[aria-label="Page 10"]')).toHaveCount(1);
+    await expect(nav.locator('[aria-label="Page 11"]')).toHaveCount(0);
   });
 
   test('toggling pagination ↔ virtual keeps the table functional', async ({ page }) => {

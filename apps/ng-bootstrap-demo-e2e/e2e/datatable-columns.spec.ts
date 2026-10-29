@@ -105,10 +105,10 @@ test.describe('datatable column resize', () => {
     await page.mouse.move(x + 40, y, { steps: 5 });
     await page.mouse.up();
     expect(await headerWidth(page, 'Name')).toBeGreaterThan(before + 30);
-    await expect(page.locator('.resize-panel')).toHaveCount(0);
+    await expect(page.locator('.resize-panel:popover-open')).toHaveCount(0);
 
     await handle(page, 'Name').click();
-    await expect(page.locator('.resize-panel')).toBeVisible();
+    await expect(page.locator('.resize-panel:popover-open')).toBeVisible();
   });
 
   test('the rendered column edge follows the pointer 1:1, in both directions', async ({ page }) => {

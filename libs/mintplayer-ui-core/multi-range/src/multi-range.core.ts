@@ -88,8 +88,9 @@ function move(api: Api, i: number, candidate: number): boolean {
 
 export const multiRangeCore = defineCore<MultiRangeInputs, MultiRangeState, { view: MultiRangeView }, MultiRangeEvents, undefined, undefined, MultiRangeMethods>({
   state: (inputs) => ({ value: normaliseValues(inputs.value, inputs.min, inputs.max), active: null }),
-  view: ({ inputs, state, id, label }) => ({
+  view: ({ inputs, state, id, hydrated, label }) => ({
     view: connectMultiRange({
+      hydrated,
       id,
       values: state.value,
       min: inputs.min,

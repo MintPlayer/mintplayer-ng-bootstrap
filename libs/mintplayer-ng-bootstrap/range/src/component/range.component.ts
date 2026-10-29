@@ -4,7 +4,6 @@ import { BsRangeValueAccessor } from '../value-accessor/range-value-accessor';
 @Component({
   selector: 'bs-range',
   templateUrl: './range.component.html',
-  styleUrls: ['./range.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   hostDirectives: [BsRangeValueAccessor],
 })
