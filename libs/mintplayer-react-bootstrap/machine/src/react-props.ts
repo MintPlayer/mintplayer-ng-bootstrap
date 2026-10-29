@@ -6,6 +6,8 @@ const RENAME: Readonly<Record<string, string>> = {
   autocomplete: 'autoComplete',
   class: 'className',
   for: 'htmlFor',
+  popovertarget: 'popoverTarget',
+  popovertargetaction: 'popoverTargetAction',
   tabindex: 'tabIndex',
   readonly: 'readOnly',
 };
