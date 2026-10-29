@@ -17,7 +17,7 @@ const EVENT: SchedulerEvent = {
 
 interface Harness {
   host: HTMLElement;
-  root: ShadowRoot;
+  root: HTMLElement;
   handler: InputHandler;
   callbacks: { [K in keyof Required<InputHandlerCallbacks>]: ReturnType<typeof vi.fn> };
   container: HTMLElement;
@@ -37,7 +37,7 @@ let h: Harness;
 function setup(config: { touchHoldDuration?: number; touchMoveThreshold?: number } = {}): Harness {
   const host = document.createElement('div');
   document.body.appendChild(host);
-  const root = host.attachShadow({ mode: 'open' });
+  const root = host;
   root.innerHTML = `
     <div class="scheduler-container">
       <div class="scheduler-content">
@@ -71,7 +71,7 @@ function setup(config: { touchHoldDuration?: number; touchMoveThreshold?: number
   };
   const handler = new InputHandler(
     {
-      shadowRoot: root,
+      root,
       getEventById: (id) => (id === 'e1' ? EVENT : null),
       isEditable: () => flags.editable,
       isSelectable: () => flags.selectable,

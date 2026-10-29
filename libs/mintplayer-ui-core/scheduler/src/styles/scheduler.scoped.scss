@@ -1,4 +1,4 @@
-/* Layering ladder. Nothing between :host and the events establishes a
+/* Layering ladder. Nothing between the root and the events establishes a
    stacking context, so every one of these competes in ONE shared context
    across the whole shadow root — a selected event in one day column is
    compared directly against the now-indicator in another, and against the
@@ -21,7 +21,7 @@ $z-event-dragging: 3;    // touch-held / actively dragged source event
 $z-event-selected: 2;    // selected event: its straddling handles must win
                          // pointer hits over neighbouring events (PRD D5)
 
-:host {
+.scheduler {
   display: block;
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
@@ -592,12 +592,15 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   outline-offset: 1px;
 }
 
-/* Day popover (month view). `position: fixed` coordinates are written by the
-   OverlayController, so this element must stay a top-level child of the shadow
-   root — nothing above it may introduce transform/filter/contain, which would
-   make that ancestor the containing block and shift the panel. */
+/* Day popover (month view). A native popover in the top layer, placed by
+   trackPopovers through --mp-popover-left/top. */
 .scheduler-day-popover {
   position: fixed;
+  inset: auto;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  margin: 0;
+  color: var(--bs-body-color, inherit);
   z-index: $z-day-popover;
   min-width: 220px;
   max-width: min(320px, 90vw);
@@ -785,10 +788,14 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   outline-offset: 1px;
 }
 
-/* Built-in event editor (R20/D12.8). Same containing-block rule as the day
-   popover: a top-level shadow child, position written by the OverlayController. */
+/* Built-in event editor (R20/D12.8). A native popover, placed like the day popover. */
 .scheduler-event-editor {
   position: fixed;
+  inset: auto;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  margin: 0;
+  color: var(--bs-body-color, inherit);
   z-index: $z-day-popover;
   min-width: 240px;
   max-width: min(320px, 90vw);
@@ -843,11 +850,9 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
 }
 
 /* The inputs carry Bootstrap's `.form-control` (+ `-sm`, and `-color` on the
-   swatch), whose rules reach them through `formControlStyles` in this shadow
-   root's `adoptedStyleSheets` — Bootstrap's page stylesheet cannot. So border,
-   background, focus ring and disabled appearance are Bootstrap's; only the
-   layout inside this panel is ours. `.form-control` already sets
-   `width: 100%`, hence no `flex: 1 1 auto` here. */
+   swatch) from the page baseline, so border, background, focus ring and
+   disabled appearance are Bootstrap's; only the layout inside this panel is
+   ours. `.form-control` already sets `width: 100%`. */
 .scheduler-event-editor .editor-input {
   min-width: 0;
 }
@@ -857,24 +862,17 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   width: 40px;
 }
 
-/* The start/end fields are `<mp-datetime-picker>`s. They render in the light
-   DOM of THIS shadow root, so their sheets arrive through adoptLightStyles and
-   Bootstrap's input-group and buttons through `inputGroupStyles`; only the
-   width they take in the row is ours to set. Their popups are native popovers
-   in the top layer and escape this panel's bounds by design. */
-.scheduler-event-editor mp-datetime-picker.editor-input {
-  flex: 1 1 auto;
+/* The start/end fields wrap a composed datetime picker, which styles itself.
+   Its popups are native popovers in the top layer and escape this panel. */
+.scheduler-event-editor .editor-start-field,
+.scheduler-event-editor .editor-end-field {
   display: block;
 }
 
 /* "Inherit from resource": the checkbox owns the colour's two states, so the
    swatch above is disabled while it is checked. Indented under the swatch it
-   governs — past the 40px reserved for the other fields' names.
-
-   `<mp-checkbox>` brings its own `.form-check` markup, indicator and label
-   inside its shadow root, which is the point of using it here: Bootstrap's
-   form styles do not cross a shadow boundary, so a bare `<input>` in this
-   panel would render unstyled. Nothing to size from out here. */
+   governs — past the 40px reserved for the other fields' names. A native
+   checkbox with Bootstrap's `.form-check` from the page baseline. */
 .scheduler-event-editor .editor-inherit {
   margin-left: 46px;
 }
@@ -1254,14 +1252,16 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
   pointer-events: none;
 }
 
-/* Row-actions dialog. Like .scheduler-day-popover, the OverlayController writes
-   `position: fixed` coordinates, so this must stay a top-level child of the
-   shadow root — nothing above it may introduce transform/filter/contain, which
-   would become its containing block and shift the panel. It is also OUTSIDE the
-   grid on purpose: a dialog owned by a rowheader breaks the grid's
+/* Row-actions dialog. A native popover, placed like the day popover. It is
+   OUTSIDE the grid on purpose: a dialog owned by a rowheader breaks the grid's
    owned-children contract. */
 .scheduler-row-panel {
   position: fixed;
+  inset: auto;
+  left: var(--mp-popover-left);
+  top: var(--mp-popover-top);
+  margin: 0;
+  color: var(--bs-body-color, inherit);
   z-index: $z-row-panel;
   min-width: 200px;
   max-width: min(280px, 90vw);
@@ -1595,4 +1595,72 @@ $z-event-selected: 2;    // selected event: its straddling handles must win
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Geometry (#437). The view model writes positions as custom properties in
+   slot units; nothing is measured, so the server renders the same grid. */
+.scheduler-event {
+  background: var(--scheduler-event-bg);
+  color: var(--scheduler-event-fg);
+  top: calc(var(--scheduler-event-top, 0) * var(--scheduler-slot-height));
+  height: max(calc(var(--scheduler-event-height, 1) * var(--scheduler-slot-height)), 20px);
+  left: var(--scheduler-event-left, 0%);
+  width: calc(var(--scheduler-event-width, 100%) - 2px);
+}
+
+.scheduler-event.preview {
+  left: 0;
+  width: 100%;
+}
+
+.scheduler-now-indicator {
+  top: calc(var(--scheduler-now-top, 0) * var(--scheduler-slot-height));
+}
+
+.scheduler-month-event {
+  background: var(--scheduler-event-bg);
+  color: var(--scheduler-event-fg);
+}
+
+.scheduler-timeline-event {
+  --scheduler-track-pitch: calc(var(--scheduler-timeline-event-height) + var(--scheduler-timeline-track-gap));
+  top: calc(var(--scheduler-timeline-row-padding) + var(--scheduler-event-track, 0) * var(--scheduler-track-pitch));
+  left: calc(var(--scheduler-event-left, 0) * var(--scheduler-slot-width));
+  width: calc(var(--scheduler-event-width, 1) * var(--scheduler-slot-width));
+}
+
+.scheduler-timeline-event:not(.preview) {
+  background: var(--scheduler-event-bg);
+  color: var(--scheduler-event-fg);
+}
+
+.scheduler-timeline-event.preview {
+  min-width: 20px;
+}
+
+.scheduler-timeline-row {
+  min-height: calc(
+    var(--scheduler-timeline-tracks, 1) * var(--scheduler-timeline-event-height) +
+      (var(--scheduler-timeline-tracks, 1) - 1) * var(--scheduler-timeline-track-gap) +
+      2 * var(--scheduler-timeline-row-padding)
+  );
+}
+
+.scheduler-timeline-slot-header.day {
+  width: calc(var(--scheduler-day-slots, 1) * var(--scheduler-slot-width));
+}
+
+.scheduler-timeline-slot-header,
+.scheduler-timeline-slot {
+  width: var(--scheduler-slot-width);
+}
+
+.scheduler-resource-cell {
+  padding-left: calc(8px + var(--scheduler-resource-depth, 0) * 16px);
+}
+
+.scheduler-row-menu-button {
+  background: var(--scheduler-row-swatch, transparent);
+  color: var(--scheduler-row-swatch-fg, inherit);
+  border-color: var(--scheduler-row-swatch, var(--scheduler-border-color));
 }

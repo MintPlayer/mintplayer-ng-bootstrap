@@ -35,8 +35,8 @@ export interface InputHandlerCallbacks {
  * Configuration for the input handler.
  */
 export interface InputHandlerConfig {
-  /** Shadow root to attach listeners to */
-  shadowRoot: ShadowRoot;
+  /** The scheduler's root element: listeners and lookups stay inside it. */
+  root: HTMLElement;
   /** Function to get event by ID */
   getEventById: (id: string) => SchedulerEvent | null;
   /** Whether editing is enabled */
@@ -136,7 +136,7 @@ export class InputHandler {
    * Attach all event listeners.
    */
   attach(): void {
-    const root = this.config.shadowRoot as unknown as HTMLElement;
+    const root = this.config.root;
 
     root.addEventListener('mousedown', this.boundHandleMouseDown as EventListener);
     document.addEventListener('mousemove', this.boundHandleMouseMove);
@@ -158,7 +158,7 @@ export class InputHandler {
    * Detach all event listeners.
    */
   detach(): void {
-    const root = this.config.shadowRoot as unknown as HTMLElement;
+    const root = this.config.root;
 
     root.removeEventListener('mousedown', this.boundHandleMouseDown as EventListener);
     document.removeEventListener('mousemove', this.boundHandleMouseMove);
@@ -493,7 +493,7 @@ export class InputHandler {
     }
 
     // Add container class
-    const container = this.config.shadowRoot.querySelector('.scheduler-container');
+    const container = this.config.root.querySelector('.scheduler-container');
     container?.classList.add('touch-drag-mode');
 
     // Apply scroll blocking to document body and scheduler-content
@@ -551,14 +551,14 @@ export class InputHandler {
     document.removeEventListener('touchcancel', this.boundHandleTouchCancel);
 
     // Remove container class
-    const container = this.config.shadowRoot.querySelector('.scheduler-container');
+    const container = this.config.root.querySelector('.scheduler-container');
     container?.classList.remove('touch-drag-mode');
 
     // Remove scroll blocking
     this.removeScrollBlock();
 
     // Remove all feedback classes
-    this.config.shadowRoot
+    this.config.root
       .querySelectorAll('.touch-hold-active, .touch-hold-pending')
       .forEach((el) => {
         el.classList.remove('touch-hold-active', 'touch-hold-pending');
