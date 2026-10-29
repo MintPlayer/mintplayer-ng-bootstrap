@@ -9,6 +9,9 @@
 - **`<selectedcontent>` is a snapshot.** Chromium takes it on selection change only, so the phone input's flag (lazy chunk, after hydration) never reached the closed face. The core re-takes it when the selected option's content changes.
 - **Popover placement** re-runs when the panel resizes. A panel whose content renders from the open state measures empty at `toggle`, which made the datatable filter panel open off-screen instead of flipping.
 - **Vue hand-written fronts** take their ids from `useId`, not the instance uid, so the server's `for`/`id` pairs survive hydration.
+- **React SSR outlined big pages.** Even after `onAllReady`, React moves a completed Suspense boundary over `progressiveChunkSize` (12.8 KB) into a hidden `<div id="S:n">` revealed by an inline script: with JS off the accordion and carousel pages showed nothing. The demo sets it to `Infinity`.
+- **No control characters in server-rendered attributes.** The trend's point key joined with NUL; the HTML parser rewrites it to U+FFFD and React/Vue hydration does not patch attributes, so the keyboard handler never matched a point. Keys are now `index:seriesId`.
+- **The Vue bridge hands cores raw inputs** (`toRaw`). A `v-model` ref returned the written-back array as a reactive Proxy, never `===` the core's own, so the tree-select re-fitted and wrote back forever (the page hung on select).
 
 **Issue:** #437. **Pilot:** #436 typeahead (`docs/prd/typeahead-wc-436.md`, PR #438).
 **Plan:** `docs/prd/headless-catalog-437-plan.md`.
