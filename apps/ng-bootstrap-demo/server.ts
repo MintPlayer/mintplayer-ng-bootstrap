@@ -7,12 +7,8 @@ import {
 import express from 'express';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-// The light-tier WCs (the Lit typeahead front)
-// have no shadow root, so there is no DSD chrome for them — their rescoped
-// sheets are document-level. This inserts those <style> tags into <head> for
-// the tags the page actually contains, so they are styled with JS disabled;
-// the client-side installLightStyles sees the marker and skips its own install.
-import { injectMpLightStyles } from '@mintplayer/web-components/light-dom/ssr';
+// Component sheets need no post-processing here: the Angular fronts write them
+// into DOCUMENT.head during the render (PRD #437 D8).
 
 // Resolve browser assets relative to the *bundled* server (canonical Angular
 // pattern) so the standalone Node SSR server finds them in production.
@@ -86,17 +82,14 @@ app.use((req, res, next) => {
     .handle(req)
     .then(async (response) => {
       if (!response) return next();
-      // Insert the light-tier sheets into HTML responses.
       const contentType = response.headers.get('content-type') ?? '';
       if (contentType.includes('text/html')) {
-        const body = injectMpLightStyles(await response.text());
         const headers = new Headers(response.headers);
-        headers.delete('content-length');
         // BsThemeService renders <html data-bs-theme> from the bs-theme-mode
         // cookie (PRD dark-mode D4), so the HTML differs per cookie: a shared
         // cache must key on it, or one user's theme is served to another.
         headers.append('Vary', 'Cookie');
-        return writeResponseToNodeResponse(new Response(body, { status: response.status, headers }), res);
+        return writeResponseToNodeResponse(new Response(response.body, { status: response.status, headers }), res);
       }
       return writeResponseToNodeResponse(response, res);
     })

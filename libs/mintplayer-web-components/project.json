@@ -78,41 +78,6 @@
         "command": "custom-elements-manifest analyze --litelement"
       }
     },
-    "codegen-light-styles-chrome": {
-      "executor": "nx:run-commands",
-      "outputs": [
-        "{projectRoot}/light-dom/ssr/mp-light-styles-chrome.generated.ts"
-      ],
-      "inputs": [
-        "{projectRoot}/treeview/src/styles/*.light.scss",
-        "{projectRoot}/tree-select/src/styles/*.light.scss",
-        "{workspaceRoot}/tools/lit-ssr-utils/gen-light-styles-chrome.mjs",
-        "{workspaceRoot}/tools/lit-ssr-utils/lib/*.mjs",
-        "{workspaceRoot}/tools/scripts/lib/cli.mjs"
-      ],
-      "dependsOn": [
-        "build",
-        {
-          "projects": [
-            "mintplayer-ui-core"
-          ],
-          "target": "build"
-        }
-      ],
-      "cache": true,
-      "options": {
-        "command": "node tools/lit-ssr-utils/gen-light-styles-chrome.mjs"
-      }
-    },
-    "codegen-ssr-chrome": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "echo \"SSR chrome generated (light-tier style tags)\""
-      },
-      "dependsOn": [
-        "codegen-light-styles-chrome"
-      ]
-    },
     "build": {
       "executor": "@nx/vite:build",
       "outputs": [
@@ -146,7 +111,6 @@
       "dependsOn": [
         "codegen-wc",
         "cem",
-        "codegen-ssr-chrome",
         {
           "projects": [
             "mintplayer-ui-core"

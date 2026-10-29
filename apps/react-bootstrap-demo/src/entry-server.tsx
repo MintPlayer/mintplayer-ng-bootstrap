@@ -1,14 +1,8 @@
 // Server entry for SSR. Loaded through Vite (dev: `ssrLoadModule`; prod: the
 // `vite build --ssr` bundle), so the `@mintplayer/*` tsconfig path aliases and
 // TS/JSX resolve here — `server.js` stays a thin plain-ESM transport.
-//
-// IMPORTANT: the lit-ssr DOM shim must be installed *before* any module that
-// registers a web component. Importing a `@mintplayer/react-bootstrap` wrapper
-// runs `customElements.define(...)` at module load; without the shim that
-// throws in Node. This import is first on purpose — ESM evaluates imports in
-// source order, so the globals exist before `./app/app` pulls in any wrapper.
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
-
+// No DOM shim: the React fronts render their own JSX and define no custom
+// elements, so nothing here touches a browser global at load (PRD #437).
 import { StrictMode } from 'react';
 import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';

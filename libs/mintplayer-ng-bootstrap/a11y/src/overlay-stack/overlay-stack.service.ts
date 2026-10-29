@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { dismissStack } from '@mintplayer/web-components/a11y';
+import { dismissStack } from '@mintplayer/ui-core/overlay';
 
 /**
  * Angular facade over the document's single dismiss stack, so each overlay can
@@ -16,7 +16,7 @@ import { dismissStack } from '@mintplayer/web-components/a11y';
  * true. The top-most overlay consumes Escape; lower frames stay open.
  *
  * **This is now a facade, and that matters.** The state lives in
- * `@mintplayer/web-components/a11y`'s `dismissStack`, shared with
+ * `@mintplayer/ui-core/overlay`'s `dismissStack`, shared with
  * `OverlayController`. It used to be a private array here, and the web
  * components had their own — so an Angular overlay wrapping a web-component
  * overlay (`bs-tree-select` inside `bs-modal`, the ordinary case) had one frame

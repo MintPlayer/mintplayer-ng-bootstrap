@@ -217,15 +217,15 @@ Every item below is authored as a D10 component source once M3b lands.
 
 ## M7 — Removal sweep (PRD §10)
 
-- [ ] Delete what's left:
+- [x] Delete what's left:
   - `tools/lit-ssr-utils` generators and specs
   - `gen-light-styles-chrome`
   - `light-dom` SSR injector
-  - `codegen-ssr-chrome` and its `dependsOn` entries
-  - the server.ts and entry-server injector chains
-- [ ] Delete every `data-js` gate and the unused WC infrastructure moved to ui-core
-- [ ] Remove `light-dark()` and `--mp-color-mode` workarounds from scoped sheets (C6)
-- [ ] Grep the framework libs for `isPlatformServer`; every hit is justified or removed
+  - `codegen-ssr-chrome` and its `dependsOn` entries (WC project, three demos, publish workflow)
+  - the server.ts and entry-server injector chains. *As built:* the React and Vue servers also lost the Lit DOM shim (and Vue its History stub), and both clients `lit-element-hydrate-support`: neither front defines a custom element any more. `@lit-labs/ssr`, `-ssr-client` and `-ssr-dom-shim` left the root `package.json`.
+- [x] Delete every `data-js` gate and the unused WC infrastructure moved to ui-core. No `data-js` gate was left (the last stale comment was in an e2e). Deleted: the WC `overlay` entry (`OverlayController`, no importers); the ng `_spike-lit-context` spec. The ng `a11y` entry imports `dismissStack` / roving helpers from ui-core, not web-components. React drops the `@lit/react` and web-components peers, Vue the web-components peer, Angular `lit` (it keeps web-components for `theming/color-mode.css`). *Kept:* the Lit `mp-tab-control` takes its pages through real `<slot>`s, so by the admission rule it keeps its shadow root and stays the Lit tab-control.
+- [x] Remove `light-dark()` and `--mp-color-mode` workarounds from scoped sheets (C6). None were left in a scoped sheet. What remains is legitimate: the code-snippet palette is a real two-scheme palette in `light-dark()`, and the `web-components/_styles` style queries serve the shadow-tier Lit checkbox and toggle button, which C6 allows.
+- [x] Grep the framework libs for `isPlatformServer`; every hit is justified or removed. Angular, 15 files. All but two guard a browser-only API with no template divergence: the observers in observe-size, viewport and forward-aria; the measurements in navbar-content; `requestAnimationFrame` in the offcanvas; the navigation lock, theming, user-agent, radio-group and typeahead. `machine/scoped-styles` and the tile manager write sheets into `DOCUMENT.head` on the server, by design. The two template forks, `priority-nav` and `bsNoNoscript`, are Angular-only components outside the #437 catalog (never WC-backed), so they stay. React and Vue have none.
 
 ## M8 — Docs
 

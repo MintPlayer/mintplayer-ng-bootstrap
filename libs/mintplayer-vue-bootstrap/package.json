@@ -1,7 +1,7 @@
 {
   "name": "@mintplayer/vue-bootstrap",
   "version": "0.0.0-PLACEHOLDER",
-  "description": "Vue 3.5 SFC adapters around @mintplayer/web-components. Each sub-entry maps one-to-one with a WC sub-entry and exposes typed Vue components with v-model support for input WCs.",
+  "description": "Vue 3.5 Bootstrap components. Each sub-entry renders its own template over a framework-neutral core from @mintplayer/ui-core, with v-model on every two-way input, so it server-renders real HTML and defines no custom elements.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -29,8 +29,7 @@
   },
   "peerDependencies": {
     "@mintplayer/ui-core": "^1.1.0",
-    "vue": "^3.5.0",
-    "@mintplayer/web-components": "^3.1.0"
+    "vue": "^3.5.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

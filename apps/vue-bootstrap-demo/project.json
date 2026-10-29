@@ -23,8 +23,7 @@
         }
       },
       "dependsOn": [
-        "^build",
-        "mintplayer-web-components:codegen-ssr-chrome"
+        "^build"
       ]
     },
     "build-ssr": {

@@ -471,6 +471,18 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Attribute hooks:** event buttons carry `data-start` / `data-end` (ISO), like the cells.
   - `slotDuration` outside an integer 60..86400 seconds falls back to the default rather than hanging.
   - The scheduler types come from `@mintplayer/ui-core/scheduler` and every front re-exports them.
+- **The Lit SSR machinery is gone (issue #437).** Every framework front now renders its own HTML on the
+  server and installs its sheets itself, so nothing is injected after the render:
+  - `@mintplayer/web-components/light-dom/ssr` (`injectMpLightStyles`, `MP_LIGHT_STYLE_TAGS`) is removed.
+    Drop it from your server; the Angular fronts write their sheets into `DOCUMENT.head` during the render,
+    and React / Vue servers emit `collectScopedStyles()` from `@mintplayer/ui-core/scoped-styles`.
+  - `@mintplayer/web-components/overlay` (`OverlayController`, the overlay portal) is removed. Popups use
+    native `popover` placed by `trackPopovers` from `@mintplayer/ui-core/overlay`.
+  - React and Vue servers need no Lit DOM shim and clients no `lit-element-hydrate-support`.
+- **Peer dependencies (issue #437).** `@mintplayer/react-bootstrap` no longer peers on `@lit/react` or
+  `@mintplayer/web-components`, `@mintplayer/vue-bootstrap` no longer on `@mintplayer/web-components`, and
+  `@mintplayer/ng-bootstrap` no longer on `lit` (it keeps `@mintplayer/web-components` for
+  `theming/color-mode.css`).
 - **Navbar dropdown's label slot is `labelTemplate` (issue #437).** It shared its name with the `label`
   input, which made React and Vue pass the slot in place of the label. Angular: `*bsNavbarDropdownLabelTemplate`
   (`BsNavbarDropdownLabelTemplateDirective`); React `labelTemplate`; Vue `#labelTemplate`.

@@ -56,9 +56,7 @@ const MANIFEST = resolve(LIB_ROOT, 'custom-elements.json');
 /* ------------------------------------------------------------------ */
 
 /** Manifest declarations that are not a mountable tag. Asserted to be exactly these. */
-const NOT_MOUNTABLE: Record<string, string> = {
-  MpOverlayContainer: 'module-private portal host (not exported); OverlayController creates it',
-};
+const NOT_MOUNTABLE: Record<string, string> = {};
 
 interface Override {
   /** Why this case departs from the generic rule. Required on every entry. */

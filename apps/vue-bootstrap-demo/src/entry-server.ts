@@ -1,15 +1,9 @@
 // Server entry for SSR. Loaded through Vite (dev: `ssrLoadModule`; prod: the
 // `vite build --ssr` bundle), so the `@mintplayer/*` tsconfig path aliases and
 // `.vue` SFCs resolve here — `server.mjs` stays a thin plain-ESM transport.
-//
-// IMPORTANT: install the lit-ssr DOM shim *before* anything that registers a
-// web component. Importing a @mintplayer/vue-bootstrap wrapper runs
-// `customElements.define(...)` at module load; without the shim that throws in
-// Node. This import is first on purpose (ESM evaluates imports in source order).
-// Installs the SSR DOM globals (lit-ssr shim + a History stub for vue-router).
-// MUST be the first import — see the module for the full rationale.
-import './install-ssr-dom-globals';
-
+// No DOM shim: the Vue fronts render their own templates and define no custom
+// elements (PRD #437). Without a `document` global vue-router also stays on its
+// server branch, so it needs no History stub.
 import { renderToString } from 'vue/server-renderer';
 // Re-exported for server.mjs, which splices the theme attribute onto <html> and
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).

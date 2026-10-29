@@ -2,12 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test('navigates to /basic/alert via the navbar dropdown', async ({ page }) => {
   await page.goto('/');
-  // Wait for hydration: the navbar is now the `<mp-navbar>` web component and
-  // the dropdown trigger's click listener is only attached once the WC upgrades
-  // on the client (registered via the wrapper's client-only import). Until then
-  // the SSR/DSD snapshot has no click handler; the no-JS `:focus-within` reveal
-  // is disengaged (`data-js`) as soon as the WC connects. `networkidle` is a
-  // proxy for "the page has settled enough that the WCs have upgraded".
+  // Wait for hydration: the dropdown's click handling attaches once the navbar
+  // core is live on the client. `networkidle` is a proxy for "the page has
+  // settled enough that hydration finished".
   await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
     /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
   });

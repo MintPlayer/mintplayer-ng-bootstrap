@@ -80,9 +80,10 @@ function supportsConstructableSheets(): boolean {
  * so shadow adopters still get a sheet.
  */
 export function installLightStyles(key: string, styles: ScopedStyleSource | string): void {
-  // SSR guard: `typeof document` alone is not enough — @lit-labs/ssr's DOM
-  // shim installs a minimal global `document` WITHOUT `head` (measured: the
-  // react demo's SSR module runner). Require the parts we actually use.
+  // SSR guard: `typeof document` alone is not enough — a server DOM shim can
+  // install a global `document` WITHOUT a usable `head` (measured with
+  // @lit-labs/ssr's shim; Angular's SSR shim is the same kind of risk).
+  // Require the parts we actually use.
   if (typeof document === 'undefined' || !document.head) {
     recordServerSheet(key, styles);
     return;
