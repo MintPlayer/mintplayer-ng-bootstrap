@@ -30,6 +30,8 @@ export default defineConfig({
         '**/*.styles.ts',
         '**/*.element.template.ts',
         '**/*.generated.ts',
+        // D10 fronts compiled by mintplayer-ui-core:compile-components (#437).
+        '**/src/generated/**',
       ],
       reporter: ['lcov'],
       reportsDirectory: '../../coverage/libs/mintplayer-ng-bootstrap',
