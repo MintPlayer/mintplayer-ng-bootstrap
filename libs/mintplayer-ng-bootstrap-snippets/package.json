@@ -4,7 +4,7 @@
   "description": "This package contains @mintplayer/ng-bootstrap snippets for VS Code",
   "private": false,
   "version": "0.0.0-PLACEHOLDER",
-  "icon": "images/ng-bootstrap.png",
+  "icon": "images/ng-bootstrap-icon.png",
   "publisher": "MintPlayer",
   "galleryBanner": {
     "color": "#0273D4",

@@ -1,0 +1,6 @@
+.gitignore
+project.json
+package-lock.json
+*.vsix
+images/**
+!images/ng-bootstrap-icon.png
