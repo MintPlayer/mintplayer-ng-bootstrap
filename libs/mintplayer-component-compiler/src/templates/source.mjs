@@ -176,6 +176,36 @@ export function parseFor(src, el) {
   return { item: match[1], index: match[2] ?? null, list: match[3].trim(), key: key ? key.exp.content : null };
 }
 
+/** The attribute every element a group's templates render carries (S15). */
+export const SCOPE_ATTRIBUTE = 'data-mps';
+
+/**
+ * Stamps `data-mps=<scope>` on every native element of a template (S15), so a
+ * core's bags never carry it and the group sheet's rescoped rules match exactly
+ * what this group renders. Composed children, partial calls, slots, teleports
+ * and `<template>` are not elements of this group: a composed child stamps its
+ * own, and slot content is the consumer's. The stamp is a synthetic attribute
+ * (no source location); the Vue emitter writes it into the source text.
+ */
+export function stampScope(src, scope) {
+  const visit = (node) => {
+    // <selectedcontent> takes no attributes: the browser fills it with a clone of the selected option.
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.ELEMENT && node.tag !== 'selectedcontent') {
+      // compiler-sfc caches the parse by source text, so the same AST can come back
+      // already stamped: keep our own stamp, refuse another group's.
+      const stamp = attribute(node, SCOPE_ATTRIBUTE);
+      if (stamp?.synthetic) {
+        if (stamp.value.content !== scope) throw new TemplateError(src.file, node, `stamped for two groups: ${stamp.value.content} and ${scope}`);
+      } else if (stamp || node.props.some((p) => p.type === PROP.DIRECTIVE && p.arg?.content === SCOPE_ATTRIBUTE)) {
+        throw new TemplateError(src.file, node, `the compiler stamps ${SCOPE_ATTRIBUTE}; remove it from the template`);
+      } else node.props.unshift({ type: PROP.ATTRIBUTE, name: SCOPE_ATTRIBUTE, value: { content: scope }, synthetic: true });
+    }
+    (node.children ?? []).forEach(visit);
+  };
+  visit(src.root);
+  return src;
+}
+
 /** The attributes an emitter renders: everything except structure directives and the host marker. */
 export function renderedProps(el) {
   return el.props.filter((p) => {

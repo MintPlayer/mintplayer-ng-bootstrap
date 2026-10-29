@@ -11,10 +11,14 @@ import {
   type NavbarBag,
 } from './navbar';
 
-/** Apply a bag the way the fronts do: null/false drops, true is an empty attribute. */
+/**
+ * Apply a bag the way the fronts do: null/false drops, true is an empty
+ * attribute, and the compiler stamps the group's scope on every element (S15).
+ */
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, bag: NavbarBag = {}, ...children: (Node | string)[]) {
   const node = document.createElement(tag);
-  Object.entries(bag)
+  const stamped: NavbarBag = { 'data-mps': 'navbar', ...bag };
+  Object.entries(stamped)
     .filter(([, value]) => value !== null && value !== false)
     .map(([name, value]) => node.setAttribute(name, value === true ? '' : String(value)));
   node.append(...children);
@@ -63,7 +67,9 @@ describe('connectNavbar', () => {
     expect(view.toggle).toMatchObject({ id: 'n-toggle', type: 'checkbox', 'aria-controls': 'n-collapse', 'aria-label': 'Toggle navigation' });
     expect(view.toggler).toMatchObject({ for: 'n-toggle', 'aria-hidden': 'true' });
     expect(view.collapse['id']).toBe('n-collapse');
-    expect(view.root).toMatchObject({ 'data-mps': 'navbar', 'data-breakpoint': 'md', 'aria-label': 'Main navigation' });
+    expect(view.root).toMatchObject({ 'data-breakpoint': 'md', 'aria-label': 'Main navigation' });
+    // S15: the compiler stamps the scope; a bag-carried one would double it.
+    expect(view.root).not.toHaveProperty('data-mps');
   });
 
   it('keeps the native checkbox role until hydrated, then presents a button with live aria-expanded', () => {

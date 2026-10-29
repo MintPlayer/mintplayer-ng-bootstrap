@@ -27,6 +27,16 @@ export function emitVue(src, { generator = GENERATOR, partials, components } = {
       .forEach((p) => remove(p.loc)),
   );
 
+  // The group's scope stamp (stampScope) has no source location: write it after the tag name.
+  walk(src.root, (node) =>
+    (node.props ?? [])
+      .filter((p) => p.synthetic)
+      .forEach((p) => {
+        const at = node.loc.start.offset + 1 + node.tag.length;
+        edits.push({ start: at, end: at, text: ` ${p.name}="${p.value.content}"` });
+      }),
+  );
+
   // A teleport renders nothing while its target is null (the server's case), as in the
   // other fronts; Vue's own <Teleport> would warn and mount nowhere.
   walk(src.root, (node) => {

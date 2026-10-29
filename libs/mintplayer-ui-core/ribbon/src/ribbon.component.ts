@@ -28,7 +28,7 @@ const item = (core: string, type: string, doc: string, extra: Partial<ComponentM
  */
 export default {
   group: 'ribbon',
-  styles: [{ scope: 'RIBBON_SCOPE', sheet: 'ribbonScopedStyles' }],
+  style: { scope: 'ribbon' },
   components: {
     ribbon: {
       core: 'ribbonCore',

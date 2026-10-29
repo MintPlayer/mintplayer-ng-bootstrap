@@ -92,8 +92,8 @@ describe('connectOtpInput', () => {
     expect(view.boxes[0].bag['class']).toContain('otp-box-invalid');
   });
 
-  it('scopes every node', () => {
+  it('leaves the scope to the compiler: no bag carries data-mps (S15)', () => {
     const view = connectOtpInput(base);
-    [view.root, view.container, view.input, view.spacer, view.content, view.boxes[0].bag].forEach((bag) => expect(bag['data-mps']).toBe('otp-input'));
+    [view.root, view.container, view.input, view.spacer, view.content, view.boxes[0].bag].forEach((bag) => expect(bag['data-mps']).toBeUndefined());
   });
 });

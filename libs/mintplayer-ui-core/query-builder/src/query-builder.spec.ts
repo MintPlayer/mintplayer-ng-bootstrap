@@ -31,7 +31,7 @@ const TREE: Expression = {
       kind: 'group',
       id: 'g2',
       logic: 'or',
-      children: [{ kind: 'condition', id: 'c2', field: 'orderDate', operator: 'eq', value: '2026-01-01' }],
+      children: [{ kind: 'condition', id: 'c2', field: 'orderDate', operator: 'equals', value: '2026-01-01' }],
     },
   ],
 };
@@ -79,7 +79,7 @@ describe('connectQueryBuilder', () => {
     const date = rows.find((r) => r.item['data-row-id'] === 'c2')!;
     expect(total.condition.editor.custom).toBe(false);
     expect(date.condition.editor.custom).toBe(true);
-    expect(date.condition.editor.ctx).toMatchObject({ value: '2026-01-01', operator: 'eq', disabled: false });
+    expect(date.condition.editor.ctx).toMatchObject({ value: '2026-01-01', operator: 'equals', disabled: false });
     date.condition.editor.ctx.onChange('2026-02-02');
     expect(onValue).toHaveBeenCalledWith('c2', '2026-02-02');
   });

@@ -12,8 +12,6 @@ export type TimelineBag = CoreBag;
 /** Keys of the selected rows. */
 export type TimelineKeys = readonly string[];
 
-const scoped = (bag: TimelineBag): TimelineBag => ({ ...bag, 'data-mps': TIMELINE_SCOPE });
-
 /**
  * What every row needs from its timeline: how items are reached and which one
  * holds the tab stop. The timeline hands it to declarative items as context,
@@ -61,7 +59,7 @@ export function rowBag(ctx: TimelineRowsContext, row: TimelineRowOptions): Timel
   const selecting = ctx.selectable !== 'none';
   const selected = selecting && ctx.selected.includes(row.key);
   const interactive = role !== 'listitem';
-  return scoped({
+  return {
     class: ['timeline-item', selected ? 'timeline-item-selected' : null, row.disabled ? 'timeline-item-disabled' : null, row.cssClass]
       .filter(Boolean)
       .join(' '),
@@ -73,7 +71,7 @@ export function rowBag(ctx: TimelineRowsContext, row: TimelineRowOptions): Timel
     'aria-disabled': interactive && row.disabled ? 'true' : null,
     // No tab stop until the timeline is live: with JS off a row cannot act.
     tabindex: isRoving(ctx) && ctx.activeKey !== null ? (ctx.activeKey === row.key ? 0 : -1) : null,
-  });
+  };
 }
 
 /** The fixed regions of a row, shared by data rows and declarative items. */
@@ -89,19 +87,19 @@ export interface TimelineRowParts {
 }
 
 export const ROW_PARTS: TimelineRowParts = {
-  opposite: scoped({ class: 'timeline-opposite' }),
-  line: scoped({ class: 'timeline-line' }),
-  marker: scoped({ class: 'timeline-marker' }),
-  dot: scoped({ class: 'timeline-dot' }),
-  connector: scoped({ class: 'timeline-connector' }),
-  content: scoped({ class: 'timeline-content' }),
-  heading: scoped({ class: 'timeline-heading' }),
-  body: scoped({ class: 'timeline-body' }),
+  opposite: { class: 'timeline-opposite' },
+  line: { class: 'timeline-line' },
+  marker: { class: 'timeline-marker' },
+  dot: { class: 'timeline-dot' },
+  connector: { class: 'timeline-connector' },
+  content: { class: 'timeline-content' },
+  heading: { class: 'timeline-heading' },
+  body: { class: 'timeline-body' },
 };
 
 /** The marker's default icon: a decorative `<i class>`. */
 export const iconBag = (icon: string | null | undefined): TimelineBag | null =>
-  icon ? scoped({ class: icon, 'aria-hidden': 'true' }) : null;
+  icon ? { class: icon, 'aria-hidden': 'true' } : null;
 
 /** The accent colour, carried as a custom property on the line (marker + connector). */
 export const accentStyle = (color: string | null | undefined): Record<string, string> =>
@@ -156,7 +154,7 @@ export function connectTimeline(options: TimelineOptions): TimelineView {
   const activeKey = options.activeKey !== null && enabled.includes(options.activeKey) ? options.activeKey : (enabled[0] ?? null);
   const rowsCtx: TimelineRowsContext = { ...options, activeKey: items ? activeKey : options.activeKey };
   return {
-    root: scoped({
+    root: {
       class: [
         'timeline',
         `timeline-${options.orientation}`,
@@ -168,7 +166,7 @@ export function connectTimeline(options: TimelineOptions): TimelineView {
       // Only a widget takes aria-orientation; on list/group it is invalid.
       'aria-orientation': role === 'listbox' ? options.orientation : null,
       'aria-multiselectable': options.selectable === 'multiple' ? 'true' : null,
-    }),
+    },
     rows: items
       ? items.map((item, index) => {
           const key = dataKey(item, index);

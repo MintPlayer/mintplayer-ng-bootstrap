@@ -85,25 +85,25 @@ export interface ThemeToggleView {
  */
 export function connectThemeToggle(options: ThemeToggleOptions): ThemeToggleView {
   const { id, modes, mode, hydrated, announcement } = options;
-  const scoped = (bag: ThemeToggleBag): ThemeToggleBag => ({ ...bag, 'data-mps': THEME_TOGGLE_SCOPE });
+
   const { current, next } = toggleEntries(modes, mode);
   const descriptionId = `${id}-current`;
   // One path: subpaths concatenate, and the icons' subpaths never overlap.
   const d = typeof current.icon === 'string' ? current.icon : current.icon.join(' ');
   return {
-    root: scoped({ class: 'theme-toggle' }),
-    button: scoped({
+    root: { class: 'theme-toggle' },
+    button: {
       type: 'button',
       class: 'theme-toggle-button',
       'aria-label': next.label,
       'aria-describedby': descriptionId,
       disabled: !hydrated,
-    }),
-    icon: scoped({ viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' }),
-    path: scoped({ d }),
-    description: scoped({ id: descriptionId, class: 'visually-hidden' }),
+    },
+    icon: { viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
+    path: { d },
+    description: { id: descriptionId, class: 'visually-hidden' },
     descriptionText: current.announcement,
-    live: scoped({ class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    live: { class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
     liveText: announcement,
   };
 }

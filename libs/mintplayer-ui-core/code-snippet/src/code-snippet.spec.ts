@@ -25,7 +25,7 @@ describe('connectCodeSnippet', () => {
   it('renders escaped plain rows until highlighted, one per line without a phantom last row', () => {
     const view = connectCodeSnippet(options());
     expect(view.rows.map((r) => r.html)).toEqual(['const a = 1;', 'const b = &quot;&lt;x&gt;&quot;;']);
-    expect(view.rows.every((r) => r.row['data-mps'] === 'code-snippet')).toBe(true);
+    expect(view.rows.every((r) => r.row['data-mps'] === undefined)).toBe(true);
   });
 
   it('uses the highlighted rows when given', () => {

@@ -63,8 +63,6 @@ export interface CarouselItemsContext {
 
 export const CAROUSEL_ITEMS = defineContext<CarouselItemsContext>('carousel-items', { labels: CAROUSEL_LABELS });
 
-const scoped = (bag: CarouselBag): CarouselBag => ({ ...bag, 'data-mps': CAROUSEL_SCOPE });
-
 export interface CarouselOptions {
   /** Deterministic id: radio ids and the radio group's name derive from it. */
   readonly id: string;
@@ -125,7 +123,7 @@ export function connectCarousel(o: CarouselOptions): CarouselView {
   const slides = Array.from({ length: n }, (_, i) => i);
   const radio = (i: number) => carouselRadioId(o.id, ((i % n) + n) % n);
   return {
-    root: scoped({
+    root: {
       class: 'carousel',
       role: 'region',
       'aria-roledescription': o.labels.carousel,
@@ -133,33 +131,33 @@ export function connectCarousel(o: CarouselOptions): CarouselView {
       'data-animation': o.animation,
       'data-orientation': o.orientation,
       ...hydratedAttr(live),
-    }),
+    },
     playPause:
       live && o.interval > 0
         ? {
-            wrap: scoped({ class: 'carousel-play-pause' }),
-            button: scoped({
+            wrap: { class: 'carousel-play-pause' },
+            button: {
               type: 'button',
               class: `carousel-play-pause-btn ${o.paused ? 'carousel-play-pause-paused' : 'carousel-play-pause-playing'}`,
               'aria-pressed': String(o.paused),
               'aria-label': o.paused ? o.labels.play : o.labels.pause,
               'data-carousel-toggle': '',
-            }),
-            icon: scoped({ class: 'carousel-play-pause-icon', 'aria-hidden': 'true' }),
+            },
+            icon: { class: 'carousel-play-pause-icon', 'aria-hidden': 'true' },
           }
         : null,
     radios: slides.map((i) => ({
       key: i,
-      bag: scoped({
+      bag: {
         type: 'radio',
         id: radio(i),
         name: o.id,
         class: 'car-radio visually-hidden',
         'aria-label': carouselLabel(o.labels.goTo, { n: i + 1, count: n }),
         checked: i === o.index,
-      }),
+      },
     })),
-    inner: scoped({
+    inner: {
       class: 'carousel-inner',
       tabindex: live ? 0 : null,
       'aria-live': live ? ariaLive(o) : null,
@@ -167,50 +165,50 @@ export function connectCarousel(o: CarouselOptions): CarouselView {
       'aria-busy': live && o.animating ? 'true' : null,
       'aria-keyshortcuts':
         live && o.keyboardEvents ? (o.orientation === 'horizontal' ? 'ArrowLeft ArrowRight Home End' : 'ArrowUp ArrowDown Home End') : null,
-    }),
-    track: scoped({ class: 'carousel-track' }),
+    },
+    track: { class: 'carousel-track' },
     indicators: o.indicators
       ? {
-          bag: scoped({ class: 'carousel-indicators' }),
+          bag: { class: 'carousel-indicators' },
           items: slides.map((i) => ({
             key: i,
-            bag: scoped({
+            bag: {
               for: radio(i),
               'data-bs-target': '',
               'data-index': i,
               'aria-label': carouselLabel(o.labels.goTo, { n: i + 1, count: n }),
               'aria-current': live && i === o.index ? 'true' : null,
-            }),
+            },
           })),
         }
       : null,
     controls: {
-      bag: scoped({ class: 'carousel-controls' }),
+      bag: { class: 'carousel-controls' },
       // One pair per slide; the stylesheet shows the checked slide's pair. The
       // labels' targets wrap, which is what navigates with JS off.
       pairs: slides.map((i) => ({
         key: i,
-        pair: scoped({ class: 'carousel-control-pair' }),
-        prev: scoped({
+        pair: { class: 'carousel-control-pair' },
+        prev: {
           class: 'carousel-control-prev',
           for: radio(i - 1),
           role: 'button',
           tabindex: live ? 0 : null,
           'data-step': 'previous',
           'aria-label': o.labels.previous,
-        }),
-        next: scoped({
+        },
+        next: {
           class: 'carousel-control-next',
           for: radio(i + 1),
           role: 'button',
           tabindex: live ? 0 : null,
           'data-step': 'next',
           'aria-label': o.labels.next,
-        }),
+        },
       })),
       icon: {
-        prev: scoped({ class: 'carousel-control-prev-icon', 'aria-hidden': 'true' }),
-        next: scoped({ class: 'carousel-control-next-icon', 'aria-hidden': 'true' }),
+        prev: { class: 'carousel-control-prev-icon', 'aria-hidden': 'true' },
+        next: { class: 'carousel-control-next-icon', 'aria-hidden': 'true' },
       },
     },
   };
@@ -223,6 +221,6 @@ export interface CarouselItemView {
 /** A slide. Its position name ("2 of 5") is written once live: only the deck knows its index. */
 export function connectCarouselItem(context: CarouselItemsContext): CarouselItemView {
   return {
-    root: scoped({ class: 'carousel-item', role: 'group', 'aria-roledescription': context.labels.slide }),
+    root: { class: 'carousel-item', role: 'group', 'aria-roledescription': context.labels.slide },
   };
 }

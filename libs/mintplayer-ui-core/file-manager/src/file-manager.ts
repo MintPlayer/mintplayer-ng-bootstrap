@@ -377,8 +377,6 @@ export const fileManagerRowKey = (row: unknown): string => (row as FileSystemNod
 
 // ─── Bags ───────────────────────────────────────────────────────────────────
 
-const scoped = (bag: FileManagerBag): FileManagerBag => ({ ...bag, 'data-mps': FILE_MANAGER_SCOPE });
-
 export interface FileManagerAction {
   readonly key: string;
   readonly bag: FileManagerBag;
@@ -571,10 +569,10 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
       key: command,
       glyph,
       label: m[command],
-      bag: scoped({ type: 'button', class: 'toolbar-button', 'data-fm-command': command, disabled: disabled(enabled[command]) }),
+      bag: { type: 'button', class: 'toolbar-button', 'data-fm-command': command, disabled: disabled(enabled[command]) },
     })),
     ...(o.allowUpload
-      ? [{ key: 'upload', glyph: '📤', label: m.upload, bag: scoped({ type: 'button', class: 'toolbar-button', 'data-fm-command': 'upload', disabled: disabled(true) }) }]
+      ? [{ key: 'upload', glyph: '📤', label: m.upload, bag: { type: 'button', class: 'toolbar-button', 'data-fm-command': 'upload', disabled: disabled(true) } }]
       : []),
   ];
 
@@ -583,14 +581,14 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
     key: id ?? '',
     label,
     separator,
-    bag: scoped({
+    bag: {
       type: 'button',
       class: 'breadcrumb-segment',
       'data-fm-navigate': id ?? '',
       'data-current': current ? 'true' : 'false',
       'aria-current': current ? 'page' : null,
       disabled: live ? null : true,
-    }),
+    },
   });
   const crumbs = [crumb(null, m.home, path.length === 0, false), ...path.map((n, i) => crumb(n.id, n.name, i === path.length - 1, true))];
 
@@ -608,12 +606,12 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
       name: node.name,
       icon: nodeIcon(node, o.iconResolver),
       texts: { name: node.name, size: formatSize(node), modifiedAt: formatDate(node), type: typeText(node, m) },
-      cell: scoped({ class: 'row-cell', 'data-pending': pending }),
+      cell: { class: 'row-cell', 'data-pending': pending },
       renameInput:
         o.renameTarget === node.id
-          ? scoped({ type: 'text', class: 'rename-input', value: node.name, 'aria-label': m.renameLabel(node.name), 'data-fm-rename': node.id })
+          ? { type: 'text', class: 'rename-input', value: node.name, 'aria-label': m.renameLabel(node.name), 'data-fm-rename': node.id }
           : null,
-      card: scoped({
+      card: {
         type: 'button',
         class: 'icon-card',
         role: 'option',
@@ -624,36 +622,36 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
         'data-pending': pending,
         'aria-selected': selected ? 'true' : 'false',
         'aria-busy': pending ? 'true' : null,
-      }),
+      },
     };
   });
 
   const menu: FileManagerMenu | null = o.contextMenu
     ? {
-        list: scoped({ class: 'context-menu', role: 'menu', 'aria-label': m.ariaFileOperations }),
+        list: { class: 'context-menu', role: 'menu', 'aria-label': m.ariaFileOperations },
         style: { '--mp-file-manager-menu-x': `${o.contextMenu.x}px`, '--mp-file-manager-menu-y': `${o.contextMenu.y}px` },
-        items: MENU.filter((entry) => entry === 'separator' || offered[entry]).map((entry, i) =>
+        items: MENU.filter((entry) => entry === 'separator' || offered[entry]).map((entry, i): FileManagerMenuItem =>
           entry === 'separator'
-            ? { key: `separator-${i}`, li: scoped({ role: 'separator', class: 'menu-separator' }), button: null, label: '' }
+            ? { key: `separator-${i}`, li: { role: 'separator', class: 'menu-separator' }, button: null, label: '' }
             : {
                 key: entry,
-                li: scoped({ role: 'none' }),
+                li: { role: 'none' },
                 label: m[entry],
-                button: scoped({
+                button: {
                   type: 'button',
                   class: 'menu-item',
                   role: 'menuitem',
                   tabindex: -1,
                   'data-fm-command': entry,
                   disabled: enabled[entry] ? null : true,
-                }),
+                },
               },
         ),
       }
     : null;
 
   const toggle = (mode: FileManagerViewMode, label: string) =>
-    scoped({
+    ({
       type: 'button',
       'data-fm-view': mode,
       'data-active': o.viewMode === mode ? 'true' : 'false',
@@ -663,40 +661,40 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
     });
 
   return {
-    root: scoped({
+    root: {
       class: o.dropActive ? 'file-manager drop-active' : 'file-manager',
       role: 'region',
       'aria-label': o.label ?? m.ariaFileManager,
       ...hydratedAttr(o.hydrated),
-    }),
-    live: scoped({ class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }),
-    alert: scoped({ class: 'visually-hidden', role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true' }),
-    toolbar: scoped({ class: 'toolbar', role: 'toolbar', 'aria-label': m.ariaToolbar }),
+    },
+    live: { class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
+    alert: { class: 'visually-hidden', role: 'alert', 'aria-live': 'assertive', 'aria-atomic': 'true' },
+    toolbar: { class: 'toolbar', role: 'toolbar', 'aria-label': m.ariaToolbar },
     actions,
-    glyph: scoped({ class: 'toolbar-glyph', 'aria-hidden': 'true' }),
-    spacer: scoped({ class: 'spacer' }),
-    search: scoped({
+    glyph: { class: 'toolbar-glyph', 'aria-hidden': 'true' },
+    spacer: { class: 'spacer' },
+    search: {
       type: 'search',
       class: 'search-input',
       placeholder: o.searchPlaceholder || m.searchPlaceholder,
       'aria-label': m.searchPlaceholder,
       'data-fm-search': '',
       disabled: live ? null : true,
-    }),
-    viewToggle: scoped({ class: 'view-toggle', role: 'group', 'aria-label': m.ariaViewMode }),
+    },
+    viewToggle: { class: 'view-toggle', role: 'group', 'aria-label': m.ariaViewMode },
     listToggle: toggle('list', m.listView),
     iconsToggle: toggle('icons', m.iconsView),
-    toggleIcon: scoped({ class: 'toggle-icon', 'aria-hidden': 'true' }),
+    toggleIcon: { class: 'toggle-icon', 'aria-hidden': 'true' },
     listIcon: LIST_SVG,
     gridIcon: GRID_SVG,
-    breadcrumb: scoped({ class: 'breadcrumb-bar', 'aria-label': m.ariaBreadcrumb }),
-    crumbItem: scoped({ class: 'breadcrumb-item' }),
-    crumbSeparator: scoped({ class: 'breadcrumb-separator', 'aria-hidden': 'true' }),
+    breadcrumb: { class: 'breadcrumb-bar', 'aria-label': m.ariaBreadcrumb },
+    crumbItem: { class: 'breadcrumb-item' },
+    crumbSeparator: { class: 'breadcrumb-separator', 'aria-hidden': 'true' },
     crumbs,
-    splitArea: scoped({ class: 'split-area' }),
-    treePane: scoped({ class: 'tree-pane' }),
-    contentPane: scoped({ class: 'content-pane', 'data-fm-content': '' }),
-    contentBody: scoped({ class: 'content-body' }),
+    splitArea: { class: 'split-area' },
+    treePane: { class: 'tree-pane' },
+    contentPane: { class: 'content-pane', 'data-fm-content': '' },
+    contentBody: { class: 'content-body' },
     list: !icons,
     listLabel: m.ariaFileList,
     emptyMessage: m.noFilesOrFolders,
@@ -704,19 +702,19 @@ export function connectFileManager(o: FileManagerOptions): FileManagerView {
     rowKey: fileManagerRowKey,
     cutIds: cut,
     rows,
-    rowIcon: scoped({ class: 'row-icon', 'aria-hidden': 'true' }),
-    rowName: scoped({ class: 'row-name' }),
-    cellText: scoped({ class: 'cell-text' }),
-    grid: scoped({
+    rowIcon: { class: 'row-icon', 'aria-hidden': 'true' },
+    rowName: { class: 'row-name' },
+    cellText: { class: 'cell-text' },
+    grid: {
       class: 'icon-grid',
       role: 'listbox',
       'aria-multiselectable': o.selectionMode === 'multiple' ? 'true' : null,
       'aria-label': m.ariaFileList,
-    }),
-    cardIcon: scoped({ class: 'file-icon', 'aria-hidden': 'true' }),
-    cardName: scoped({ class: 'file-name' }),
+    },
+    cardIcon: { class: 'file-icon', 'aria-hidden': 'true' },
+    cardName: { class: 'file-name' },
     // Drag feedback is visual; the upload path announces its own outcomes.
-    overlay: scoped({ class: 'drop-overlay', 'aria-hidden': 'true' }),
+    overlay: { class: 'drop-overlay', 'aria-hidden': 'true' },
     dropText: m.dropFilesToUpload,
     menu,
     tree: {

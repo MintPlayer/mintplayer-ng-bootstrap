@@ -186,8 +186,6 @@ export interface TreeSelectOptions {
   readonly labels?: Partial<TreeSelectLabels>;
 }
 
-const scoped = (bag: TreeSelectBag): TreeSelectBag => ({ ...bag, 'data-mps': TREE_SELECT_SCOPE });
-
 export const treeSelectPanelId = (id: string) => `${id}-panel`;
 export const treeSelectTreeId = (id: string) => `${id}-tree`;
 
@@ -227,7 +225,7 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
       ? { ...row.item, 'aria-selected': null, 'aria-checked': stateOf(row.key) === 'checked' ? 'true' : stateOf(row.key) === 'mixed' ? 'mixed' : 'false' }
       : row.item,
     check: multi
-      ? scoped({ class: 'ts-node-check', 'data-state': stateOf(row.key), 'data-ts-check': '', 'aria-hidden': 'true' })
+      ? { class: 'ts-node-check', 'data-state': stateOf(row.key), 'data-ts-check': '', 'aria-hidden': 'true' }
       : null,
   }));
 
@@ -237,19 +235,19 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
   const single = o.mode === 'single' ? (o.value[0] ?? null) : null;
 
   return {
-    root: scoped({
+    root: {
       class: 'tree-select',
       'data-mode': o.mode,
       'data-variant': o.variant,
       'data-open': o.open ? 'true' : 'false',
       'data-disabled': o.disabled ? 'true' : 'false',
       ...hydratedAttr(o.hydrated ?? false),
-    }),
-    live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    },
+    live: { class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' },
     announcement: o.announcement,
     textbox,
-    control: scoped({ class: 'ts-control ts-anchor', 'data-ts-control': '' }),
-    input: scoped({
+    control: { class: 'ts-control ts-anchor', 'data-ts-control': '' },
+    input: {
       class: 'ts-search',
       type: 'text',
       role: 'combobox',
@@ -262,8 +260,8 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
       placeholder: hasSelection ? '' : o.placeholder,
       disabled: o.disabled,
       'data-ts-search': '',
-    }),
-    button: scoped({
+    },
+    button: {
       class: 'ts-button ts-anchor',
       type: 'button',
       popovertarget: panelId,
@@ -272,47 +270,47 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
       'aria-controls': panelId,
       'aria-label': o.label,
       disabled: o.disabled,
-    }),
-    buttonBody: scoped({ class: 'ts-button-body' }),
-    placeholder: scoped({ class: 'ts-placeholder' }),
+    },
+    buttonBody: { class: 'ts-button-body' },
+    placeholder: { class: 'ts-placeholder' },
     placeholderText: o.placeholder,
     showPlaceholder: !hasSelection,
     chips: multi
       ? o.value.map((node) => ({
           key: node.id,
           node,
-          bag: scoped({ class: 'ts-chip' }),
+          bag: { class: 'ts-chip' },
           remove: textbox
-            ? scoped({
+            ? {
                 class: 'ts-chip-remove',
                 type: 'button',
                 'aria-label': fill(labels.remove, { label: node.label ?? '' }),
                 'data-ts-remove': node.id,
-              })
+              }
             : null,
         }))
       : [],
-    chipLabel: scoped({ class: 'ts-chip-label' }),
+    chipLabel: { class: 'ts-chip-label' },
     single: textbox && searching ? null : single,
-    singleBag: scoped({ class: 'ts-single-value' }),
+    singleBag: { class: 'ts-single-value' },
     clear:
       o.showClear && hasSelection && textbox
-        ? scoped({ class: 'ts-clear', type: 'button', 'aria-label': labels.clear, 'data-ts-clear': '' })
+        ? { class: 'ts-clear', type: 'button', 'aria-label': labels.clear, 'data-ts-clear': '' }
         : null,
-    caret: scoped({ class: 'ts-caret', 'aria-hidden': 'true' }),
-    panel: scoped({
+    caret: { class: 'ts-caret', 'aria-hidden': 'true' },
+    panel: {
       class: 'ts-panel',
       id: panelId,
       popover: 'auto',
       role: textbox ? null : 'dialog',
       'aria-label': textbox ? null : name,
       'aria-busy': o.loading ? 'true' : null,
-    }),
-    header: scoped({ class: 'ts-panel-header' }),
-    footer: scoped({ class: 'ts-panel-footer' }),
+    },
+    header: { class: 'ts-panel-header' },
+    footer: { class: 'ts-panel-footer' },
     panelSearch: textbox
       ? null
-      : scoped({
+      : {
           class: 'ts-search panel-search',
           type: 'text',
           autocomplete: 'off',
@@ -320,22 +318,22 @@ export function connectTreeSelect(o: TreeSelectOptions): TreeSelectView {
           'aria-label': labels.search,
           'aria-controls': treeId,
           'data-ts-search': '',
-        }),
-    body: scoped({ class: 'ts-panel-body' }),
+        },
+    body: { class: 'ts-panel-body' },
     bodyStyle: { '--mp-tree-select-panel-max-height': o.scrollHeight || '300px' },
     busy,
     noResults: empty && searching,
     noItems: empty && !searching,
     noProvider: !o.hasProvider,
     showTree: o.hasProvider && !busy && o.nodes.length > 0,
-    stateBag: scoped({ class: 'ts-state' }),
-    spinner: scoped({ class: 'ts-spinner', 'aria-hidden': 'true' }),
+    stateBag: { class: 'ts-state' },
+    spinner: { class: 'ts-spinner', 'aria-hidden': 'true' },
     // The treeview class names on the list carry its custom properties to the rows.
     tree: { ...tree, tree: { ...tree.tree, id: treeId, class: `treeview treeview-borderless ${tree.tree['class']}` } },
     rows,
-    loadMore: o.hasMore ? scoped({ class: 'ts-load-more', type: 'button', 'data-ts-load-more': '' }) : null,
+    loadMore: o.hasMore ? { class: 'ts-load-more', type: 'button', 'data-ts-load-more': '' } : null,
     loadMoreBusy: o.loading,
-    loadMoreLabel: scoped({ class: 'ts-load-more-label' }),
+    loadMoreLabel: { class: 'ts-load-more-label' },
     query: o.query,
     value: valueFor(o.mode, o.value),
     labels,

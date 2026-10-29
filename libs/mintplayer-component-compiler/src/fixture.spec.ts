@@ -67,7 +67,7 @@ describe('the packed compiler in a foreign workspace (S19)', () => {
         '',
         'export default {',
         "  group: 'greeting',",
-        "  styles: [{ scope: 'GREETING_SCOPE', sheet: 'greetingScopedStyles' }],",
+        "  style: { scope: 'greeting' },",
         '  components: {',
         "    greeting: {",
         "      core: 'greetingCore',",
@@ -100,12 +100,11 @@ describe('the packed compiler in a foreign workspace (S19)', () => {
       [
         "import { defineCore, type CoreBag } from '@mintplayer/ui-core/component';",
         '',
-        "export const GREETING_SCOPE = 'greeting';",
         "export const greetingScopedStyles = '.greeting[data-mps=greeting] { font-weight: bold; }';",
         'export interface GreetingInputs { name: string }',
         'export interface GreetingProps { root: CoreBag; text: string }',
         'export const greetingCore = defineCore<GreetingInputs, object, GreetingProps>({',
-        "  view: ({ inputs }) => ({ root: { 'data-mps': GREETING_SCOPE, class: 'greeting' }, text: `Hello, ${inputs.name}` }),",
+        "  view: ({ inputs }) => ({ root: { class: 'greeting' }, text: `Hello, ${inputs.name}` }),",
         '});',
         '',
       ].join('\n'),
@@ -156,6 +155,9 @@ describe('the packed compiler in a foreign workspace (S19)', () => {
     const lit = walk(join(fixture, 'libs/acme-wc/greeting/src/generated')).map((file) => readFileSync(file, 'utf8')).join('\n');
     expect(lit).toContain("'@acme/core/greeting'");
     expect(lit).toContain("from '@mintplayer/ui-core/scoped-styles'");
+    // S15: the group's scope comes from the manifest, onto the host, not from the core's bag.
+    expect(lit).toContain("installLightStyles('greeting', greetingScopedStyles)");
+    expect(lit).toContain("'data-mps': 'greeting'");
   });
 
   it('type-checks all four fronts against the core and the runtimes', () => {

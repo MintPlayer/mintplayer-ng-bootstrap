@@ -42,7 +42,7 @@ export interface SelectChangeEventDetail {
 export const SELECT_SCOPE = 'select';
 
 const SIZES: ReadonlySet<string> = new Set(['sm', 'md', 'lg']);
-const ROOT: SelectBag = { 'data-mps': SELECT_SCOPE, class: 'mp-select' };
+const ROOT: SelectBag = { class: 'mp-select' };
 
 export function isOptgroup(item: SelectItem): item is SelectOptgroup {
   return Array.isArray((item as SelectOptgroup).options);
@@ -119,7 +119,6 @@ export function connectSelect(options: SelectOptions): SelectView {
   return {
     root: ROOT,
     select: {
-      'data-mps': SELECT_SCOPE,
       class: size === 'md' ? 'form-select' : `form-select form-select-${size}`,
       id: options.id,
       name: options.name,
@@ -147,7 +146,7 @@ export function connectSelect(options: SelectOptions): SelectView {
     rich,
     showFeedback: !!error.message,
     // Stamped like every node a front renders (a light host tells its own nodes from a consumer's by it).
-    feedback: error.message ? { attrs: { ...error.message.attrs, 'data-mps': SELECT_SCOPE }, text: error.message.text } : { attrs: {}, text: '' },
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
   };
 }
 

@@ -49,8 +49,6 @@ export interface SplitterPanelsContext {
 
 export const SPLITTER_PANELS = defineContext<SplitterPanelsContext>('splitter-panels', { orientation: 'horizontal' });
 
-const scoped = (bag: SplitterBag): SplitterBag => ({ ...bag, 'data-mps': SPLITTER_SCOPE });
-
 export interface SplitterOptions {
   readonly orientation: SplitterOrientation;
   readonly touchMode: boolean;
@@ -66,7 +64,7 @@ export interface SplitterView {
 export function connectSplitter(options: SplitterOptions): SplitterView {
   const classes = ['splitter', options.orientation, options.touchMode ? 'touch-mode' : '', options.resizing ? 'resizing' : ''];
   return {
-    root: scoped({ class: classes.filter(Boolean).join(' '), ...hydratedAttr(options.hydrated) }),
+    root: { class: classes.filter(Boolean).join(' '), ...hydratedAttr(options.hydrated) },
   };
 }
 
@@ -95,14 +93,14 @@ export const splitterPaneId = (id: string): string => `${id}-pane`;
  */
 export function connectSplitterPanel(options: SplitterPanelOptions): SplitterPanelView {
   return {
-    root: scoped({ class: 'splitter-panel' }),
-    divider: scoped({
+    root: { class: 'splitter-panel' },
+    divider: {
       class: 'splitter-divider',
       role: 'separator',
       'aria-orientation': options.orientation === 'horizontal' ? 'vertical' : 'horizontal',
       tabindex: options.hydrated ? 0 : null,
-    }),
-    pane: scoped({ class: 'splitter-pane', id: splitterPaneId(options.id) }),
+    },
+    pane: { class: 'splitter-pane', id: splitterPaneId(options.id) },
   };
 }
 

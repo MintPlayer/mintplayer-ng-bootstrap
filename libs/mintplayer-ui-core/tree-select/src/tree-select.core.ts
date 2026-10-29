@@ -110,7 +110,7 @@ const panelIsOpen = (api: Api): boolean => {
   try {
     return panel.matches(':popover-open');
   } catch {
-    return api.state().open; // an engine without the pseudo-class (jsdom)
+    return api.state().open; // an engine that cannot parse the pseudo-class
   }
 };
 const showPanel = (api: Api) => {

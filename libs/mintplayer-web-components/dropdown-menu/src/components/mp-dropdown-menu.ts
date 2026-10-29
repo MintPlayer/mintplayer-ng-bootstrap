@@ -71,7 +71,7 @@ export class MpDropdownMenu extends ReactiveElement {
     super.update(changed);
     // Naming stays the consumer's: the element is the role-bearing node.
     const bag = Object.fromEntries(Object.entries(connectDropdownMenu({ hydrated: true })).filter(([name]) => !NAMING.has(name)));
-    this.#host = applyHostProps(this, this.#host, bag);
+    this.#host = applyHostProps(this, this.#host, { ...bag, 'data-mps': DROPDOWN_MENU_SCOPE });
     if (this.maxHeight) this.style.setProperty('--mp-dropdown-max-height', `${this.maxHeight}px`);
     else this.style.removeProperty('--mp-dropdown-max-height');
   }

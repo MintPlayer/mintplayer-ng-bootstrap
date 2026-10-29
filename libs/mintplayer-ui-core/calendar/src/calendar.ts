@@ -251,7 +251,6 @@ export interface CalendarView {
   weeks: CalendarWeekView[];
 }
 
-const scoped = (bag: CalendarBag): CalendarBag => ({ ...bag, 'data-mps': CALENDAR_SCOPE });
 const classes = (...names: (string | false | null)[]) => names.filter(Boolean).join(' ');
 
 /** The cell id of `date`: unique per calendar, so focus can find it after a re-render. */
@@ -265,7 +264,7 @@ export function connectCalendar(options: CalendarOptions): CalendarView {
   const roving = rovingDate(month, weeks, options.focused, options.selected, options.today, options);
 
   const nav = (action: 'previous' | 'next', label: string): CalendarBag =>
-    scoped({
+    ({
       type: 'button',
       class: `calendar-chevron calendar-chevron-${action}`,
       'aria-label': label,
@@ -275,37 +274,37 @@ export function connectCalendar(options: CalendarOptions): CalendarView {
     });
 
   return {
-    root: scoped({ class: 'mp-calendar' }),
-    nav: scoped({ class: 'calendar-nav' }),
+    root: { class: 'mp-calendar' },
+    nav: { class: 'calendar-nav' },
     previous: nav('previous', labels.previousMonth),
-    monthLabel: scoped({ id: labelId, class: 'calendar-month-label', 'aria-live': 'polite' }),
+    monthLabel: { id: labelId, class: 'calendar-month-label', 'aria-live': 'polite' },
     monthText: monthLabel(month, options.locale),
     next: nav('next', labels.nextMonth),
-    grid: scoped({ class: 'calendar-grid', role: 'grid', 'aria-labelledby': labelId }),
-    headRow: scoped({ role: 'row' }),
-    weekHeader: scoped({ scope: 'col', role: 'columnheader', class: 'calendar-week-header' }),
-    weekHeaderText: scoped({ class: 'visually-hidden' }),
+    grid: { class: 'calendar-grid', role: 'grid', 'aria-labelledby': labelId },
+    headRow: { role: 'row' },
+    weekHeader: { scope: 'col', role: 'columnheader', class: 'calendar-week-header' },
+    weekHeaderText: { class: 'visually-hidden' },
     weekLabel: labels.week,
     weekdays: weekdayNames(options.firstDayOfWeek, options.locale).map((d, i) => ({
       key: String(i),
-      bag: scoped({ scope: 'col', role: 'columnheader', title: d.long }),
+      bag: { scope: 'col', role: 'columnheader', title: d.long },
       text: d.short,
     })),
     weeks: weeks.map((week) => ({
       key: isoDate(week.days[0].date),
-      row: scoped({ role: 'row' }),
-      header: scoped({ scope: 'row', role: 'rowheader', class: 'calendar-week-number' }),
+      row: { role: 'row' },
+      header: { scope: 'row', role: 'rowheader', class: 'calendar-week-number' },
       number: String(week.number),
       cells: week.days.map((day): CalendarCellView => {
         const key = isoDate(day.date);
         if (!day.isInMonth) {
-          return { key, cell: scoped({ role: 'gridcell', class: 'calendar-day calendar-day-outside' }), content: null, text: '' };
+          return { key, cell: { role: 'gridcell', class: 'calendar-day calendar-day-outside' }, content: null, text: '' };
         }
         const disabled = isDateDisabled(day.date, options);
         const selected = isSameDate(options.selected, day.date);
         return {
           key,
-          cell: scoped({
+          cell: {
             role: 'gridcell',
             id: calendarCellId(id, day.date),
             class: classes('calendar-day', selected && 'calendar-day-selected', disabled && 'calendar-day-disabled'),
@@ -314,8 +313,8 @@ export function connectCalendar(options: CalendarOptions): CalendarView {
             'aria-current': isSameDate(options.today, day.date) ? 'date' : null,
             'aria-disabled': disabled ? 'true' : null,
             'data-date': key,
-          }),
-          content: scoped({ class: 'calendar-day-number' }),
+          },
+          content: { class: 'calendar-day-number' },
           text: String(day.dayOfMonth),
         };
       }),

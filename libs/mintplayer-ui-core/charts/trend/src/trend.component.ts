@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'charts/trend',
-  styles: [{ scope: 'TREND_CHART_SCOPE', sheet: 'trendChartScopedStyles' }],
+  style: { scope: 'trend-chart' },
   components: {
     'trend-chart': {
       core: 'trendChartCore',

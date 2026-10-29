@@ -69,10 +69,10 @@ describe('connectTrendChart', () => {
     expect(hovered.points[1].bag['data-hovered']).toBe('');
   });
 
-  it('scopes every bag', () => {
+  it('leaves the scope to the compiler: no bag carries data-mps (S15)', () => {
     const view = connectTrendChart({ ...base, goal: 25, goalLabel: 'Goal' });
-    expect(view.root['data-mps']).toBe('trend-chart');
-    expect(view.goal?.label?.['data-mps']).toBe('trend-chart');
-    expect(view.points.every((p) => p.bag['data-mps'] === 'trend-chart')).toBe(true);
+    expect(view.root['data-mps']).toBeUndefined();
+    expect(view.goal?.label?.['data-mps']).toBeUndefined();
+    expect(view.points.every((p) => p.bag['data-mps'] === undefined)).toBe(true);
   });
 });

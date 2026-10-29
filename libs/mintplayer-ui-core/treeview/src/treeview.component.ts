@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'treeview',
-  styles: [{ scope: 'TREEVIEW_SCOPE', sheet: 'treeviewScopedStyles' }],
+  style: { scope: 'treeview' },
   components: {
     treeview: {
       core: 'treeviewCore',

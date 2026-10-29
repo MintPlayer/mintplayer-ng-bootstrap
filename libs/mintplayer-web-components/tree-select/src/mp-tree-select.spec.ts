@@ -27,6 +27,12 @@ beforeAll(() => {
     if (!open.delete(this)) return;
     toggle(this, 'closed');
   };
+  // jsdom parses :popover-open but always answers false; the core reads it to
+  // know the panel is showing before the queued toggle event lands.
+  const matches = Element.prototype.matches;
+  Element.prototype.matches = function (this: Element, selector: string) {
+    return selector === ':popover-open' ? open.has(this as HTMLElement) : matches.call(this, selector);
+  };
 });
 
 const TREE: TreeNode[] = [

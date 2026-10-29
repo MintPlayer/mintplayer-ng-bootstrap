@@ -5,7 +5,7 @@ describe('connectSplitter', () => {
   it('classes the root by orientation, touch mode and an in-flight drag', () => {
     const view = connectSplitter({ orientation: 'vertical', touchMode: true, resizing: true, hydrated: true });
     expect(view.root['class']).toBe('splitter vertical touch-mode resizing');
-    expect(view.root['data-mps']).toBe('splitter');
+    expect(view.root['data-mps']).toBeUndefined();
   });
 });
 

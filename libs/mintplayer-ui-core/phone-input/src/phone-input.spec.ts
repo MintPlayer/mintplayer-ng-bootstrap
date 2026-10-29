@@ -25,7 +25,7 @@ const options = (patch: Partial<PhoneInputOptions> = {}): PhoneInputOptions => (
 describe('connectPhoneInput', () => {
   it('stamps every node it renders, and selects the country', () => {
     const view = connectPhoneInput(options());
-    expect([view.root, view.group, view.select, view.addon, view.input].every((bag) => bag['data-mps'] === 'phone-input')).toBe(true);
+    expect([view.root, view.group, view.select, view.addon, view.input].every((bag) => bag['data-mps'] === undefined)).toBe(true);
     expect(view.options.map((o) => [o.key, o.bag['selected']])).toEqual([
       ['be', true],
       ['nl', false],
@@ -44,7 +44,7 @@ describe('connectPhoneInput', () => {
     expect([named.input['aria-label'], named.select['aria-label']]).toEqual(['Mobile', 'Land']);
     expect(named.input['aria-describedby']).toBe('pi-dial pi-error');
     expect(named.input['aria-errormessage']).toBe('pi-error');
-    expect(named.feedback).toEqual({ attrs: { id: 'pi-error', class: 'invalid-feedback d-block', 'data-mps': 'phone-input' }, text: 'Bad' });
+    expect(named.feedback).toEqual({ attrs: { id: 'pi-error', class: 'invalid-feedback d-block' }, text: 'Bad' });
   });
 
   it('submits the typed text with JavaScript off, and E.164 through a hidden input once live', () => {

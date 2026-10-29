@@ -69,8 +69,6 @@ export type TreeviewBag = CoreBag;
 /** Node ids, as the two-way `expandedIds` and `selectedIds` carry them. */
 export type TreeviewIds = string[];
 
-const scoped = (bag: TreeviewBag): TreeviewBag => ({ ...bag, 'data-mps': TREEVIEW_SCOPE });
-
 /** One visible node: its bags, and what its slot renders with. */
 export interface TreeviewRow {
   readonly key: string;
@@ -153,7 +151,7 @@ export function connectTreeview(o: TreeviewOptions): TreeviewView {
         key: node.id,
         node,
         ctx: { level, expanded, selected, focused: node.id === stop, hasChildren: expandable },
-        item: scoped({
+        item: {
           id: rowId,
           class: 'treeview-row',
           role: 'treeitem',
@@ -169,40 +167,40 @@ export function connectTreeview(o: TreeviewOptions): TreeviewView {
           'aria-selected': o.mode === 'none' ? null : selected ? 'true' : 'false',
           'aria-describedby': error ? `${rowId}-error` : null,
           tabindex: node.id === stop ? 0 : -1,
-        }),
+        },
         style: { '--mp-treeview-level': String(level) },
-        chevron: scoped({
+        chevron: {
           class: `treeview-chevron${expandable ? '' : ' invisible'}${loading ? ' loading' : ''}`,
           'data-expanded': expanded ? 'true' : 'false',
           'data-tree-chevron': '',
           'aria-hidden': 'true',
-        }),
+        },
         loading,
         icon: (node.iconKey && o.iconResolver?.(node.iconKey, node)) || null,
         error,
-        errorBag: scoped({ id: `${rowId}-error`, class: 'treeview-load-error' }),
+        errorBag: { id: `${rowId}-error`, class: 'treeview-load-error' },
       };
       return [row, ...(hasChildren(node) && expanded ? rowsOf(node.children as TreeNode[], level + 1) : [])];
     });
   const rows = rowsOf(o.nodes, 1);
 
   return {
-    root: scoped({ class: `treeview${o.hideBorders ? ' treeview-borderless' : ''}` }),
+    root: { class: `treeview${o.hideBorders ? ' treeview-borderless' : ''}` },
     // A childless tree is invalid ARIA: the role appears once there are treeitems.
-    tree: scoped({
+    tree: {
       class: 'treeview-tree',
       role: rows.length ? 'tree' : 'presentation',
       'aria-label': o.label,
       'aria-multiselectable': o.mode === 'multiple' ? 'true' : null,
-    }),
+    },
     rows,
-    spinner: scoped({ class: 'treeview-spinner', 'aria-hidden': 'true' }),
-    body: scoped({ class: 'treeview-body' }),
-    icon: scoped({ class: 'treeview-icon', 'aria-hidden': 'true' }),
-    label: scoped({ class: 'treeview-label' }),
+    spinner: { class: 'treeview-spinner', 'aria-hidden': 'true' },
+    body: { class: 'treeview-body' },
+    icon: { class: 'treeview-icon', 'aria-hidden': 'true' },
+    label: { class: 'treeview-label' },
     // Next to the tree, never inside it (aria-required-children). aria-live
     // alone announces; no role, so a host's own role=status stays the only one.
-    live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    live: { class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' },
     announcement: o.announcement,
   };
 }

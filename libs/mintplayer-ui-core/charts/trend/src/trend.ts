@@ -24,8 +24,6 @@ export const TREND_W = 1000;
 export const TREND_H = 562;
 const MARGIN = { top: 20, right: 20, bottom: 48, left: 72 };
 
-const scoped = (bag: TrendBag): TrendBag => ({ ...bag, 'data-mps': TREND_CHART_SCOPE });
-
 export interface PlacedPoint {
   seriesId: string;
   seriesLabel: string;
@@ -215,52 +213,52 @@ export function connectTrendChart(options: TrendChartOptions): TrendChartView {
   const hovered = placed.find((p) => pointKey(p) === options.hoveredKey);
 
   return {
-    root: scoped({ class: 'trend-chart', ...hydratedAttr(options.live) }),
-    svg: scoped({
+    root: { class: 'trend-chart', ...hydratedAttr(options.live) },
+    svg: {
       viewBox: `0 0 ${TREND_W} ${TREND_H}`,
       role: 'group',
       'aria-label': options.label ?? null,
       'aria-describedby': summary ? summaryId : null,
-    }),
-    grid: scoped({ class: 'grid', 'aria-hidden': 'true' }),
-    axis: scoped({ class: 'axis', 'aria-hidden': 'true' }),
+    },
+    grid: { class: 'grid', 'aria-hidden': 'true' },
+    axis: { class: 'axis', 'aria-hidden': 'true' },
     yTicks: yTicks.map((t) => ({
       key: `y-${t}`,
-      line: scoped({ x1: MARGIN.left, x2: TREND_W - MARGIN.right, y1: y(t), y2: y(t) }),
-      label: scoped({ class: 'y-label', x: MARGIN.left - 10, y: y(t) }),
+      line: { x1: MARGIN.left, x2: TREND_W - MARGIN.right, y1: y(t), y2: y(t) },
+      label: { class: 'y-label', x: MARGIN.left - 10, y: y(t) },
       text: numbers.format(t),
     })),
     xTicks: xTicks.map((t) => ({
       key: `x-${t.time}`,
-      line: scoped({ x1: x(t.time), x2: x(t.time), y1: MARGIN.top, y2: TREND_H - MARGIN.bottom }),
-      label: scoped({ class: 'x-label', x: x(t.time), y: TREND_H - MARGIN.bottom + 12 }),
+      line: { x1: x(t.time), x2: x(t.time), y1: MARGIN.top, y2: TREND_H - MARGIN.bottom },
+      label: { class: 'x-label', x: x(t.time), y: TREND_H - MARGIN.bottom + 12 },
       text: t.label,
     })),
     goal:
       goal === null
         ? null
         : {
-            group: scoped({ 'aria-hidden': 'true' }),
-            line: scoped({ class: 'goal-line', x1: MARGIN.left, x2: TREND_W - MARGIN.right, y1: y(goal), y2: y(goal) }),
-            label: options.goalLabel ? scoped({ class: 'goal-label', x: TREND_W - MARGIN.right, y: y(goal) - 8 }) : null,
+            group: { 'aria-hidden': 'true' },
+            line: { class: 'goal-line', x1: MARGIN.left, x2: TREND_W - MARGIN.right, y1: y(goal), y2: y(goal) },
+            label: options.goalLabel ? { class: 'goal-label', x: TREND_W - MARGIN.right, y: y(goal) - 8 } : null,
             text: options.goalLabel ?? '',
           },
-    crosshair: hovered ? scoped({ class: 'crosshair', x1: hovered.px, x2: hovered.px, y1: MARGIN.top, y2: TREND_H - MARGIN.bottom }) : null,
+    crosshair: hovered ? { class: 'crosshair', x1: hovered.px, x2: hovered.px, y1: MARGIN.top, y2: TREND_H - MARGIN.bottom } : null,
     series: (options.series ?? []).map((s, si) => {
       const color = s.color ?? TREND_PALETTE[si % TREND_PALETTE.length];
       const points = placed.filter((p) => p.seriesId === s.id).sort((a, b) => a.xMs - b.xMs);
       return {
         key: s.id,
-        group: scoped({ 'aria-hidden': 'true' }),
-        area: options.area === false ? null : scoped({ class: 'series-area', fill: color, d: areaPath(points, baselineY) }),
-        line: scoped({ class: 'series-line', stroke: color, d: linePath(points) }),
+        group: { 'aria-hidden': 'true' },
+        area: options.area === false ? null : { class: 'series-area', fill: color, d: areaPath(points, baselineY) },
+        line: { class: 'series-line', stroke: color, d: linePath(points) },
       };
     }),
     points: placed.map((p) => {
       const key = pointKey(p);
       return {
         key,
-        bag: scoped({
+        bag: {
           class: 'point',
           'data-key': key,
           'data-hovered': key === options.hoveredKey ? '' : null,
@@ -271,12 +269,12 @@ export function connectTrendChart(options: TrendChartOptions): TrendChartView {
           role: options.live ? 'button' : 'img',
           tabindex: options.live ? (key === focused ? 0 : -1) : null,
           'aria-label': trendPointName(p, options.locale),
-        }),
+        },
       };
     }),
-    summary: summary ? { bag: scoped({ id: summaryId, class: 'visually-hidden' }), text: summary } : null,
+    summary: summary ? { bag: { id: summaryId, class: 'visually-hidden' }, text: summary } : null,
     tooltip: {
-      bag: scoped({ class: 'chart-tooltip', 'aria-hidden': 'true', 'data-visible': options.tooltip ? '' : null }),
+      bag: { class: 'chart-tooltip', 'aria-hidden': 'true', 'data-visible': options.tooltip ? '' : null },
       style: options.tooltip ? { left: `${options.tooltip.left}px`, top: `${options.tooltip.top}px` } : {},
       text: options.tooltip?.text ?? '',
     },

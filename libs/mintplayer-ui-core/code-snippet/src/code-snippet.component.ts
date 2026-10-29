@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'code-snippet',
-  styles: [{ scope: 'CODE_SNIPPET_SCOPE', sheet: 'codeSnippetScopedStyles' }],
+  style: { scope: 'code-snippet' },
   components: {
     'code-snippet': {
       core: 'codeSnippetCore',

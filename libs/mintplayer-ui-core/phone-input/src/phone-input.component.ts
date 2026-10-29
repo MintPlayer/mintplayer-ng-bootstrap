@@ -8,9 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'phone-input',
-  styles: [
-    { scope: 'PHONE_INPUT_SCOPE', sheet: 'phoneInputScopedStyles' },
-  ],
+  style: { scope: 'phone-input' },
   components: {
     'phone-input': {
       core: 'phoneInputCore',

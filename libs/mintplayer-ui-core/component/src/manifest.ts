@@ -8,7 +8,7 @@
  *
  *     export default {
  *       group: 'navbar',
- *       styles: [{ scope: 'NAVBAR_SCOPE', sheet: 'navbarScopedStyles' }],
+ *       style: { scope: 'navbar' },
  *       components: {
  *         'navbar-nav': {
  *           core: 'navbarNavCore',
@@ -17,9 +17,9 @@
  *       },
  *     } satisfies ComponentGroup;
  *
- * Names in it (`core`, `inputs.type`, an output's `type`, a style's `scope`
- * and `sheet`) are exports of the group's entry point, or of `from` where
- * given; the generated fronts import them, so a typo is a type error there.
+ * Names in it (`core`, `inputs.type`, an output's `type`, the group sheet) are
+ * exports of the group's entry point, or of `from` where given; the generated
+ * fronts import them, so a typo is a type error there.
  */
 
 /** How a Lit property converts from its attribute; `false` keeps it a property only. */
@@ -110,18 +110,25 @@ export interface ComponentManifest {
   readonly doc?: string;
 }
 
+/**
+ * The group's one scoped sheet (S15). The compiler stamps `data-mps=<scope>` on
+ * every element its templates render, so a core's bags carry no scope. The
+ * sheet is `<scope>.scoped.scss`, exported as `<camelScope>ScopedStyles` (the
+ * codegen derives both from the file name, so the stamp and the sheet agree).
+ * A group that renders another core's bags `@use`s that core's sheet in its own.
+ */
 export interface GroupStyle {
+  /** The literal scope, e.g. `'navbar'`. */
   readonly scope: string;
-  readonly sheet: string;
-  /** Module exporting both; default the group's entry. */
+  /** Module exporting the sheet; default the group's entry. */
   readonly from?: string;
 }
 
 export interface ComponentGroup {
   /** The entry point name; also the generated entry in every front lib. */
   readonly group: string;
-  /** Sheets every component of the group installs. */
-  readonly styles?: readonly GroupStyle[];
+  /** The sheet every component of the group installs, and the scope its templates are stamped with. */
+  readonly style?: GroupStyle;
   /** Keyed by element name (`navbar`, `navbar-item`, …). */
   readonly components: Readonly<Record<string, ComponentManifest>>;
 }

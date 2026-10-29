@@ -7,7 +7,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'multi-range',
-  styles: [{ scope: 'MULTI_RANGE_SCOPE', sheet: 'multiRangeScopedStyles' }],
+  style: { scope: 'multi-range' },
   components: {
     'multi-range': {
       core: 'multiRangeCore',

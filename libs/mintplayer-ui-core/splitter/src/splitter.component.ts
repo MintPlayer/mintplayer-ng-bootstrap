@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'splitter',
-  styles: [{ scope: 'SPLITTER_SCOPE', sheet: 'splitterScopedStyles' }],
+  style: { scope: 'splitter' },
   components: {
     splitter: {
       core: 'splitterCore',

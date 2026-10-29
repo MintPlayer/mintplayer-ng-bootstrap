@@ -2,6 +2,10 @@
 // gains [data-mps=treeview]. Rows are flat; a row's indent comes from its
 // level, which the core writes as --mp-treeview-level.
 
+// The scope of the final-form selectors below; a group that includes this sheet
+// (S15) sets its own, since its templates stamp theirs.
+$scope: treeview !default;
+
 .treeview {
   display: block;
   width: 100%;
@@ -148,7 +152,7 @@
 
 // The icon markup is the resolver's: anchored on our stamped icon, final form.
 /*! @mps-global */
-.treeview-icon[data-mps=treeview] svg {
+.treeview-icon[data-mps=#{$scope}] svg {
   width: 1rem;
   height: 1rem;
 }
@@ -164,7 +168,7 @@
 /*! @mps-global */
 // A class contract on content a node slot may render (tree-select builds its own
 // .treeview-label): anchored on our stamped row, so nothing outside can match.
-.treeview-row[data-mps=treeview] .treeview-label {
+.treeview-row[data-mps=#{$scope}] .treeview-label {
   flex: 1 1 auto;
   white-space: nowrap;
   overflow: hidden;

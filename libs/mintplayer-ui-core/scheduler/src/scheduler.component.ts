@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'scheduler',
-  styles: [{ scope: 'SCHEDULER_SCOPE', sheet: 'schedulerScopedStyles' }],
+  style: { scope: 'scheduler' },
   components: {
     scheduler: {
       core: 'schedulerCore',

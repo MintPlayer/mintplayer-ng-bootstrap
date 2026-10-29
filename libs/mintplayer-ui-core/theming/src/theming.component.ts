@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'theming',
-  styles: [{ scope: 'THEME_TOGGLE_SCOPE', sheet: 'themeToggleScopedStyles' }],
+  style: { scope: 'theme-toggle' },
   components: {
     'theme-toggle': {
       core: 'themeToggleCore',

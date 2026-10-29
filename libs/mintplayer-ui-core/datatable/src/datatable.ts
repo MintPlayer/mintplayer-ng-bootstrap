@@ -570,8 +570,6 @@ export interface DatatableOptions {
   readonly labels?: Partial<DatatableLabels> | null;
 }
 
-const scoped = (bag: DatatableBag): DatatableBag => ({ ...bag, 'data-mps': DATATABLE_SCOPE });
-
 export const datatableResizePanelId = (id: string) => `${id}-resize`;
 
 export const columnLabel =(column: DatatableColumnDef) => column.label ?? column.name;
@@ -605,27 +603,27 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     return {
       key: column.name,
       column,
-      th: scoped({
+      th: {
         scope: 'col',
         'data-column': column.name,
         'data-sortable': sortable ? 'true' : 'false',
         'aria-sort': direction ?? 'none',
-      }),
+      },
       style: (typeof width === 'number' ? { width: `${width}px`, 'min-width': `${width}px` } : {}) as Record<string, string>,
       sortable,
-      sort: scoped({
+      sort: {
         class: 'header-cell header-sort',
         ...(sortHref === null ? { type: 'button' } : {}),
         'data-dt-sort': column.name,
-      }),
+      },
       sortHref,
-      plain: scoped({ class: 'header-cell' }),
-      text: scoped({ class: 'header-text' }),
+      plain: { class: 'header-cell' },
+      text: { class: 'header-text' },
       label,
-      sortIndex: at >= 0 && o.sortColumns.length > 1 ? scoped({ class: 'sort-index' }) : null,
+      sortIndex: at >= 0 && o.sortColumns.length > 1 ? { class: 'sort-index' } : null,
       sortIndexText: at >= 0 ? String(at + 1) : '',
       resize: isResizable(column, o.resizableColumns)
-        ? scoped({
+        ? {
             class: 'resize-handle',
             role: 'separator',
             tabindex: 0,
@@ -634,7 +632,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
             'aria-valuemin': MIN_COLUMN_WIDTH,
             'aria-valuenow': typeof width === 'number' ? Math.round(width) : null,
             'data-dt-resize': column.name,
-          })
+          }
         : null,
     };
   });
@@ -648,7 +646,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     const named = (live && o.rowLabel?.(flat.row)?.trim()) || firstText;
     return {
       key: flat.key,
-      tr: scoped({
+      tr: {
         role: 'row',
         'aria-rowindex': rowIndex + 1 + headerRows,
         'aria-level': o.tree ? flat.depth + 1 : null,
@@ -663,11 +661,11 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
         'data-depth': o.tree ? String(flat.depth) : null,
         'data-clickable': live ? 'true' : 'false',
         tabindex: live && focusable ? (flat.key === rovingKey ? 0 : -1) : null,
-      }),
-      chevronCell: o.tree ? scoped({ class: 'tree-chevron-cell' }) : null,
+      },
+      chevronCell: o.tree ? { class: 'tree-chevron-cell' } : null,
       chevronStyle: { '--mp-datatable-depth': String(flat.depth) },
       chevron: hasChevron
-        ? scoped({
+        ? {
             class: 'tree-chevron',
             type: 'button',
             tabindex: -1,
@@ -675,26 +673,26 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
             'aria-expanded': flat.isExpanded ? 'true' : 'false',
             'data-expanded': flat.isExpanded ? 'true' : 'false',
             'data-dt-toggle': '',
-          })
+          }
         : null,
       chevronText: flat.isExpanded ? '▾' : '▸',
       checkCell: multi
-        ? scoped({ class: o.selectionMode === 'checkbox' ? 'checkbox-cell checkbox-cell-toggles' : 'checkbox-cell', 'data-dt-check-cell': '' })
+        ? { class: o.selectionMode === 'checkbox' ? 'checkbox-cell checkbox-cell-toggles' : 'checkbox-cell', 'data-dt-check-cell': '' }
         : null,
       check:
         multi && live
-          ? scoped({
+          ? {
               class: 'form-check-input',
               type: 'checkbox',
               tabindex: -1,
               'aria-label': named ? labels.selectRowNamed(named) : labels.selectRow(rowIndex + 1),
               'data-dt-check': '',
-            })
+            }
           : null,
       checked: isSelected,
       indeterminate: live && !isSelected && o.indeterminate.has(flat.key),
       placeholder: flat.isPlaceholder
-        ? scoped({ class: 'tree-placeholder-cell', colspan: Math.max(1, o.columns.length), 'aria-label': labels.loading })
+        ? { class: 'tree-placeholder-cell', colspan: Math.max(1, o.columns.length), 'aria-label': labels.loading }
         : null,
       row: flat.row,
       rowIndex,
@@ -703,7 +701,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
         ? o.columns.map((column) => ({
             key: column.name,
             column,
-            td: scoped({ class: column.cellClass ?? null, 'data-column': column.name }),
+            td: { class: column.cellClass ?? null, 'data-column': column.name },
             text: cellText(flat.row, column, rowIndex),
           }))
         : [],
@@ -712,7 +710,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
 
   const spacer = (height: number): DatatableSpacer | null =>
     height > 0
-      ? { tr: scoped({ class: 'virtual-spacer', 'aria-hidden': 'true' }), td: scoped({ colspan: colCount }), style: { height: `${height}px` } }
+      ? { tr: { class: 'virtual-spacer', 'aria-hidden': 'true' }, td: { colspan: colCount }, style: { height: `${height}px` } }
       : null;
 
   const showFooter = o.pagination && !o.tree;
@@ -739,12 +737,12 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     });
     return {
       key,
-      nav: scoped({ ...p.nav, class: className }),
-      list: scoped({ class: p.listClass }),
+      nav: { ...p.nav, class: className },
+      list: { class: p.listClass },
       entries: p.entries.map((e: PaginationEntry) => ({
         key: e.key,
-        item: scoped({ class: e.itemClass }),
-        link: scoped({ ...e.attrs, ...(e.kind === 'link' && e.target !== null ? { [data]: e.target } : {}) }),
+        item: { class: e.itemClass },
+        link: { ...e.attrs, ...(e.kind === 'link' && e.target !== null ? { [data]: e.target } : {}) },
         text: e.text,
         gap: e.kind === 'gap',
         anchor: e.kind === 'link' && p.tag === 'a',
@@ -789,53 +787,53 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     return {
       column,
       ctx,
-      body: scoped({ class: 'filter-panel-body' }),
-      clear: scoped({
+      body: { class: 'filter-panel-body' },
+      clear: {
         class: 'filter-clear',
         type: 'button',
         disabled: comparing ? selection.operand == null : picked.length === 0 && !selection.inverse,
         'data-dt-filter-clear': '',
-      }),
+      },
       clearText: labels.filterClear(label),
       custom,
       list: comparing || custom
         ? null
         : {
-            search: scoped({ class: 'filter-search', type: 'search', 'aria-label': labels.filterSearch, 'data-dt-filter-search': '' }),
+            search: { class: 'filter-search', type: 'search', 'aria-label': labels.filterSearch, 'data-dt-filter-search': '' },
             term: f.term,
-            invert: scoped({ class: 'filter-invert', type: 'button', 'aria-pressed': selection.inverse ? 'true' : 'false', 'data-dt-filter-invert': '' }),
+            invert: { class: 'filter-invert', type: 'button', 'aria-pressed': selection.inverse ? 'true' : 'false', 'data-dt-filter-invert': '' },
             invertText: labels.filterInvert,
-            group: scoped({ class: 'filter-options', role: 'group', 'aria-label': labels.filterGroup(label) }),
-            loading: f.loading ? scoped({ class: 'filter-loading' }) : null,
+            group: { class: 'filter-options', role: 'group', 'aria-label': labels.filterGroup(label) },
+            loading: f.loading ? { class: 'filter-loading' } : null,
             loadingText: labels.loading,
             options: listed.map((v, i) => ({
               key: `${i}:${v.label}`,
-              label: scoped({ class: f.values && includesValue(f.values.remaining, v.value) ? 'filter-option filter-remaining' : 'filter-option' }),
-              input: scoped({ type: 'checkbox', 'data-dt-filter-value': i }),
+              label: { class: f.values && includesValue(f.values.remaining, v.value) ? 'filter-option filter-remaining' : 'filter-option' },
+              input: { type: 'checkbox', 'data-dt-filter-value': i },
               checked: includesValue(picked, v.value),
               text: v.label,
             })),
-            noValues: listed.length === 0 && !f.loading ? scoped({ class: 'filter-no-values' }) : null,
+            noValues: listed.length === 0 && !f.loading ? { class: 'filter-no-values' } : null,
             noValuesText: labels.filterNoValues,
-            hasMore: f.values?.hasMore ? scoped({ class: 'filter-has-more' }) : null,
+            hasMore: f.values?.hasMore ? { class: 'filter-has-more' } : null,
             hasMoreText: labels.filterHasMore,
           },
       comparison: comparing
         ? {
-            wrap: scoped({ class: 'filter-comparison' }),
-            operator: scoped({ class: 'filter-operator', 'aria-label': labels.filterOperator, 'data-dt-filter-operator': '' }),
+            wrap: { class: 'filter-comparison' },
+            operator: { class: 'filter-operator', 'aria-label': labels.filterOperator, 'data-dt-filter-operator': '' },
             operatorValue: operator,
             operators: operators.map((op) => ({
               key: op,
-              option: scoped({ value: op, selected: op === operator }),
+              option: { value: op, selected: op === operator },
               text: `${FILTER_OPERATOR_SYMBOLS[op]} ${labels.filterOperatorLabel(op)}`,
             })),
-            operand: scoped({
+            operand: {
               class: 'filter-operand',
               type: column.filterInputType ?? 'number',
               'aria-label': labels.filterOperand,
               'data-dt-filter-operand': '',
-            }),
+            },
             operandText: f.operandTexts[name] ?? (selection.operand == null ? '' : String(selection.operand)),
           }
         : null,
@@ -849,9 +847,9 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
         return {
           key: column.name,
           // A column with no filter still gets its cell: it belongs to the grid, so it is not hidden.
-          th: scoped({ class: 'filter-cell p-0', scope: 'col', 'data-column': column.name }),
+          th: { class: 'filter-cell p-0', scope: 'col', 'data-column': column.name },
           trigger: column.filterable
-            ? scoped({
+            ? {
                 class: ['filter-trigger p-2 rounded-0', column.filterActive ? 'active' : '', open ? 'open' : ''].filter(Boolean).join(' '),
                 type: 'button',
                 // The browser toggles the panel (no JavaScript needed to open it).
@@ -861,22 +859,22 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
                 // "Filtered" is part of the name: the active styling is not visible to everyone.
                 'aria-label': column.filterActive ? labels.filterColumnActive(label, column.filterSummary) : labels.filterColumn(label),
                 'data-dt-filter': column.name,
-              })
+              }
             : null,
-          icon: scoped({ class: 'filter-icon', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' }),
-          path: scoped({ d: 'M2 3h12l-4.5 5.25V13L6.5 11.5V8.25L2 3z' }),
-          summary: column.filterSummary ? scoped({ class: 'filter-summary' }) : null,
+          icon: { class: 'filter-icon', viewBox: '0 0 16 16', 'aria-hidden': 'true', focusable: 'false' },
+          path: { d: 'M2 3h12l-4.5 5.25V13L6.5 11.5V8.25L2 3z' },
+          summary: column.filterSummary ? { class: 'filter-summary' } : null,
           summaryText: column.filterSummary ?? '',
           // Non-modal on purpose (#416): the rows whose values are being picked stay available.
           panel: column.filterable
-            ? scoped({
+            ? {
                 class: 'filter-panel',
                 id: panelId,
                 popover: 'auto',
                 role: 'dialog',
                 'aria-label': labels.filterColumn(label),
                 'data-dt-filter-panel': column.name,
-              })
+              }
             : null,
           open: column.filterable && open ? filterPanel(column) : null,
         };
@@ -888,12 +886,12 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
   const empty = rows.length === 0;
   const stateText = o.loading ? `${labels.loading}…` : o.emptyMessage;
   return {
-    root: scoped({ class: 'datatable', 'data-fill': o.fill ? 'true' : 'false', 'data-dt-id': o.id, ...hydratedAttr(o.hydrated ?? false) }),
-    live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    root: { class: 'datatable', 'data-fill': o.fill ? 'true' : 'false', 'data-dt-id': o.id, ...hydratedAttr(o.hydrated ?? false) },
+    live: { class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' },
     announcement: o.announcement,
-    shell: scoped({ class: 'datatable-shell' }),
-    scroll: scoped({ class: o.virtualScroll ? 'datatable-scroll datatable-virtual' : 'datatable-scroll', role: 'presentation' }),
-    table: scoped({
+    shell: { class: 'datatable-shell' },
+    scroll: { class: o.virtualScroll ? 'datatable-scroll datatable-virtual' : 'datatable-scroll', role: 'presentation' },
+    table: {
       id: `${o.id}-table`,
       class: o.measured ? 'measured' : null,
       role: o.tree ? 'treegrid' : o.selectionMode !== 'none' ? 'grid' : null,
@@ -902,54 +900,54 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
       'aria-colcount': colCount,
       'aria-busy': o.busy ? 'true' : null,
       'aria-label': o.label,
-    }),
+    },
     tableStyle: {
       '--mp-datatable-tree-indent': `${o.treeIndent}rem`,
       ...(o.tableWidth === null ? {} : { width: `${o.tableWidth}px` }),
       ...(filterable && o.headerHeight > 0 ? { '--mp-datatable-header-height': `${o.headerHeight}px` } : {}),
     },
     caption: o.caption || null,
-    captionBag: scoped({}),
-    thead: scoped({}),
-    headerRow: scoped({ role: 'row', 'aria-rowindex': 1 }),
-    chevronHeader: o.tree ? scoped({ class: 'tree-chevron-cell', scope: 'col', 'aria-label': labels.treeChevronColumn }) : null,
-    checkHeader: multi ? scoped({ class: 'checkbox-cell', scope: 'col' }) : null,
-    deselectAll: scoped({
+    captionBag: {},
+    thead: {},
+    headerRow: { role: 'row', 'aria-rowindex': 1 },
+    chevronHeader: o.tree ? { class: 'tree-chevron-cell', scope: 'col', 'aria-label': labels.treeChevronColumn } : null,
+    checkHeader: multi ? { class: 'checkbox-cell', scope: 'col' } : null,
+    deselectAll: {
       class: 'form-check-input',
       type: 'checkbox',
       'aria-label': labels.deselectAll,
       'data-hidden': selected.size === 0 ? 'true' : 'false',
       'data-dt-deselect-all': '',
-    }),
+    },
     anySelected: selected.size > 0,
     headers,
-    tbody: scoped({}),
-    stateRow: scoped({}),
-    stateCell: o.loading || empty ? scoped({ class: o.loading ? 'loading-state' : 'empty-state', colspan: colCount }) : null,
+    tbody: {},
+    stateRow: {},
+    stateCell: o.loading || empty ? { class: o.loading ? 'loading-state' : 'empty-state', colspan: colCount } : null,
     stateText,
     spacerTop: o.loading || empty ? null : spacer(win.before),
     spacerBottom: o.loading || empty ? null : spacer(win.after),
     rows: o.loading ? [] : rows,
-    footer: showFooter ? scoped({ class: 'datatable-footer' }) : null,
+    footer: showFooter ? { class: 'datatable-footer' } : null,
     pagers,
-    resizePanel: scoped({
+    resizePanel: {
       class: 'resize-panel',
       id: datatableResizePanelId(o.id),
       popover: 'auto',
       role: 'dialog',
       'aria-label': labels.resizeColumnOptions(resizeName),
-    }),
-    resizeSteps: scoped({ class: 'resize-panel-steps' }),
-    narrower: scoped({ class: 'resize-panel-step', type: 'button', 'aria-label': labels.narrowerColumn(resizeName), 'data-dt-step': -1 }),
-    wider: scoped({ class: 'resize-panel-step', type: 'button', 'aria-label': labels.widerColumn(resizeName), 'data-dt-step': 1 }),
-    stepGlyph: scoped({ 'aria-hidden': 'true' }),
-    widthOutput: scoped({ class: 'resize-panel-width' }),
+    },
+    resizeSteps: { class: 'resize-panel-steps' },
+    narrower: { class: 'resize-panel-step', type: 'button', 'aria-label': labels.narrowerColumn(resizeName), 'data-dt-step': -1 },
+    wider: { class: 'resize-panel-step', type: 'button', 'aria-label': labels.widerColumn(resizeName), 'data-dt-step': 1 },
+    stepGlyph: { 'aria-hidden': 'true' },
+    widthOutput: { class: 'resize-panel-width' },
     widthText: labels.columnWidth(Math.round(o.resizeWidth)),
-    fit: scoped({ class: 'resize-panel-action', type: 'button', 'data-dt-fit': '' }),
-    reset: scoped({ class: 'resize-panel-action', type: 'button', 'data-dt-reset': '' }),
-    filterRow: filterable ? scoped({ class: 'filter-row', role: 'row', 'aria-rowindex': 2 }) : null,
-    filterChevronCell: filterable && o.tree ? scoped({ class: 'filter-cell tree-chevron-cell' }) : null,
-    filterCheckCell: filterable && multi ? scoped({ class: 'filter-cell checkbox-cell' }) : null,
+    fit: { class: 'resize-panel-action', type: 'button', 'data-dt-fit': '' },
+    reset: { class: 'resize-panel-action', type: 'button', 'data-dt-reset': '' },
+    filterRow: filterable ? { class: 'filter-row', role: 'row', 'aria-rowindex': 2 } : null,
+    filterChevronCell: filterable && o.tree ? { class: 'filter-cell tree-chevron-cell' } : null,
+    filterCheckCell: filterable && multi ? { class: 'filter-cell checkbox-cell' } : null,
     filterCells,
     labels,
   };

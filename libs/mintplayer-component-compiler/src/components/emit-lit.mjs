@@ -2,7 +2,7 @@
 // template stage's `<name>Template()` function, hosting the core through
 // `CoreController` (PRD #437 D10). Authored children are captured by
 // `LightChildren` and placed by `slot="…"` into the template's slots.
-import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
+import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall } from './model.mjs';
 import { rendererProperty, slotArgsType } from '../templates/emit-lit.mjs';
 
 const LIT_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
@@ -72,7 +72,7 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
   const options = [`idPrefix: '${names.tag}'`, `inputs: () => ({ ${inputEntries.join(', ')} })`];
   if (model.host) {
     const bag = `props.${model.hostExpression}`;
-    options.push(`hostBag: (props) => ${model.hostRole ? `({ ...${bag}, role: '${model.hostRole}' })` : bag}`);
+    options.push(`hostBag: (props) => ${scopedHostBag(model, bag)}`);
   }
   const models = model.inputs.filter((i) => i.model);
   if (models.length) options.push(`models: [${models.map((i) => `'${i.name}'`).join(', ')}]`);
@@ -115,11 +115,11 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
   });
   lines.push(`}`, '');
 
-  if (model.styles.length) {
+  if (model.style) {
     lines.push(
       `// Angular's SSR DOM shim has a document with no usable head.`,
       `if (typeof document !== 'undefined' && document.head) {`,
-      ...model.styles.map((style) => `  installLightStyles(${style.scope}, ${style.sheet});`),
+      `  ${styleInstall(model, 'installLightStyles')}`,
       `}`,
       '',
     );

@@ -158,17 +158,17 @@ export function rovingSlot(options: Pick<TimeListOptions, 'focused' | 'selected'
 export function connectTimeList(options: TimeListOptions): TimeListView {
   const { id, hydrated, minMinutes, maxMinutes } = options;
   const labels = { ...DEFAULT_TIME_LIST_LABELS, ...options.labels };
-  const scoped = (bag: TimepickerBag): TimepickerBag => ({ ...bag, 'data-mps': TIMEPICKER_SCOPE });
+
   const roving = rovingSlot(options);
   return {
-    root: scoped({ class: 'mp-time-list', id: `${id}-list`, role: 'listbox', 'aria-label': options.label ?? labels.list }),
-    list: scoped({ class: 'time-list', role: 'presentation' }),
+    root: { class: 'mp-time-list', id: `${id}-list`, role: 'listbox', 'aria-label': options.label ?? labels.list },
+    list: { class: 'time-list', role: 'presentation' },
     slots: timeSlots(options.step).map((minutes) => {
       const disabled = isTimeDisabled(minutes, minMinutes, maxMinutes);
       return {
         key: String(minutes),
-        item: scoped({ role: 'presentation' }),
-        option: scoped({
+        item: { role: 'presentation' },
+        option: {
           type: 'button',
           class: ['time-slot', disabled ? 'time-slot-disabled' : null].filter(Boolean).join(' '),
           role: 'option',
@@ -179,7 +179,7 @@ export function connectTimeList(options: TimeListOptions): TimeListView {
           // Inert until hydration, like the calendar's days: nothing to do with JS off.
           tabindex: hydrated ? (minutes === roving ? 0 : -1) : null,
           disabled: !hydrated,
-        }),
+        },
         text: formatTime(minutes, options.locale, options.hour12),
       };
     }),
@@ -241,7 +241,7 @@ export const timepickerPopupId = (id: string) => `${id}-popup`;
 export function connectTimepicker(options: TimepickerOptions): TimepickerView {
   const { id, hydrated, disabled, selected } = options;
   const labels = { ...DEFAULT_TIMEPICKER_LABELS, ...options.labels };
-  const scoped = (bag: TimepickerBag): TimepickerBag => ({ ...bag, 'data-mps': TIMEPICKER_SCOPE });
+
   const timeList = connectTimeList({
     id,
     selected,
@@ -258,9 +258,9 @@ export function connectTimepicker(options: TimepickerOptions): TimepickerView {
   const iso = selected === null ? '' : isoTime(selected);
   const error = errorFeedback(`${id}-error`, options.errorText, options.invalid);
   return {
-    root: scoped({ class: ['mp-timepicker', disabled ? 'mp-timepicker-disabled' : null].filter(Boolean).join(' ') }),
-    group: scoped({ class: 'input-group' }),
-    input: scoped({
+    root: { class: ['mp-timepicker', disabled ? 'mp-timepicker-disabled' : null].filter(Boolean).join(' ') },
+    group: { class: 'input-group' },
+    input: {
       class: 'form-control timepicker-input',
       id: `${id}-input`,
       type: hydrated ? 'text' : 'time',
@@ -277,12 +277,12 @@ export function connectTimepicker(options: TimepickerOptions): TimepickerView {
       required: options.required,
       'aria-required': options.required ? 'true' : null,
       ...error.control,
-    }),
+    },
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: { ...error.message.attrs, 'data-mps': TIMEPICKER_SCOPE }, text: error.message.text } : { attrs: {}, text: '' },
-    hidden: hydrated && options.name ? scoped({ type: 'hidden', name: options.name, value: iso, class: 'timepicker-value' }) : null,
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
+    hidden: hydrated && options.name ? { type: 'hidden', name: options.name, value: iso, class: 'timepicker-value' } : null,
     trigger: hydrated
-      ? scoped({
+      ? {
           type: 'button',
           class: 'btn btn-outline-secondary timepicker-trigger',
           popovertarget: timepickerPopupId(id),
@@ -291,9 +291,9 @@ export function connectTimepicker(options: TimepickerOptions): TimepickerView {
           'aria-controls': `${id}-list`,
           'aria-label': labels.trigger,
           disabled,
-        })
+        }
       : null,
-    popup: scoped({ class: 'timepicker-popup', id: timepickerPopupId(id), popover: 'auto' }),
+    popup: { class: 'timepicker-popup', id: timepickerPopupId(id), popover: 'auto' },
     timeList,
   };
 }

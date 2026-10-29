@@ -7,7 +7,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'otp-input',
-  styles: [{ scope: 'OTP_INPUT_SCOPE', sheet: 'otpInputScopedStyles' }],
+  style: { scope: 'otp-input' },
   components: {
     'otp-input': {
       core: 'otpInputCore',

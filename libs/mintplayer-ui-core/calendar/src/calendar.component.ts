@@ -7,7 +7,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'calendar',
-  styles: [{ scope: 'CALENDAR_SCOPE', sheet: 'calendarScopedStyles' }],
+  style: { scope: 'calendar' },
   components: {
     calendar: {
       core: 'calendarCore',

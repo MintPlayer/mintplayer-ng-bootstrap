@@ -69,8 +69,6 @@ export type HierarchyChildrenLoader = (node: HierarchyNode) => Promise<Hierarchy
 
 export type HierarchyBag = CoreBag;
 
-const scoped = (bag: HierarchyBag): HierarchyBag => ({ ...bag, 'data-mps': HIERARCHY_CHART_SCOPE });
-
 /* ---------- index ---------- */
 
 const indexes = new WeakMap<HierarchyNode, { version: number; index: HierarchyIndex }>();
@@ -370,12 +368,12 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
     const fill = branch ? undefined : fillOf(n.node);
     return {
       key: n.node.id,
-      bag: scoped({
+      bag: {
         ...treeitem(n),
         class: 'cell',
         'data-branch': flag(branch),
         'data-surface': fill ? surfaceOf(n.node, 1) : toneOfSurface(undefined, o.backdrop),
-      }),
+      },
       style: { ...geometry(r), 'font-size': `${o.labelFontSize}px`, ...(fill ? { background: fill } : {}) },
       label: o.showLabels && cellLabelFits(r) ? labelText(o, n.node) : null,
     };
@@ -393,24 +391,24 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
     const settled = o.tween >= 1;
     return {
       // The geometric view window IS the viewBox: no transform, no re-rasterization.
-      svg: scoped({
+      svg: {
         viewBox: `${o.view.x * HIERARCHY_VIEW} ${o.view.y * HIERARCHY_VIEW} ${HIERARCHY_VIEW / z} ${HIERARCHY_VIEW / z}`,
         role: 'tree',
         'aria-label': o.label,
-      }),
+      },
       // role=none: this group only centres the geometry, and an unroled node
       // between role=tree and its treeitems is an aria-required-parent risk.
-      g: scoped({ role: 'none', transform: `translate(${HIERARCHY_VIEW / 2},${HIERARCHY_VIEW / 2})` }),
+      g: { role: 'none', transform: `translate(${HIERARCHY_VIEW / 2},${HIERARCHY_VIEW / 2})` },
       arcs: parts.map((n) => {
         const span = tweenedSpan(n, o.tween, o.tweenFrom);
         return {
           key: n.node.id,
-          bag: scoped({
+          bag: {
             ...treeitem(n),
             class: 'ring',
             d: arcPath(0, 0, n.depth * unit, (n.depth + 1) * unit, span.x0 * TAU, span.x1 * TAU, { padAngle: 0.005 }),
             fill: fillOf(n.node) ?? 'var(--mp-hierarchy-chart-node-fill)',
-          }),
+          },
         };
       }),
       // Labels are fitted IN DEVICE PX: the same 12px label needs a bigger arc
@@ -426,24 +424,24 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
             .map(({ n, fit }) => ({
               key: `label-${n.node.id}`,
               text: fit.text,
-              bag: scoped({
+              bag: {
                 class: 'arc-label',
                 'aria-hidden': 'true',
                 'font-size': Math.round((o.labelFontSize / effectiveScale) * 100) / 100,
                 'data-surface': surfaceOf(n.node, n.hasChildren ? 1 : 0.6),
                 transform: arcLabelTransform(n.x0, n.x1, (n.depth + 0.5) * unit, fit.orientation),
-              }),
+              },
             })),
       // A real button OVERLAY in the hole: role=tree only allows treeitem/group children.
       center: {
-        bag: scoped({
+        bag: {
           type: 'button',
           class: 'center-control',
           'data-zoom-out': '',
           'aria-label': o.zoomOutLabel,
           title: atRoot ? null : o.zoomOutLabel,
           disabled: atRoot || !o.live,
-        }),
+        },
         style: { left: percent(hole.x0), top: percent(hole.y0), width: `${holePct * z}%`, height: `${holePct * z}%` },
         text: focus ? labelText(o, focus) : '',
       },
@@ -455,10 +453,10 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
     const columns = depth + 1; // column 0 is the focus cell
     const focusRect = project({ x0: 0, y0: 0, x1: 1 / columns, y1: 1 });
     return {
-      tree: scoped({ class: 'icicle', role: 'tree', 'aria-label': o.label }),
+      tree: { class: 'icicle', role: 'tree', 'aria-label': o.label },
       focus: {
         key: focus.id,
-        bag: scoped({
+        bag: {
           class: 'cell focus-cell',
           'data-id': focus.id,
           'data-surface': toneOfSurface(undefined, o.backdrop),
@@ -470,7 +468,7 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
           'aria-posinset': 1,
           'aria-expanded': 'true',
           title: atRoot ? null : o.zoomOutLabel,
-        }),
+        },
         style: { ...geometry(focusRect), 'font-size': `${o.labelFontSize}px` },
         label: o.showLabels && cellLabelFits(focusRect) ? labelText(o, focus) : null,
       },
@@ -482,13 +480,13 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
     if (!index || !focus) return null;
     const crumbs = pathTo(index, focus).map((n) => labelText(o, n)).join(' / ');
     return {
-      wrap: scoped({ class: 'treemap' }),
+      wrap: { class: 'treemap' },
       header: {
-        bag: scoped({ type: 'button', class: 'treemap-header', 'data-zoom-out': '', 'aria-label': o.zoomOutLabel, title: crumbs, disabled: atRoot || !o.live }),
+        bag: { type: 'button', class: 'treemap-header', 'data-zoom-out': '', 'aria-label': o.zoomOutLabel, title: crumbs, disabled: atRoot || !o.live },
         text: crumbs,
       },
       // Branch tiles are frames; painting order (parents first) keeps children on top.
-      body: scoped({ class: 'treemap-body', role: 'tree', 'aria-label': o.label }),
+      body: { class: 'treemap-body', role: 'tree', 'aria-label': o.label },
       cells: (nodes as RectNode[]).map((n) => cell(n, project(n))),
     };
   };
@@ -498,15 +496,15 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
     if (!o.showBreadcrumb || !index || !focus) return null;
     const path = pathTo(index, focus);
     return {
-      nav: scoped({ class: 'breadcrumb', 'aria-label': o.breadcrumbLabel }),
+      nav: { class: 'breadcrumb', 'aria-label': o.breadcrumbLabel },
       items: path.map((node, i) => {
         const last = i === path.length - 1;
         return {
           key: node.id,
           text: labelText(o, node),
-          current: last ? scoped({ class: 'crumb-current', 'aria-current': 'location' }) : null,
-          button: last ? null : scoped({ type: 'button', class: 'crumb', 'data-crumb': node === index.root ? '' : node.id, disabled: !o.live }),
-          sep: last ? null : scoped({ class: 'crumb-sep', 'aria-hidden': 'true' }),
+          current: last ? { class: 'crumb-current', 'aria-current': 'location' } : null,
+          button: last ? null : { type: 'button', class: 'crumb', 'data-crumb': node === index.root ? '' : node.id, disabled: !o.live },
+          sep: last ? null : { class: 'crumb-sep', 'aria-hidden': 'true' },
         };
       }),
     };
@@ -514,24 +512,24 @@ export function connectHierarchyChart(o: HierarchyChartOptions): HierarchyChartV
 
   const hasTree = !!index && !!focus;
   return {
-    root: scoped({ class: 'hierarchy-chart', ...hydratedAttr(o.live) }),
+    root: { class: 'hierarchy-chart', ...hydratedAttr(o.live) },
     breadcrumb: breadcrumb(),
-    chart: scoped({ class: o.pinch ? 'chart pinch' : 'chart' }),
+    chart: { class: o.pinch ? 'chart pinch' : 'chart' },
     // The cells animate through this; reduced motion kills the transition in the sheet.
     chartStyle: { '--mp-hierarchy-chart-transition-duration': `${o.transitionDuration}ms` },
     sunburst: hasTree && o.layout === 'sunburst' ? sunburst() : null,
     icicle: hasTree && o.layout === 'icicle' ? icicle() : null,
     treemap: hasTree && o.layout === 'treemap' ? treemap() : null,
-    cellLabel: scoped({ class: 'cell-label' }),
+    cellLabel: { class: 'cell-label' },
     tooltip: {
-      bag: scoped({ class: 'chart-tooltip', 'aria-hidden': 'true', 'data-visible': flag(o.tooltip !== null) }),
+      bag: { class: 'chart-tooltip', 'aria-hidden': 'true', 'data-visible': flag(o.tooltip !== null) },
       style: o.tooltip ? { left: `${o.tooltip.left}px`, top: `${o.tooltip.top}px` } : {},
       text: o.tooltip?.text ?? '',
     },
     // A transient "how to zoom" overlay on an uncaptured plain wheel; purely visual.
-    hint: o.hint === null ? null : { bag: scoped({ class: 'zoom-hint', 'aria-hidden': 'true' }), text: o.hint },
+    hint: o.hint === null ? null : { bag: { class: 'zoom-hint', 'aria-hidden': 'true' }, text: o.hint },
     // No role: the live region sits beside role=tree containers inside .chart.
-    live: scoped({ class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    live: { class: 'visually-hidden', 'aria-live': 'polite', 'aria-atomic': 'true' },
     announcement: o.announcement,
   };
 }

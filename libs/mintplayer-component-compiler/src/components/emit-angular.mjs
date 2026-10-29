@@ -3,7 +3,7 @@
 // `useCore` (PRD #437 D10). Named slots become structural directives
 // (`*bsNavbarBrand`); the default slot is `<ng-content />`.
 import { emitAngular, partialGuard } from '../templates/emit-angular.mjs';
-import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
+import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall } from './model.mjs';
 
 const angularOutput = (output) => output.lower;
 
@@ -162,7 +162,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (model.outputs.length) options.push(`outputs: { ${model.outputs.map((o) => `${o.name}: this.${angularOutput(o)}`).join(', ')} }`);
   if (model.host) {
     const bag = `props.${model.hostExpression}`;
-    options.push(`hostBag: (props) => ${model.hostRole ? `({ ...${bag}, role: '${model.hostRole}' })` : bag}`);
+    options.push(`hostBag: (props) => ${scopedHostBag(model, bag)}`);
   }
   const models = model.inputs.filter((i) => i.model);
   if (models.length) options.push(`models: { ${models.map((i) => `${i.name}: this.${i.name}`).join(', ')} }`);
@@ -172,7 +172,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   lines.push('');
 
   lines.push(`  constructor() {`);
-  model.styles.forEach((style) => lines.push(`    useScopedStyles(${style.scope}, ${style.sheet});`));
+  if (model.style) lines.push(`    ${styleInstall(model, 'useScopedStyles')}`);
   lines.push(`  }`);
 
   model.methods.forEach((method) => {

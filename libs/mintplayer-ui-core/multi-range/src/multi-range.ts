@@ -137,7 +137,6 @@ export interface MultiRangeView {
   thumbs: MultiRangeThumbView[];
 }
 
-const scoped = (bag: MultiRangeBag): MultiRangeBag => ({ ...bag, 'data-mps': MULTI_RANGE_SCOPE });
 const pos = (f: number) => String(Number(f.toFixed(6)));
 
 function formatted(format: MultiRangeOptions['format'], value: number): string | null {
@@ -162,8 +161,8 @@ export function connectMultiRange(options: MultiRangeOptions): MultiRangeView {
     const raised = options.active === i || (i < values.length - 1 && values[i + 1] === value && value > mid);
     return {
       key: String(i),
-      slot: scoped({ class: 'multi-range-slot' }),
-      input: scoped({
+      slot: { class: 'multi-range-slot' },
+      input: {
         class: ['multi-range-thumb', raised ? 'multi-range-thumb-raised' : null].filter(Boolean).join(' '),
         type: 'range',
         id: `${options.id}-thumb-${i}`,
@@ -177,11 +176,11 @@ export function connectMultiRange(options: MultiRangeOptions): MultiRangeView {
         'aria-valuetext': text,
         'aria-orientation': vertical ? 'vertical' : null,
         'data-thumb-index': i,
-      }),
-      tooltip: scoped({
+      },
+      tooltip: {
         class: ['multi-range-tooltip', options.active === i ? 'multi-range-tooltip-shown' : null].filter(Boolean).join(' '),
         'aria-hidden': 'true',
-      }),
+      },
       position: { '--mp-multi-range-at': pos(at(value)) },
       text: text ?? String(value),
     };
@@ -189,19 +188,19 @@ export function connectMultiRange(options: MultiRangeOptions): MultiRangeView {
 
   const fills = values.slice(0, -1).map((value, i): MultiRangeFillView => ({
     key: String(i),
-    bag: scoped({ class: 'multi-range-fill' }),
+    bag: { class: 'multi-range-fill' },
     geometry: { '--mp-multi-range-from': pos(at(value)), '--mp-multi-range-to': pos(at(values[i + 1])) },
   }));
 
   return {
-    root: scoped({
+    root: {
       class: ['mp-multi-range', vertical ? 'mp-multi-range-vertical' : null, disabled ? 'mp-multi-range-disabled' : null].filter(Boolean).join(' '),
       role: 'group',
       'aria-label': options.label,
       'aria-disabled': disabled ? 'true' : null,
       ...hydratedAttr(options.hydrated ?? false),
-    }),
-    track: scoped({ class: 'multi-range-track' }),
+    },
+    track: { class: 'multi-range-track' },
     fills,
     thumbs,
   };

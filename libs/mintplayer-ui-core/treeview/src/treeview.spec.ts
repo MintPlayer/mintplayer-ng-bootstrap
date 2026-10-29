@@ -29,7 +29,7 @@ describe('connectTreeview', () => {
     expect(view.rows.map((r) => r.key)).toEqual(['a', 'a1', 'b', 'c']);
     expect(view.rows.map((r) => r.item['aria-level'])).toEqual([1, 2, 1, 1]);
     expect(view.rows[1].style).toEqual({ '--mp-treeview-level': '2' });
-    expect(view.rows.every((r) => r.item['data-mps'] === 'treeview')).toBe(true);
+    expect(view.rows.every((r) => r.item['data-mps'] === undefined)).toBe(true);
   });
 
   it('puts one tab stop on the first row until a row is focused', () => {

@@ -101,7 +101,6 @@ export interface OtpInputOptions {
 }
 
 const SIZES: ReadonlySet<string> = new Set(['sm', 'md', 'lg']);
-const scoped = (bag: OtpBag): OtpBag => ({ ...bag, 'data-mps': OTP_INPUT_SCOPE });
 
 export function connectOtpInput(options: OtpInputOptions): OtpInputView {
   const groups = normaliseGroups(options.groups);
@@ -125,7 +124,7 @@ export function connectOtpInput(options: OtpInputOptions): OtpInputView {
         ].filter(Boolean);
         return {
           key: String(i),
-          bag: scoped({ class: classes.join(' '), 'aria-hidden': 'true' }),
+          bag: { class: classes.join(' '), 'aria-hidden': 'true' },
           spacer: 'M'.repeat(length),
           content: [...slice].map((char, j) => shown(char, start + j)).join(''),
         };
@@ -133,11 +132,11 @@ export function connectOtpInput(options: OtpInputOptions): OtpInputView {
     : [];
 
   return {
-    root: scoped({
+    root: {
       class: ['mp-otp-input', size === 'md' ? null : `mp-otp-input-${size}`, options.disabled ? 'mp-otp-input-disabled' : null].filter(Boolean).join(' '),
-    }),
-    container: scoped({ class: 'otp-container' }),
-    input: scoped({
+    },
+    container: { class: 'otp-container' },
+    input: {
       class: options.hydrated ? 'otp-hidden-input' : size === 'md' ? 'form-control otp-plain-input' : `form-control form-control-${size} otp-plain-input`,
       id: options.id,
       name: options.name,
@@ -157,11 +156,11 @@ export function connectOtpInput(options: OtpInputOptions): OtpInputView {
       'aria-invalid': options.invalid ? 'true' : null,
       'aria-errormessage': error.control['aria-errormessage'],
       'aria-describedby': error.control['aria-describedby'],
-    }),
+    },
     boxes,
-    spacer: scoped({ class: 'otp-box-spacer' }),
-    content: scoped({ class: 'otp-box-content' }),
+    spacer: { class: 'otp-box-spacer' },
+    content: { class: 'otp-box-content' },
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: scoped(error.message.attrs), text: error.message.text } : { attrs: {}, text: '' },
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
   };
 }

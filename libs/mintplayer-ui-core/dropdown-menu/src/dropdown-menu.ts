@@ -58,9 +58,13 @@ export interface DropdownMenuOptions {
   readonly hydrated: boolean;
 }
 
+/**
+ * The menu list's bag. It carries no `data-mps` (S15): whoever renders it stamps
+ * its own scope, the compiled navbar its group's, the hand-written fronts
+ * `DROPDOWN_MENU_SCOPE`.
+ */
 export function connectDropdownMenu(options: DropdownMenuOptions): DropdownMenuBag {
   return {
-    'data-mps': DROPDOWN_MENU_SCOPE,
     class: 'dropdown-menu show',
     role: options.hydrated ? 'menu' : null,
     'aria-label': options.label || null,

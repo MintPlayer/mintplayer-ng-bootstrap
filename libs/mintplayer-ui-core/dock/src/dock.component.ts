@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'dock',
-  styles: [{ scope: 'DOCK_SCOPE', sheet: 'dockScopedStyles' }],
+  style: { scope: 'dock' },
   components: {
     'dock-manager': {
       core: 'dockCore',

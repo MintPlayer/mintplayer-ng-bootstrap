@@ -42,7 +42,7 @@ onBeforeUnmount(() => detach?.());
 </script>
 
 <template>
-  <ul ref="menu" v-bind="bag" :style="style">
+  <ul ref="menu" :data-mps="DROPDOWN_MENU_SCOPE" v-bind="bag" :style="style">
     <slot />
   </ul>
 </template>

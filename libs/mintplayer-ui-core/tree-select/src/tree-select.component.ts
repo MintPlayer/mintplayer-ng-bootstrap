@@ -8,10 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'tree-select',
-  styles: [
-    { scope: 'TREEVIEW_SCOPE', sheet: 'treeviewScopedStyles', from: '@mintplayer/ui-core/treeview' },
-    { scope: 'TREE_SELECT_SCOPE', sheet: 'treeSelectScopedStyles' },
-  ],
+  style: { scope: 'tree-select' },
   components: {
     'tree-select': {
       core: 'treeSelectCore',

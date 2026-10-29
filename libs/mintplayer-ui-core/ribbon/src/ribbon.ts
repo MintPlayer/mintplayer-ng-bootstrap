@@ -30,9 +30,7 @@ export type RibbonColorScheme = 'light' | 'dark' | 'auto';
 export type RibbonTouchMode = 'on' | 'off' | 'auto';
 export type RibbonMenuItemKind = 'action' | 'checkbox' | 'radio';
 
-const scoped = (bag: RibbonBag): RibbonBag => ({ ...bag, 'data-mps': RIBBON_SCOPE });
-
-const part = (cls: string, extra: RibbonBag = {}): RibbonBag => scoped({ class: cls, ...extra });
+const part = (cls: string, extra: RibbonBag = {}): RibbonBag => ({ class: cls, ...extra });
 const decorative = { 'aria-hidden': 'true' };
 
 /** The static nodes of the family's templates: a bag each, so the scoped sheet reaches them. */
@@ -302,7 +300,7 @@ function tabButton(o: ConnectRibbonOptions, entry: RibbonTabEntry): RibbonTabBut
   return {
     key: entry.tabId,
     label: entry.label,
-    bag: scoped({
+    bag: {
       type: 'button',
       role: 'tab',
       id: ribbonTabButtonId(o.id, entry.tabId),
@@ -314,7 +312,7 @@ function tabButton(o: ConnectRibbonOptions, entry: RibbonTabEntry): RibbonTabBut
       'data-key-tip': entry.keyTip,
       // A tab cannot switch panels before the core is live.
       disabled: o.hydrated ? null : true,
-    }),
+    },
   };
 }
 
@@ -331,7 +329,7 @@ export function connectRibbon(o: ConnectRibbonOptions): RibbonView {
       key: set ? `set:${set.label}:${entry.tabId}` : `tab:${entry.tabId}`,
       contextual: !!set,
       label: set?.label ?? '',
-      band: set ? scoped({ class: 'ribbon-contextual-group', 'data-color': set.color }) : scoped({}),
+      band: set ? { class: 'ribbon-contextual-group', 'data-color': set.color } : {},
       bandStyle: set ? { '--bs-ribbon-contextual-color': set.color, '--ribbon-contextual-text': bandTextColor(set.color) } : {},
       tabs: [tabButton(o, entry)],
     });
@@ -339,7 +337,7 @@ export function connectRibbon(o: ConnectRibbonOptions): RibbonView {
 
   return {
     parts: RIBBON_PARTS,
-    root: scoped({
+    root: {
       class: 'ribbon',
       role: 'region',
       'aria-label': o.label || o.labels.region,
@@ -349,12 +347,12 @@ export function connectRibbon(o: ConnectRibbonOptions): RibbonView {
       'data-layout': o.layout,
       'data-minimized': o.minimized ? '' : null,
       ...hydratedAttr(o.hydrated),
-    }),
-    tablist: scoped({ role: 'tablist', class: 'ribbon-tablist', 'aria-label': o.label || o.labels.region }),
+    },
+    tablist: { role: 'tablist', class: 'ribbon-tablist', 'aria-label': o.label || o.labels.region },
     runs,
-    content: scoped({ class: 'ribbon-content', hidden: o.minimized ? true : null }),
+    content: { class: 'ribbon-content', hidden: o.minimized ? true : null },
     keyTips: o.keyTips.map((badge, i) => ({ key: `${i}:${badge.tip}`, tip: badge.tip, style: { '--ribbon-keytip-left': `${badge.left}px`, '--ribbon-keytip-top': `${badge.top}px` } })),
-    live: scoped({ ...{ role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, ...o.live, class: 'visually-hidden' }),
+    live: { ...{ role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, ...o.live, class: 'visually-hidden' },
     announcement: o.announcement,
   };
 }
@@ -363,7 +361,7 @@ export function connectRibbon(o: ConnectRibbonOptions): RibbonView {
 // Contextual tab set: transparent in the layout.
 
 export function connectRibbonContextualTabSet(): RibbonBag {
-  return scoped({ class: 'ribbon-contextual-tab-set' });
+  return { class: 'ribbon-contextual-tab-set' };
 }
 
 // ---------------------------------------------------------------------------
@@ -404,7 +402,7 @@ export function connectRibbonTab(o: ConnectRibbonTabOptions): RibbonTabView {
   const menuId = `${o.id}-overflow`;
   return {
     parts: RIBBON_PARTS,
-    panel: scoped({
+    panel: {
       class: 'ribbon-tabpanel',
       role: 'tabpanel',
       id: ribbonId && o.tabId ? ribbonPanelId(ribbonId, o.tabId) : null,
@@ -413,8 +411,8 @@ export function connectRibbonTab(o: ConnectRibbonTabOptions): RibbonTabView {
       'data-active': active ? '' : null,
       'data-has-overflow': o.overflow.length ? '' : null,
       hidden: active && !minimized ? null : true,
-    }),
-    overflowTrigger: scoped({
+    },
+    overflowTrigger: {
       type: 'button',
       class: 'overflow-trigger',
       popovertarget: menuId,
@@ -423,13 +421,13 @@ export function connectRibbonTab(o: ConnectRibbonTabOptions): RibbonTabView {
       'aria-label': labels.moreCommands,
       title: labels.moreCommands,
       disabled: o.hydrated ? null : true,
-    }),
-    overflowMenu: scoped({ id: menuId, popover: 'auto', class: 'overflow-panel', role: 'menu', 'aria-label': labels.overflowMenu, 'data-ribbon-menu': '' }),
+    },
+    overflowMenu: { id: menuId, popover: 'auto', class: 'overflow-panel', role: 'menu', 'aria-label': labels.overflowMenu, 'data-ribbon-menu': '' },
     overflowEntries: o.overflow.map((entry, i) => ({
       key: `${i}`,
       label: entry.label,
       icon: entry.icon,
-      bag: scoped({ type: 'button', class: 'overflow-entry', role: 'menuitem', tabindex: -1, 'data-ribbon-overflow-entry': i }),
+      bag: { type: 'button', class: 'overflow-entry', role: 'menuitem', tabindex: -1, 'data-ribbon-overflow-entry': i },
     })),
   };
 }
@@ -476,7 +474,7 @@ export function connectRibbonGroup(o: ConnectRibbonGroupOptions): RibbonGroupVie
   const ideal = o.context.idealSizes?.[groupId];
   return {
     parts: RIBBON_PARTS,
-    root: scoped({
+    root: {
       class: 'ribbon-group-host',
       'data-ribbon-group': groupId,
       'data-ideal-size': ideal && ideal !== 'large' ? ideal : null,
@@ -484,20 +482,20 @@ export function connectRibbonGroup(o: ConnectRibbonGroupOptions): RibbonGroupVie
       'data-auto-scale': inputs.autoScale === false ? 'false' : null,
       'data-key-tip': inputs.keyTip ?? null,
       'data-label': label,
-    }),
-    body: scoped({ id: bodyId, class: 'ribbon-group', role: 'toolbar', 'aria-label': label || null, 'data-ribbon-toolbar': '', 'data-ribbon-group-body': '' }),
+    },
+    body: { id: bodyId, class: 'ribbon-group', role: 'toolbar', 'aria-label': label || null, 'data-ribbon-toolbar': '', 'data-ribbon-group-body': '' },
     label,
     launcher: inputs.dialogLauncher
-      ? scoped({
+      ? {
           type: 'button',
           class: 'ribbon-dialog-launcher',
           title: inputs.dialogLauncher,
           'aria-label': inputs.dialogLauncher,
           'data-ribbon-launcher': '',
           disabled: o.hydrated ? null : true,
-        })
+        }
       : null,
-    trigger: scoped({
+    trigger: {
       type: 'button',
       class: 'ribbon-popup-trigger',
       popovertarget: bodyId,
@@ -507,7 +505,7 @@ export function connectRibbonGroup(o: ConnectRibbonGroupOptions): RibbonGroupVie
       title: label || null,
       'data-ribbon-popup-trigger': '',
       disabled: o.hydrated ? null : true,
-    }),
+    },
     icon: inputs.icon ?? '',
   };
 }
@@ -520,13 +518,13 @@ export interface RibbonQuickAccessToolbarInputs {
 }
 
 export function connectQuickAccessToolbar(o: { touchMode: RibbonTouchMode; label: string | null; labels: RibbonLabels }): RibbonBag {
-  return scoped({
+  return {
     class: 'qat',
     role: 'toolbar',
     'aria-label': o.label || o.labels.quickAccessToolbar,
     'data-touch-mode': o.touchMode,
     'data-ribbon-toolbar': '',
-  });
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -558,7 +556,7 @@ export function ribbonItemSize(size: unknown): RibbonItemSize {
 
 /** The item root every kind shares: what the KeyTips, the overflow menu and the size rules read. */
 export function ribbonItemRoot(o: ConnectRibbonItemOptions, extra: RibbonBag = {}): RibbonBag {
-  return scoped({
+  return {
     class: `ribbon-item ribbon-${o.kind}-host`,
     'data-ribbon-item': o.kind,
     'data-item-id': o.inputs.itemId || null,
@@ -568,27 +566,27 @@ export function ribbonItemRoot(o: ConnectRibbonItemOptions, extra: RibbonBag = {
     'data-key-tip': o.inputs.keyTip || null,
     'data-disabled': o.inputs.disabled ? '' : null,
     ...extra,
-  });
+  };
 }
 
 const off = (o: ConnectRibbonItemOptions) => (o.inputs.disabled || !o.hydrated ? true : null);
 
 /** A command button's own attributes; `data-ribbon-control` makes it a toolbar stop. */
 export function ribbonControl(o: ConnectRibbonItemOptions, extra: RibbonBag = {}): RibbonBag {
-  return scoped({
+  return {
     type: 'button',
     'data-ribbon-control': '',
     title: o.inputs.tooltip || o.inputs.label || null,
     disabled: off(o),
     ...extra,
-  });
+  };
 }
 
 function itemView(o: ConnectRibbonItemOptions, control: RibbonBag, extra: Partial<RibbonItemView> = {}): RibbonItemView {
   return {
     parts: RIBBON_PARTS,
     root: ribbonItemRoot(o),
-    wrap: scoped({}),
+    wrap: {},
     control,
     checked: false,
     value: '',
@@ -610,11 +608,11 @@ export function connectRibbonToggleButton(o: ConnectRibbonItemOptions & { presse
 
 /** A checkbox or colour input: a native input in a `<label>` that names it. */
 function fieldWrap(o: ConnectRibbonItemOptions, cls: string): RibbonBag {
-  return scoped({ class: `${cls}${o.inputs.disabled ? ' disabled' : ''}`, title: o.inputs.tooltip || o.inputs.label || null });
+  return { class: `${cls}${o.inputs.disabled ? ' disabled' : ''}`, title: o.inputs.tooltip || o.inputs.label || null };
 }
 
 export function connectRibbonCheckBox(o: ConnectRibbonItemOptions & { checked: boolean }): RibbonItemView {
-  return itemView(o, scoped({ type: 'checkbox', class: 'ribbon-checkbox-input', 'data-ribbon-control': '', disabled: off(o) }), {
+  return itemView(o, { type: 'checkbox', class: 'ribbon-checkbox-input', 'data-ribbon-control': '', disabled: off(o) }, {
     checked: o.checked,
     wrap: fieldWrap(o, 'ribbon-checkbox'),
     icon: '',
@@ -622,7 +620,7 @@ export function connectRibbonCheckBox(o: ConnectRibbonItemOptions & { checked: b
 }
 
 export function connectRibbonColorPicker(o: ConnectRibbonItemOptions & { color: string }): RibbonItemView {
-  return itemView(o, scoped({ type: 'color', class: 'ribbon-color-picker-input', 'data-ribbon-control': '', 'aria-label': o.inputs.label || null, disabled: off(o) }), {
+  return itemView(o, { type: 'color', class: 'ribbon-color-picker-input', 'data-ribbon-control': '', 'aria-label': o.inputs.label || null, disabled: off(o) }, {
     value: o.color,
     wrap: fieldWrap(o, 'ribbon-color-picker'),
     icon: '',
@@ -646,19 +644,19 @@ export function connectRibbonComboBox(
   return {
     ...itemView(
       o,
-      scoped({
+      {
         class: 'ribbon-combobox-select',
         'data-ribbon-control': '',
         'aria-label': o.inputs.label || null,
         title: o.inputs.tooltip || o.inputs.label || null,
         disabled: off(o),
-      }),
+      },
       { icon: '' },
     ),
     options: o.options.map((option) => ({
       key: option.value,
       label: option.label,
-      bag: scoped({ value: option.value, selected: option.value === o.value }),
+      bag: { value: option.value, selected: option.value === o.value },
     })),
   };
 }
@@ -680,14 +678,14 @@ export function connectRibbonGroupButton(
   o: ConnectRibbonItemOptions & { selectedValue: string; buttons: readonly RibbonGroupButtonOption[] },
 ): RibbonItemView & { radios: readonly RibbonRadioView[] } {
   return {
-    ...itemView(o, scoped({ class: 'ribbon-group-button', role: 'radiogroup', 'aria-label': o.inputs.label || null }), { icon: '' }),
+    ...itemView(o, { class: 'ribbon-group-button', role: 'radiogroup', 'aria-label': o.inputs.label || null }, { icon: '' }),
     radios: o.buttons.map((button) => {
       const checked = button.value === o.selectedValue;
       return {
         key: button.value,
         label: button.label,
         icon: button.icon ?? '',
-        bag: scoped({
+        bag: {
           type: 'button',
           role: 'radio',
           class: `ribbon-group-button-item${checked ? ' selected' : ''}`,
@@ -696,7 +694,7 @@ export function connectRibbonGroupButton(
           'data-ribbon-control': '',
           'data-value': button.value,
           disabled: off(o),
-        }),
+        },
       };
     }),
   };
@@ -708,7 +706,7 @@ export interface RibbonMenuButtonView extends RibbonItemView {
 
 /** The popup menu of a dropdown or split button: a native popover, opened by `popovertarget`. */
 function itemMenu(id: string, label: string): RibbonBag {
-  return scoped({ id: `${id}-menu`, popover: 'auto', class: 'menu-panel', role: 'menu', 'aria-label': label || null, 'data-ribbon-menu': '' });
+  return { id: `${id}-menu`, popover: 'auto', class: 'menu-panel', role: 'menu', 'aria-label': label || null, 'data-ribbon-menu': '' };
 }
 
 export function connectRibbonDropdownButton(o: ConnectRibbonItemOptions & { id: string; open: boolean }): RibbonMenuButtonView {
@@ -736,7 +734,7 @@ export function connectRibbonSplitButton(o: ConnectRibbonItemOptions & { id: str
   const label = o.inputs.label ?? '';
   return {
     ...itemView(o, ribbonControl(o, { class: 'ribbon-button ribbon-split-button-main', 'data-ribbon-main': '' })),
-    group: scoped({ class: 'ribbon-split-button', role: 'group', 'aria-label': label || null }),
+    group: { class: 'ribbon-split-button', role: 'group', 'aria-label': label || null },
     toggle: ribbonControl(o, {
       class: 'ribbon-split-button-dropdown',
       title: null,
@@ -775,8 +773,8 @@ export function connectRibbonMenuItem(o: { inputs: Readonly<RibbonMenuItemInputs
   return {
     parts: RIBBON_PARTS,
     // A div, not an li: the implicit listitem role would override `none`.
-    root: scoped({ class: 'ribbon-menu-item', role: 'none', 'data-item-id': o.inputs.itemId || null }),
-    button: scoped({
+    root: { class: 'ribbon-menu-item', role: 'none', 'data-item-id': o.inputs.itemId || null },
+    button: {
       type: 'button',
       class: 'menu-item',
       role: kind === 'checkbox' ? 'menuitemcheckbox' : kind === 'radio' ? 'menuitemradio' : 'menuitem',
@@ -784,7 +782,7 @@ export function connectRibbonMenuItem(o: { inputs: Readonly<RibbonMenuItemInputs
       tabindex: -1,
       'data-ribbon-menu-item': '',
       disabled: o.inputs.disabled || !o.hydrated ? true : null,
-    }),
+    },
     checkable,
     check: o.checked ? '✓' : '',
     label: o.inputs.label ?? '',
@@ -793,7 +791,7 @@ export function connectRibbonMenuItem(o: { inputs: Readonly<RibbonMenuItemInputs
 }
 
 export function connectRibbonMenuSeparator(): RibbonBag {
-  return scoped({ class: 'ribbon-menu-separator', role: 'separator' });
+  return { class: 'ribbon-menu-separator', role: 'separator' };
 }
 
 export interface RibbonGalleryInputs extends RibbonItemInputs {
@@ -802,7 +800,7 @@ export interface RibbonGalleryInputs extends RibbonItemInputs {
 
 export function connectRibbonGallery(o: ConnectRibbonItemOptions & { columns: number }): RibbonItemView & { columns: RibbonStyle } {
   return {
-    ...itemView(o, scoped({ class: 'ribbon-gallery', role: 'listbox', 'aria-label': o.inputs.label || null }), { icon: '' }),
+    ...itemView(o, { class: 'ribbon-gallery', role: 'listbox', 'aria-label': o.inputs.label || null }, { icon: '' }),
     columns: { '--ribbon-gallery-columns': String(Math.max(1, Math.floor(o.columns) || 1)) },
   };
 }
@@ -819,11 +817,11 @@ export function connectRibbonGalleryItem(o: { inputs: Readonly<RibbonGalleryItem
   const selected = !!o.inputs.selected;
   return {
     parts: RIBBON_PARTS,
-    root: scoped({ class: 'ribbon-gallery-item', role: 'none', 'data-item-id': o.inputs.itemId || null }),
-    wrap: scoped({}),
+    root: { class: 'ribbon-gallery-item', role: 'none', 'data-item-id': o.inputs.itemId || null },
+    wrap: {},
     checked: false,
     value: '',
-    control: scoped({
+    control: {
       type: 'button',
       class: `gallery-item${selected ? ' selected' : ''}`,
       role: 'option',
@@ -832,14 +830,14 @@ export function connectRibbonGalleryItem(o: { inputs: Readonly<RibbonGalleryItem
       title: o.inputs.label || null,
       'data-ribbon-control': '',
       disabled: o.inputs.disabled || !o.hydrated ? true : null,
-    }),
+    },
     label: o.inputs.label ?? '',
     icon: o.inputs.icon ?? '',
   };
 }
 
 export function connectRibbonTemplateItem(o: { size: unknown }): RibbonBag {
-  return scoped({ class: 'ribbon-item ribbon-template-item', 'data-ribbon-item': 'template', 'data-size': ribbonItemSize(o.size) });
+  return { class: 'ribbon-item ribbon-template-item', 'data-ribbon-item': 'template', 'data-size': ribbonItemSize(o.size) };
 }
 
 /** The Lit/test-friendly re-export of the boolean reading a content query needs. */

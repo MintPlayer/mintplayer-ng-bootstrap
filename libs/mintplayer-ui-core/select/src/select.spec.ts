@@ -22,7 +22,7 @@ const base: SelectOptions = {
 
 describe('connectSelect', () => {
   it('stamps the select and maps size to the Bootstrap class, unknown sizes to md', () => {
-    expect(connectSelect(base).select).toMatchObject({ 'data-mps': 'select', class: 'form-select', id: 's1' });
+    expect(connectSelect(base).select).toMatchObject({ class: 'form-select', id: 's1' });
     expect(connectSelect({ ...base, size: 'sm' }).select['class']).toBe('form-select form-select-sm');
     expect(connectSelect({ ...base, size: 'xl' as never }).select['class']).toBe('form-select');
   });
@@ -58,7 +58,7 @@ describe('connectSelect', () => {
     expect(quiet.select['aria-describedby']).toBeNull();
     const view = connectSelect({ ...base, errorText: 'Pick one', invalid: true, required: true });
     expect(view.showFeedback).toBe(true);
-    expect(view.feedback.attrs).toMatchObject({ id: 's1-error', 'data-mps': 'select' });
+    expect(view.feedback.attrs).toMatchObject({ id: 's1-error' });
     expect(view.select).toMatchObject({ 'aria-invalid': 'true', 'aria-required': 'true', 'aria-errormessage': 's1-error', 'aria-describedby': 's1-error' });
   });
 });

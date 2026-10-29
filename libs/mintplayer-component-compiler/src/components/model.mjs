@@ -38,6 +38,19 @@ function inputKind(field) {
   return false;
 }
 
+/**
+ * The group's one sheet and the scope its templates are stamped with (S15). The
+ * sheet's export name follows from the scope as the codegen derives both from
+ * `<scope>.scoped.scss`, so a stamp and the sheet that styles it cannot disagree.
+ */
+export function groupStyle(group, entry) {
+  if (group.styles) throw new Error(`${entry}: \`styles\` is replaced by one \`style: { scope }\` per group (S15)`);
+  if (!group.style) return null;
+  const { scope, from } = group.style;
+  if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(scope ?? '')) throw new Error(`${entry}: style.scope must be a kebab-case literal (got ${JSON.stringify(scope)})`);
+  return { scope, sheet: `${camel(scope)}ScopedStyles`, from: from ?? null };
+}
+
 /** Named exports of an extension file: `export const x`, `export function x`. */
 function exportsOf(file) {
   const text = readFileSync(file, 'utf8');
@@ -55,6 +68,7 @@ function exportsOf(file) {
  */
 export function componentModels({ group, entry, corePackage, template, extension, literals = () => null, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
+  const style = groupStyle(group, entry);
   const models = Object.entries(group.components).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
     const { root, host } = rootElement(src);
@@ -126,7 +140,7 @@ export function componentModels({ group, entry, corePackage, template, extension
       methods: Object.entries(manifest.methods?.fields ?? {}).map(([name, method]) => ({ name, ...method })),
       methodsType: manifest.methods?.type ?? null,
       slots,
-      styles: group.styles ?? [],
+      style,
       names: {
         angular: names.angular ?? `Bs${base}Component`,
         selector: names.selector ?? `bs-${element}`,
@@ -178,9 +192,7 @@ export function coreImports(model, { values = [], types = [], slotTypes = false,
     if (!names.has(name) || !isType) names.set(name, isType);
   };
   values.forEach((name) => add(model.entryModule, name, false));
-  model.styles
-    .filter((style) => (style.from ?? model.entryModule) === model.entryModule)
-    .forEach((style) => [style.scope, style.sheet].forEach((name) => add(model.entryModule, name, false)));
+  if (model.style && !model.style.from) add(model.entryModule, model.style.sheet, false);
   types.forEach((name) => add(model.entryModule, name, true));
   // An output's type may be a builtin (`string`) or an expression (`Foo | null`): import its names only.
   model.outputs.forEach((output) =>
@@ -202,14 +214,18 @@ export function coreImports(model, { values = [], types = [], slotTypes = false,
     .join('\n');
 }
 
-/** `import { A, B } from '<module>';` per style module. */
+/** `import { sheet } from '<module>';` for a sheet from another module. */
 export function styleImports(model) {
-  const modules = new Map();
-  model.styles.forEach((style) => {
-    const module = style.from ?? model.entryModule;
-    modules.set(module, [...(modules.get(module) ?? []), style.scope, style.sheet]);
-  });
-  return [...modules].map(([module, names]) => ({ module, names: [...new Set(names)].sort() }));
+  return model.style?.from ? [{ module: model.style.from, names: [model.style.sheet] }] : [];
+}
+
+/** The group's sheet install, as `<call>('<scope>', <sheet>);`, or none. */
+export const styleInstall = (model, call) => (model.style ? `${call}('${model.style.scope}', ${model.style.sheet});` : null);
+
+/** A host bag stamped with the group's scope (Angular and Lit render no root element to stamp). */
+export function scopedHostBag(model, bag) {
+  const extra = [model.style ? `'data-mps': '${model.style.scope}'` : null, model.hostRole ? `role: '${model.hostRole}'` : null].filter(Boolean);
+  return extra.length ? `({ ...${bag}, ${extra.join(', ')} })` : bag;
 }
 
 /** A JSDoc block from a doc string, indented. */

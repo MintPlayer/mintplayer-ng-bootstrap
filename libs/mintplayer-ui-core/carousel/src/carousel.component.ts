@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'carousel',
-  styles: [{ scope: 'CAROUSEL_SCOPE', sheet: 'carouselScopedStyles' }],
+  style: { scope: 'carousel' },
   components: {
     carousel: {
       core: 'carouselCore',

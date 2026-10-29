@@ -9,7 +9,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'timepicker',
-  styles: [{ scope: 'TIMEPICKER_SCOPE', sheet: 'timepickerScopedStyles' }],
+  style: { scope: 'timepicker' },
   components: {
     'time-list': {
       core: 'timeListCore',

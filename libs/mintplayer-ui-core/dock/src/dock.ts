@@ -33,8 +33,6 @@ export const DOCK_SCOPE = 'dock';
 
 export type DockBag = Record<string, string | number | boolean | null>;
 
-const scoped = (bag: DockBag): DockBag => ({ ...bag, 'data-mps': DOCK_SCOPE });
-
 /** Every string the dock shows or speaks. `{name}` placeholders are filled in. */
 export interface DockLabels {
   /** The region's name when the consumer gives no `aria-label`. */
@@ -373,15 +371,15 @@ const px = (value: number) => `${value}px`;
 function stackView(node: DockStackNode, path: DockPath, o: DockViewOptions): DockNodeView {
   const pathStr = formatPath(path);
   const panes = Array.from(new Set(node.panes));
-  const root = scoped({ class: 'dock-stack', 'data-path': pathStr });
+  const root = { class: 'dock-stack', 'data-path': pathStr };
   if (panes.length === 0) {
     return {
       bag: root,
       ...NOT_A_SPLIT,
       stack: {
-        strip: scoped({ class: 'dock-stack__strip', role: 'tablist' }),
-        tabs: [{ key: '__empty__', title: o.labels.emptyTab, placeholder: true, bag: scoped({ class: 'dock-tab', 'aria-hidden': 'true' }), style: {} }],
-        body: scoped({ class: 'dock-stack__pane' }),
+        strip: { class: 'dock-stack__strip', role: 'tablist' },
+        tabs: [{ key: '__empty__', title: o.labels.emptyTab, placeholder: true, bag: { class: 'dock-tab', 'aria-hidden': 'true' }, style: {} }],
+        body: { class: 'dock-stack__pane' },
         empty: o.labels.emptyStack,
       },
     };
@@ -399,7 +397,7 @@ function stackView(node: DockStackNode, path: DockPath, o: DockViewOptions): Doc
         title: dockTitle(o.layout, pane),
         placeholder: false,
         style: {},
-        bag: scoped({
+        bag: {
           type: 'button',
           class: `dock-tab${selected ? ' active' : ''}`,
           id: tabId,
@@ -411,7 +409,7 @@ function stackView(node: DockStackNode, path: DockPath, o: DockViewOptions): Doc
           'data-tab-id': tabId,
           'data-pressing': o.visual.pressing === tabId ? 'true' : null,
           disabled: live ? null : true,
-        }),
+        },
       };
     });
   if (drag) {
@@ -421,22 +419,22 @@ function stackView(node: DockStackNode, path: DockPath, o: DockViewOptions): Doc
       title: dockTitle(o.layout, drag.pane),
       placeholder: true,
       style: { '--dock-placeholder-width': px(drag.width) },
-      bag: scoped({ class: 'dock-tab dock-tab--placeholder', 'aria-hidden': 'true', 'data-placeholder': 'true' }),
+      bag: { class: 'dock-tab dock-tab--placeholder', 'aria-hidden': 'true', 'data-placeholder': 'true' },
     });
   }
   return {
     bag: { ...root, 'data-active-pane': active },
     ...NOT_A_SPLIT,
     stack: {
-      strip: scoped({ class: 'dock-stack__strip', role: 'tablist' }),
+      strip: { class: 'dock-stack__strip', role: 'tablist' },
       tabs,
-      body: scoped({
+      body: {
         class: 'dock-stack__pane',
         role: 'tabpanel',
         id: dockPanelId(o.id, path, active),
         'aria-labelledby': dockTabId(o.id, path, active),
         'data-dock-pane-body': active,
-      }),
+      },
       empty: null,
     },
   };
@@ -446,7 +444,7 @@ function nodeView(node: DockLayoutNode, path: DockPath, o: DockViewOptions): Doc
   if (node.kind === 'stack') return stackView(node, path, o);
   const pathStr = formatPath(path);
   return {
-    bag: scoped({ class: 'dock-split', 'data-path': pathStr, 'data-direction': node.direction }),
+    bag: { class: 'dock-split', 'data-path': pathStr, 'data-direction': node.direction },
     stack: null,
     split: true,
     direction: node.direction,
@@ -471,14 +469,14 @@ function floatingView(window: DockFloatingStackLayout, index: number, o: DockVie
   const resizing = o.visual.resizingFloating?.index === index ? o.visual.resizingFloating.edge : null;
   return {
     key: pathStr,
-    bag: scoped({
+    bag: {
       class: 'dock-floating',
       'data-path': pathStr,
       role: 'dialog',
       'aria-labelledby': titleId,
       'aria-modal': 'false',
       'data-dragging': o.visual.draggingFloating === index ? 'true' : null,
-    }),
+    },
     style: {
       '--dock-left': px(bounds.left),
       '--dock-top': px(bounds.top),
@@ -486,16 +484,16 @@ function floatingView(window: DockFloatingStackLayout, index: number, o: DockVie
       '--dock-height': px(bounds.height),
       '--dock-z': String(override ? override.z : floatingZIndex(window, index)),
     },
-    chrome: scoped({ class: 'dock-floating__chrome' }),
-    title: scoped({ class: 'dock-floating__title', id: titleId }),
+    chrome: { class: 'dock-floating__chrome' },
+    title: { class: 'dock-floating__title', id: titleId },
     titleText: title,
-    close: scoped({
+    close: {
       type: 'button',
       class: 'dock-floating__close',
       'aria-label': dockLabel(o.labels.closeFloating, { title }),
       disabled: o.hydrated ? null : true,
-    }),
-    content: scoped({ class: 'dock-floating__stack' }),
+    },
+    content: { class: 'dock-floating__stack' },
     node: window.root ? nodeView(window.root, path, o) : null,
     resizers: FLOATING_RESIZERS.map(({ edge, edges }) => {
       const corner = edges.horizontal !== 'none' && edges.vertical !== 'none';
@@ -507,7 +505,7 @@ function floatingView(window: DockFloatingStackLayout, index: number, o: DockVie
           : 0;
       return {
         key: edge,
-        bag: scoped({
+        bag: {
           class: `dock-floating__resizer dock-floating__resizer--${edge}`,
           role: 'separator',
           'aria-orientation': corner ? null : edges.horizontal === 'none' ? 'horizontal' : 'vertical',
@@ -518,7 +516,7 @@ function floatingView(window: DockFloatingStackLayout, index: number, o: DockVie
           'aria-valuenow': String(Math.round(Math.min(100, Math.max(0, percent)))),
           'data-edge': edge,
           'data-resizing': resizing === edge ? 'true' : null,
-        }),
+        },
       };
     }),
   };
@@ -536,16 +534,16 @@ export function connectDock(o: DockViewOptions): DockView {
     bottom: labels.dropBottom,
   };
   return {
-    root: scoped({ class: 'dock', role: 'region', 'aria-label': o.label ?? labels.dock, ...hydratedAttr(o.hydrated) }),
-    docked: scoped({ class: 'dock-docked', 'data-path': formatPath({ type: 'docked', segments: [] }) }),
+    root: { class: 'dock', role: 'region', 'aria-label': o.label ?? labels.dock, ...hydratedAttr(o.hydrated) },
+    docked: { class: 'dock-docked', 'data-path': formatPath({ type: 'docked', segments: [] }) },
     dockedNode: o.layout.root ? nodeView(o.layout.root, { type: 'docked', segments: [] }, o) : null,
-    floatingLayer: scoped({ class: 'dock-floating-layer' }),
+    floatingLayer: { class: 'dock-floating-layer' },
     floating: o.layout.floating.map((window, index) => floatingView(window, index, o)),
-    intersectionLayer: scoped({ class: 'dock-intersections-layer' }),
+    intersectionLayer: { class: 'dock-intersections-layer' },
     intersections: visual.intersections.map((handle) => ({
       key: handle.key,
       style: { '--dock-left': px(handle.x), '--dock-top': px(handle.y) },
-      bag: scoped({
+      bag: {
         class: 'dock-intersection-handle',
         role: 'separator',
         'aria-label': labels.intersection,
@@ -556,9 +554,9 @@ export function connectDock(o: DockViewOptions): DockView {
         'data-key': handle.key,
         'data-pairs': handle.pairs,
         'data-resizing': visual.resizingIntersection === handle.key ? 'true' : null,
-      }),
+      },
     })),
-    indicator: scoped({ class: 'dock-drop-indicator', 'data-visible': indicator ? 'true' : 'false' }),
+    indicator: { class: 'dock-drop-indicator', 'data-visible': indicator ? 'true' : 'false' },
     indicatorStyle: indicator
       ? {
           '--dock-left': px(indicator.left),
@@ -568,20 +566,20 @@ export function connectDock(o: DockViewOptions): DockView {
           '--dock-z': String(indicator.z),
         }
       : {},
-    joystick: scoped({
+    joystick: {
       class: 'dock-drop-joystick',
       'data-visible': joystick ? 'true' : 'false',
       'data-path': joystick?.path ?? null,
       'data-zone': joystick?.zone ?? null,
-    }),
+    },
     joystickStyle: joystick ? { '--dock-left': px(joystick.left), '--dock-top': px(joystick.top), '--dock-z': String(joystick.z) } : {},
-    joystickCells: JOYSTICK_CELLS.map((zone, index) =>
+    joystickCells: JOYSTICK_CELLS.map((zone, index): DockView['joystickCells'][number] =>
       zone
         ? {
             key: zone,
             button: true,
             glyph: JOYSTICK_GLYPHS[zone],
-            bag: scoped({
+            bag: {
               type: 'button',
               tabindex: '-1',
               class: 'dock-drop-joystick__button',
@@ -589,12 +587,12 @@ export function connectDock(o: DockViewOptions): DockView {
               'aria-label': dropLabels[zone],
               'data-active': joystick?.zone === zone ? 'true' : null,
               'data-hidden': joystick?.centerOnly && zone !== 'center' ? 'true' : null,
-            }),
+            },
           }
-        : { key: `spacer-${index}`, button: false, glyph: '', bag: scoped({ class: 'dock-drop-joystick__spacer' }) },
+        : { key: `spacer-${index}`, button: false, glyph: '', bag: { class: 'dock-drop-joystick__spacer' } },
     ),
-    live: scoped({ class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }),
-    parking: scoped({ class: 'dock-parking', hidden: true }),
+    live: { class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
+    parking: { class: 'dock-parking', hidden: true },
     announcement: o.announcement,
     panes: o.paneHosts,
   };

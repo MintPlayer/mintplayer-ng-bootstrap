@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  DROPDOWN_MENU_SCOPE,
   attachDropdownMenu,
   connectDropdownMenu,
   dropdownItemValue,
@@ -25,8 +24,8 @@ afterEach(() => document.body.replaceChildren());
 
 describe('connectDropdownMenu', () => {
   it('writes role=menu only once hydrated, so the no-JS list stays valid', () => {
+    // No data-mps: whoever renders the menu stamps its own scope (S15).
     expect(connectDropdownMenu({ hydrated: false })).toEqual({
-      'data-mps': DROPDOWN_MENU_SCOPE,
       class: 'dropdown-menu show',
       role: null,
       'aria-label': null,

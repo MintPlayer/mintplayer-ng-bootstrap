@@ -121,12 +121,12 @@ describe('connectMultiRange', () => {
     expect(raised({ values: [10, 10] })).toEqual([false, false]);
   });
 
-  it('disables every thumb and scopes every node', () => {
+  it('disables every thumb, no node scoped by the core (S15)', () => {
     const view = connectMultiRange({ ...base, disabled: true });
     expect(view.thumbs.every((t) => t.input['disabled'] === true)).toBe(true);
     expect(view.root['aria-disabled']).toBe('true');
     [view.root, view.track, view.fills[0].bag, view.thumbs[0].slot, view.thumbs[0].input, view.thumbs[0].tooltip].forEach((bag) =>
-      expect(bag['data-mps']).toBe('multi-range'),
+      expect(bag['data-mps']).toBeUndefined(),
     );
   });
 });

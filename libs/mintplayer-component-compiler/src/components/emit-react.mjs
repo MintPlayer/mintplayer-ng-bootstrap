@@ -2,7 +2,7 @@
 // template stage's `<Name>Template`, hosting the core through `useCore` (PRD
 // #437 D10). Props extend the root element's HTML attributes and the rest is
 // spread onto the root; a named slot is a prop of the same name, typed as the template types it.
-import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
+import { banner, coreImports, jsdoc, styleImports, styleInstall } from './model.mjs';
 
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
@@ -74,7 +74,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   lines.push(jsdoc(model.doc).trimEnd());
   lines.push(`export const ${names.component} = forwardRef<${element}, ${propsName}>(function ${names.component}(`);
   lines.push(`  { ${params.join(', ')} },`, `  ref,`, `) {`);
-  model.styles.forEach((style) => lines.push(`  installLightStyles(${style.scope}, ${style.sheet});`));
+  if (model.style) lines.push(`  ${styleInstall(model, 'installLightStyles')}`);
   lines.push(`  const rootRef = useRef<${element}>(null);`, `  useImperativeHandle(ref, () => rootRef.current as ${element});`);
   model.content.forEach(({ input, child, within }) =>
     lines.push(`  const content_${input} = useContent(children, { type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),

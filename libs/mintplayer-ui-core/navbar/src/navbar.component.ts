@@ -8,11 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'navbar',
-  styles: [
-    { scope: 'NAVBAR_SCOPE', sheet: 'navbarScopedStyles' },
-    // The dropdown panels are dropdown-menu panels.
-    { scope: 'DROPDOWN_MENU_SCOPE', sheet: 'dropdownMenuScopedStyles', from: '@mintplayer/ui-core/dropdown-menu' },
-  ],
+  style: { scope: 'navbar' },
   components: {
     navbar: {
       core: 'navbarCore',

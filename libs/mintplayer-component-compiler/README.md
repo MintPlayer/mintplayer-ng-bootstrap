@@ -108,6 +108,11 @@ the template of every front. A template without a manifest is still compiled on 
     root only: Angular `[style]`, React `style={reactStyle(bag)}`, Lit `styleMap`. It is refused on
     the root, `mp-host` and `mp-attrs` elements, which belong to the consumer. Every other style
     belongs in the scoped sheet.
+- **Scope.** A group names one scope in its manifest (`style: { scope: 'navbar' }`): the sheet
+  `<camelScope>ScopedStyles` is installed once per front, and the compiler stamps
+  `data-mps="<scope>"` on every native element of the group's templates and partials, and on the
+  Angular/Lit host. Composed children, slots, teleports and `<selectedcontent>` are not stamped.
+  A template that writes `data-mps` itself is refused, and a core's bags carry none.
 - **Control flow.**
   - `v-if` / `v-else-if` / `v-else` are supported.
   - `v-for="(item, i) in items"` is supported, with `:key`.

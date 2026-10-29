@@ -1,6 +1,8 @@
 // The tree-select's stylesheet (PRD #437). Rescoped at build time: every
-// compound gains [data-mps=tree-select]. The panel's tree rows are the
-// treeview's markup and take the treeview's sheet, which the group installs too.
+// compound gains [data-mps=tree-select]. It is the group's one sheet (S15): the
+// panel's tree rows are the treeview's markup, stamped with this group's scope,
+// so the treeview's rules are included here, their final-form selectors too.
+@use '../../../treeview/src/styles/treeview.scoped' with ($scope: tree-select);
 
 .tree-select {
   display: inline-block;

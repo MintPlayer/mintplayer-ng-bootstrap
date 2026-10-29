@@ -17,19 +17,20 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { GENERATOR, componentTags, groupPartials, readSource } from './templates/source.mjs';
+import { GENERATOR, componentTags, groupPartials, readSource, stampScope } from './templates/source.mjs';
 import { emitAngular } from './templates/emit-angular.mjs';
 import { emitReact } from './templates/emit-react.mjs';
 import { emitVue } from './templates/emit-vue.mjs';
 import { emitLit } from './templates/emit-lit.mjs';
-import { componentModels } from './components/model.mjs';
+import { componentModels, groupStyle } from './components/model.mjs';
 import { literalTypes } from './components/literal-types.mjs';
 import { emitAngularComponent } from './components/emit-angular.mjs';
 import { emitReactComponent } from './components/emit-react.mjs';
 import { emitVueComponent } from './components/emit-vue.mjs';
 import { emitLitComponent } from './components/emit-lit.mjs';
 
-export { readSource, groupPartials, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
+export { readSource, groupPartials, stampScope, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
+export { groupStyle } from './components/model.mjs';
 export { emitAngular, emitReact, emitVue, emitLit };
 export { emitAngularComponent, emitReactComponent, emitVueComponent, emitLitComponent, componentModels };
 
@@ -159,6 +160,9 @@ async function describeEntry(config, cwd, entry) {
   );
   const group = entry.manifest ? await loadManifest(entry.manifest) : null;
   if (group && group.group !== entry.entry) throw new Error(`${entry.manifest}: group "${group.group}" must match its entry "${entry.entry}"`);
+  // Every template of the group, partials included, renders under the group's scope (S15).
+  const scope = group ? groupStyle(group, entry.entry)?.scope : null;
+  if (scope) sources.forEach((src) => stampScope(src, scope));
   const partials = groupPartials(
     sources,
     group ? new Set(Object.entries(group.components).map(([element, manifest]) => manifest.template ?? `${element}.view.vue`)) : null,

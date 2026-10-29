@@ -84,10 +84,10 @@ describe('connectThemeToggle', () => {
     expect(v.liveText).toBe('Dark theme');
   });
 
-  it('scopes every node', () => {
+  it('leaves the scope to the compiler: no bag carries data-mps (S15)', () => {
     const v = view();
     for (const bag of [v.root, v.button, v.icon, v.path, v.description, v.live]) {
-      expect(bag['data-mps']).toBe('theme-toggle');
+      expect(bag['data-mps']).toBeUndefined();
     }
   });
 });

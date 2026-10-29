@@ -8,10 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'datepicker',
-  styles: [
-    { scope: 'CALENDAR_SCOPE', sheet: 'calendarScopedStyles', from: '@mintplayer/ui-core/calendar' },
-    { scope: 'DATEPICKER_SCOPE', sheet: 'datepickerScopedStyles' },
-  ],
+  style: { scope: 'datepicker' },
   components: {
     datepicker: {
       core: 'datepickerCore',

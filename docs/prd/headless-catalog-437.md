@@ -1,6 +1,6 @@
 # PRD — Headless core + four fronts for the whole catalog (#437)
 
-**Status:** Complete, pending the CI run (2026-10-29). Every component is a ui-core core plus four fronts; Waves A–D, the removal sweep (M7) and the docs (M8) have landed, and the local M9 verification passed. *As built:* the dropdown-menu, `mp-tab-control` and `mp-typeahead` stay hand-written (the dropdown-menu over a ui-core core; the other two slot-based or light-tier Lit); the file manager's toolbar is disabled until hydrated rather than usable with no JS. S4 is measured and S19 runs as a spec (both 2026-10-29). *Open:* S15 (group styles not built; every bag already carries `data-mps`). Verdicts are in §7; the plan file tracks each item.
+**Status:** Complete, pending the CI run (2026-10-29). Every component is a ui-core core plus four fronts; Waves A–D, the removal sweep (M7) and the docs (M8) have landed, and the local M9 verification passed. *As built:* the dropdown-menu, `mp-tab-control` and `mp-typeahead` stay hand-written (the dropdown-menu over a ui-core core; the other two slot-based or light-tier Lit); the file manager's toolbar is disabled until hydrated rather than usable with no JS. S4 is measured, S19 runs as a spec and S15 (one compiler-stamped scope per group) is built (all 2026-10-29). Verdicts are in §7; the plan file tracks each item.
 **CI round 1 (2026-10-29), as built:** the first PR run surfaced defects the local sweep could not, all fixed on the branch:
 - **Angular event replay shifts hydration paths.** platform-server inserts its `__jsaction_bootstrap` script after computing the body-relative paths of projected nodes rendered outside their host (an accordion tab's body, a tab page's body), so hydration landed one node off and the page stayed inert. `useScopedStyles` removes that script before any front hydrates (`repairEventReplayBodyPaths`); `e2e/hydration.spec.ts` pins it.
 - **`v-html` in Angular** compiles to `[innerHTML] | mpTrustedHtml`: the sanitiser dropped every core-produced `<svg>` (flags, file-type and treeview icons).
@@ -404,9 +404,19 @@ Each spike is small and throwaway, lives on a scratch branch or under `_spike-*/
     frame >= 250ms (a whole-list pass). Measuring found two defects: the suite first watched
     `.datatable-scroll`, which does not scroll in `fill` mode, and the datatable had no readiness mark, so a
     test could scroll before the core attached. The core now writes `data-mp-hydrated`.
-  - **S15: not built.** Compiler-stamped scopes would add nothing the bags do not already do: every bag
-    carries `data-mps`, and a group may already share sheets (the navbar group shares two across four
-    components). Per-component sheets stay. *Deviation.*
+  - **S15: met (2026-10-29).** A manifest names its group's one scope (`style: { scope: 'navbar' }`; the old
+    `styles: [{ scope, sheet }]` list is refused). The compiler stamps `data-mps="<scope>"` on every native
+    element of the group's templates and partials, and on the Angular/Lit host through `hostBag`; a template
+    that writes `data-mps` itself is a compile error. The 25 D10 cores no longer put `data-mps` in any bag
+    (523 `scoped()` wrappers removed). Markup one group borrows from another core is styled by that core's
+    sheet `@use`d into the group's sheet with the group's scope: tree-select ← treeview, navbar ←
+    dropdown-menu (both sheets take `$scope: … !default` for their final-form selectors), datepicker ←
+    calendar, datetime-picker ← calendar + timepicker. Before, a borrowed node carried the lending core's
+    scope from its bag and depended on the lender's sheet being installed by someone. The hand-written fronts
+    (accordion, input-group, shell, tab-control, tile-manager, typeahead, sparkline, dropdown-menu) keep
+    stamping their own scope; the accordion is not a D10 group, so the "accordion + tab" example does not
+    apply. Pinned by `ui-core/_conformance/no-scope-in-compiled-bags.spec.ts` and the compiler's
+    `templates.spec.ts` (stamping, refusals, idempotence over compiler-sfc's parse cache) and S19 fixture.
   - **S17:** the clean-tree build is CI's (every run regenerates the gitignored output from nothing). The
     cache hit is read from that run.
   - **S19: met (2026-10-29).** `libs/mintplayer-component-compiler/src/fixture.spec.ts` packs the plugin with

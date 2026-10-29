@@ -83,8 +83,6 @@ export interface PhoneInputOptions {
   readonly rich: boolean;
 }
 
-const scoped = (bag: PhoneBag): PhoneBag => ({ ...bag, 'data-mps': PHONE_INPUT_SCOPE });
-
 /** Lowercase ISO codes from an array or a comma-separated string. */
 export function countryCodes(value: readonly string[] | string | null | undefined): string[] {
   const list = typeof value === 'string' ? value.split(',') : (value ?? []);
@@ -136,14 +134,14 @@ export function connectPhoneInput(options: PhoneInputOptions): PhoneInputView {
   const value = phoneValue(options.rules, country, dialCode, options.digits);
 
   return {
-    root: scoped({ class: 'phone-input', ...hydratedAttr(options.hydrated) }),
-    group: scoped({ class: 'input-group' }),
-    select: scoped({
+    root: { class: 'phone-input', ...hydratedAttr(options.hydrated) },
+    group: { class: 'input-group' },
+    select: {
       class: 'form-select',
       id: `${id}-country`,
       disabled: options.disabled,
       'aria-label': options.countryLabel ?? 'Country',
-    }),
+    },
     options: countries.map((c) => ({
       key: c.iso2,
       bag: { value: c.iso2, selected: c.iso2 === country },
@@ -160,14 +158,14 @@ export function connectPhoneInput(options: PhoneInputOptions): PhoneInputView {
     listOnly: { 'data-list-only': '' },
     richLabel: { class: 'rich-label', 'data-list-only': '' },
     closedOnly: { 'data-closed-only': '' },
-    addon: scoped({ class: 'input-group-text addon', id: dialId }),
-    flag: scoped({ class: 'flag', 'aria-hidden': 'true' }),
+    addon: { class: 'input-group-text addon', id: dialId },
+    flag: { class: 'flag', 'aria-hidden': 'true' },
     flagHtml: flags?.[country] ?? '',
     // dir=ltr is required, not cosmetic: the plus sign is bidi-neutral, so in an
     // RTL paragraph it reorders and the code reads 32+ (PRD 12.6).
-    dial: scoped({ class: 'dial-code', dir: 'ltr' }),
+    dial: { class: 'dial-code', dir: 'ltr' },
     dialText: `+${dialCode}`,
-    input: scoped({
+    input: {
       class: 'form-control',
       id: `${id}-input`,
       type: 'tel',
@@ -185,9 +183,9 @@ export function connectPhoneInput(options: PhoneInputOptions): PhoneInputView {
       'aria-required': options.required ? 'true' : null,
       'aria-errormessage': error.control['aria-errormessage'],
       'aria-describedby': describedBy,
-    }),
-    hidden: options.hydrated && options.name ? scoped({ type: 'hidden', name: options.name, value: value ?? '', disabled: options.disabled }) : null,
+    },
+    hidden: options.hydrated && options.name ? { type: 'hidden', name: options.name, value: value ?? '', disabled: options.disabled } : null,
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: scoped(error.message.attrs), text: error.message.text } : { attrs: {}, text: '' },
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
   };
 }

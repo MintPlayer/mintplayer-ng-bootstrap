@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { compileComponents, emitAngular, emitLit, emitReact, emitVue, groupPartials, readSource } from '../index.mjs';
+import { compileComponents, emitAngular, emitLit, emitReact, emitVue, groupPartials, groupStyle, readSource, stampScope } from '../index.mjs';
 
 const sfc = (template: string, script = 'defineProps<{ bag: Record<string, string | null>; label?: string }>();\ndefineSlots<{ default?: () => unknown }>();') =>
   `<script setup lang="ts">\n${script}\n</script>\n\n<template>\n${template}\n</template>\n`;
@@ -52,6 +52,42 @@ describe('emitters', () => {
   it('React and Lit refuse to emit without a runtime module', () => {
     expect(() => emitReact(src)).toThrow(/runtime/);
     expect(() => emitLit(src)).toThrow(/runtime/);
+  });
+});
+
+describe('scope stamping (S15)', () => {
+  const stamped = () =>
+    stampScope(
+      read('<div mp-host v-bind="bag"><span v-if="label">{{ label }}</span><select v-bind="bag"><button><selectedcontent></selectedcontent></button></select><slot /></div>'),
+      'demo',
+    );
+
+  it('stamps every native element of the template, in every front', () => {
+    const count = (text: string) => (text.match(/data-mps="demo"/g) ?? []).length;
+    // div (the host), span, select, button; never <selectedcontent>, never a slot.
+    expect(count(emitVue(stamped()))).toBe(4);
+    expect(count(emitReact(stamped(), RUNTIME))).toBe(4);
+    // Angular and Lit drop the mp-host element: their host is stamped through hostBag.
+    expect(count(emitAngular(stamped()).text)).toBe(3);
+    expect(count(emitLit(stamped(), RUNTIME))).toBe(3);
+    expect(emitVue(stamped())).toMatch(/<selectedcontent>/);
+  });
+
+  it('is idempotent over the parser cache, and refuses a second scope', () => {
+    // Every stamped() above parsed the same text, so they shared one cached AST.
+    expect(() => stampScope(read('<div mp-host v-bind="bag"><span v-if="label">{{ label }}</span><select v-bind="bag"><button><selectedcontent></selectedcontent></button></select><slot /></div>'), 'other')).toThrow(/two groups/);
+  });
+
+  it('refuses a template that writes data-mps itself, static or bound', () => {
+    expect(() => stampScope(read('<div v-bind="bag" data-mps="x"></div>'), 'demo')).toThrow(/stamps data-mps/);
+    expect(() => stampScope(read('<div v-bind="bag" :data-mps="label"></div>'), 'demo')).toThrow(/stamps data-mps/);
+  });
+
+  it('takes one kebab-case literal scope per group and refuses the old styles list', () => {
+    expect(groupStyle({ style: { scope: 'tree-select' } }, 'x')).toEqual({ scope: 'tree-select', sheet: 'treeSelectScopedStyles', from: null });
+    expect(groupStyle({}, 'x')).toBeNull();
+    expect(() => groupStyle({ style: { scope: 'TREE_SCOPE' } }, 'x')).toThrow();
+    expect(() => groupStyle({ styles: [{ scope: 'A', sheet: 'a' }] }, 'x')).toThrow(/S15/);
   });
 });
 

@@ -172,7 +172,7 @@ export const datetimeTimePopupId = (id: string) => `${id}-popup-time`;
 export function connectDatetimePicker(options: DatetimePickerOptions): DatetimePickerView {
   const { id, hydrated, disabled, value } = options;
   const labels = { ...DEFAULT_DATETIME_PICKER_LABELS, ...options.labels };
-  const scoped = (bag: DatetimePickerBag): DatetimePickerBag => ({ ...bag, 'data-mps': DATETIME_PICKER_SCOPE });
+
   const error = errorFeedback(`${id}-error`, options.errorText, options.invalid);
   const iso = value ? isoDateTime(value) : '';
   const datePopupId = datetimeDatePopupId(id);
@@ -181,7 +181,7 @@ export function connectDatetimePicker(options: DatetimePickerOptions): DatetimeP
   const now = roundedNow(options.now, options.step);
   const trigger = (kind: 'date' | 'time', popupId: string, label: string) =>
     hydrated
-      ? scoped({
+      ? {
           type: 'button',
           class: `btn btn-outline-secondary datetime-picker-trigger datetime-picker-${kind}`,
           popovertarget: popupId,
@@ -190,14 +190,14 @@ export function connectDatetimePicker(options: DatetimePickerOptions): DatetimeP
           'aria-controls': popupId,
           'aria-label': label,
           disabled,
-        })
+        }
       : null;
   const footerButton = (kind: string, unavailable: boolean) =>
-    scoped({ type: 'button', class: `btn btn-primary btn-sm datetime-picker-${kind}`, disabled: !hydrated || unavailable });
+    ({ type: 'button', class: `btn btn-primary btn-sm datetime-picker-${kind}`, disabled: !hydrated || unavailable });
   return {
-    root: scoped({ class: ['mp-datetime-picker', disabled ? 'mp-datetime-picker-disabled' : null].filter(Boolean).join(' ') }),
-    group: scoped({ class: 'input-group' }),
-    input: scoped({
+    root: { class: ['mp-datetime-picker', disabled ? 'mp-datetime-picker-disabled' : null].filter(Boolean).join(' ') },
+    group: { class: 'input-group' },
+    input: {
       class: 'form-control datetime-picker-input',
       id: `${id}-input`,
       type: hydrated ? 'text' : 'datetime-local',
@@ -214,19 +214,19 @@ export function connectDatetimePicker(options: DatetimePickerOptions): DatetimeP
       'aria-required': options.required ? 'true' : null,
       'aria-label': options.label ?? labels.input,
       ...error.control,
-    }),
-    hidden: hydrated && options.name ? scoped({ type: 'hidden', name: options.name, value: iso, class: 'datetime-picker-value' }) : null,
+    },
+    hidden: hydrated && options.name ? { type: 'hidden', name: options.name, value: iso, class: 'datetime-picker-value' } : null,
     clear:
       hydrated && options.showClear && value && !disabled
-        ? scoped({ type: 'button', class: 'btn btn-outline-secondary datetime-picker-trigger datetime-picker-clear', 'aria-label': labels.clear })
+        ? { type: 'button', class: 'btn btn-outline-secondary datetime-picker-trigger datetime-picker-clear', 'aria-label': labels.clear }
         : null,
     dateTrigger: trigger('date', datePopupId, labels.dateButton),
     timeTrigger: trigger('time', timePopupId, labels.timeButton),
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: { ...error.message.attrs, 'data-mps': DATETIME_PICKER_SCOPE }, text: error.message.text } : { attrs: {}, text: '' },
-    live: scoped({ class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
+    live: { class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
     liveText: options.announcement,
-    datePopup: scoped({ class: 'datetime-picker-popup datetime-picker-popup-date', id: datePopupId, popover: 'auto', role: 'dialog', 'aria-label': labels.dateButton }),
+    datePopup: { class: 'datetime-picker-popup datetime-picker-popup-date', id: datePopupId, popover: 'auto', role: 'dialog', 'aria-label': labels.dateButton },
     calendar: connectCalendar({
       id: `${id}-calendar`,
       month: options.month,
@@ -241,10 +241,10 @@ export function connectDatetimePicker(options: DatetimePickerOptions): DatetimeP
       hydrated,
       labels: options.calendarLabels,
     }),
-    dateFooter: scoped({ class: 'datetime-picker-footer' }),
+    dateFooter: { class: 'datetime-picker-footer' },
     today: footerButton('today', isDateDisabled(options.now, options)),
     todayText: labels.today,
-    timePopup: scoped({ class: 'datetime-picker-popup datetime-picker-popup-time', id: timePopupId, popover: 'auto', role: 'dialog', 'aria-label': labels.timeButton }),
+    timePopup: { class: 'datetime-picker-popup datetime-picker-popup-time', id: timePopupId, popover: 'auto', role: 'dialog', 'aria-label': labels.timeButton },
     timeList: connectTimeList({
       id,
       selected: minutesOfDay(value),
@@ -258,7 +258,7 @@ export function connectDatetimePicker(options: DatetimePickerOptions): DatetimeP
       label: null,
       labels: { list: labels.list },
     }),
-    timeFooter: scoped({ class: 'datetime-picker-footer' }),
+    timeFooter: { class: 'datetime-picker-footer' },
     now: footerButton('now', isTimeDisabled(minutesOfDay(now)!, bounds.minMinutes, bounds.maxMinutes)),
     nowText: labels.now,
   };

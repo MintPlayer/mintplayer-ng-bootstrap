@@ -24,9 +24,8 @@ export const DEFAULT_MAX_DEPTH = 32;
 
 export type QueryBuilderBag = CoreBag;
 
-const scoped = (bag: QueryBuilderBag): QueryBuilderBag => ({ ...bag, 'data-mps': QUERY_BUILDER_SCOPE });
-const BLANK: QueryBuilderBag = scoped({});
-const LIST: QueryBuilderBag = scoped({ class: 'qb-rows' });
+const BLANK: QueryBuilderBag = {};
+const LIST: QueryBuilderBag = { class: 'qb-rows' };
 
 /** Messages with the consumer's overrides merged per key (operators too). */
 export function mergeMessages(own: Partial<QueryBuilderMessages> | null | undefined): QueryBuilderMessages {
@@ -351,16 +350,16 @@ const EMPTY_SUBQUERY: QueryBuilderSubqueryRow = { header: BLANK, fieldLabel: '',
 const option = (key: string, value: string, label: string, selected: boolean): QueryBuilderOption => ({
   key,
   label,
-  bag: scoped({ value, selected }),
+  bag: { value, selected },
 });
 
 /** The built-in editor for a field and operator, or the slot for a custom one. */
 function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): QueryBuilderEditor {
   const shape = valueShapeFor(node.operator);
-  const wrap = scoped({ class: 'qb-value' });
+  const wrap = { class: 'qb-value' };
   const label = field.label;
   const act = (parse: ValueParse, index: number, bag: QueryBuilderBag): QueryBuilderBag =>
-    scoped({ ...bag, 'data-qb-act': 'value', 'data-qb-id': node.id, 'data-qb-parse': parse, 'data-qb-index': index, disabled: o.disabled });
+    ({ ...bag, 'data-qb-act': 'value', 'data-qb-id': node.id, 'data-qb-parse': parse, 'data-qb-index': index, disabled: o.disabled });
   const draft = (index: number, formatted: string): string => o.drafts[inputKey(node.id, node.field, node.operator, index)] ?? formatted;
   const text = (
     index: number,
@@ -385,9 +384,9 @@ function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): Qu
     ...EMPTY_EDITOR,
     isInputs: true,
     wrap,
-    inputBox: scoped({ class: tuple ? 'qb-editor-tuple' : 'qb-editor-inputs' }),
+    inputBox: { class: tuple ? 'qb-editor-tuple' : 'qb-editor-inputs' },
     inputs: list,
-    sep: scoped({ class: 'qb-editor-tuple-sep', 'aria-hidden': 'true' }),
+    sep: { class: 'qb-editor-tuple-sep', 'aria-hidden': 'true' },
   });
 
   if (field.editor === 'custom') {
@@ -446,12 +445,12 @@ function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): Qu
       ...EMPTY_EDITOR,
       isChips: true,
       wrap,
-      chipBox: scoped({ class: 'qb-editor-chip-input' }),
+      chipBox: { class: 'qb-editor-chip-input' },
       chips: values.map((v, k) => ({
         key: `${k}:${String(v)}`,
         label: String(v),
-        bag: scoped({ class: 'qb-editor-chip' }),
-        remove: scoped({
+        bag: { class: 'qb-editor-chip' },
+        remove: {
           type: 'button',
           class: 'qb-editor-chip-remove',
           'aria-label': `Remove ${String(v)}`,
@@ -459,7 +458,7 @@ function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): Qu
           'data-qb-id': node.id,
           'data-qb-index': k,
           disabled: o.disabled,
-        }),
+        },
       })),
       chipAdd: act(parse, 0, {
         type: 'text',
@@ -503,7 +502,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
   const disabled = o.disabled;
   const operatorLabel = (op: Operator): string => m.operators[op] ?? op;
   const button = (cls: string, act: string, id: string, extra: QueryBuilderBag = {}): QueryBuilderBag =>
-    scoped({ type: 'button', class: cls, 'data-qb-act': act, 'data-qb-id': id, disabled, ...extra });
+    ({ type: 'button', class: cls, 'data-qb-act': act, 'data-qb-id': id, disabled, ...extra });
 
   const row = (
     key: string,
@@ -513,7 +512,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
   ): QueryBuilderNode => ({
     key,
     kind,
-    item: scoped({ class: `qb-row qb-row-${kind}`, ...item }),
+    item: { class: `qb-row qb-row-${kind}`, ...item },
     group: EMPTY_GROUP,
     condition: EMPTY_CONDITION,
     subquery: EMPTY_SUBQUERY,
@@ -526,18 +525,18 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
 
   const dropRow = (parent: Group, index: number, entity: string): QueryBuilderNode =>
     row(`${parent.id}-drop-${index}`, 'drop', { 'aria-hidden': 'true' }, {
-      note: scoped({
+      note: {
         class: 'qb-drop-slot',
         'data-drop-slot': '',
         'data-parent-id': parent.id,
         'data-index': index,
         'data-qb-root': `entity:${entity}`,
-      }),
+      },
     });
 
   const groupNode = (group: Group, entity: string, depth: number, isRoot: boolean): QueryBuilderNode => {
     if (depth > o.maxDepth) {
-      return row(`${group.id}-deep`, 'deep', {}, { note: scoped({ class: 'qb-too-deep', role: 'alert' }), text: m.treeTooDeep });
+      return row(`${group.id}-deep`, 'deep', {}, { note: { class: 'qb-too-deep', role: 'alert' }, text: m.treeTooDeep });
     }
     const logic = group.logic === 'and' ? 'AND' : 'OR';
     const hasRelation = (entityOf(o.schema, entity)?.fields ?? []).some((f) => f.type === 'relation' && !!f.targetEntity);
@@ -549,31 +548,31 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
     const slot = (index: number): QueryBuilderNode[] => (o.dragging ? [dropRow(group, index, entity)] : []);
     const empty = o.dragging
       ? row(`${group.id}-empty`, 'drop', { 'aria-hidden': 'true' }, {
-          note: scoped({
+          note: {
             class: 'qb-drop-slot qb-drop-slot-placeholder',
             'data-drop-slot': '',
             'data-parent-id': group.id,
             'data-index': 0,
             'data-qb-root': `entity:${entity}`,
-          }),
+          },
           text: m.dropHerePlaceholder,
         })
-      : row(`${group.id}-empty`, 'empty', {}, { note: scoped({ class: 'qb-empty' }), text: m.emptyGroup });
+      : row(`${group.id}-empty`, 'empty', {}, { note: { class: 'qb-empty' }, text: m.emptyGroup });
     return row(group.id, 'group', { 'data-row-id': group.id }, {
       children:
         group.children.length === 0
           ? [empty]
           : [...slot(0), ...group.children.flatMap((child, k) => [childNode(child, entity, inner), ...slot(k + 1)])],
       group: {
-        header: scoped({
+        header: {
           class: 'qb-group-header',
           role: 'group',
           'aria-label': depth > 0 ? fillMessage(m.nestedGroupName, { logic, level: depth + 1 }) : fillMessage(m.groupName, { logic }),
-        }),
-        logic: scoped({ class: 'qb-logic-toggle btn-group btn-group-sm', role: 'group', 'aria-label': m.groupLogic }),
+        },
+        logic: { class: 'qb-logic-toggle btn-group btn-group-sm', role: 'group', 'aria-label': m.groupLogic },
         and: logicButton('and'),
         or: logicButton('or'),
-        actions: scoped({ class: 'qb-group-actions' }),
+        actions: { class: 'qb-group-actions' },
         addCondition: button('btn btn-sm btn-outline-secondary qb-add-condition', 'add-condition', group.id),
         addGroup: button('btn btn-sm btn-outline-secondary qb-add-group', 'add-group', group.id),
         canAddSubquery: hasRelation,
@@ -591,7 +590,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
     const operators = field ? operatorsForType(field.type) : [];
     const editor = field && valueShapeFor(node.operator) !== 'null' ? editorFor(o, node, field) : EMPTY_EDITOR;
     const select = (cls: string, act: string, ariaLabel: string, value: string, extra: QueryBuilderBag = {}): QueryBuilderBag =>
-      scoped({
+      ({
         class: `form-select form-select-sm ${cls}`,
         'data-qb-act': act,
         'data-qb-id': node.id,
@@ -602,14 +601,14 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
       });
     return row(node.id, 'condition', { 'data-row-id': node.id }, {
         condition: {
-          box: scoped({
+          box: {
             class: 'qb-condition',
             tabindex: 0,
             role: 'group',
             // The row is a tab stop (Alt+Up/Down reorder), so it needs a role
             // and a name; the name tracks the current field and operator.
             'aria-label': `${field?.label ?? node.field} ${operatorLabel(node.operator)}`,
-          }),
+          },
           handle: button('qb-drag-handle', 'drag', node.id, { 'aria-label': m.reorderHint, title: m.reorderHint }),
           field: select('qb-field-select', 'field', m.field, node.field),
           fieldValue: node.field,
@@ -638,12 +637,12 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
     return row(node.id, 'subquery', { 'data-row-id': node.id }, {
         children: [groupNode(node.subQuery, subqueryEntity(o.schema, entity, node), depth + 1, true)],
         subquery: {
-          header: scoped({
+          header: {
             class: 'qb-subquery-header',
             tabindex: 0,
             role: 'group',
             'aria-label': `${fieldLabel} ${operatorLabel(node.operator)}${target ? ` ${target}` : ''}`,
-          }),
+          },
           fieldLabel,
           operatorLabel: operatorLabel(node.operator),
           target,
@@ -667,7 +666,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
   const projectable = currentEntity?.fields.filter((f) => f.type !== 'relation') ?? [];
   const toolbar = o.multiEntityPickerEnabled && o.schema.length > 1;
   const sortSelect = (cls: string, act: string, index: number, ariaLabel: string, value: string): QueryBuilderBag =>
-    scoped({
+    ({
       class: `form-select form-select-sm ${cls}`,
       'data-qb-act': act,
       'data-qb-index': index,
@@ -686,40 +685,40 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
   }
 
   return {
-    root: scoped({ class: 'query-builder', 'data-qb-instance': o.id, 'aria-label': o.label }),
+    root: { class: 'query-builder', 'data-qb-instance': o.id, 'aria-label': o.label },
     text: m,
 
     toolbar,
-    toolbarBox: scoped({ class: 'qb-toolbar' }),
-    toolbarLabel: scoped({ class: 'qb-toolbar-label' }),
-    entity: scoped({
+    toolbarBox: { class: 'qb-toolbar' },
+    toolbarLabel: { class: 'qb-toolbar-label' },
+    entity: {
       class: 'form-select form-select-sm qb-entity-picker',
       'data-qb-act': 'entity',
       'aria-label': m.entity,
       'data-qb-value': JSON.stringify([o.rootEntity]),
       disabled,
-    }),
+    },
     entityValue: o.rootEntity,
     entities: o.schema.map((e) => option(e.name, e.name, e.label, e.name === o.rootEntity)),
     projection: projectable.length > 0,
-    projectionBox: scoped({ class: 'qb-toolbar-section qb-field-projection', role: 'group', 'aria-label': m.columns }),
+    projectionBox: { class: 'qb-toolbar-section qb-field-projection', role: 'group', 'aria-label': m.columns },
     projections: projectable.map((f) => ({
       key: f.name,
       label: f.label,
-      box: scoped({ class: 'qb-field-checkbox form-check-label' }),
-      input: scoped({
+      box: { class: 'qb-field-checkbox form-check-label' },
+      input: {
         type: 'checkbox',
         class: 'form-check-input',
         value: f.name,
         checked: o.selectedFields.includes(f.name),
         'data-qb-act': 'project',
         disabled,
-      }),
+      },
     })),
-    sortBox: scoped({ class: 'qb-toolbar-section qb-sort-by', role: 'group', 'aria-label': m.sortBy }),
+    sortBox: { class: 'qb-toolbar-section qb-sort-by', role: 'group', 'aria-label': m.sortBy },
     sorts: o.sortBy.map((s, i) => ({
       key: `${i}`,
-      box: scoped({ class: 'qb-sort-row' }),
+      box: { class: 'qb-sort-row' },
       field: sortSelect('qb-sort-field', 'sort-field', i, fillMessage(m.sortField, { n: i + 1 }), s.field),
       fieldValue: s.field,
       fields: [
@@ -729,7 +728,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
       direction: sortSelect('qb-sort-direction', 'sort-direction', i, fillMessage(m.sortDirection, { n: i + 1 }), s.direction),
       directionValue: s.direction,
       directions: [option('asc', 'asc', m.ascending, s.direction === 'asc'), option('desc', 'desc', m.descending, s.direction === 'desc')],
-      remove: scoped({
+      remove: {
         type: 'button',
         class: 'btn btn-sm btn-link qb-sort-remove',
         'data-qb-act': 'sort-remove',
@@ -737,51 +736,51 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
         'aria-label': fillMessage(m.removeSort, { n: i + 1 }),
         title: fillMessage(m.removeSort, { n: i + 1 }),
         disabled,
-      }),
+      },
     })),
-    sortAdd: scoped({ type: 'button', class: 'btn btn-sm btn-outline-secondary qb-sort-add', 'data-qb-act': 'sort-add', disabled }),
+    sortAdd: { type: 'button', class: 'btn btn-sm btn-outline-secondary qb-sort-add', 'data-qb-act': 'sort-add', disabled },
 
     saved: o.showSavedQueries,
-    savedBox: scoped({ class: 'qb-saved' }),
-    savedList: scoped({ class: 'qb-saved-list' }),
-    savedEmpty: scoped({ class: 'qb-saved-empty' }),
+    savedBox: { class: 'qb-saved' },
+    savedList: { class: 'qb-saved-list' },
+    savedEmpty: { class: 'qb-saved-empty' },
     savedQueries: o.savedQueries.map((sq) => ({
       key: sq.name,
-      box: scoped({ class: 'qb-saved-row', 'data-name': sq.name }),
-      load: scoped({ type: 'button', class: 'btn btn-sm btn-outline-primary qb-saved-load', 'data-qb-act': 'load', 'data-name': sq.name }),
+      box: { class: 'qb-saved-row', 'data-name': sq.name },
+      load: { type: 'button', class: 'btn btn-sm btn-outline-primary qb-saved-load', 'data-qb-act': 'load', 'data-name': sq.name },
       loadText: `${m.loadQuery}: ${sq.name}`,
-      remove: scoped({
+      remove: {
         type: 'button',
         class: 'btn btn-sm btn-outline-danger qb-saved-delete',
         'data-qb-act': 'delete',
         'data-name': sq.name,
         'aria-label': fillMessage(m.deleteSavedQuery, { name: sq.name }),
-      }),
+      },
     })),
-    savedNew: scoped({ class: 'qb-saved-new' }),
-    savedName: scoped({
+    savedNew: { class: 'qb-saved-new' },
+    savedName: {
       type: 'text',
       class: 'form-control form-control-sm qb-saved-name',
       placeholder: m.saveCurrentAs,
       'aria-label': m.savedQueryName,
       value: o.saveDraft,
       'data-qb-act': 'save-name',
-    }),
-    savedSave: scoped({
+    },
+    savedSave: {
       type: 'button',
       class: 'btn btn-sm btn-primary qb-saved-save',
       'data-qb-act': 'save',
       disabled: o.saveDraft.trim() === '',
-    }),
+    },
 
     preview: o.showPreview,
-    previewBox: scoped({ class: 'qb-preview' }),
+    previewBox: { class: 'qb-preview' },
     previewText: preview,
 
     list: LIST,
     tree: groupNode(rootGroup, o.rootEntity, 0, true),
-    subqueryField: scoped({ class: 'qb-subquery-field' }),
-    subqueryOperator: scoped({ class: 'qb-subquery-operator' }),
-    subqueryTarget: scoped({ class: 'qb-subquery-target' }),
+    subqueryField: { class: 'qb-subquery-field' },
+    subqueryOperator: { class: 'qb-subquery-operator' },
+    subqueryTarget: { class: 'qb-subquery-target' },
   };
 }

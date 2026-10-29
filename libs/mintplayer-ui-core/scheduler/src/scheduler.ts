@@ -46,8 +46,6 @@ export const UNASSIGNED_ROW_ID = '__mp-unassigned__';
 export type SchedulerBag = Record<string, string | number | boolean | null>;
 export type SchedulerStyle = Record<string, string>;
 
-const scoped = (bag: SchedulerBag): SchedulerBag => ({ ...bag, 'data-mps': SCHEDULER_SCOPE });
-
 export type RowAction = 'rename-resource' | 'add-resource' | 'add-group' | 'set-resource-color' | 'delete-resource';
 
 /** The built-in event editor's working copy. */
@@ -168,8 +166,8 @@ function resizeHandles(s: SchedulerState, part: SchedulerEventPart, [startClass,
   const permissions = s.resolvedPermissions;
   const handle = (position: string, edge: 'start' | 'end'): SchedulerHandle => ({
     key: edge,
-    bag: scoped({ class: `resize-handle ${position}`, 'data-handle': edge }),
-    glyph: scoped({ class: 'resize-glyph', 'aria-hidden': 'true' }),
+    bag: { class: `resize-handle ${position}`, 'data-handle': edge },
+    glyph: { class: 'resize-glyph', 'aria-hidden': 'true' },
   });
   return [
     ...(part.isStart && resolveResizeEdge('start', { permissions, event: part.event }) ? [handle(startClass, 'start')] : []),
@@ -197,7 +195,7 @@ export interface SchedulerPreviewBox {
 
 function eventButton(s: SchedulerState, event: SchedulerEvent, className: string, resourceTitle: string | null): SchedulerBag {
   const selected = s.selectedEvent?.id === event.id;
-  return scoped({
+  return {
     class: `${className}${selected ? ' selected' : ''}`,
     role: 'button',
     tabindex: 0,
@@ -208,7 +206,7 @@ function eventButton(s: SchedulerState, event: SchedulerEvent, className: string
     // The event's own times, as the cells carry theirs.
     'data-start': event.start.toISOString(),
     'data-end': event.end.toISOString(),
-  });
+  };
 }
 
 /* ----------------------------------------------------------------------- */
@@ -274,18 +272,17 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
   const now = ui.now !== null && options.nowIndicator ? new Date(ui.now) : null;
 
   return {
-    headerRow: scoped({ class: 'scheduler-day-headers', role: 'row' }),
-    gutterSpace: scoped({ class: 'scheduler-time-gutter-space', role: 'presentation' }),
-    headers: days.map((day) => {
+    headerRow: { class: 'scheduler-day-headers', role: 'row' },
+    gutterSpace: { class: 'scheduler-time-gutter-space', role: 'presentation' },
+    headers: days.map((day): SchedulerTimeGrid['headers'][number] => {
       const today = dateService.isToday(day);
       return {
         key: toDayKey(day),
-        bag: scoped({ class: `scheduler-day-header${today ? ' today' : ''}`, role: 'columnheader', 'aria-current': today ? 'date' : null }),
-        nameBag: scoped({ class: 'day-name' }),
+        bag: { class: `scheduler-day-header${today ? ' today' : ''}`, role: 'columnheader', 'aria-current': today ? 'date' : null },
+        nameBag: { class: 'day-name' },
         name: dateService.getDayName(day, options.locale),
         // Week view: the number drills into the day (audit M9). Day view: it is just the date.
-        numberBag: scoped(
-          week
+        numberBag: week
             ? {
                 class: 'day-number',
                 role: 'button',
@@ -294,20 +291,19 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
                 'data-date': toDayKey(day),
               }
             : { class: 'day-number' },
-        ),
         number: String(day.getDate()),
-        monthYearBag: week ? null : scoped({ class: 'month-year' }),
+        monthYearBag: week ? null : { class: 'month-year' },
         monthYear: week ? '' : dateService.formatDate(day, options.locale, { month: 'long', year: 'numeric' }),
       };
     }),
-    grid: scoped({ class: 'scheduler-time-grid', role: 'presentation' }),
-    gutter: scoped({ class: 'scheduler-time-gutter', role: 'presentation' }),
+    grid: { class: 'scheduler-time-grid', role: 'presentation' },
+    gutter: { class: 'scheduler-time-gutter', role: 'presentation' },
     labels: slots.map((slot, i) => ({
       key: String(i),
-      bag: scoped({ class: 'scheduler-time-slot-label', role: 'presentation' }),
+      bag: { class: 'scheduler-time-slot-label', role: 'presentation' },
       text: dateService.formatTime(slot.start, options.timeFormat, options.locale),
     })),
-    days: scoped({ class: 'scheduler-days-container', role: 'presentation' }),
+    days: { class: 'scheduler-days-container', role: 'presentation' },
     columns: days.map((day, dayIndex) => {
       const boxes = laidOut
         .filter(({ part }) => part.event && dateService.isSameDay(day, part.start))
@@ -323,10 +319,10 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
               '--scheduler-event-left': `${(trackIndex / totalTracks) * 100}%`,
               '--scheduler-event-width': `${(colspan / totalTracks) * 100}%`,
             },
-            content: scoped({ class: 'event-content' }),
-            titleBag: scoped({ class: 'event-title' }),
+            content: { class: 'event-content' },
+            titleBag: { class: 'event-title' },
             title: part.event.title,
-            timeBag: scoped({ class: 'event-time' }),
+            timeBag: { class: 'event-time' },
             time: dateService.formatTimeRange(part.start, part.end, options.timeFormat, options.locale),
             handles: resizeHandles(s, part, ['top', 'bottom']),
           };
@@ -338,9 +334,9 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
           if (!geometry) return null;
           return {
             key: `preview-${i}`,
-            bag: scoped({
+            bag: {
               class: `scheduler-event preview${part.isStart ? '' : ' preview-continues-before'}${part.isEnd ? '' : ' preview-continues-after'}`,
-            }),
+            },
             style: { '--scheduler-event-top': String(geometry.top), '--scheduler-event-height': String(geometry.height) },
           };
         })
@@ -348,19 +344,19 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
       const minutes = now && dateService.isSameDay(day, now) ? (now.getTime() - new Date(now).setHours(0, 0, 0, 0)) / 60000 : null;
       return {
         key: toDayKey(day),
-        bag: scoped({
+        bag: {
           class: 'scheduler-day-column',
           role: 'row',
           'data-day-index': week ? dayIndex : null,
           'aria-label': week ? dateService.formatDateWithWeekday(day, options.locale) : null,
           'aria-rowindex': week ? dayIndex + 2 : null,
-        }),
+        },
         slots: cells[dayIndex].map((slot, slotIndex) => {
           const isFocused = anyFocused ? slot.start.getTime() === focused!.start.getTime() : dayIndex === 0 && slotIndex === 0;
           const selected = isSlotInSelection(slot, s, null);
           return {
             key: String(slotIndex),
-            bag: scoped({
+            bag: {
               class: `scheduler-time-slot${selected ? ' selected' : ''}${greyed(slot) ? ' greyed' : ''}`,
               role: 'gridcell',
               tabindex: isFocused ? 0 : -1,
@@ -372,16 +368,16 @@ function timeGridModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdEvent:
               'data-slot-index': slotIndex,
               'data-start': slot.start.toISOString(),
               'data-end': slot.end.toISOString(),
-            }),
+            },
           };
         }),
-        events: scoped({ class: 'scheduler-events-container', role: 'gridcell' }),
+        events: { class: 'scheduler-events-container', role: 'gridcell' },
         boxes,
         previews,
         now:
           minutes !== null
             ? {
-                bag: scoped({ class: 'scheduler-now-indicator', 'aria-hidden': 'true' }),
+                bag: { class: 'scheduler-now-indicator', 'aria-hidden': 'true' },
                 style: { '--scheduler-now-top': String(minutes / ((options.slotDuration ?? 1800) / 60)) },
               }
             : null,
@@ -442,16 +438,16 @@ function monthModel(id: string, s: SchedulerState, kbdEvent: string): SchedulerM
     toDayKey(all.find((d) => dateService.isToday(d) && inMonth(d)) ?? all.find(inMonth) ?? all[0]);
 
   return {
-    headerRow: scoped({ class: 'scheduler-day-headers', role: 'row' }),
+    headerRow: { class: 'scheduler-day-headers', role: 'row' },
     headers: weeks[0].map((day) => ({
       key: String(day.getDay()),
-      bag: scoped({ class: 'scheduler-day-header', role: 'columnheader' }),
+      bag: { class: 'scheduler-day-header', role: 'columnheader' },
       text: dateService.getDayName(day, options.locale),
     })),
-    grid: scoped({ class: 'scheduler-month-grid', role: 'presentation' }),
+    grid: { class: 'scheduler-month-grid', role: 'presentation' },
     weeks: weeks.map((week) => ({
       key: toDayKey(week[0]),
-      bag: scoped({ class: 'scheduler-month-week', role: 'row' }),
+      bag: { class: 'scheduler-month-week', role: 'row' },
       days: week.map((day) => {
         const key = toDayKey(day);
         const today = dateService.isToday(day);
@@ -460,17 +456,17 @@ function monthModel(id: string, s: SchedulerState, kbdEvent: string): SchedulerM
         const hidden = dayEvents.length - visible.length;
         return {
           key,
-          bag: scoped({
+          bag: {
             class: `scheduler-month-day${inMonth(day) ? '' : ' other-month'}${today ? ' today' : ''}`,
             role: 'gridcell',
             tabindex: key === rovingKey ? 0 : -1,
             id: `${id}-cell-m-${key}`,
             'data-date': key,
             'aria-current': today ? 'date' : null,
-          }),
-          numberBag: scoped({ class: 'day-number' }),
+          },
+          numberBag: { class: 'day-number' },
           number: String(day.getDate()),
-          events: scoped({ class: 'month-events' }),
+          events: { class: 'month-events' },
           items: visible.map((event) => ({
             key: event.id,
             bag: { ...eventButton(s, event, 'scheduler-month-event', null), 'aria-describedby': kbdEvent },
@@ -480,7 +476,7 @@ function monthModel(id: string, s: SchedulerState, kbdEvent: string): SchedulerM
           more:
             hidden > 0
               ? {
-                  bag: scoped({ class: 'scheduler-more-link', role: 'button', tabindex: 0, 'data-date': key }),
+                  bag: { class: 'scheduler-more-link', role: 'button', tabindex: 0, 'data-date': key },
                   text: schedulerMessage(options, 'moreEvents', { count: hidden }),
                 }
               : null,
@@ -516,7 +512,7 @@ function yearModel(id: string, s: SchedulerState): SchedulerYear {
   const focusedKey = s.focusedDate ? monthKey(s.focusedDate) : null;
   const rovingKey = focusedKey && months.some((m) => monthKey(m) === focusedKey) ? focusedKey : monthKey(months[0]);
   return {
-    grid: scoped({ class: 'scheduler-year-grid', role: 'row' }),
+    grid: { class: 'scheduler-year-grid', role: 'row' },
     months: months.map((month) => {
       const key = monthKey(month);
       const weeks = dateService.getMonthWeeks(month, firstDayOfWeek(options));
@@ -533,7 +529,7 @@ function yearModel(id: string, s: SchedulerState): SchedulerYear {
       const name = dateService.getMonthName(month, options.locale);
       return {
         key,
-        bag: scoped({
+        bag: {
           class: 'scheduler-year-month',
           role: 'gridcell',
           tabindex: key === rovingKey ? 0 : -1,
@@ -544,26 +540,26 @@ function yearModel(id: string, s: SchedulerState): SchedulerYear {
             count: monthEvents.length,
             events: monthEvents.length === 1 ? messages.eventSingular : messages.eventPlural,
           }),
-        }),
-        headerBag: scoped({ class: 'scheduler-year-month-header', role: 'button', tabindex: 0, 'data-month': month.toISOString() }),
+        },
+        headerBag: { class: 'scheduler-year-month-header', role: 'button', tabindex: 0, 'data-month': month.toISOString() },
         header: name,
-        mini: scoped({ class: 'scheduler-mini-month' }),
+        mini: { class: 'scheduler-mini-month' },
         dayHeaders: weeks[0].map((day) => ({
           key: String(day.getDay()),
-          bag: scoped({ class: 'scheduler-mini-day header' }),
+          bag: { class: 'scheduler-mini-day header' },
           text: dateService.getDayName(day, options.locale, 'narrow'),
         })),
         days: weeks.flat().map((day) => {
           const today = dateService.isToday(day);
           return {
             key: toDayKey(day),
-            bag: scoped({
+            bag: {
               class: `scheduler-mini-day${dateService.isSameMonth(day, month) ? '' : ' other-month'}${today ? ' today' : ''}${
                 withEvents.has(toDayKey(day)) ? ' has-events' : ''
               }`,
               'data-date': day.toISOString(),
               'aria-current': today ? 'date' : null,
-            }),
+            },
             text: String(day.getDate()),
           };
         }),
@@ -684,7 +680,7 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
       const greyed = dropRow === key && slot.start < s.previewEvent!.end && slot.end > s.previewEvent!.start;
       return {
         key: String(slot.start.getTime()),
-        bag: scoped({
+        bag: {
           class: `scheduler-timeline-slot${selected ? ' selected' : ''}${greyed ? ' greyed' : ''}`,
           role: 'gridcell',
           'aria-colindex': colIndex,
@@ -696,25 +692,25 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
           'data-unassigned': item ? null : 'true',
           'data-start': slot.start.toISOString(),
           'data-end': slot.end.toISOString(),
-        }),
+        },
       };
     });
 
     return {
       key,
-      bag: scoped({
+      bag: {
         class: `scheduler-timeline-row${group ? ' group' : ''}${item ? '' : ' unassigned'}${dropRow === key ? ' drop-target' : ''}`,
         role: 'row',
         'aria-rowindex': rowIndex,
         'data-row-id': key,
-      }),
+      },
       style: { '--scheduler-timeline-tracks': String(tracks) },
-      cell: scoped({ class: 'scheduler-resource-cell', role: 'rowheader', 'aria-colindex': 1 }),
+      cell: { class: 'scheduler-resource-cell', role: 'rowheader', 'aria-colindex': 1 },
       cellStyle: { '--scheduler-resource-depth': String(depth) },
       menu:
         item && actions.length > 0
           ? {
-              bag: scoped({
+              bag: {
                 class: 'scheduler-row-menu-button',
                 type: 'button',
                 'aria-label': formatMessage(messages.rowMenuLabel, { title }),
@@ -724,44 +720,44 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
                 tabindex: -1,
                 'data-action': 'row-menu',
                 'data-resource-id': item.id,
-              }),
+              },
               style:
                 swatch && readable
                   ? { '--scheduler-row-swatch': swatch, '--scheduler-row-swatch-fg': readable }
                   : {},
-              glyph: scoped({ class: 'action-glyph', 'aria-hidden': 'true' }),
+              glyph: { class: 'action-glyph', 'aria-hidden': 'true' },
             }
           : null,
       toggle: group
         ? {
-            bag: scoped({
+            bag: {
               class: 'expand-toggle',
               type: 'button',
               'aria-expanded': String(!collapsed),
               'aria-label': formatMessage(messages[collapsed ? 'expandGroup' : 'collapseGroup'], { title }),
               'data-action': 'toggle-group',
               'data-group-id': item!.id,
-            }),
+            },
             text: collapsed ? '▶' : '▼',
           }
         : null,
-      titleBag: scoped({ class: 'resource-title', title, 'data-resource-id': item && can(s, 'updateResource') ? item.id : null }),
+      titleBag: { class: 'resource-title', title, 'data-resource-id': item && can(s, 'updateResource') ? item.id : null },
       title,
       rename:
         item && ui.renaming === item.id
           ? {
-              bag: scoped({
+              bag: {
                 class: 'form-control form-control-sm rename-input',
                 type: 'text',
                 'aria-label': formatMessage(messages.renameResourceLabel, { title }),
-              }),
+              },
               value: title,
             }
           : null,
-      slots: scoped({ class: 'scheduler-timeline-slots', role: 'presentation' }),
+      slots: { class: 'scheduler-timeline-slots', role: 'presentation' },
       cells,
       events: hasEvents
-        ? scoped({ class: 'scheduler-timeline-events', role: 'gridcell', 'aria-colindex': 2, 'aria-colspan': column - 2 })
+        ? { class: 'scheduler-timeline-events', role: 'gridcell', 'aria-colindex': 2, 'aria-colspan': column - 2 }
         : null,
       boxes: laidOut
         .filter(({ part }) => part.event)
@@ -775,8 +771,8 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
               ...horizontal(event.start.getTime(), event.end.getTime()),
               '--scheduler-event-track': String(trackIndex),
             },
-            content: scoped({ class: 'event-content' }),
-            titleBag: scoped({ class: 'event-title' }),
+            content: { class: 'event-content' },
+            titleBag: { class: 'event-title' },
             title: event.title,
             timeBag: null,
             time: '',
@@ -792,7 +788,7 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
           ? [
               {
                 key: 'preview',
-                bag: scoped({ class: 'scheduler-timeline-event preview' }),
+                bag: { class: 'scheduler-timeline-event preview' },
                 style: {
                   ...horizontal(s.previewEvent.start.getTime(), s.previewEvent.end.getTime()),
                   '--scheduler-event-track': String(trackOf(draggedId)),
@@ -813,7 +809,7 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
   const canGroup = can(s, 'createGroup');
 
   return {
-    timeline: scoped({
+    timeline: {
       class: 'scheduler-timeline',
       role: 'grid',
       'aria-label': formatMessage(messages.timelineGridLabel, { date: dateService.formatDateWithWeekday(days[0], options.locale) }),
@@ -821,12 +817,12 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
       'aria-colcount': 1 + totalSlots,
       'aria-describedby': kbdGrid,
       'aria-multiselectable': 'true',
-    }),
-    head: scoped({ class: 'scheduler-timeline-head' }),
-    dayRow: scoped({ class: 'scheduler-timeline-header', role: 'row', 'aria-rowindex': 1 }),
-    resourceHeader: scoped({ class: 'scheduler-resource-header', role: 'columnheader', 'aria-colindex': 1 }),
+    },
+    head: { class: 'scheduler-timeline-head' },
+    dayRow: { class: 'scheduler-timeline-header', role: 'row', 'aria-rowindex': 1 },
+    resourceHeader: { class: 'scheduler-resource-header', role: 'columnheader', 'aria-colindex': 1 },
     resourceHeaderText: messages.resourcesHeader,
-    resizer: scoped({
+    resizer: {
       class: 'scheduler-column-resizer',
       role: 'separator',
       tabindex: 0,
@@ -835,45 +831,45 @@ function timelineModel(id: string, s: SchedulerState, ui: SchedulerUi, kbdGrid: 
       'aria-valuemin': 0,
       'aria-valuemax': 100,
       'aria-valuenow': ui.column?.percent ?? null,
-    }),
-    dayHeaders: scoped({ class: 'scheduler-timeline-slots-header', role: 'presentation' }),
+    },
+    dayHeaders: { class: 'scheduler-timeline-slots-header', role: 'presentation' },
     days: days.map((day, i) => {
       const colIndex = column;
       column += slotsByDay[i].length;
       return {
         key: toDayKey(day),
-        bag: scoped({
+        bag: {
           class: 'scheduler-timeline-slot-header day',
           role: 'columnheader',
           'aria-colindex': colIndex,
           'aria-colspan': slotsByDay[i].length,
-        }),
+        },
         style: { '--scheduler-day-slots': String(slotsByDay[i].length) },
-        labelBag: scoped({ class: 'day-label' }),
+        labelBag: { class: 'day-label' },
         label: dateService.formatDateWithWeekday(day, options.locale),
       };
     }),
-    timeRow: scoped({ class: 'scheduler-timeline-header', role: 'row', 'aria-rowindex': 2 }),
-    emptyHeader: scoped({ class: 'scheduler-resource-header', role: 'columnheader', 'aria-colindex': 1 }),
-    timeHeaders: scoped({ class: 'scheduler-timeline-slots-header', role: 'presentation' }),
+    timeRow: { class: 'scheduler-timeline-header', role: 'row', 'aria-rowindex': 2 },
+    emptyHeader: { class: 'scheduler-resource-header', role: 'columnheader', 'aria-colindex': 1 },
+    timeHeaders: { class: 'scheduler-timeline-slots-header', role: 'presentation' },
     times: allSlots.map((slot, i) => ({
       key: String(slot.start.getTime()),
-      bag: scoped({ class: 'scheduler-timeline-slot-header', role: 'columnheader', 'aria-colindex': i + 2 }),
+      bag: { class: 'scheduler-timeline-slot-header', role: 'columnheader', 'aria-colindex': i + 2 },
       text: dateService.formatTime(slot.start, options.timeFormat, options.locale),
     })),
-    body: scoped({ class: 'scheduler-timeline-body' }),
+    body: { class: 'scheduler-timeline-body' },
     rows,
-    empty: flattened.length === 0 && !hasUnassigned ? { bag: scoped({ class: 'scheduler-timeline-empty' }), text: messages.noResources } : null,
+    empty: flattened.length === 0 && !hasUnassigned ? { bag: { class: 'scheduler-timeline-empty' }, text: messages.noResources } : null,
     addBar:
       canResource || canGroup
         ? {
-            bag: scoped({ class: 'scheduler-timeline-addbar', role: 'toolbar', 'aria-label': messages.addResourceBarLabel }),
+            bag: { class: 'scheduler-timeline-addbar', role: 'toolbar', 'aria-label': messages.addResourceBarLabel },
             buttons: [
               ...(canResource
-                ? [{ key: 'resource', bag: scoped({ class: 'scheduler-add-button', type: 'button', 'data-action': 'add-resource' }), text: messages.addResource }]
+                ? [{ key: 'resource', bag: { class: 'scheduler-add-button', type: 'button', 'data-action': 'add-resource' }, text: messages.addResource }]
                 : []),
               ...(canGroup
-                ? [{ key: 'group', bag: scoped({ class: 'scheduler-add-button', type: 'button', 'data-action': 'add-group' }), text: messages.addGroup }]
+                ? [{ key: 'group', bag: { class: 'scheduler-add-button', type: 'button', 'data-action': 'add-group' }, text: messages.addGroup }]
                 : []),
             ],
           }
@@ -939,19 +935,19 @@ export function eventsInMonth(s: SchedulerState, day: Date): SchedulerEvent[] {
 function popoverEvent(s: SchedulerState, event: SchedulerEvent): SchedulerPopoverEvent {
   return {
     key: event.id,
-    row: scoped({ class: 'popover-event-row' }),
-    bag: scoped({ class: 'popover-event', type: 'button', 'aria-label': formatEventAriaLabel(event, null, s.options), 'data-event-id': event.id }),
-    swatch: scoped({ class: 'popover-event-swatch', 'aria-hidden': 'true' }),
+    row: { class: 'popover-event-row' },
+    bag: { class: 'popover-event', type: 'button', 'aria-label': formatEventAriaLabel(event, null, s.options), 'data-event-id': event.id },
+    swatch: { class: 'popover-event-swatch', 'aria-hidden': 'true' },
     swatchStyle: { '--scheduler-event-bg': resolveEventColor(event, s.resourceById, s.options.defaultEventColor) },
-    titleBag: scoped({ class: 'popover-event-title' }),
+    titleBag: { class: 'popover-event-title' },
     title: event.title,
     remove: can(s, 'deleteEvent', event)
-      ? scoped({
+      ? {
           class: 'popover-event-delete',
           type: 'button',
           'aria-label': schedulerMessage(s.options, 'deleteEventLabel', { title: event.title }),
           'data-event-id': event.id,
-        })
+        }
       : null,
   };
 }
@@ -976,52 +972,52 @@ function dayPopoverModel(s: SchedulerState, popover: NonNullable<SchedulerUi['po
   ];
   const canCreate = can(s, 'createEvent');
   return {
-    bag: scoped({
+    bag: {
       class: 'scheduler-day-popover',
       role: 'dialog',
       popover: 'auto',
       'aria-label': schedulerMessage(options, 'dayPopoverLabel', { date: dateText }),
-    }),
-    head: scoped({ class: 'popover-head' }),
-    dateBag: scoped({ class: 'popover-date' }),
+    },
+    head: { class: 'popover-head' },
+    dateBag: { class: 'popover-date' },
     date: dateText,
-    countBag: scoped({ class: 'popover-count' }),
+    countBag: { class: 'popover-count' },
     count: schedulerMessage(options, 'dayPopoverCount', {
       count: events.length,
       events: schedulerMessage(options, events.length === 1 ? 'eventSingular' : 'eventPlural'),
     }),
-    close: scoped({ class: 'popover-close', type: 'button', 'aria-label': schedulerMessage(options, 'closePopover') }),
-    empty: events.length === 0 ? { bag: scoped({ class: 'popover-empty' }), text: schedulerMessage(options, 'dayPopoverEmpty') } : null,
-    list: events.length > 0 && scope === 'day' ? scoped({ class: 'popover-events' }) : null,
+    close: { class: 'popover-close', type: 'button', 'aria-label': schedulerMessage(options, 'closePopover') },
+    empty: events.length === 0 ? { bag: { class: 'popover-empty' }, text: schedulerMessage(options, 'dayPopoverEmpty') } : null,
+    list: events.length > 0 && scope === 'day' ? { class: 'popover-events' } : null,
     events: scope === 'day' ? events.map((event) => popoverEvent(s, event)) : [],
     groups:
       scope === 'month'
         ? groups.map((group) => ({
             key: String(group.day.getTime()),
-            bag: scoped({ class: 'popover-day-group' }),
-            headingBag: scoped({ class: 'popover-day-label' }),
+            bag: { class: 'popover-day-group' },
+            headingBag: { class: 'popover-day-label' },
             heading: dateService.formatDateWithWeekday(group.day, options.locale),
-            list: scoped({ class: 'popover-events' }),
+            list: { class: 'popover-events' },
             events: group.events.map((event) => popoverEvent(s, event)),
           }))
         : [],
     resource:
       canCreate && resources.length > 0
         ? {
-            bag: scoped({ class: 'popover-resource' }),
-            labelBag: scoped({ class: 'popover-resource-label' }),
+            bag: { class: 'popover-resource' },
+            labelBag: { class: 'popover-resource-label' },
             label: schedulerMessage(options, 'newEventResource'),
-            select: scoped({ class: 'form-select popover-resource-select', 'aria-label': schedulerMessage(options, 'newEventResource') }),
+            select: { class: 'form-select popover-resource-select', 'aria-label': schedulerMessage(options, 'newEventResource') },
             options: [
               { key: '', value: '', text: schedulerMessage(options, 'unassignedResource') },
               ...resources.map((r) => ({ key: r.id, value: r.id, text: r.title })),
             ],
           }
         : null,
-    actions: scoped({ class: 'popover-actions' }),
-    create: canCreate ? { bag: scoped({ class: 'popover-action primary', type: 'button', 'data-popover-action': 'create' }), text: schedulerMessage(options, 'newEvent') } : null,
+    actions: { class: 'popover-actions' },
+    create: canCreate ? { bag: { class: 'popover-action primary', type: 'button', 'data-popover-action': 'create' }, text: schedulerMessage(options, 'newEvent') } : null,
     drill: {
-      bag: scoped({ class: 'popover-action', type: 'button', 'data-popover-action': 'drill' }),
+      bag: { class: 'popover-action', type: 'button', 'data-popover-action': 'drill' },
       text: schedulerMessage(options, scope === 'month' ? 'showMonth' : 'showDay'),
     },
   };
@@ -1046,28 +1042,28 @@ function rowPanelModel(s: SchedulerState, resourceId: string): SchedulerRowPanel
   const colorField = resource.eventColor ? 'eventColor' : 'color';
   const current = resource.eventColor ?? item.color;
   return {
-    bag: scoped({
+    bag: {
       class: 'scheduler-row-panel',
       role: 'dialog',
       popover: 'auto',
       'aria-label': formatMessage(messages.rowMenuDialogLabel, { title: item.title }),
-    }),
+    },
     actions: actions.map((action) => {
       if (action === 'set-resource-color') {
         const text = formatMessage(messages.resourceColor, { title: item.title });
         return {
           key: action,
           color: {
-            label: scoped({ class: 'row-action row-action-color' }),
+            label: { class: 'row-action row-action-color' },
             text,
-            input: scoped({
+            input: {
               type: 'color',
               class: 'row-color-input',
               'aria-label': text,
               'data-action': 'set-resource-color',
               'data-resource-id': item.id,
               'data-field': colorField,
-            }),
+            },
             value: current && /^#[0-9a-f]{6}$/i.test(current) ? current : '#000000',
           },
           button: null,
@@ -1086,13 +1082,13 @@ function rowPanelModel(s: SchedulerState, resourceId: string): SchedulerRowPanel
         key: action,
         color: null,
         button: {
-          bag: scoped({
+          bag: {
             type: 'button',
             class: `row-action${action === 'delete-resource' ? ' is-destructive' : ''}`,
             'data-action': action,
             'data-parent-id': adds ? item.id : null,
             'data-resource-id': adds ? null : item.id,
-          }),
+          },
           text,
         },
       };
@@ -1176,24 +1172,24 @@ function editorModel(id: string, s: SchedulerState, editor: NonNullable<Schedule
   const errorId = `${id}-editor-title-error`;
   const msg = (key: keyof SchedulerMessages, params?: Record<string, string | number>) => schedulerMessage(options, key, params);
   return {
-    bag: scoped({ class: 'scheduler-event-editor', role: 'dialog', popover: 'auto', 'aria-label': msg('eventEditorLabel', { title: event.title }) }),
-    head: scoped({ class: 'editor-head' }),
-    titleBag: scoped({ class: 'editor-title' }),
+    bag: { class: 'scheduler-event-editor', role: 'dialog', popover: 'auto', 'aria-label': msg('eventEditorLabel', { title: event.title }) },
+    head: { class: 'editor-head' },
+    titleBag: { class: 'editor-title' },
     title: draft.title,
-    close: scoped({ class: 'editor-close', type: 'button', 'aria-label': msg('closePopover') }),
-    field: scoped({ class: 'editor-field' }),
+    close: { class: 'editor-close', type: 'button', 'aria-label': msg('closePopover') },
+    field: { class: 'editor-field' },
     titleLabel: msg('editorTitleLabel'),
-    titleInput: scoped({
+    titleInput: {
       type: 'text',
       class: `form-control form-control-sm editor-input editor-title-input${titleInvalid ? ' is-invalid' : ''}`,
       disabled: !canFields,
       'aria-invalid': titleInvalid ? 'true' : 'false',
       'aria-errormessage': errorId,
       'aria-describedby': errorId,
-    }),
+    },
     titleValue: draft.title,
     // The message node always exists, so the IDREFs above always resolve; it is shown only while invalid.
-    titleError: scoped({ class: `invalid-feedback${titleInvalid ? ' d-block' : ''}`, id: errorId }),
+    titleError: { class: `invalid-feedback${titleInvalid ? ' d-block' : ''}`, id: errorId },
     titleErrorText: titleInvalid ? error!.message : '',
     startLabel: msg('editorStartLabel'),
     endLabel: msg('editorEndLabel'),
@@ -1210,25 +1206,25 @@ function editorModel(id: string, s: SchedulerState, editor: NonNullable<Schedule
     hour12: resolvedHour12(options),
     step: pickerStep(options),
     // The draft as ISO, like a slot's data-start: the field's value without reading a picker.
-    startField: scoped({ class: 'editor-field editor-start-field', 'data-value': draft.start?.toISOString() ?? null }),
-    endField: scoped({ class: 'editor-field editor-end-field', 'data-value': draft.end?.toISOString() ?? null }),
+    startField: { class: 'editor-field editor-start-field', 'data-value': draft.start?.toISOString() ?? null },
+    endField: { class: 'editor-field editor-end-field', 'data-value': draft.end?.toISOString() ?? null },
     colorLabel: msg('editorColorLabel'),
-    colorInput: scoped({
+    colorInput: {
       type: 'color',
       class: 'form-control form-control-color editor-input editor-color-input',
       disabled: !canFields || draft.inheritColor,
-    }),
+    },
     colorValue: draft.color ?? resolveEventColor(event, s.resourceById, options.defaultEventColor),
-    inherit: scoped({ class: 'editor-field editor-inherit form-check' }),
-    inheritInput: scoped({ type: 'checkbox', class: 'form-check-input editor-inherit-input', disabled: !canFields }),
+    inherit: { class: 'editor-field editor-inherit form-check' },
+    inheritInput: { type: 'checkbox', class: 'form-check-input editor-inherit-input', disabled: !canFields },
     inheritChecked: draft.inheritColor,
     inheritLabel: msg('editorInheritColor'),
-    actions: scoped({ class: 'editor-actions' }),
-    save: { bag: scoped({ class: 'editor-action primary', type: 'button', 'data-editor-action': 'save' }), text: msg('editorSave') },
+    actions: { class: 'editor-actions' },
+    save: { bag: { class: 'editor-action primary', type: 'button', 'data-editor-action': 'save' }, text: msg('editorSave') },
     remove: can(s, 'deleteEvent', event)
-      ? { bag: scoped({ class: 'editor-action danger', type: 'button', 'data-editor-action': 'delete' }), text: msg('editorDelete') }
+      ? { bag: { class: 'editor-action danger', type: 'button', 'data-editor-action': 'delete' }, text: msg('editorDelete') }
       : null,
-    cancel: { bag: scoped({ class: 'editor-action', type: 'button', 'data-editor-action': 'cancel' }), text: msg('editorCancel') },
+    cancel: { bag: { class: 'editor-action', type: 'button', 'data-editor-action': 'cancel' }, text: msg('editorCancel') },
   };
 }
 
@@ -1322,30 +1318,30 @@ export function connectScheduler(args: SchedulerViewArgs): SchedulerView {
   const editor = ui.editor ? editorModel(id, s, ui.editor, args) : null;
 
   return {
-    root: scoped({ class: 'scheduler', id, 'data-view': s.view, ...hydratedAttr(args.hydrated) }),
-    container: scoped({ class: 'scheduler-container', 'data-narrow': ui.narrow ? '' : null }),
-    header: scoped({ class: 'scheduler-header', 'data-narrow': ui.narrow ? '' : null }),
-    nav: scoped({ class: 'scheduler-nav', 'aria-label': msg('navLabel') }),
-    prev: scoped({ type: 'button', 'aria-label': msg('previousPeriod'), title: msg('previousPeriod'), 'data-nav': 'prev' }),
-    next: scoped({ type: 'button', 'aria-label': msg('nextPeriod'), title: msg('nextPeriod'), 'data-nav': 'next' }),
-    today: scoped({ type: 'button', 'aria-label': msg('jumpToToday'), 'data-nav': 'today' }),
+    root: { class: 'scheduler', id, 'data-view': s.view, ...hydratedAttr(args.hydrated) },
+    container: { class: 'scheduler-container', 'data-narrow': ui.narrow ? '' : null },
+    header: { class: 'scheduler-header', 'data-narrow': ui.narrow ? '' : null },
+    nav: { class: 'scheduler-nav', 'aria-label': msg('navLabel') },
+    prev: { type: 'button', 'aria-label': msg('previousPeriod'), title: msg('previousPeriod'), 'data-nav': 'prev' },
+    next: { type: 'button', 'aria-label': msg('nextPeriod'), title: msg('nextPeriod'), 'data-nav': 'next' },
+    today: { type: 'button', 'aria-label': msg('jumpToToday'), 'data-nav': 'today' },
     todayText: msg('today'),
-    title: scoped({ class: 'scheduler-title', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    title: { class: 'scheduler-title', 'aria-live': 'polite', 'aria-atomic': 'true' },
     titleText: schedulerTitle(s),
-    switcher: scoped({ class: 'scheduler-view-switcher', role: 'group', 'aria-label': msg('switchView') }),
+    switcher: { class: 'scheduler-view-switcher', role: 'group', 'aria-label': msg('switchView') },
     views: views.map((view) => ({
       key: view,
-      bag: scoped({ type: 'button', class: view === s.view ? 'active' : null, 'aria-pressed': String(view === s.view), 'data-view': view }),
+      bag: { type: 'button', class: view === s.view ? 'active' : null, 'aria-pressed': String(view === s.view), 'data-view': view },
       text: viewLabel(options, view),
     })),
     // Week/day/month/year claim the grid on the scroller; the timeline puts it on an inner element.
-    content: scoped({
+    content: {
       class: `scheduler-content scheduler-${s.view}-view`,
       role: timeline ? null : 'grid',
       'aria-label': timeline ? null : (args.label ?? gridLabel(s)),
       'aria-describedby': timeline ? null : kbdGrid,
       'aria-multiselectable': s.view === 'week' || s.view === 'day' ? 'true' : null,
-    }),
+    },
     contentStyle: ui.column?.width != null
       ? { '--scheduler-resource-column-width': `min(${ui.column.width}px, calc(100% - 50px))` }
       : {},
@@ -1353,9 +1349,9 @@ export function connectScheduler(args: SchedulerViewArgs): SchedulerView {
     month: s.view === 'month' ? monthModel(id, s, kbdEvent) : null,
     year: s.view === 'year' ? yearModel(id, s) : null,
     timeline: timeline ? timelineModel(id, s, ui, kbdGrid, kbdEvent) : null,
-    kbdGrid: scoped({ class: 'visually-hidden', id: kbdGrid }),
+    kbdGrid: { class: 'visually-hidden', id: kbdGrid },
     kbdGridText: msg(gridInstructionsKey(s)),
-    kbdEvent: scoped({ class: 'visually-hidden', id: kbdEvent }),
+    kbdEvent: { class: 'visually-hidden', id: kbdEvent },
     kbdEventText: msg(
       can(s, 'moveEvent') || can(s, 'resizeEvent') || can(s, 'deleteEvent')
         ? args.eventEditor
@@ -1366,7 +1362,7 @@ export function connectScheduler(args: SchedulerViewArgs): SchedulerView {
     popover: ui.popover ? dayPopoverModel(s, ui.popover) : null,
     rowPanel: ui.rowMenu ? rowPanelModel(s, ui.rowMenu) : null,
     editor,
-    live: scoped({ class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }),
+    live: { class: 'visually-hidden', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
     announcement: args.announcement,
   };
 }

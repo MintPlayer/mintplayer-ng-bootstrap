@@ -6,7 +6,10 @@
 // the native-details dropdowns. Ported from the former mp-navbar shadow sheets;
 // `:host([breakpoint])` is now the stamped root's `data-breakpoint`, and the
 // `data-js` gates are gone because the checkbox and `<details>` work the same
-// with and without JavaScript.
+// with and without JavaScript. It is the group's one sheet (S15): the dropdown
+// panels are dropdown-menu markup stamped with this group's scope, so the
+// dropdown menu's rules are included here, their final-form selectors too.
+@use '../../../dropdown-menu/src/styles/dropdown-menu.scoped' with ($scope: navbar);
 @import "node_modules/bootstrap/scss/functions";
 @import "node_modules/bootstrap/scss/variables";
 @import "node_modules/bootstrap/scss/mixins/breakpoints";

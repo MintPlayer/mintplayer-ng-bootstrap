@@ -33,7 +33,7 @@ describe('connectCarousel', () => {
   it('names the region and exposes the APG carousel role description', () => {
     const { root } = view();
     expect(root).toMatchObject({ class: 'carousel', role: 'region', 'aria-roledescription': 'carousel', 'aria-label': 'Photos' });
-    expect(root['data-mps']).toBe('carousel');
+    expect(root['data-mps']).toBeUndefined();
   });
 
   it('renders one radio per slide in one group, the index checked', () => {
@@ -102,7 +102,7 @@ describe('connectCarousel', () => {
 describe('connectCarouselItem', () => {
   it('is a group with the slide role description', () => {
     const { root } = connectCarouselItem({ labels: CAROUSEL_LABELS });
-    expect(root).toMatchObject({ class: 'carousel-item', role: 'group', 'aria-roledescription': 'slide', 'data-mps': 'carousel' });
+    expect(root).toMatchObject({ class: 'carousel-item', role: 'group', 'aria-roledescription': 'slide' });
   });
 });
 

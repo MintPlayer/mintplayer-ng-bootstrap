@@ -30,7 +30,7 @@ describe('connectSignaturePad', () => {
     expect(view.typed).toMatchObject({ id: 'sp-text', 'aria-label': 'Type your signature' });
     expect([view.undoText, view.clearText]).toEqual(['Undo', 'Clear']);
     for (const bag of [view.root, view.canvas, view.controls, view.typed!, view.undo, view.clear]) {
-      expect(bag['data-mps']).toBe('signature-pad');
+      expect(bag['data-mps']).toBeUndefined();
     }
   });
 

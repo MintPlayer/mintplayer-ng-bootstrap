@@ -98,11 +98,11 @@ This turns S13 into the full library. Every M4–M6 component is then authored a
 - [x] `libs/mintplayer-component-compiler` Nx plugin project (`@mintplayer/nx-component-compiler`): move `tools/front-templates` into it as the template stage, keep its spec, delete `tools/front-templates`
 - [x] Manifest API: plain data `satisfies ComponentGroup` (inputs incl. `model`, outputs, methods, `provides`, styles), typed against the core; hooks live on `ComponentCore`
 - [x] Emitters for the front components: Angular (signal inputs and outputs, CVA for a model, `hostDirectives` extensions), React (`forwardRef`, `useMachine`, props extend `HTMLAttributes` + rest passthrough), Vue (`defineProps` / `defineEmits` / `defineModel`, `inheritAttrs: false`), Lit (properties, events, `LightChildren`, light DOM)
-- [ ] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element. *Deviation (S15):* not built; every bag already carries `data-mps` and a group may share sheets
+- [x] Group styles: one `<group>.scoped.scss`; the compiler stamps `data-mps=<group>` on every template element (2026-10-29). Manifest `style: { scope }`; no D10 bag carries `data-mps` (conformance spec); borrowed markup is styled by `@use` of the lender's sheet
 - [x] Output routing: `<front-lib>/<group>/src/generated/` + entry-point scaffolding (ng-package secondary entry, React/Vue vite entry, WC sub-entry) written once by the generator
 - [x] Nx: `createNodes` infers `compile-components` (cacheable inputs and outputs); front `build` / `test` / `typecheck` `dependsOn` it; `nx g …:component` scaffold; `--check` in CI (CI `--check` dropped: outputs are gitignored, see S17)
 - [x] S14 navbar family + dropdown-menu fully generated; the hand-written fronts are deleted (dropdown-menu converts with M4)
-- [ ] S15 group styles on accordion (+ tab). *Deviation:* see Group styles
+- [x] S15 group styles, on the 25 D10 groups. The accordion is hand-written (not a D10 group) and keeps its own stamp
 - [x] S16 escape hatches (RouterLinkActive, checkbox CVA, React imperative handle): three of three
   - the select's CVA is resolved: `select.angular.ts` adds the accessor and validity as `hostDirectives` and merges the form state over the inputs in `extendInputs`
 - [ ] S17 clean-tree build + cache hit: read from the CI run (M9)

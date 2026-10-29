@@ -183,10 +183,16 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   `useMachine`/`useSnapshot` (`useSyncExternalStore`) + `reactProps()`; Vue `useMachine` (`shallowRef`);
   Lit `MachineController` + the `props()` element-part directive.
 - **Styles**: one `<name>.scoped.scss` in the core → a plain-string `*.scoped.styles.ts` (ui-core `codegen`
-  target; no lit import), rescoped with `[data-mps=<name>]` like a light sheet. Every front writes
-  `data-mps="<name>"` on its own nodes (it is in the bags) and installs the sheet through the shared registry
-  (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into `DOCUMENT.head`
-  on the server — no string post-processing. No `styleUrls`, no `::ng-deep`.
+  target; no lit import), rescoped with `[data-mps=<name>]` like a light sheet, and installed through the shared
+  registry (`ui-core/scoped-styles`, which `web-components/light-dom` re-exports). Angular writes it into
+  `DOCUMENT.head` on the server — no string post-processing. No `styleUrls`, no `::ng-deep`. **S15: one scope
+  and one sheet per D10 group** (`style: { scope: '<name>' }` in the manifest). The compiler stamps
+  `data-mps="<scope>"` on every native element of the group's templates (partials too) and on the Angular/Lit
+  host, so a D10 core's bags carry **no** `data-mps` (`_conformance/no-scope-in-compiled-bags.spec.ts`), and a
+  template may not write one. A group that renders another core's markup `@use`s that core's sheet with its own
+  scope (`tree-select` → treeview, `navbar` → dropdown-menu, `datepicker` → calendar); a reusable sheet takes
+  `$scope: <name> !default` for its final-form selectors. Hand-written fronts (accordion, input-group, shell,
+  tab-control, tile-manager, typeahead, sparkline, dropdown-menu) still stamp their own scope.
 - **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
   a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
   (`<name>/src/templates/*.view.vue`) and a plain-data manifest (`<name>/src/<name>.component.ts`, `import type`

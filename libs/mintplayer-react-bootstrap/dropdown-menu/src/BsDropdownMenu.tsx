@@ -58,6 +58,7 @@ export const BsDropdownMenu = forwardRef<HTMLUListElement | null, BsDropdownMenu
   return (
     <ul
       ref={menuRef}
+      data-mps={DROPDOWN_MENU_SCOPE}
       {...reactProps(bag)}
       {...rest}
       style={maxHeight === undefined ? style : ({ ...style, '--mp-dropdown-max-height': `${maxHeight}px` } as React.CSSProperties)}

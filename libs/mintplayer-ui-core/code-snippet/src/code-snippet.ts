@@ -146,7 +146,7 @@ const fill = (pattern: string, key: string, value: string | number): string => p
 
 export function connectCodeSnippet(options: CodeSnippetOptions): CodeSnippetView {
   const { id, labels, language, startLine, lineHref, hydrated } = options;
-  const scoped = (bag: CodeSnippetBag): CodeSnippetBag => ({ ...bag, 'data-mps': CODE_SNIPPET_SCOPE });
+
   const lines = options.highlighted ?? plainLines(options.code);
   const byLine = new Map(options.annotations.map((a) => [a.line, a]));
   const count = codeSnippetRowCount(lines.length, options.annotations, startLine);
@@ -160,61 +160,61 @@ export function connectCodeSnippet(options: CodeSnippetOptions): CodeSnippetView
     const kind = annotation?.kind ? ` annotation-${annotation.kind}` : '';
     return {
       number,
-      row: scoped({
+      row: {
         id: codeSnippetLineId(id, number),
         class: `line${active ? ' active' : ''}${annotation ? ' annotated' : ''}${kind}`,
         title: annotation?.description ?? null,
         'data-line': number,
-      }),
+      },
       link:
         options.lineNumbers && lineHref
-          ? scoped({
+          ? {
               class: 'line-number',
               'aria-label': fill(labels.line, 'line', number),
               tabindex: number === tabbable ? 0 : -1,
               'data-line': number,
-            })
+            }
           : null,
       href: options.lineNumbers && lineHref ? resolveLineHref(lineHref(number), hydrated) : '',
-      gutter: options.lineNumbers && !lineHref ? scoped({ class: 'line-number', 'aria-hidden': 'true' }) : null,
-      mark: annotation?.label !== undefined ? scoped({ class: 'line-mark', 'aria-hidden': 'true' }) : null,
+      gutter: options.lineNumbers && !lineHref ? { class: 'line-number', 'aria-hidden': 'true' } : null,
+      mark: annotation?.label !== undefined ? { class: 'line-mark', 'aria-hidden': 'true' } : null,
       markText: annotation?.label ?? '',
-      secondary: annotation?.secondaryLabel !== undefined ? scoped({ class: 'line-mark secondary', 'aria-hidden': 'true' }) : null,
+      secondary: annotation?.secondaryLabel !== undefined ? { class: 'line-mark secondary', 'aria-hidden': 'true' } : null,
       secondaryText: annotation?.secondaryLabel ?? '',
-      text: scoped({ class: 'line-text' }),
+      text: { class: 'line-text' },
       html: lines[index] ?? '',
-      description: annotation?.description ? scoped({ class: 'sr-only' }) : null,
+      description: annotation?.description ? { class: 'sr-only' } : null,
       descriptionText: annotation?.description ?? '',
     };
   });
 
   const links = options.lineNumbers && !!lineHref;
   return {
-    root: scoped({
+    root: {
       class: 'code-snippet',
       'data-theme': options.theme === 'auto' ? null : options.theme,
       'data-wrap': options.wrap ? '' : null,
-    }),
-    copy: scoped({
+    },
+    copy: {
       type: 'button',
       class: 'copy',
       'aria-label': fill(labels.copy, 'language', language),
       disabled: !hydrated,
-    }),
+    },
     copyText: fill(labels.copyText, 'language', language),
-    pre: scoped({
+    pre: {
       tabindex: 0,
       role: 'region',
       'aria-label': options.label || fill(labels.region, 'language', language),
       'aria-describedby': links ? keymapId : null,
-    }),
-    code: scoped({ class: 'hljs' }),
+    },
+    code: { class: 'hljs' },
     rows,
-    keymap: links ? scoped({ id: keymapId, class: 'sr-only' }) : null,
+    keymap: links ? { id: keymapId, class: 'sr-only' } : null,
     keymapText: labels.keymapHint,
-    toast: scoped({ class: `toast${options.copied ? ' visible' : ''}`, 'aria-hidden': options.copied ? 'false' : 'true' }),
+    toast: { class: `toast${options.copied ? ' visible' : ''}`, 'aria-hidden': options.copied ? 'false' : 'true' },
     toastText: labels.copied,
-    live: scoped({ class: 'sr-only', role: 'status', 'aria-live': 'polite' }),
+    live: { class: 'sr-only', role: 'status', 'aria-live': 'polite' },
     liveText: options.copied ? labels.copiedAnnouncement : '',
   };
 }

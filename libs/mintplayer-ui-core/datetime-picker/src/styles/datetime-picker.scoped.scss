@@ -1,8 +1,11 @@
 // The datetime picker's stylesheet (PRD #437). Rescoped at build time: every
-// compound gains `[data-mps=datetime-picker]`. The grid and the slot list are
-// styled by the calendar's and the time picker's sheets, which the manifest
-// installs alongside this one. `.input-group`, `.form-control`, `.btn` and
+// compound gains `[data-mps=datetime-picker]`. It is the group's one sheet
+// (S15): the grid and the slot list are the calendar's and the time picker's
+// markup, stamped with this group's scope, so their rules are included here and
+// rescoped with these. `.input-group`, `.form-control`, `.btn` and
 // `.visually-hidden` are global Bootstrap.
+@use '../../../calendar/src/styles/calendar.scoped';
+@use '../../../timepicker/src/styles/timepicker.scoped';
 
 .mp-datetime-picker {
   display: inline-block;

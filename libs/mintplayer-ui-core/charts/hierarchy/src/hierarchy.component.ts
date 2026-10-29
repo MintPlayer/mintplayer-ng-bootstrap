@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'charts/hierarchy',
-  styles: [{ scope: 'HIERARCHY_CHART_SCOPE', sheet: 'hierarchyChartScopedStyles' }],
+  style: { scope: 'hierarchy-chart' },
   components: {
     'hierarchy-chart': {
       core: 'hierarchyChartCore',

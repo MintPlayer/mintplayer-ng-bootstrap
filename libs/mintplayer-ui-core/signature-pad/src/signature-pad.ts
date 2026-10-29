@@ -115,12 +115,12 @@ export interface SignaturePadView {
 export function connectSignaturePad(options: SignaturePadOptions): SignaturePadView {
   const { id, signature, hydrated } = options;
   const labels = { ...DEFAULT_SIGNATURE_PAD_LABELS, ...options.labels };
-  const scoped = (bag: SignaturePadBag): SignaturePadBag => ({ ...bag, 'data-mps': SIGNATURE_PAD_SCOPE });
+
   const error = errorFeedback(`${id}-error`, options.errorText, options.invalid);
   const inert = !hydrated || options.disabled;
   return {
-    root: scoped({ class: ['mp-signature-pad', options.disabled ? 'mp-signature-pad-disabled' : null, options.invalid ? 'mp-signature-pad-invalid' : null].filter(Boolean).join(' ') }),
-    canvas: scoped({
+    root: { class: ['mp-signature-pad', options.disabled ? 'mp-signature-pad-disabled' : null, options.invalid ? 'mp-signature-pad-invalid' : null].filter(Boolean).join(' ') },
+    canvas: {
       class: 'signature-pad-canvas',
       width: options.width,
       height: options.height,
@@ -128,10 +128,10 @@ export function connectSignaturePad(options: SignaturePadOptions): SignaturePadV
       'aria-label': options.label ?? labels.pad,
       // With no typed alternative the canvas is what the message describes.
       ...(options.showAccessibilityToggle ? {} : { 'aria-describedby': error.control['aria-describedby'] }),
-    }),
-    controls: scoped({ class: 'signature-pad-controls' }),
+    },
+    controls: { class: 'signature-pad-controls' },
     typed: options.showAccessibilityToggle
-      ? scoped({
+      ? {
           class: 'form-control form-control-sm signature-pad-text',
           id: `${id}-text`,
           type: 'text',
@@ -143,15 +143,15 @@ export function connectSignaturePad(options: SignaturePadOptions): SignaturePadV
           required: options.required,
           'aria-required': options.required ? 'true' : null,
           ...error.control,
-        })
+        }
       : null,
     // Never disabled for being empty: pressing Clear would disable the button
     // under the keyboard user's focus and drop it to <body>. Empty is a no-op.
-    undo: scoped({ type: 'button', class: 'btn btn-outline-secondary btn-sm signature-pad-undo', disabled: inert }),
+    undo: { type: 'button', class: 'btn btn-outline-secondary btn-sm signature-pad-undo', disabled: inert },
     undoText: labels.undo,
-    clear: scoped({ type: 'button', class: 'btn btn-outline-secondary btn-sm signature-pad-clear', disabled: inert }),
+    clear: { type: 'button', class: 'btn btn-outline-secondary btn-sm signature-pad-clear', disabled: inert },
     clearText: labels.clear,
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: { ...error.message.attrs, 'data-mps': SIGNATURE_PAD_SCOPE }, text: error.message.text } : { attrs: {}, text: '' },
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
   };
 }

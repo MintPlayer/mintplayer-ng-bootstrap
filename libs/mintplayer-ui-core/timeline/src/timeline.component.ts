@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'timeline',
-  styles: [{ scope: 'TIMELINE_SCOPE', sheet: 'timelineScopedStyles' }],
+  style: { scope: 'timeline' },
   components: {
     timeline: {
       core: 'timelineCore',

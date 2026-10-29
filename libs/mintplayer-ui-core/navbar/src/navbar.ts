@@ -120,8 +120,6 @@ export interface NavbarView {
   readonly inner: NavbarBag;
 }
 
-const scope = { 'data-mps': NAVBAR_SCOPE };
-
 const classes = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
 
 export function connectNavbar(options: NavbarOptions): NavbarView {
@@ -132,7 +130,6 @@ export function connectNavbar(options: NavbarOptions): NavbarView {
   const collapseId = `${id}-collapse`;
   return {
     root: {
-      ...scope,
       class: classes(
         'navbar',
         breakpoint === 'xs' ? 'navbar-expand' : `navbar-expand-${breakpoint}`,
@@ -145,7 +142,6 @@ export function connectNavbar(options: NavbarOptions): NavbarView {
       ...hydratedAttr(hydrated),
     },
     toggle: {
-      ...scope,
       type: 'checkbox',
       id: toggleId,
       class: 'navbar-toggle',
@@ -157,25 +153,25 @@ export function connectNavbar(options: NavbarOptions): NavbarView {
       role: hydrated ? 'button' : null,
       'aria-expanded': hydrated ? String(expanded) : null,
     },
-    toggler: { ...scope, class: 'navbar-toggler', for: toggleId, 'aria-hidden': 'true' },
-    bar: { ...scope, class: 'navbar-toggler-bar' },
-    collapse: { ...scope, class: 'navbar-collapse', id: collapseId },
-    inner: { ...scope, class: 'navbar-collapse-inner' },
+    toggler: { class: 'navbar-toggler', for: toggleId, 'aria-hidden': 'true' },
+    bar: { class: 'navbar-toggler-bar' },
+    collapse: { class: 'navbar-collapse', id: collapseId },
+    inner: { class: 'navbar-collapse-inner' },
   };
 }
 
 /** A nav group; `end` pushes it to the far side when the bar is wide. */
 export function connectNavbarNav(align: 'start' | 'end' | null = 'start'): NavbarBag {
-  return { ...scope, class: classes('navbar-nav', align === 'end' ? 'nav-end' : 'nav-start') };
+  return { class: classes('navbar-nav', align === 'end' ? 'nav-end' : 'nav-start') };
 }
 
 export function connectNavbarBrand(): NavbarBag {
-  return { ...scope, class: 'navbar-brand' };
+  return { class: 'navbar-brand' };
 }
 
 /** A front's own host element around a bar node, taken out of the layout. */
 export function connectNavbarContents(): NavbarBag {
-  return { ...scope, class: 'navbar-contents' };
+  return { class: 'navbar-contents' };
 }
 
 export interface NavbarItemOptions {
@@ -189,7 +185,6 @@ export interface NavbarItemOptions {
 export function connectNavbarItem(options: NavbarItemOptions = {}): NavbarBag {
   const { inMenu = false, active = false, disabled = false } = options;
   return {
-    ...scope,
     class: classes(inMenu ? 'dropdown-item' : 'nav-item', active && 'active', disabled && 'disabled'),
     'aria-disabled': disabled ? 'true' : null,
     'aria-current': active ? (inMenu ? 'true' : 'page') : null,
@@ -214,12 +209,10 @@ export function connectNavbarDropdown(options: NavbarDropdownOptions): NavbarDro
   const active = options.active ?? false;
   return {
     details: {
-      ...scope,
       class: submenu ? 'dropdown dropdown-submenu' : 'nav-item dropdown',
       name: `mp-navbar-${options.depth}`,
     },
     summary: {
-      ...scope,
       class: classes(submenu ? 'dropdown-item' : 'nav-link', 'dropdown-toggle', active && 'active'),
     },
     // Navigation, not a menu: never role=menu, whatever the hydration state.

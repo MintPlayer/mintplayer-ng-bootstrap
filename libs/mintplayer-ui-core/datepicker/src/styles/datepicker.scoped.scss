@@ -1,7 +1,9 @@
 // The date picker's stylesheet (PRD #437). Rescoped at build time: every
-// compound gains `[data-mps=datepicker]`. The grid inside the popup is styled
-// by the calendar's own sheet, which the manifest installs alongside this one.
+// compound gains `[data-mps=datepicker]`. It is the group's one sheet (S15): the
+// grid inside the popup is the calendar's markup, stamped with this group's
+// scope, so the calendar's rules are included here and rescoped with these.
 // `.input-group`, `.form-control` and `.btn` are global Bootstrap.
+@use '../../../calendar/src/styles/calendar.scoped';
 
 .mp-datepicker {
   display: inline-block;

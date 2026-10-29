@@ -2,7 +2,7 @@
 // SFC, hosting the core through `useCore` (PRD #437 D10). Props are declared
 // at runtime (`PropType` casts), so Vue never has to resolve a core's types
 // across packages; attributes fall through to the template's root.
-import { banner, coreImports, jsdoc, styleImports } from './model.mjs';
+import { banner, coreImports, jsdoc, styleImports, styleInstall } from './model.mjs';
 
 const RUNTIME_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
 
@@ -54,7 +54,7 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
     );
   }
   script.push('');
-  model.styles.forEach((style) => script.push(`installLightStyles(${style.scope}, ${style.sheet});`));
+  if (model.style) script.push(styleInstall(model, 'installLightStyles'));
   script.push(`const template = useTemplateRef<ComponentPublicInstance>('template');`);
   model.content.forEach(({ input, child, within }) =>
     script.push(`const content_${input} = useContent({ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),

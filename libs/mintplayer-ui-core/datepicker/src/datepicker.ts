@@ -64,8 +64,6 @@ export interface DatepickerView {
   calendar: CalendarView;
 }
 
-const scoped = (bag: DatepickerBag): DatepickerBag => ({ ...bag, 'data-mps': DATEPICKER_SCOPE });
-
 /** The locale's short date, as the hydrated field shows it. */
 export function formatPickedDate(date: Date | null, locale: string | null): string {
   return date ? date.toLocaleDateString(locale ?? undefined, { dateStyle: 'short' }) : '';
@@ -80,9 +78,9 @@ export function connectDatepicker(options: DatepickerOptions): DatepickerView {
   const error = errorFeedback(`${id}-error`, options.errorText, options.invalid);
   const iso = options.selected ? isoDate(options.selected) : '';
   return {
-    root: scoped({ class: ['mp-datepicker', disabled ? 'mp-datepicker-disabled' : null].filter(Boolean).join(' ') }),
-    group: scoped({ class: 'input-group' }),
-    input: scoped({
+    root: { class: ['mp-datepicker', disabled ? 'mp-datepicker-disabled' : null].filter(Boolean).join(' ') },
+    group: { class: 'input-group' },
+    input: {
       class: 'form-control datepicker-input',
       id: `${id}-input`,
       type: hydrated ? 'text' : 'date',
@@ -98,12 +96,12 @@ export function connectDatepicker(options: DatepickerOptions): DatepickerView {
       required: options.required,
       'aria-required': options.required ? 'true' : null,
       ...error.control,
-    }),
+    },
     showFeedback: !!error.message,
-    feedback: error.message ? { attrs: { ...error.message.attrs, 'data-mps': DATEPICKER_SCOPE }, text: error.message.text } : { attrs: {}, text: '' },
-    hidden: hydrated && options.name ? scoped({ type: 'hidden', name: options.name, value: iso, class: 'datepicker-value' }) : null,
+    feedback: error.message ? { attrs: error.message.attrs, text: error.message.text } : { attrs: {}, text: '' },
+    hidden: hydrated && options.name ? { type: 'hidden', name: options.name, value: iso, class: 'datepicker-value' } : null,
     trigger: hydrated
-      ? scoped({
+      ? {
           type: 'button',
           class: 'btn btn-outline-secondary datepicker-trigger',
           popovertarget: popupId,
@@ -112,9 +110,9 @@ export function connectDatepicker(options: DatepickerOptions): DatepickerView {
           'aria-controls': popupId,
           'aria-label': labels.trigger,
           disabled,
-        })
+        }
       : null,
-    popup: scoped({ class: 'datepicker-popup', id: popupId, popover: 'auto', role: 'dialog', 'aria-label': labels.trigger }),
+    popup: { class: 'datepicker-popup', id: popupId, popover: 'auto', role: 'dialog', 'aria-label': labels.trigger },
     calendar: connectCalendar({
       id: `${id}-calendar`,
       month: options.month,
