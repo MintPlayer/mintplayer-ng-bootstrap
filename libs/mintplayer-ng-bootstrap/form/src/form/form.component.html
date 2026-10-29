@@ -1,3 +1,6 @@
-<form (submit)="onSubmit($event)" [action]="action()" [method]="method()">
+<!-- This IS the form: never nest another <form> in bs-form. The HTML parser
+     drops a nested form tag, so a server-rendered page hydrates against a DOM
+     one level shallower than the template. Put [formGroup] on a div instead. -->
+<form (submit)="onSubmit($event)" [attr.action]="action() ?? null" [attr.method]="method() ?? null">
     <ng-content></ng-content>
 </form>

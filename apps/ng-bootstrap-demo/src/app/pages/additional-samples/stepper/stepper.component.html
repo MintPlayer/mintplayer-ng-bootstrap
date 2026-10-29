@@ -44,7 +44,7 @@
             <div cdkStepper #signupStepper="cdkStepper" [linear]="true" orientation="horizontal" class="step-wrapper">
                 <cdk-step [stepControl]="signupAccount" label="Account">
                     <bs-form>
-                        <form [formGroup]="signupAccount">
+                        <div [formGroup]="signupAccount">
                             <div class="mb-2">
                                 <label class="form-label">Name</label>
                                 <input formControlName="name" placeholder="Ada Lovelace">
@@ -53,12 +53,12 @@
                                 <label class="form-label">Email</label>
                                 <input type="email" formControlName="email" placeholder="ada@example.com">
                             </div>
-                        </form>
+                        </div>
                     </bs-form>
                 </cdk-step>
                 <cdk-step [stepControl]="signupAddress" label="Address">
                     <bs-form>
-                        <form [formGroup]="signupAddress">
+                        <div [formGroup]="signupAddress">
                             <div class="mb-2">
                                 <label class="form-label">Street</label>
                                 <input formControlName="street" placeholder="221B Baker Street">
@@ -71,7 +71,7 @@
                                 <label class="form-label">Postal code</label>
                                 <input formControlName="zip" placeholder="NW1 6XE">
                             </div>
-                        </form>
+                        </div>
                     </bs-form>
                 </cdk-step>
                 <cdk-step label="Review">
@@ -135,7 +135,7 @@
             <div cdkStepper #checkoutStepper="cdkStepper" [linear]="true" orientation="vertical" class="step-wrapper">
                 <cdk-step [stepControl]="checkoutContact" label="Contact">
                     <bs-form>
-                        <form [formGroup]="checkoutContact">
+                        <div [formGroup]="checkoutContact">
                             <div class="mb-2">
                                 <label class="form-label">Full name</label>
                                 <input formControlName="fullName">
@@ -144,12 +144,12 @@
                                 <label class="form-label">Phone</label>
                                 <input formControlName="phone" type="tel">
                             </div>
-                        </form>
+                        </div>
                     </bs-form>
                 </cdk-step>
                 <cdk-step [stepControl]="checkoutShipping" label="Shipping">
                     <bs-form>
-                        <form [formGroup]="checkoutShipping">
+                        <div [formGroup]="checkoutShipping">
                             <div class="mb-2">
                                 <label class="form-label">Method</label>
                                 <select formControlName="method" class="form-select">
@@ -162,12 +162,12 @@
                                 <label class="form-label">Notes</label>
                                 <textarea formControlName="notes" rows="2"></textarea>
                             </div>
-                        </form>
+                        </div>
                     </bs-form>
                 </cdk-step>
                 <cdk-step [stepControl]="checkoutPayment" label="Payment">
                     <bs-form>
-                        <form [formGroup]="checkoutPayment">
+                        <div [formGroup]="checkoutPayment">
                             <div class="mb-2">
                                 <label class="form-label">Cardholder</label>
                                 <input formControlName="cardholder">
@@ -177,7 +177,7 @@
                                 <input formControlName="cardNumber" inputmode="numeric"
                                        placeholder="At least 12 digits">
                             </div>
-                        </form>
+                        </div>
                     </bs-form>
                 </cdk-step>
 

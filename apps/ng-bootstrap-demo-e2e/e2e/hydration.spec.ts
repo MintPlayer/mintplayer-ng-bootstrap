@@ -13,6 +13,9 @@ const PAGES = [
   '/overlays/shell',
   '/advanced/sticky-footer',
   '/basic/placeholder',
+  // A <form> nested in bs-form's own form: the parser drops it, so hydration
+  // walked one level off and threw "hasAttribute is not a function".
+  '/additional-samples/stepper',
 ];
 
 for (const path of PAGES) {

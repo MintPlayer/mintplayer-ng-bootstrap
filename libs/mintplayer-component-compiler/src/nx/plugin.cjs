@@ -3,13 +3,19 @@
 // Every `component-compiler.config.mjs` adds two targets to the project that
 // holds it:
 //
-//   compile-components        generate the fronts (cached; the outputs are the
-//                             front libs' `<entry>/src/generated` directories)
+//   compile-components        generate the fronts into the front libs'
+//                             `<entry>/src/generated` directories (NOT cached)
 //   compile-components-check  write nothing, fail when a generated file is
 //                             stale (CI, and for a tree that must stay clean)
 //
 // The inputs are the component sources, the extension files next to each
-// front's output, the config and the compiler itself, so a cache hit is safe.
+// front's output, the config and the compiler itself.
+//
+// compile-components is deliberately uncached. A full run takes about a second
+// and rewrites only what changed, so a cache hit saves nothing; and a cached
+// entry is replayed byte for byte, so one recorded while another process was
+// writing the same directories (CI run 40890169814 restored one with no
+// calendar output) fails every later build that hashes the same.
 const { dirname, join, relative, resolve } = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { createNodesFromFiles } = require('@nx/devkit');
@@ -54,7 +60,7 @@ async function createNodesInternal(configFile, options, context) {
         targets: {
           [targetName]: {
             command,
-            cache: true,
+            cache: false,
             inputs,
             outputs,
             metadata: {
