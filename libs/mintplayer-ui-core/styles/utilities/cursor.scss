@@ -1,11 +1,13 @@
 @use "sass:map";
 
-//Generate utilites for cursor
+// Generate .cursor-* utilities. Under a key of our own, so a Bootstrap release
+// that adds a "cursor" utility is never replaced by this one (#450).
 $utilities: map.merge(
   $utilities,
   (
-    "cursor": (
+    "mp-cursor": (
       property: cursor,
+      class: cursor,
       values: auto default pointer wait text move help not-allowed n-resize e-resize s-resize w-resize ne-resize se-resize nw-resize sw-resize grab grabbing
     ),
   )

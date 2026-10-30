@@ -12,6 +12,7 @@
  * class selectors, so a patch can only ever ADD classes.
  */
 import { compile, Logger } from 'sass';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,7 +46,46 @@ describe('Bootstrap baseline', () => {
     expect(baseline.has('white-space-pre-wrap')).toBe(true);
   });
 
+  it('ships the utility patches classes under the prefixes they always had', () => {
+    expect(baseline.has('cursor-pointer')).toBe(true);
+    expect(baseline.has('overflow-x-clip')).toBe(true);
+    expect(baseline.has('overflow-x-auto')).toBe(true);
+  });
+
   it('reads class selectors only (the check is not vacuous)', () => {
     expect([...classesOf('/* see example.com */ .a, .b:hover > .c { x: url(y.png) }')]).toEqual(['a', 'b', 'c']);
+  });
+});
+
+/**
+ * A future Bootstrap may define any key a patch uses today (cursor, say), and
+ * the superset check above only notices once that release is installed. So a
+ * patch never writes a literal entry under a non-`mp-` key: it adds classes
+ * under a key of its own, or merges into Bootstrap's entry on purpose
+ * (`"width": map.merge(map.get($utilities, "width"), ...)`).
+ */
+describe('utility patches', () => {
+  // Read from disk: vitest's css handling serves `.scss?raw` empty, which would make every check pass.
+  const dir = join(repoRoot, 'libs/mintplayer-ui-core/styles/utilities');
+  const patches = Object.fromEntries(
+    readdirSync(dir)
+      .filter((name) => name.endsWith('.scss'))
+      .map((name) => [name, readFileSync(join(dir, name), 'utf8')]),
+  );
+  /** The keys a patch assigns a literal map to, which replaces whatever Bootstrap has under them. */
+  const literalKeys = (scss: string) => [...scss.matchAll(/"([\w-]+)"\s*:\s*\(/g)].map((m) => m[1]);
+
+  it('finds the patches', () => {
+    expect(Object.keys(patches).length).toBeGreaterThan(0);
+    expect(Object.values(patches).every((scss) => scss.includes('$utilities'))).toBe(true);
+  });
+
+  it.each(Object.entries(patches))('%s never replaces a Bootstrap key', (_path, scss) => {
+    expect(literalKeys(scss).filter((key) => !key.startsWith('mp-'))).toEqual([]);
+  });
+
+  it('recognises a replacing entry and allows a merge (the check is not vacuous)', () => {
+    expect(literalKeys('"cursor": (property: cursor), "mp-x": (property: x)')).toEqual(['cursor', 'mp-x']);
+    expect(literalKeys('"width": map.merge(map.get($utilities, "width"), (responsive: true))')).toEqual([]);
   });
 });

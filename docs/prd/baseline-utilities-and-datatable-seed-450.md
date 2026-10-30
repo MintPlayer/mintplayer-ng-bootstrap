@@ -34,10 +34,14 @@ with Bootstrap's.
 - **D1.** A patch that changes a Bootstrap key merges into Bootstrap's entry
   (`map.merge(map.get($utilities, "width"), (responsive: true))`). A patch that adds classes of its own
   uses a key of its own (`"mp-white-space"`, `class: white-space`), never Bootstrap's key.
+  This holds for every patch, not only the two that lost classes: `cursor` (`mp-cursor`) and
+  `overflow-x` (`mp-overflow-x`, only the values Bootstrap lacks) also moved to keys of their own, so
+  a future Bootstrap that defines `cursor` or extends `overflow-x` is never replaced by ours.
 - **D2.** Regression spec `ui-core/_conformance/bootstrap-baseline-superset.spec.ts` compiles both
   sheets with `sass` and requires the baseline's class set to be a superset of stock Bootstrap's. It
-  pins the issue's own assertions too (`.w-100{width:100%!important}`, `.w-md-auto`). This catches
-  any future patch, not just these two.
+  pins the issue's own assertions too (`.w-100{width:100%!important}`, `.w-md-auto`). A second check
+  reads every `styles/utilities/*.scss` and fails on a literal entry under a non-`mp-` key, so a
+  patch cannot replace a key Bootstrap only adds in a later release.
 
 ## 2. A seeded first page drops the consumer's fetch metadata
 
