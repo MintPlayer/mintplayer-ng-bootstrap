@@ -347,6 +347,14 @@
   included) and hands it to the browser, so the table hydrates with rows and
   fetches nothing &mdash; view this page with JavaScript off to see it.
 </p>
+<p>
+  Because the browser skips <code>fetch</code> for that first page, anything
+  else your <code>fetch</code> reads off its response (the columns a server
+  query decides, say) belongs in the response's <code>extra</code>, which must be
+  JSON. <code>(pageload)</code> hands it back for every page the table applies,
+  with <code>seeded: true</code> for the page that came from the server. Record
+  it in <code>fetch</code> too: <code>(pageload)</code> fires in the browser only.
+</p>
 <p class="text-muted small">
   <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;
   <kbd>Enter</kbd> or <kbd>Space</kbd> opens the panel and moves focus to its
