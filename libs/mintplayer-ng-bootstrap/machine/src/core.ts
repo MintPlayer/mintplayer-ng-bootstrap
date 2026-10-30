@@ -6,15 +6,22 @@ import {
   ElementRef,
   inject,
   InjectionToken,
+  makeStateKey,
+  PendingTasks,
+  PLATFORM_ID,
   signal,
+  TransferState,
   untracked,
   type Provider,
   type Signal,
   type Type,
 } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { coreRuntime, type ComponentCore, type CoreBag, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
+import { runPrefetch } from '@mintplayer/ui-core/transfer-state';
 import { useHostProps } from './host-props';
+import { MACHINE_SSR_OPTIONS } from './ssr';
 
 const tokens = new WeakMap<CoreContext<unknown>, InjectionToken<Signal<unknown>>>();
 
@@ -70,6 +77,10 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   // template's bindings have set the inputs by then. In the constructor they
   // have not, and the server would render a bound model input's default.
   const written = signal<S | null>(null);
+  const server = isPlatformServer(inject(PLATFORM_ID));
+  const transfer = core.transferKey ? inject(TransferState) : null;
+  /** Server only: starts the prefetch with the first inputs the bindings deliver. */
+  let prefetchOnce: ((inputs: I) => void) | null = null;
   let seeded: S | null = null;
   const seed = (): S => {
     if (seeded) return seeded;
@@ -77,8 +88,34 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
     // The baseline the state was seeded from: inputs that change before attaching
     // (a form control writing its value) reach inputsChanged on attach.
     runtime.inputs(inputs);
-    return (seeded = core.state ? core.state(inputs) : ({} as S));
+    return (seeded = core.state ? core.state(inputs, server ? undefined : takeTransferred(inputs)) : ({} as S));
   };
+  /** The server's prefetched seed for these inputs, read once: a later instance with the same query fetches fresh (#448). */
+  const takeTransferred = (inputs: I): unknown => {
+    const key = transfer && core.transferKey?.(inputs);
+    if (!transfer || !key) return undefined;
+    const stateKey = makeStateKey<unknown>(key);
+    if (!transfer.hasKey(stateKey)) return undefined;
+    const value = transfer.get(stateKey, undefined);
+    transfer.remove(stateKey);
+    return value;
+  };
+  if (server && transfer && core.prefetch) {
+    // Outside the state computed, which must not write signals: the first change
+    // detection seeds the loading snapshot, this replaces it before serialization.
+    const pendingTasks = inject(PendingTasks);
+    const ssr = inject(MACHINE_SSR_OPTIONS);
+    const abort = new AbortController();
+    inject(DestroyRef).onDestroy(() => abort.abort());
+    prefetchOnce = (inputs) => {
+      void pendingTasks.run(async () => {
+        const result = await runPrefetch(core, inputs, { timeout: ssr.prefetchTimeout, signal: abort.signal });
+        if (!result || abort.signal.aborted) return;
+        transfer.set(makeStateKey<unknown>(result.key), result.seed);
+        written.set(core.state!(inputs, result.seed));
+      });
+    };
+  }
   const state = computed(() => written() ?? seed());
 
   const args = computed<ViewArgs<I, S, C, E>>(() => ({
@@ -111,7 +148,12 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   });
   effect(() => {
     const inputs = options.inputs();
-    untracked(() => runtime.inputs(inputs));
+    untracked(() => {
+      runtime.inputs(inputs);
+      const start = prefetchOnce;
+      prefetchOnce = null;
+      start?.(inputs);
+    });
   });
   inject(DestroyRef).onDestroy(() => runtime.dispose());
 
