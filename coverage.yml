@@ -10,3 +10,11 @@ versioning:
 #       packages: [Acme.Core, Acme.Core.*]
 #   packages:
 #     Acme.Generators: { anchor: free }   # free, or the framework package whose major it follows
+
+# CodeCoverage merge queue: label a pull request `merge-queue` (or press "Add to merge queue" on its check) and the
+# app rebases it on master, waits for the checks and squash-merges it. Guide: MintPlayer.Spark docs/code-coverage/merge-queue.md
+mergeQueue:
+  enabled: true
+#   branches: [master]                # default: the default branch
+#   enqueue: { label: merge-queue }   # default label
+#   checks: { retryFlaky: 1, timeout: 60m }
