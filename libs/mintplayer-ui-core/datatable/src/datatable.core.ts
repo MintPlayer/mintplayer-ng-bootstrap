@@ -141,7 +141,7 @@ export interface DatatableState {
   fetched: unknown[] | null;
   /** The request key `fetched` answers; set from a prefetched seed, so the client skips refetching it. */
   fetchedKey: string | null;
-  /** `fetched` came from a transferred seed rather than a load, so a newly delivered `fetch` can keep it. */
+  /** `fetched` is a seed `adopt` applied before any `fetch` arrived: the first `fetch` keeps it, once. */
   seeded: boolean;
   totalRecords: number | null;
   pageCache: ReadonlyMap<number, readonly unknown[]>;
@@ -382,7 +382,7 @@ export const datatableCore = defineCore<
       focusedKey: inputs.focusedRowKey ?? null,
       fetched: seeded ? [...seeded.rows] : null,
       fetchedKey: seeded?.key ?? null,
-      seeded: !!seeded,
+      seeded: false,
       totalRecords: seeded ? total(seeded.totalRecords) : null,
       pageCache: new Map(),
       childCache: new Map(),
@@ -1343,9 +1343,11 @@ export const datatableCore = defineCore<
         const inputs = api.inputs();
         const s = api.state();
         if (inputs.fetch !== prev.fetch) {
-          if (inputs.fetch && s.seeded && s.fetchedKey === requestKeyOf(inputs, s)) {
-            // A fetch delivered late, after the bridge adopted the server's seed for it: page 1 is its answer.
+          if (!prev.fetch && inputs.fetch && s.seeded && s.fetchedKey === requestKeyOf(inputs, s)) {
+            // The late fetch the bridge adopted the server's seed for: page 1 is its answer, once.
+            // Any later swap of fetch identity is a new source and reloads.
             lastKey = s.fetchedKey;
+            api.setState({ seeded: false });
           } else {
             // A new source: its count, pages and children are all unknown.
             invalidate();
