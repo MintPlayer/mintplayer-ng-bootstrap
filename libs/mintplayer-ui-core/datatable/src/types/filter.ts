@@ -1,9 +1,12 @@
+import type { JsonValue } from '@mintplayer/ui-core/transfer-state';
+
 /**
- * Types for the distinct-value filter panel.
+ * Types for the filter panels and the filter state (#448).
  *
- * The component owns the *panel*, never the *filtering*: it collects a
- * selection and emits it. Which rows that selection removes, and whether the
- * removal happens client-side or on a server, belongs to the consumer.
+ * The component owns the *state* and the *panel*, never the *filtering*. With
+ * `fetch`, the active filters travel in every request and the server applies
+ * them; with `data`, the consumer reads the `filters` model and filters its
+ * own array. The table never removes a row itself.
  */
 
 /**
@@ -35,11 +38,18 @@ export interface DistinctValues {
 }
 
 /** One request for a column's distinct values. */
-export interface DistinctsRequest {
+export interface DistinctsRequest<P extends JsonValue = JsonValue> {
   /** `DatatableColumnDef.name` of the column whose panel is open. */
   column: string;
   /** Current search term; `''` when the user has typed nothing. */
   search: string;
+  /**
+   * The OTHER columns' active filters: the facet the list should be computed
+   * over. The column's own filter is left out, so its unselected values still list.
+   */
+  filters: DatatableFilters;
+  /** The table's `fetchParams`, verbatim. */
+  params: P | undefined;
   /** Aborted when the panel closes or a newer request supersedes this one. */
   signal: AbortSignal;
 }
@@ -85,9 +95,39 @@ export type FilterOperator = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
  * same `FilterContext` the built-in panels use. There is no `contains` operator
  * for the same reason.
  */
-export type FilterInputType = 'number' | 'date';
+export type FilterInputType = 'number' | 'date' | 'datetime';
 
-/** A column's current filter selection. */
+/**
+ * One column's active filter, as the `filters` model and every request carry it
+ * (#448 D1). Labels are not part of it: a value is identified by `value` alone,
+ * so a relabelled value is the same filter and the same request.
+ *
+ * - **Values** (`'values'` and `'custom'` mode): a row matches when its cell
+ *   value equals one of `values` (strict equality, `NaN` equal to itself), or,
+ *   with `inverse`, equals none of them. A missing or null cell is the value
+ *   `null`. `operator` and `operand` are absent.
+ * - **Comparison** (`'comparison'` mode): a row matches when
+ *   `cell <operator> operand`; `values` is empty and `inverse` false. The
+ *   operand is a `number` for `filterInputType: 'number'`, a calendar date
+ *   `yyyy-mm-dd` for `'date'` (no time, no timezone) and a UTC instant
+ *   `yyyy-mm-ddTHH:mm:ss.sssZ` for `'datetime'` (#448 D10): the same moment for
+ *   every user, compared as an instant.
+ */
+export interface DatatableFilter {
+  values: JsonValue[];
+  inverse: boolean;
+  operator?: FilterOperator;
+  operand?: string | number;
+}
+
+/**
+ * The active filters by `DatatableColumnDef.name`. Only active ones: a column
+ * without a filter has no key, never an empty entry, so equal filters are equal
+ * requests.
+ */
+export type DatatableFilters = Readonly<Record<string, DatatableFilter>>;
+
+/** A column's current filter selection, as its panel shows it (values carry their labels). */
 export interface FilterSelection {
   values: DistinctValue[];
   /** `true` = exclude the selected values instead of including them. */
@@ -95,8 +135,7 @@ export interface FilterSelection {
   /** Comparison-mode operator. Ignored in `'values'` mode. */
   operator?: FilterOperator;
   /**
-   * Comparison-mode operand: a `number` for `filterInputType: 'number'`, an
-   * ISO `yyyy-mm-dd` string for `'date'`, otherwise the raw text. `null` means
+   * Comparison-mode operand, in the `DatatableFilter` encoding. `null` means
    * the user has not entered one, and no filter is active.
    */
   operand?: string | number | null;
@@ -118,39 +157,15 @@ export interface FilterContext {
   readonly term: string;
   /** Set the search term. Debounced; re-queries the source only when needed. */
   search(term: string): void;
-  /** Replace the selection and emit the change event. */
+  /** Replace the selection; the `filters` model and, with `fetch`, the rows follow. */
   apply(values: DistinctValue[], inverse: boolean): void;
-  /** Set a comparison from the operand's raw text; empty or unparseable text clears it. */
+  /**
+   * Set a comparison from the operand's raw text, as the column's input reports
+   * it (`datetime-local` text for `'datetime'`); empty or unparseable text clears it.
+   */
   compare(operator: FilterOperator, operand: string): void;
-  /** Clear the selection (in the column's own mode) and emit the change event. */
+  /** Clear the column's filter. */
   clear(): void;
   /** Close the panel. */
   close(): void;
-}
-
-/**
- * Detail of the `mp-datatable-filter-change` event.
- *
- * A discriminated union on `mode`, not one flat shape with half its fields
- * unset: a consumer switching on `mode` cannot then read a field the other mode
- * never fills, which is the mistake a single optional-everything interface
- * invites. Clearing fires the shape of the column's own mode, emptied.
- */
-export type FilterChangeDetail = ValuesFilterChangeDetail | ComparisonFilterChangeDetail;
-
-export interface ValuesFilterChangeDetail {
-  mode: 'values';
-  /** `DatatableColumnDef.name` of the column whose selection changed. */
-  column: string;
-  /** Empty when the user cleared the filter. */
-  selected: DistinctValue[];
-  inverse: boolean;
-}
-
-export interface ComparisonFilterChangeDetail {
-  mode: 'comparison';
-  column: string;
-  operator: FilterOperator;
-  /** `null` when the user cleared the filter or emptied the input. */
-  operand: string | number | null;
 }

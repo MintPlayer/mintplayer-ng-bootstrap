@@ -91,6 +91,8 @@ export interface DatatableLabels {
   filterOperator: string;
   /** Accessible name of the operand input in a comparison panel. */
   filterOperand: string;
+  /** Under a `'datetime'` operand: the instant the typed local time was applied as, in the user's locale. */
+  filterApplied: (when: string) => string;
   /**
    * Visible text of each operator option.
    *
@@ -188,6 +190,7 @@ export const DEFAULT_DATATABLE_LABELS: DatatableLabels = {
         : `${count} values selected in ${column}`,
   filterOperator: 'Comparison',
   filterOperand: 'Value to compare with',
+  filterApplied: (when) => `Applied as ${when}`,
   filterOperatorLabel: (operator) => FILTER_OPERATOR_LABELS[operator],
   announceComparisonFilter: (column, operator, operand) =>
     operand === '' ? `Filter cleared on ${column}` : `${column} ${operator} ${operand}`,

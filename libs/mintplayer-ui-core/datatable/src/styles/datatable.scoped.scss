@@ -774,6 +774,12 @@ tr.filter-row th {
   align-items: stretch;
 }
 
+// The read-back of a datetime operand, on its own line under the pair.
+.filter-applied {
+  display: block;
+  margin: 0.25rem 0 0;
+}
+
 .filter-operator {
   flex: 0 0 auto;
   // A native select sizes to its WIDEST option, so without a cap the six

@@ -60,6 +60,7 @@ defineSlots<{
                         </select>
                         <input v-bind="fc.open.comparison.operand" :value.prop="fc.open.comparison.operandText" />
                       </div>
+                      <small v-if="fc.open.comparison && fc.open.comparison.applied" v-bind="fc.open.comparison.applied">{{ fc.open.comparison.appliedText }}</small>
                       <input v-if="fc.open.list" v-bind="fc.open.list.search" :value.prop="fc.open.list.term" />
                       <button v-if="fc.open.list" v-bind="fc.open.list.invert">{{ fc.open.list.invertText }}</button>
                       <div v-if="fc.open.list" v-bind="fc.open.list.group">

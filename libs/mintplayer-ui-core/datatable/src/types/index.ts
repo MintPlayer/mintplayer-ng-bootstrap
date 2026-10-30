@@ -1,17 +1,16 @@
 export type { DatatableColumnDef, RowKey, RowRenderContext } from './column-def';
 export type {
-  ComparisonFilterChangeDetail,
+  DatatableFilter,
   DatatableDistincts,
   DistinctValue,
   DistinctValues,
   DistinctsRequest,
-  FilterChangeDetail,
+  DatatableFilters,
   FilterContext,
   FilterInputType,
   FilterMode,
   FilterOperator,
   FilterSelection,
-  ValuesFilterChangeDetail,
 } from './filter';
 export type {
   DatatableFetch,

@@ -3,6 +3,7 @@ import { SupersedingRequest } from '@mintplayer/ui-core/async';
 import { defineCore, type CoreApi } from '@mintplayer/ui-core/component';
 import { trackPopovers } from '@mintplayer/ui-core/overlay';
 import { isPlainClick } from '@mintplayer/ui-core/pagination';
+import { canonicalJson, canonicalValue, hashKey, type JsonValue } from '@mintplayer/ui-core/transfer-state';
 import { sameWindow, trackScroll, virtualWindow } from '@mintplayer/ui-core/virtual-window';
 import {
   KEYBOARD_RESIZE_STEP,
@@ -16,11 +17,15 @@ import {
   bucketDistincts,
   columnLabel,
   connectDatatable,
+  activeFilter,
+  EMPTY_SELECTION,
   filterOptionsOf,
-  filterSelectionOf,
   localDistincts,
   parseOperand,
+  requestFilters,
   sameValue,
+  selectionFromFilter,
+  withFilter,
   type DatatableFilterCommands,
   datatableModel,
   defaultRowKey,
@@ -40,10 +45,10 @@ import {
 import { computeNextSort, type SortColumn } from './sort';
 import type { DatatableColumnDef, RowKey } from './types/column-def';
 import type {
-  DatatableDistincts,
+  DatatableFilters,
+  DistinctsRequest,
   DistinctValue,
   DistinctValues,
-  FilterChangeDetail,
   FilterOperator,
   FilterSelection,
 } from './types/filter';
@@ -62,8 +67,25 @@ import type { DatatableFetch, TreeIdKey, TreeRowExpandDetail, TreeSelectionStrat
 export interface DatatableInputs {
   columns: DatatableColumnDef[];
   data: unknown[];
-  /** Server-side rows: the table calls it for every page, sort and expanded parent. */
-  fetch: DatatableFetch | null;
+  /**
+   * Server-side rows: the table calls it for every page, sort, filter and
+   * expanded parent. `any`, so a consumer's typed `DatatableFetch<Row, Params>` binds.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  fetch: DatatableFetch<any, any> | null;
+  /**
+   * The column filters, by column name (#448): a two-way model. The table
+   * never filters; `fetch` (or the consumer filtering `data`) applies them.
+   */
+  filters: DatatableFilters | null;
+  /** The consumer's own query context, sent verbatim as `params`. Must be JSON (#448 D2). */
+  fetchParams: JsonValue | null;
+  /**
+   * Turns on the server-side first page (#448 D3): the server prefetches it
+   * and hands it to the client under this key plus the request's identity.
+   * Unique per table on a page. Without it both sides render loading.
+   */
+  stateKey: string | null;
   caption: string | null;
   labels: Partial<DatatableLabels> | null;
   /** Names the table when no `aria-label` does. */
@@ -104,7 +126,8 @@ export interface DatatableInputs {
   /** Renders sort and page controls as links, so they work without JavaScript. */
   hrefFor: DatatableHrefFor | null;
   /** The filter panels' value lists; resolve null for a column the table should list from its own rows. */
-  distincts: DatatableDistincts | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  distincts: ((request: DistinctsRequest<any>) => Promise<DistinctValues | null>) | null;
 }
 
 export interface DatatableState {
@@ -116,6 +139,8 @@ export interface DatatableState {
   focusedKey: string | null;
   /** Page 1 of `fetch`, or null before it loads. */
   fetched: unknown[] | null;
+  /** The request key `fetched` answers; set from a prefetched seed, so the client skips refetching it. */
+  fetchedKey: string | null;
   totalRecords: number | null;
   pageCache: ReadonlyMap<number, readonly unknown[]>;
   childCache: ReadonlyMap<unknown, readonly unknown[]>;
@@ -133,8 +158,12 @@ export interface DatatableState {
   headerHeight: number;
   /** The column whose filter panel is open. */
   filterColumn: string | null;
-  /** The user's selections, by column; a column without one reads its filterSelection seed. */
-  filterSelections: Readonly<Record<string, FilterSelection>>;
+  /** The `filters` model: only active filters, in canonical form. */
+  filters: DatatableFilters;
+  /** What a panel shows but does not filter by yet: an operator picked, "exclude" pressed with nothing ticked. */
+  filterDrafts: Readonly<Record<string, Partial<FilterSelection>>>;
+  /** The labels of the values last applied, by column, so a closed panel still names them. */
+  filterValueLabels: Readonly<Record<string, DistinctValue[]>>;
   /** The list when a column's selection became non-empty, by column. */
   filterSnapshots: Readonly<Record<string, DistinctValue[]>>;
   /** The comparison operand's raw text, by column. */
@@ -163,7 +192,7 @@ export interface DatatableEvents {
   rowExpand: TreeRowExpandDetail;
   rowCollapse: TreeRowExpandDetail;
   loadError: DatatableLoadErrorDetail;
-  filterChange: FilterChangeDetail;
+  filtersChange: DatatableFilters;
 }
 
 export interface DatatableLoadErrorDetail {
@@ -183,6 +212,83 @@ const SSR_VIEWPORT = 480;
 const sameSort = (a: readonly SortColumn[], b: readonly SortColumn[]) =>
   a.length === b.length && a.every((c, i) => c.property === b[i].property && c.direction === b[i].direction);
 const positive = (v: unknown, fallback: number) => Math.max(1, Math.floor(Number(v) || fallback));
+
+type QueryState = Pick<DatatableState, 'sortColumns' | 'page' | 'perPage' | 'filters'>;
+
+/**
+ * The identity of a root query (#448): sort, page size, page (always 1 when
+ * virtual), filters and params, canonically. It dedupes reloads, names the
+ * page a seed answers, and keys the transfer. Throws `NonJsonValueError` on a
+ * `fetchParams` that is not JSON (D2).
+ */
+export function requestKeyOf(inputs: Readonly<DatatableInputs>, s: QueryState): string {
+  return JSON.stringify({
+    s: s.sortColumns.map((c) => [c.property, c.direction]),
+    pp: s.perPage,
+    p: inputs.virtualScroll ? 1 : s.page,
+    f: canonicalValue(requestFilters(s.filters), 'filters'),
+    q: canonicalValue(inputs.fetchParams ?? null, 'fetchParams'),
+  });
+}
+
+/** The query the inputs alone describe: what the server prefetches and the client starts from. */
+const queryOf = (inputs: Readonly<DatatableInputs>): QueryState => ({
+  sortColumns: [...(inputs.sortColumns ?? [])],
+  page: positive(inputs.page, 1),
+  perPage: positive(inputs.perPage, 20),
+  filters: requestFilters(inputs.filters),
+});
+
+const fetchPage = (inputs: Readonly<DatatableInputs>, s: QueryState, parentId: unknown | null, page: number, signal: AbortSignal) =>
+  inputs.fetch!({
+    parentId,
+    page,
+    perPage: s.perPage,
+    sortColumns: [...s.sortColumns],
+    filters: requestFilters(s.filters),
+    params: inputs.fetchParams ?? undefined,
+    signal,
+  });
+
+/** What `prefetch` resolves and the client is seeded with: page 1 of the query named by `key`. */
+interface DatatableSeed {
+  key: string;
+  rows: unknown[];
+  totalRecords: number | null;
+}
+const isSeed = (seed: unknown): seed is DatatableSeed =>
+  !!seed && typeof (seed as DatatableSeed).key === 'string' && Array.isArray((seed as DatatableSeed).rows);
+
+const total = (value: number | undefined | null) => (value == null ? null : Math.max(0, Math.floor(value)));
+
+/** The labels a column's values are known by: last applied, then snapshotted, then listed in its open panel. */
+const knownValues = (s: Readonly<DatatableState>, name: string): DistinctValue[] => [
+  ...(s.filterValueLabels[name] ?? []),
+  ...(s.filterSnapshots[name] ?? []),
+  ...(s.filterColumn === name && s.filterLoaded ? [...s.filterLoaded.matching, ...s.filterLoaded.remaining] : []),
+];
+
+const selectionsMemo = new WeakMap<object, { inputs: object; selections: Record<string, FilterSelection> }>();
+/** Every column's panel selection, from the model plus drafts; once per snapshot. */
+function selectionsOf(inputs: Readonly<DatatableInputs>, s: Readonly<DatatableState>): Record<string, FilterSelection> {
+  const hit = selectionsMemo.get(s);
+  if (hit && hit.inputs === inputs) return hit.selections;
+  const labels: DatatableLabels = { ...DEFAULT_DATATABLE_LABELS, ...(inputs.labels ?? {}) };
+  const names = [...new Set([...(inputs.columns ?? []).map((c) => c.name), ...Object.keys(s.filters), ...Object.keys(s.filterDrafts)])];
+  const selections = Object.fromEntries(
+    names.map((name) => [name, selectionFromFilter(s.filters[name], s.filterDrafts[name], knownValues(s, name), labels)]),
+  );
+  selectionsMemo.set(s, { inputs, selections });
+  return selections;
+}
+
+/** `record` with `name` set to `value`, or removed when it is null. */
+const withEntry = <T,>(record: Readonly<Record<string, T>>, name: string, value: T | null): Record<string, T> => {
+  const { [name]: _dropped, ...rest } = record;
+  return value === null ? rest : { ...rest, [name]: value };
+};
+
+let warnedNoStateKey = false;
 
 const modelMemo = new WeakMap<object, { inputs: object; model: DatatableModel }>();
 
@@ -230,6 +336,8 @@ const controllers = new WeakMap<HTMLElement, Controller>();
 
 /** The type-to-search quiet time shared with the typeahead and tree-select (#436 D6). */
 const FILTER_SEARCH_DEBOUNCE_MS = 200;
+/** Typing an operand is a server query per pause, not per keystroke (#448). */
+const FILTER_OPERAND_DEBOUNCE_MS = 300;
 
 /**
  * By instance id: the filter commands of each attached table. The view is
@@ -261,38 +369,62 @@ export const datatableCore = defineCore<
   undefined,
   DatatableMethods
 >({
-  state: (inputs) => ({
-    sortColumns: [...(inputs.sortColumns ?? [])],
-    page: positive(inputs.page, 1),
-    perPage: positive(inputs.perPage, 20),
-    selectedIds: [...(inputs.selectedIds ?? [])],
-    expandedIds: [...(inputs.expandedIds ?? [])],
-    focusedKey: inputs.focusedRowKey ?? null,
-    fetched: null,
-    totalRecords: null,
-    pageCache: new Map(),
-    childCache: new Map(),
-    childTotals: new Map(),
-    fetching: !!inputs.fetch,
-    scrollTop: 0,
-    viewport: 0,
-    columnWidths: {},
-    measured: false,
-    tableWidth: null,
-    resizeColumn: null,
-    resizeWidth: 0,
-    announcement: '',
-    headerHeight: 0,
-    filterColumn: null,
-    filterSelections: {},
-    filterSnapshots: {},
-    filterOperandTexts: {},
-    filterLoaded: null,
-    filterLoadedTerm: null,
-    filterFromLocal: false,
-    filterTerm: '',
-    filterLoading: false,
-  }),
+  state: (inputs, seed) => {
+    const query = queryOf(inputs);
+    // A seed for another query (the inputs moved on) is ignored, never shown as this one.
+    const seeded = !!inputs.fetch && isSeed(seed) && seed.key === requestKeyOf(inputs, query) ? seed : null;
+    return {
+      ...query,
+      selectedIds: [...(inputs.selectedIds ?? [])],
+      expandedIds: [...(inputs.expandedIds ?? [])],
+      focusedKey: inputs.focusedRowKey ?? null,
+      fetched: seeded ? [...seeded.rows] : null,
+      fetchedKey: seeded?.key ?? null,
+      totalRecords: seeded ? total(seeded.totalRecords) : null,
+      pageCache: new Map(),
+      childCache: new Map(),
+      childTotals: new Map(),
+      fetching: !!inputs.fetch && !seeded,
+      scrollTop: 0,
+      viewport: 0,
+      columnWidths: {},
+      measured: false,
+      tableWidth: null,
+      resizeColumn: null,
+      resizeWidth: 0,
+      announcement: '',
+      headerHeight: 0,
+      filterColumn: null,
+      filterDrafts: {},
+      filterValueLabels: {},
+      filterSnapshots: {},
+      filterOperandTexts: {},
+      filterLoaded: null,
+      filterLoadedTerm: null,
+      filterFromLocal: false,
+      filterTerm: '',
+      filterLoading: false,
+    };
+  },
+  transferKey: (inputs) => {
+    if (!inputs.fetch) return undefined;
+    if (!inputs.stateKey) {
+      if (!warnedNoStateKey) {
+        warnedNoStateKey = true;
+        console.warn('[mp-datatable] a fetch table without stateKey renders loading on the server and fetches on the client; set stateKey to prefetch its first page (#448).');
+      }
+      return undefined;
+    }
+    return `mp-dt:${inputs.stateKey}:${hashKey(requestKeyOf(inputs, queryOf(inputs)))}`;
+  },
+  prefetch: (inputs, signal) => {
+    if (!inputs.fetch || !inputs.stateKey) return undefined;
+    const query = queryOf(inputs);
+    const page = inputs.virtualScroll ? 1 : query.page;
+    return fetchPage(inputs, query, null, page, signal).then(
+      (resp): DatatableSeed => ({ key: requestKeyOf(inputs, query), rows: [...(resp?.data ?? [])], totalRecords: total(resp?.totalRecords) }),
+    );
+  },
   view: ({ inputs, state, id, hydrated, label }) => {
     const model = modelOf(inputs, state);
     const mode = parseSelectionMode(inputs.selectionMode);
@@ -341,7 +473,7 @@ export const datatableCore = defineCore<
         headerHeight: state.headerHeight,
         filter: {
           column: state.filterColumn,
-          selections: state.filterSelections,
+          selections: selectionsOf(inputs, state),
           operandTexts: state.filterOperandTexts,
           values:
             state.filterColumn === null
@@ -379,8 +511,11 @@ export const datatableCore = defineCore<
     // ── Fetch ────────────────────────────────────────────────────────────
     let generation = 0;
     let abort = new AbortController();
-    let lastKey: string | null = null;
+    // A seeded page 1 (#448) is already the answer to its query: the first reload skips it.
+    let lastKey: string | null = api.state().fetchedKey;
     let reloadQueued = false;
+    /** Set while typing in an operand holds reloads back; the timer reloads once typing pauses. */
+    let filterHold: ReturnType<typeof setTimeout> | null = null;
     const pendingPages = new Set<number>();
     const pendingChildren = new Set<unknown>();
     const isAbort = (e: unknown) => (e as { name?: string } | null)?.name === 'AbortError';
@@ -394,9 +529,7 @@ export const datatableCore = defineCore<
       pendingPages.clear();
       pendingChildren.clear();
     };
-    const request = (parentId: unknown | null, page: number) =>
-      api.inputs().fetch!({ parentId, page, perPage: api.state().perPage, sortColumns: [...api.state().sortColumns], signal: abort.signal });
-    const total = (value: number | undefined | null) => (value == null ? null : Math.max(0, Math.floor(value)));
+    const request = (parentId: unknown | null, page: number) => fetchPage(api.inputs(), api.state(), parentId, page, abort.signal);
 
     const loadPage = async (page: number) => {
       if (!api.inputs().fetch) return;
@@ -406,7 +539,7 @@ export const datatableCore = defineCore<
         const resp = await request(null, page);
         if (g !== generation || !api.inputs().fetch) return;
         const rows = [...(resp?.data ?? [])];
-        api.setState({ fetched: rows, totalRecords: total(resp?.totalRecords), fetching: false });
+        api.setState({ fetched: rows, fetchedKey: lastKey, totalRecords: total(resp?.totalRecords), fetching: false });
         announcer.announce(labels().announceLoaded(rows.length));
       } catch (error) {
         if (g === generation) api.setState({ fetching: false });
@@ -451,19 +584,20 @@ export const datatableCore = defineCore<
     };
 
     /**
-     * Coalesces sort, page and page-size changes (user actions and echoed
-     * inputs alike) into one request per task; a change key skips echoes.
+     * Coalesces sort, page, page-size, filter and params changes (user actions
+     * and echoed inputs alike) into one request per task; the request key skips
+     * echoes, and a pending operand-typing hold defers it.
      */
     const scheduleReload = () => {
-      if (!api.inputs().fetch || reloadQueued) return;
+      if (!api.inputs().fetch || reloadQueued || filterHold !== null) return;
       reloadQueued = true;
       queueMicrotask(() => {
         reloadQueued = false;
         const inputs = api.inputs();
-        if (!inputs.fetch) return;
+        if (!inputs.fetch || filterHold !== null) return;
         const s = api.state();
         const page = inputs.virtualScroll ? 1 : s.page;
-        const key = JSON.stringify({ s: s.sortColumns, pp: s.perPage, p: page });
+        const key = requestKeyOf(inputs, s);
         if (key === lastKey) return;
         lastKey = key;
         invalidate();
@@ -745,11 +879,28 @@ export const datatableCore = defineCore<
       panel()?.showPopover?.();
     };
     // ── Filters ──────────────────────────────────────────────────────────
-    // The table owns the panel, never the filtering: it records the selection
-    // and emits filterChange; the consumer decides which rows that removes.
+    // The table owns the panel and the `filters` model, never the filtering
+    // (#448): `fetch` applies them server-side, or the consumer filters `data`.
     const distinctsRequest = new SupersedingRequest({ debounceMs: FILTER_SEARCH_DEBOUNCE_MS });
     const columnOf = (name: string) => columns().find((c) => c.name === name);
-    const selectionOf = (name: string) => filterSelectionOf(columnOf(name), api.state().filterSelections);
+    const selectionOf = (name: string): FilterSelection => selectionsOf(api.inputs(), api.state())[name] ?? EMPTY_SELECTION;
+    /** Commits a new model: page 1, then a reload now, or once operand typing pauses. */
+    const setFilters = (next: DatatableFilters, typed: boolean) => {
+      if (filterHold !== null) clearTimeout(filterHold);
+      filterHold = typed
+        ? setTimeout(() => {
+            filterHold = null;
+            scheduleReload();
+          }, FILTER_OPERAND_DEBOUNCE_MS)
+        : null;
+      const current = api.state().filters;
+      if (canonicalJson(next, 'filters') !== canonicalJson(current, 'filters')) {
+        api.setState({ filters: next });
+        api.emit('filtersChange', next);
+        resetPageTo1();
+      }
+      scheduleReload();
+    };
     const nameOf = (name: string) => {
       const column = columnOf(name);
       return column ? columnLabel(column) : name;
@@ -765,9 +916,12 @@ export const datatableCore = defineCore<
       const source = api.inputs().distincts;
       if (source) {
         api.setState({ filterLoading: true });
+        // Faceted: over the other columns' filters, never the column's own.
+        const filters = requestFilters(withFilter(api.state().filters, name, null));
+        const params = api.inputs().fetchParams ?? undefined;
         // Wrapped, so a null answer stays distinguishable from a rejection (also a null value).
         const result = await distinctsRequest.run(
-          async ({ signal }) => ({ response: await source({ column: name, search: term, signal }) }),
+          async ({ signal }) => ({ response: await source({ column: name, search: term, filters, params, signal }) }),
           { debounceMs: debounced ? undefined : 0 },
         );
         if (result.aborted || api.state().filterColumn !== name) return;
@@ -788,24 +942,28 @@ export const datatableCore = defineCore<
           ? null
           : (s.filterSnapshots[name] ??
             (previous.values.length === 0 && s.filterColumn === name && s.filterLoaded ? [...s.filterLoaded.matching, ...s.filterLoaded.remaining] : null));
+      const next = activeFilter({ values, inverse }, 'values');
       api.setState({
-        filterSelections: { ...s.filterSelections, [name]: { ...previous, values: [...values], inverse } },
+        filterDrafts: withEntry(s.filterDrafts, name, next ? null : { inverse }),
+        filterValueLabels: withEntry(s.filterValueLabels, name, values.length ? [...values] : null),
         filterSnapshots: snapshot ? { ...unsnapped, [name]: snapshot } : unsnapped,
       });
       announcer.announce(labels().announceFilter(nameOf(name), values.length));
-      api.emit('filterChange', { mode: 'values', column: name, selected: [...values], inverse });
+      setFilters(withFilter(s.filters, name, next), false);
     };
-    const compareFilter = (name: string, operator: FilterOperator, raw: string) => {
+    /** `typed`: from the operand box, keystroke by keystroke, so the reload waits for a pause. */
+    const compareFilter = (name: string, operator: FilterOperator, raw: string, typed = false) => {
       const s = api.state();
       const operand = parseOperand(raw, columnOf(name)?.filterInputType);
+      const next = activeFilter({ values: [], inverse: false, operator, operand }, 'comparison');
       api.setState({
         // The raw text is echoed back: a number input's "-" or "1e" parses to nothing mid-typing.
         filterOperandTexts: { ...s.filterOperandTexts, [name]: raw },
-        filterSelections: { ...s.filterSelections, [name]: { ...selectionOf(name), operator, operand } },
+        filterDrafts: withEntry(s.filterDrafts, name, next ? null : { operator }),
       });
       const l = labels();
       announcer.announce(l.announceComparisonFilter(nameOf(name), l.filterOperatorLabel(operator), operand == null ? '' : String(operand)));
-      api.emit('filterChange', { mode: 'comparison', column: name, operator, operand });
+      setFilters(withFilter(s.filters, name, next), typed);
     };
     /** Clears in the column's own mode: a comparison column never reports a values filter. */
     const clearFilter = (name: string) => {
@@ -872,7 +1030,7 @@ export const datatableCore = defineCore<
       const name = panelColumn(target);
       if (name === null) return;
       if (target.matches('[data-dt-filter-search]')) searchFilter(name, target.value);
-      else if (target.matches('[data-dt-filter-operand]')) compareFilter(name, operatorOf(filterPanelOf(name), name), target.value);
+      else if (target.matches('[data-dt-filter-operand]')) compareFilter(name, operatorOf(filterPanelOf(name), name), target.value, true);
     };
     const onChange = (ev: Event) => {
       const target = ev.target as HTMLInputElement;
@@ -1180,7 +1338,7 @@ export const datatableCore = defineCore<
           // A new source: its count, pages and children are all unknown.
           invalidate();
           lastKey = null;
-          api.setState({ fetched: null, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
+          api.setState({ fetched: null, fetchedKey: null, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
         }
         if (inputs.sortColumns !== prev.sortColumns && !sameSort(inputs.sortColumns ?? [], s.sortColumns)) {
           api.setState({ sortColumns: [...(inputs.sortColumns ?? [])] });
@@ -1205,8 +1363,16 @@ export const datatableCore = defineCore<
           measuredWidths = new Map();
           userWidths.clear();
           frozenExtra = null;
-          // New column defs re-seed every selection from their filterSelection.
-          api.setState({ columnWidths: {}, measured: false, tableWidth: null, filterSelections: {}, filterSnapshots: {}, filterOperandTexts: {} });
+          // The filters are the model's and survive; panel leftovers of the old columns do not.
+          api.setState({ columnWidths: {}, measured: false, tableWidth: null, filterDrafts: {}, filterSnapshots: {}, filterOperandTexts: {} });
+        }
+        if (inputs.filters !== prev.filters) {
+          const next = requestFilters(inputs.filters);
+          // Compared canonically: an echo of our own filtersChange is a new object with the same filters.
+          if (canonicalJson(next, 'filters') !== canonicalJson(api.state().filters, 'filters')) {
+            // Set from outside: the typed operand texts no longer describe it.
+            api.setState({ filters: next, filterOperandTexts: {} });
+          }
         }
         // A locally derived list follows the rows under it, or no value would ever move to "remaining".
         const open = api.state().filterColumn;
@@ -1225,6 +1391,7 @@ export const datatableCore = defineCore<
       host.removeEventListener('toggle', onToggle, true);
       if (instanceId && filterRegistry.get(instanceId) === filterCommands) filterRegistry.delete(instanceId);
       distinctsRequest.dispose();
+      if (filterHold !== null) clearTimeout(filterHold);
       untrackPopovers();
       untrackScroll?.();
       observer?.disconnect();
