@@ -141,8 +141,8 @@ export interface DatatableState {
   fetched: unknown[] | null;
   /** The request key `fetched` answers; set from a prefetched seed, so the client skips refetching it. */
   fetchedKey: string | null;
-  /** `fetched` is a seed `adopt` applied before any `fetch` arrived: the first `fetch` keeps it, once. */
-  seeded: boolean;
+  /** The late `fetch` that `adopt` applied the server's seed for: only that function keeps `fetched` as its page 1, once. */
+  seededFor: DatatableFetch<any, any> | null;
   totalRecords: number | null;
   pageCache: ReadonlyMap<number, readonly unknown[]>;
   childCache: ReadonlyMap<unknown, readonly unknown[]>;
@@ -382,7 +382,7 @@ export const datatableCore = defineCore<
       focusedKey: inputs.focusedRowKey ?? null,
       fetched: seeded ? [...seeded.rows] : null,
       fetchedKey: seeded?.key ?? null,
-      seeded: false,
+      seededFor: null,
       totalRecords: seeded ? total(seeded.totalRecords) : null,
       pageCache: new Map(),
       childCache: new Map(),
@@ -431,7 +431,7 @@ export const datatableCore = defineCore<
   adopt: (state, inputs, seed) => {
     const query = queryOf(inputs);
     if (!inputs.fetch || !isSeed(seed) || seed.key !== requestKeyOf(inputs, query)) return state;
-    return { ...state, ...query, fetched: [...seed.rows], fetchedKey: seed.key, seeded: true, totalRecords: total(seed.totalRecords), fetching: false };
+    return { ...state, ...query, fetched: [...seed.rows], fetchedKey: seed.key, seededFor: inputs.fetch, totalRecords: total(seed.totalRecords), fetching: false };
   },
   view: ({ inputs, state, id, hydrated, label }) => {
     const model = modelOf(inputs, state);
@@ -520,6 +520,8 @@ export const datatableCore = defineCore<
     let generation = 0;
     let abort = new AbortController();
     // A seeded page 1 (#448) is already the answer to its query: the first reload skips it.
+    // An adopted seed is checked by identity in inputsChanged, which the runtime calls at
+    // attach with every input change made before it (fetch → null → another fetch reloads).
     let lastKey: string | null = api.state().fetchedKey;
     let reloadQueued = false;
     /** Set while typing in an operand holds reloads back; the timer reloads once typing pauses. */
@@ -547,7 +549,7 @@ export const datatableCore = defineCore<
         const resp = await request(null, page);
         if (g !== generation || !api.inputs().fetch) return;
         const rows = [...(resp?.data ?? [])];
-        api.setState({ fetched: rows, fetchedKey: lastKey, seeded: false, totalRecords: total(resp?.totalRecords), fetching: false });
+        api.setState({ fetched: rows, fetchedKey: lastKey, seededFor: null, totalRecords: total(resp?.totalRecords), fetching: false });
         announcer.announce(labels().announceLoaded(rows.length));
       } catch (error) {
         if (g === generation) api.setState({ fetching: false });
@@ -1343,16 +1345,16 @@ export const datatableCore = defineCore<
         const inputs = api.inputs();
         const s = api.state();
         if (inputs.fetch !== prev.fetch) {
-          if (!prev.fetch && inputs.fetch && s.seeded && s.fetchedKey === requestKeyOf(inputs, s)) {
+          if (inputs.fetch && s.seededFor === inputs.fetch && s.fetchedKey === requestKeyOf(inputs, s)) {
             // The late fetch the bridge adopted the server's seed for: page 1 is its answer, once.
-            // Any later swap of fetch identity is a new source and reloads.
+            // Any other fetch identity is a new source and reloads.
             lastKey = s.fetchedKey;
-            api.setState({ seeded: false });
+            api.setState({ seededFor: null });
           } else {
             // A new source: its count, pages and children are all unknown.
             invalidate();
             lastKey = null;
-            api.setState({ fetched: null, fetchedKey: null, seeded: false, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
+            api.setState({ fetched: null, fetchedKey: null, seededFor: null, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
           }
         }
         if (inputs.sortColumns !== prev.sortColumns && !sameSort(inputs.sortColumns ?? [], s.sortColumns)) {

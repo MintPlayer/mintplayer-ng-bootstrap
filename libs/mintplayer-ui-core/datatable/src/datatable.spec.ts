@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { coreRuntime } from '@mintplayer/ui-core/component';
 import {
   activeFilter,
   bucketDistincts,
@@ -326,13 +327,52 @@ describe('datatableCore server seed (#448)', () => {
     const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
     const before = datatableCore.state(inputs({ fetch: null }), undefined);
     expect(before.fetched).toBeNull();
-    const after = datatableCore.adopt!(before, inputs(), seed);
+    const late = inputs();
+    const after = datatableCore.adopt!(before, late, seed);
     expect(after.fetched).toEqual(page.data);
-    expect(after.seeded).toBe(true);
+    expect(after.seededFor).toBe(late.fetch);
     expect(after.fetching).toBe(false);
     expect(after.fetchedKey).toBe(requestKeyOf(inputs(), after));
     expect(datatableCore.adopt!(before, inputs({ fetchParams: { search: 'q' } }), seed)).toBe(before);
     expect(datatableCore.adopt!(before, inputs({ fetch: null }), seed)).toBe(before);
+  });
+
+  it('keeps an adopted seed only for the fetch it was adopted for, also across a swap before attach (#449 review)', async () => {
+    const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
+    const run = async (swap: boolean) => {
+      let current = inputs({ fetch: null });
+      let state = datatableCore.state(current, undefined);
+      const runtime = coreRuntime(datatableCore, {
+        inputs: () => current,
+        state: () => state,
+        setState: (next) => (state = next),
+        emit: () => undefined,
+      });
+      const report = (next: DatatableInputs) => {
+        current = next;
+        runtime.inputs(next);
+      };
+      report(current);
+      const late = inputs();
+      state = datatableCore.adopt!(state, late, seed);
+      report(late);
+      const b = inputs();
+      if (swap) {
+        report({ ...late, fetch: null });
+        report(b);
+      }
+      runtime.attachTo(document.createElement('div'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return { late, b, state };
+    };
+
+    const kept = await run(false);
+    expect(kept.late.fetch).not.toHaveBeenCalled();
+    expect(kept.state.fetched).toEqual(page.data);
+
+    const swapped = await run(true);
+    expect(swapped.late.fetch).not.toHaveBeenCalled();
+    expect(swapped.b.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('ignores a seed for another query, and renders loading instead', async () => {
