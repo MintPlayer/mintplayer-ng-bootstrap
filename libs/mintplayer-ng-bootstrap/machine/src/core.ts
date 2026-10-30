@@ -79,8 +79,10 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   const written = signal<S | null>(null);
   const server = isPlatformServer(inject(PLATFORM_ID));
   const transfer = core.transferKey ? inject(TransferState) : null;
-  /** Server only: starts the prefetch with the first inputs the bindings deliver. */
+  /** Server only: starts the prefetch with the first inputs that name one (a `transferKey`), however late they arrive. */
   let prefetchOnce: ((inputs: I) => void) | null = null;
+  /** Client only: the transferred seed is still unread, because no inputs have named its key yet. */
+  let transferArmed = !server && !!transfer;
   let seeded: S | null = null;
   const seed = (): S => {
     if (seeded) return seeded;
@@ -90,10 +92,14 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
     runtime.inputs(inputs);
     return (seeded = core.state ? core.state(inputs, server ? undefined : takeTransferred(inputs)) : ({} as S));
   };
-  /** The server's prefetched seed for these inputs, read once: a later instance with the same query fetches fresh (#448). */
+  /**
+   * The server's prefetched seed for these inputs, read once: a later instance with the same query fetches fresh (#448).
+   * Inputs without a key (a `fetch` the consumer sets after an async step) leave it armed for the next delivery.
+   */
   const takeTransferred = (inputs: I): unknown => {
-    const key = transfer && core.transferKey?.(inputs);
+    const key = transferArmed && transfer ? core.transferKey?.(inputs) : undefined;
     if (!transfer || !key) return undefined;
+    transferArmed = false;
     const stateKey = makeStateKey<unknown>(key);
     if (!transfer.hasKey(stateKey)) return undefined;
     const value = transfer.get(stateKey, undefined);
@@ -149,10 +155,19 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   effect(() => {
     const inputs = options.inputs();
     untracked(() => {
+      // A seed whose key the first inputs did not name: applied before the inputs reach the core,
+      // so its inputsChanged sees the seeded page as the answer rather than reloading it.
+      if (transferArmed && core.adopt) {
+        const late = takeTransferred(inputs);
+        if (late !== undefined) written.set(core.adopt(state(), inputs, late));
+      }
       runtime.inputs(inputs);
-      const start = prefetchOnce;
-      prefetchOnce = null;
-      start?.(inputs);
+      // Armed until the inputs name a prefetch: a `fetch` or `stateKey` can arrive after the first delivery.
+      if (prefetchOnce && core.transferKey?.(inputs)) {
+        const start = prefetchOnce;
+        prefetchOnce = null;
+        start(inputs);
+      }
     });
   });
   inject(DestroyRef).onDestroy(() => runtime.dispose());

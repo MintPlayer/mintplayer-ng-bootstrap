@@ -141,6 +141,8 @@ export interface DatatableState {
   fetched: unknown[] | null;
   /** The request key `fetched` answers; set from a prefetched seed, so the client skips refetching it. */
   fetchedKey: string | null;
+  /** `fetched` came from a transferred seed rather than a load, so a newly delivered `fetch` can keep it. */
+  seeded: boolean;
   totalRecords: number | null;
   pageCache: ReadonlyMap<number, readonly unknown[]>;
   childCache: ReadonlyMap<unknown, readonly unknown[]>;
@@ -380,6 +382,7 @@ export const datatableCore = defineCore<
       focusedKey: inputs.focusedRowKey ?? null,
       fetched: seeded ? [...seeded.rows] : null,
       fetchedKey: seeded?.key ?? null,
+      seeded: !!seeded,
       totalRecords: seeded ? total(seeded.totalRecords) : null,
       pageCache: new Map(),
       childCache: new Map(),
@@ -424,6 +427,11 @@ export const datatableCore = defineCore<
     return fetchPage(inputs, query, null, page, signal).then(
       (resp): DatatableSeed => ({ key: requestKeyOf(inputs, query), rows: [...(resp?.data ?? [])], totalRecords: total(resp?.totalRecords) }),
     );
+  },
+  adopt: (state, inputs, seed) => {
+    const query = queryOf(inputs);
+    if (!inputs.fetch || !isSeed(seed) || seed.key !== requestKeyOf(inputs, query)) return state;
+    return { ...state, ...query, fetched: [...seed.rows], fetchedKey: seed.key, seeded: true, totalRecords: total(seed.totalRecords), fetching: false };
   },
   view: ({ inputs, state, id, hydrated, label }) => {
     const model = modelOf(inputs, state);
@@ -539,7 +547,7 @@ export const datatableCore = defineCore<
         const resp = await request(null, page);
         if (g !== generation || !api.inputs().fetch) return;
         const rows = [...(resp?.data ?? [])];
-        api.setState({ fetched: rows, fetchedKey: lastKey, totalRecords: total(resp?.totalRecords), fetching: false });
+        api.setState({ fetched: rows, fetchedKey: lastKey, seeded: false, totalRecords: total(resp?.totalRecords), fetching: false });
         announcer.announce(labels().announceLoaded(rows.length));
       } catch (error) {
         if (g === generation) api.setState({ fetching: false });
@@ -1335,10 +1343,15 @@ export const datatableCore = defineCore<
         const inputs = api.inputs();
         const s = api.state();
         if (inputs.fetch !== prev.fetch) {
-          // A new source: its count, pages and children are all unknown.
-          invalidate();
-          lastKey = null;
-          api.setState({ fetched: null, fetchedKey: null, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
+          if (inputs.fetch && s.seeded && s.fetchedKey === requestKeyOf(inputs, s)) {
+            // A fetch delivered late, after the bridge adopted the server's seed for it: page 1 is its answer.
+            lastKey = s.fetchedKey;
+          } else {
+            // A new source: its count, pages and children are all unknown.
+            invalidate();
+            lastKey = null;
+            api.setState({ fetched: null, fetchedKey: null, seeded: false, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
+          }
         }
         if (inputs.sortColumns !== prev.sortColumns && !sameSort(inputs.sortColumns ?? [], s.sortColumns)) {
           api.setState({ sortColumns: [...(inputs.sortColumns ?? [])] });

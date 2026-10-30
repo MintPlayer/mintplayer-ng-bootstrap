@@ -26,7 +26,9 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 - **SSR first page for `fetch` tables (issue #448).** Set `stateKey` and the server render fetches page 1
   (with the filters and params), renders it, and transfers it, so the browser hydrates without fetching.
   Without `stateKey` the server renders the loading state and warns once.
-  - Angular: nothing to add; `provideMachineSsr({ prefetchTimeout })` changes the 3000 ms default.
+  - Angular: nothing to add; `provideMachineSsr({ prefetchTimeout })` changes the 3000 ms default. A
+    `fetch` or `stateKey` bound after an async step of your own (held by a pending task) is still
+    prefetched, and adopted on the client when it arrives (`ComponentCore.adopt`).
   - React: wrap the app in `<MpTransferStateProvider store={store} server>` on the server and
     `<MpTransferStateProvider>` in the browser, render with `renderToPipeableStream` + `onAllReady`, and put
     `serializeTransferState(store)` (`@mintplayer/ui-core/transfer-state`) in the head.

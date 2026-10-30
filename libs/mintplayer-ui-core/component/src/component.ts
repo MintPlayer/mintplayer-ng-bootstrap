@@ -130,6 +130,14 @@ export interface ComponentCore<I, S, P, E = Record<never, never>, C = undefined,
    * them. Undefined turns both the prefetch and the transfer off.
    */
   transferKey?(inputs: Readonly<I>): string | undefined;
+  /**
+   * A seed that arrives after the state was created: the inputs that name the
+   * prefetch (a `fetch`, a `stateKey`) were delivered late, after an async step
+   * of the consumer's own. Returns the state with the seed applied, or `state`
+   * unchanged when the seed answers another query. Called before those inputs
+   * reach `inputsChanged`, so the core can recognise its seeded data there.
+   */
+  adopt?(state: Readonly<S>, inputs: Readonly<I>, seed: unknown): S;
   /** The template's props. Pure. */
   view(args: ViewArgs<I, S, C, E>): P;
   /**

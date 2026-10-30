@@ -322,6 +322,19 @@ describe('datatableCore server seed (#448)', () => {
     expect(state.fetchedKey).toBe(requestKeyOf(i, state));
   });
 
+  it('adopts a seed delivered with a late fetch, and only for its own query (#449 review)', async () => {
+    const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
+    const before = datatableCore.state(inputs({ fetch: null }), undefined);
+    expect(before.fetched).toBeNull();
+    const after = datatableCore.adopt!(before, inputs(), seed);
+    expect(after.fetched).toEqual(page.data);
+    expect(after.seeded).toBe(true);
+    expect(after.fetching).toBe(false);
+    expect(after.fetchedKey).toBe(requestKeyOf(inputs(), after));
+    expect(datatableCore.adopt!(before, inputs({ fetchParams: { search: 'q' } }), seed)).toBe(before);
+    expect(datatableCore.adopt!(before, inputs({ fetch: null }), seed)).toBe(before);
+  });
+
   it('ignores a seed for another query, and renders loading instead', async () => {
     const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
     const state = datatableCore.state(inputs({ fetchParams: { search: 'q' } }), seed);
