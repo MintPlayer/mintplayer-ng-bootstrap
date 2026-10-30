@@ -18,8 +18,9 @@ export default {
         '',
         'Columns are data (`DatatableColumnDef`). Slots: `header {column}` (a header label),',
         '`cell {row, column, rowIndex}` (one cell) and `row {row, rowIndex, ctx}` (all of a',
-        "row's data cells) and `filter {column, ctx}` (the panel of a column with `filterMode: 'custom'`). Two-way: `sortColumns`, `page`, `perPage`, `selectedIds`, `expandedIds`.",
-        'An `aria-label` names the table.',
+        "row's data cells) and `filter {column, ctx}` (the panel of a column with `filterMode: 'custom'`). Two-way: `sortColumns`, `page`, `perPage`, `selectedIds`, `expandedIds`, `filters`.",
+        'An `aria-label` names the table. With `fetch`, filters are applied server-side; `stateKey` prefetches',
+        'the first page during SSR and hands it to the client (#448).',
       ].join('\n'),
       inputs: {
         type: 'DatatableInputs',
@@ -57,6 +58,9 @@ export default {
           resizableColumns: { default: 'true', kind: 'boolean' },
           hrefFor: { default: 'null', kind: false },
           distincts: { default: 'null', kind: false },
+          filters: { default: '{}', kind: false, model: true },
+          fetchParams: { default: 'null', kind: false },
+          stateKey: { default: 'null', kind: 'string' },
         },
       },
       outputs: {
@@ -72,7 +76,7 @@ export default {
         rowExpand: { type: 'TreeRowExpandDetail', doc: 'A tree row expanded.' },
         rowCollapse: { type: 'TreeRowExpandDetail', doc: 'A tree row collapsed.' },
         loadError: { type: 'DatatableLoadErrorDetail', doc: 'A `fetch` call rejected.' },
-        filterChange: { type: 'FilterChangeDetail', doc: "A column's filter changed; the consumer decides which rows it removes." },
+        filtersChange: { type: 'DatatableFilters', doc: 'The column filters, after the user changed them; `fetch` (or the consumer, over `data`) applies them.' },
       },
       methods: {
         type: 'DatatableMethods',

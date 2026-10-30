@@ -1,4 +1,4 @@
-import type { FilterInputType, FilterMode, FilterOperator, FilterSelection } from './filter';
+import type { FilterInputType, FilterMode, FilterOperator } from './filter';
 
 /**
  * A column is data, not markup (#437): what a cell, a header or a filter panel
@@ -48,27 +48,21 @@ export interface DatatableColumnDef<T = unknown> {
    */
   filterable?: boolean;
   /**
-   * Purely visual: marks the trigger as "this column has an active filter".
-   * What counts as active, and when, belongs to the consumer.
-   */
-  filterActive?: boolean;
-  /**
    * Short description of the active filter, rendered on the trigger and folded
    * into its accessible name. Consumer-owned: never derived from a selection.
+   * Whether the column is filtered at all follows the `filters` model.
    */
   filterSummary?: string;
-  /**
-   * Initial (or externally restored) selection for this column's panel. Read
-   * when `columns` is set; the component then owns the selection until the next
-   * `columns` assignment, so this is a seed, not a binding.
-   */
-  filterSelection?: FilterSelection;
   /**
    * Which question the built-in panel asks: a checkbox list of distinct values
    * (default) or an operator plus one operand. A `filter` slot replaces the panel.
    */
   filterMode?: FilterMode;
-  /** `type` of the operand input in `'comparison'` mode. Default `'number'`; also decides parsing. */
+  /**
+   * `type` of the operand input in `'comparison'` mode. Default `'number'`; also
+   * decides parsing and the operand's encoding (`DatatableFilter`). `'datetime'`
+   * edits local time and sends the UTC instant.
+   */
   filterInputType?: FilterInputType;
   /** Operators offered in `'comparison'` mode, in the order shown. Defaults to all six. */
   filterOperators?: FilterOperator[];

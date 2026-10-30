@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useId, useRef, useState, type Context, type RefObject } from 'react';
+import { createContext, use, useContext, useEffect, useId, useRef, useState, type Context, type RefObject } from 'react';
 import { coreRuntime, type ComponentCore, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
+import { runPrefetch } from '@mintplayer/ui-core/transfer-state';
+import { MpSsr } from './transfer-state';
 
 const contexts = new WeakMap<CoreContext<unknown>, Context<unknown>>();
 const NONE = createContext<unknown>(undefined);
@@ -40,7 +42,30 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   const id = `${options.idPrefix}-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const consumed = useContext((core.consume ? reactCoreContext(core.consume) : NONE) as Context<C | undefined>);
   const [hydrated, setHydrated] = useState(false);
-  const [state, setState] = useState<S>(() => (core.state ? core.state(inputs) : ({} as S)));
+  // #448: the server suspends on the prefetch (one per key per request); the
+  // client seeds from what the server transferred under the same key.
+  const ssr = useContext(MpSsr);
+  const [transferKey] = useState(() => (ssr && core.transferKey ? core.transferKey(inputs) : undefined));
+  let seed: unknown;
+  if (ssr && transferKey) {
+    if (!ssr.server) seed = ssr.store.get(transferKey);
+    else if (core.prefetch) {
+      let pending = ssr.pending.get(transferKey);
+      if (!pending) {
+        pending = runPrefetch(core, inputs, { timeout: ssr.prefetchTimeout }).then((result) => {
+          if (result) ssr.store.set(result.key, result.seed);
+          return result;
+        });
+        ssr.pending.set(transferKey, pending);
+      }
+      seed = use(pending)?.seed;
+    }
+  }
+  const [state, setState] = useState<S>(() => (core.state ? core.state(inputs, seed) : ({} as S)));
+  // Read once, after the commit (StrictMode renders twice): a later table with the same query fetches fresh.
+  useEffect(() => {
+    if (ssr && transferKey && !ssr.server) ssr.store.remove(transferKey);
+  }, [ssr, transferKey]);
 
   const latest = useRef({ inputs, state, emit: options.emit });
   latest.current = { inputs, state, emit: options.emit };

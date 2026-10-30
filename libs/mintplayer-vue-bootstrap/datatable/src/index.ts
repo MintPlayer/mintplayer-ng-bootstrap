@@ -2,7 +2,7 @@
 export * from './generated';
 export { DEFAULT_DATATABLE_LABELS, cellText, computeNextSort, sortRows } from '@mintplayer/ui-core/datatable';
 export type {
-  ComparisonFilterChangeDetail,
+  DatatableFilter,
   DatatableColumnDef,
   DatatableDistincts,
   DatatableFetch,
@@ -17,7 +17,7 @@ export type {
   DistinctValue,
   DistinctValues,
   DistinctsRequest,
-  FilterChangeDetail,
+  DatatableFilters,
   FilterContext,
   FilterInputType,
   FilterMode,
@@ -32,5 +32,4 @@ export type {
   TreeIdKey,
   TreeRowExpandDetail,
   TreeSelectionStrategy,
-  ValuesFilterChangeDetail,
 } from '@mintplayer/ui-core/datatable';

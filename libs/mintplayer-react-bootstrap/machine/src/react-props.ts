@@ -5,11 +5,15 @@ export type AttrBag = Record<string, string | number | boolean | null>;
 const RENAME: Readonly<Record<string, string>> = {
   autocomplete: 'autoComplete',
   class: 'className',
+  colspan: 'colSpan',
   for: 'htmlFor',
+  maxlength: 'maxLength',
+  minlength: 'minLength',
   popovertarget: 'popoverTarget',
   popovertargetaction: 'popoverTargetAction',
   tabindex: 'tabIndex',
   readonly: 'readOnly',
+  rowspan: 'rowSpan',
 };
 
 /**

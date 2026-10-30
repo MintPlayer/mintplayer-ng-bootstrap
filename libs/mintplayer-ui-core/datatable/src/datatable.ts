@@ -5,11 +5,15 @@ import { virtualWindow } from '@mintplayer/ui-core/virtual-window';
 import { MIN_COLUMN_WIDTH } from './column-resize';
 import { computeNextSort, sortRows, type SortColumn } from './sort';
 import type { DatatableColumnDef, RowKey, RowRenderContext } from './types/column-def';
+import type { JsonValue } from '@mintplayer/ui-core/transfer-state';
 import type {
+  DatatableFilter,
+  DatatableFilters,
   DistinctValue,
   DistinctValues,
   FilterContext,
   FilterInputType,
+  FilterMode,
   FilterOperator,
   FilterSelection,
 } from './types/filter';
@@ -423,6 +427,9 @@ export interface DatatableFilterPanel {
     readonly operators: readonly DatatableFilterOperatorOption[];
     readonly operand: DatatableBag;
     readonly operandText: string;
+    /** `'datetime'` only: the applied instant in the user's locale, the target of the operand's `aria-describedby`. */
+    readonly applied: DatatableBag | null;
+    readonly appliedText: string;
   } | null;
 }
 
@@ -467,23 +474,95 @@ export const sameValue = (a: unknown, b: unknown): boolean => a === b || (a !== 
 export const includesValue = (values: readonly DistinctValue[], value: unknown): boolean =>
   values.some((v) => sameValue(v.value, value));
 
-const EMPTY_SELECTION: FilterSelection = { values: [], inverse: false };
+export const EMPTY_SELECTION: FilterSelection = { values: [], inverse: false };
 
-/** A column's selection: the user's, else the column's `filterSelection` seed. */
+/** A column's selection as its panel shows it; a column without one has the empty selection. */
 export const filterSelectionOf = (column: DatatableColumnDef | undefined, selections: Readonly<Record<string, FilterSelection>>): FilterSelection =>
-  (column && selections[column.name]) || column?.filterSelection || EMPTY_SELECTION;
+  (column && selections[column.name]) || EMPTY_SELECTION;
+
+const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 
 /**
  * An empty input, and a `'number'` input holding something unparseable, both
  * mean "no filter" rather than a comparison against `NaN`. A `'date'` stays
- * the ISO string the input reports: parsing it to a Date would pick the
- * runtime's timezone.
+ * the calendar date the input reports: parsing it to a Date would pick the
+ * runtime's timezone. A `'datetime'` is the input's local wall-clock time,
+ * converted to the UTC instant it names (#448 D10). A wall-clock time inside a
+ * daylight-saving gap resolves forward and one inside an overlap to the earlier
+ * instant, as `Date` does; the panel shows the result back.
  */
 export function parseOperand(raw: string, type: FilterInputType | undefined): string | number | null {
   if (raw.trim() === '') return null;
-  if ((type ?? 'number') === 'date') return raw;
+  const kind = type ?? 'number';
+  if (kind === 'date') return raw;
+  if (kind === 'datetime') {
+    const match = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(raw.trim());
+    if (!match) return null;
+    const [, y, mo, d, h, mi, s, ms] = match;
+    const at = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s ?? 0), Number((ms ?? '0').padEnd(3, '0')));
+    return Number.isNaN(at.getTime()) ? null : at.toISOString();
+  }
   const parsed = Number(raw);
   return Number.isNaN(parsed) ? null : parsed;
+}
+
+/** The text an operand input shows for an operand: a `'datetime'` instant as local `datetime-local` text. */
+export function operandText(operand: string | number | null | undefined, type: FilterInputType | undefined): string {
+  if (operand == null) return '';
+  if ((type ?? 'number') !== 'datetime') return String(operand);
+  const at = new Date(String(operand));
+  if (Number.isNaN(at.getTime())) return String(operand);
+  const seconds = at.getSeconds() || at.getMilliseconds() ? `:${pad(at.getSeconds())}` : '';
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}${seconds}`;
+}
+
+/** A column's selection as the filter it applies, or null when it filters nothing. */
+export function activeFilter(selection: FilterSelection, mode: FilterMode | undefined): DatatableFilter | null {
+  if ((mode ?? 'values') === 'comparison') {
+    return selection.operand == null || !selection.operator ? null : { values: [], inverse: false, operator: selection.operator, operand: selection.operand };
+  }
+  // "Exclude nothing" and "include nothing" both filter nothing: neither is sent.
+  return selection.values.length ? { values: selection.values.map((v) => v.value as JsonValue), inverse: !!selection.inverse } : null;
+}
+
+/**
+ * The panel's view of one column: the active filter from the model (labelled
+ * from `known`, else by `labels.filterValue`), else the column's unapplied
+ * draft (an operator picked, or "invert" pressed, with nothing to apply yet).
+ */
+export function selectionFromFilter(
+  filter: DatatableFilter | undefined,
+  draft: Partial<FilterSelection> | undefined,
+  known: readonly DistinctValue[] | undefined,
+  labels: DatatableLabels,
+): FilterSelection {
+  if (!filter) return { values: [], inverse: !!draft?.inverse, ...(draft?.operator ? { operator: draft.operator } : {}), operand: null };
+  const values = (filter.values ?? []).map((value) => known?.find((v) => sameValue(v.value, value)) ?? { value, label: labels.filterValue(value) });
+  return {
+    values,
+    inverse: !!filter.inverse,
+    ...(filter.operator ? { operator: filter.operator } : {}),
+    operand: filter.operand ?? null,
+  };
+}
+
+/** `filters` with one column's entry replaced, or removed when `next` is null. */
+export function withFilter(filters: DatatableFilters, name: string, next: DatatableFilter | null): DatatableFilters {
+  const { [name]: _dropped, ...rest } = filters;
+  return next ? { ...rest, [name]: next } : rest;
+}
+
+/**
+ * The filters a request carries: entries for columns the table knows, each
+ * still active, in canonical form. A model entry for an unknown column is kept
+ * too: the consumer set it, and the server may know the field.
+ */
+export function requestFilters(filters: DatatableFilters | null | undefined): DatatableFilters {
+  return Object.fromEntries(
+    Object.entries(filters ?? {}).filter(
+      ([, f]) => !!f && ((f.values?.length ?? 0) > 0 || (f.operator !== undefined && f.operand !== undefined && f.operand !== null)),
+    ),
+  );
 }
 
 /** The value list computed from rows the table holds in full, sorted by label. */
@@ -767,6 +846,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     : [];
 
   const f = o.filter;
+  const panelIdOf = (name: string) => datatableFilterPanelId(o.id, name);
   const filterPanel = (column: DatatableColumnDef): DatatableFilterPanel => {
     const name = column.name;
     const label = columnLabel(column);
@@ -789,6 +869,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     const operator = selection.operator ?? operators[0];
     const picked = selection.values;
     const listed = filterOptionsOf(selection, f.values);
+    const datetimeApplied = comparing && column.filterInputType === 'datetime' && selection.operand != null;
     return {
       column,
       ctx,
@@ -835,11 +916,15 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
             })),
             operand: {
               class: 'filter-operand',
-              type: column.filterInputType ?? 'number',
+              type: column.filterInputType === 'datetime' ? 'datetime-local' : (column.filterInputType ?? 'number'),
               'aria-label': labels.filterOperand,
+              // The read-back says which instant a typed local time resolved to (a DST gap moves it).
+              'aria-describedby': datetimeApplied ? `${panelIdOf(name)}-applied` : null,
               'data-dt-filter-operand': '',
             },
-            operandText: f.operandTexts[name] ?? (selection.operand == null ? '' : String(selection.operand)),
+            operandText: f.operandTexts[name] ?? operandText(selection.operand, column.filterInputType),
+            applied: datetimeApplied ? { class: 'filter-applied form-text', id: `${panelIdOf(name)}-applied` } : null,
+            appliedText: datetimeApplied ? labels.filterApplied(new Date(String(selection.operand)).toLocaleString()) : '',
           }
         : null,
     };
@@ -849,20 +934,21 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
         const label = columnLabel(column);
         const open = f.column === column.name;
         const panelId = datatableFilterPanelId(o.id, column.name);
+        const active = activeFilter(filterSelectionOf(column, f.selections), column.filterMode) !== null;
         return {
           key: column.name,
           // A column with no filter still gets its cell: it belongs to the grid, so it is not hidden.
           th: { class: 'filter-cell p-0', scope: 'col', 'data-column': column.name },
           trigger: column.filterable
             ? {
-                class: ['filter-trigger p-2 rounded-0', column.filterActive ? 'active' : '', open ? 'open' : ''].filter(Boolean).join(' '),
+                class: ['filter-trigger p-2 rounded-0', active ? 'active' : '', open ? 'open' : ''].filter(Boolean).join(' '),
                 type: 'button',
                 // The browser toggles the panel (no JavaScript needed to open it).
                 popovertarget: panelId,
                 'aria-expanded': open ? 'true' : 'false',
                 'aria-controls': panelId,
                 // "Filtered" is part of the name: the active styling is not visible to everyone.
-                'aria-label': column.filterActive ? labels.filterColumnActive(label, column.filterSummary) : labels.filterColumn(label),
+                'aria-label': active ? labels.filterColumnActive(label, column.filterSummary) : labels.filterColumn(label),
                 'data-dt-filter': column.name,
               }
             : null,

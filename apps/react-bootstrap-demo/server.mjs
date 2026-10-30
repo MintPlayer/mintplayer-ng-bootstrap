@@ -92,12 +92,13 @@ async function createServer() {
       // @mintplayer/web-components/theming): the entry is bundled by Vite, so
       // this plain-ESM file needs no path alias in dev or prod.
       const { render, resolveServerTheme, injectThemeAttribute, collectScopedStyles } = entry;
-      const appHtml = await render(url);
+      // head: the transfer state (#448), what a stateKey table prefetched for the browser.
+      const { html: appHtml, head } = await render(url);
       // SSR theme splice (PRD dark-mode D5b, FR-6): a valid bs-theme-mode cookie,
       // else the meta default, becomes <html data-bs-theme>; auto renders none
       // and the pre-boot script resolves it from the OS scheme.
       const mode = resolveServerTheme(req.headers.cookie, { defaultMode: readDefaultMode(template) });
-      const page = template.replace('<!--app-head-->', collectScopedStyles()).replace('<!--app-html-->', appHtml);
+      const page = template.replace('<!--app-head-->', collectScopedStyles() + head).replace('<!--app-html-->', appHtml);
       const html = injectThemeAttribute(page, mode);
       // The markup depends on the cookie, so no shared cache may serve one
       // visitor's theme to another.

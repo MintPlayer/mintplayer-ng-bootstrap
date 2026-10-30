@@ -1,5 +1,21 @@
-import { computed, inject, onBeforeUnmount, onMounted, provide, shallowRef, toRaw, useAttrs, useId, watch, type ComputedRef, type InjectionKey } from 'vue';
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  onMounted,
+  onServerPrefetch,
+  provide,
+  shallowRef,
+  toRaw,
+  useAttrs,
+  useId,
+  watch,
+  type ComputedRef,
+  type InjectionKey,
+} from 'vue';
 import { coreRuntime, type ComponentCore, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
+import { runPrefetch } from '@mintplayer/ui-core/transfer-state';
+import { MP_SSR } from './transfer-state';
 
 const keys = new WeakMap<CoreContext<unknown>, InjectionKey<ComputedRef<unknown>>>();
 
@@ -46,7 +62,23 @@ export function useCore<I extends object, S, P, E, C, PC, M>(
   const attrs = useAttrs();
   const consumed = core.consume ? inject(vueCoreContextKey(core.consume), null) : null;
   const hydrated = shallowRef(false);
-  const state = shallowRef<S>(core.state ? core.state(inputs()) : ({} as S));
+  // #448: the server awaits the prefetch before rendering; the client seeds from
+  // what the server transferred under the same key, once.
+  const ssr = core.transferKey ? inject(MP_SSR, null) : null;
+  const initial = inputs();
+  const transferKey = ssr ? core.transferKey?.(initial) : undefined;
+  const transferred = ssr && transferKey && !ssr.server ? ssr.store.get(transferKey) : undefined;
+  if (ssr && transferKey && !ssr.server) ssr.store.remove(transferKey);
+  const state = shallowRef<S>(core.state ? core.state(initial, transferred) : ({} as S));
+  if (ssr?.server && core.prefetch && core.state) {
+    onServerPrefetch(async () => {
+      const now = inputs();
+      const result = await runPrefetch(core, now, { timeout: ssr.prefetchTimeout });
+      if (!result) return;
+      ssr.store.set(result.key, result.seed);
+      state.value = core.state!(now, result.seed);
+    });
+  }
 
   const args = computed<ViewArgs<I, S, C, E>>(() => ({
     inputs: inputs(),

@@ -52,6 +52,54 @@ public class CustomersController(DemoDbContext db) : ControllerBase
 
     [HttpGet("schema")]
     public ActionResult<List<EntitySchemaDto>> Schema() => EntitySchemaService.AllForCustomers();
+
+    /// <summary>The columns the datatable demo may filter and list values of (#448).</summary>
+    private static readonly IReadOnlySet<string> Filterable = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(Customer.Name), nameof(Customer.Country), nameof(Customer.Email), nameof(Customer.CreatedAt),
+    };
+
+    /// <summary>The demo's <c>fetchParams</c>: <c>{ "search": "…" }</c> narrows by name.</summary>
+    private IQueryable<Customer> Filtered(Dictionary<string, DatatableFilter>? filters, System.Text.Json.JsonElement? parameters)
+    {
+        var q = DatatableFilterApplier.Apply(db.Customers.AsQueryable(), filters, Filterable);
+        if (parameters is { ValueKind: System.Text.Json.JsonValueKind.Object } p
+            && p.TryGetProperty("search", out var search)
+            && search.ValueKind == System.Text.Json.JsonValueKind.String
+            && search.GetString() is { Length: > 0 } term)
+        {
+            var lower = term.ToLower();
+            q = q.Where(c => c.Name.ToLower().Contains(lower));
+        }
+        return q;
+    }
+
+    /// <summary>A datatable <c>fetch</c>: page, sort, server-side filters and params in one body (#448).</summary>
+    [HttpPost("table")]
+    public async Task<ActionResult<DatatableResponse<CustomerDto>>> Table([FromBody] DatatableRequest req, CancellationToken ct)
+    {
+        var sort = req.SortColumns?
+            .Select(c => new SortDescriptor { Field = c.Property, Direction = c.Direction == "descending" ? "desc" : "asc" })
+            .ToList();
+        var q = SortApplier.Apply(Filtered(req.Filters, req.Params), sort, c => c.Id);
+        var perPage = Math.Min(100, Math.Max(1, req.PerPage));
+        var page = Math.Max(1, req.Page);
+        var totalRecords = await q.CountAsync(ct);
+        var data = await q
+            .Skip((page - 1) * perPage)
+            .Take(perPage)
+            .Select(c => new CustomerDto { Id = c.Id, Name = c.Name, Country = c.Country, Email = c.Email, CreatedAt = c.CreatedAt })
+            .ToListAsync(ct);
+        return Ok(new DatatableResponse<CustomerDto> { Data = data, TotalRecords = totalRecords });
+    }
+
+    /// <summary>A datatable <c>distincts</c>: a column's values over the other columns' filters.</summary>
+    [HttpPost("distincts")]
+    public async Task<ActionResult<DistinctValuesDto>> Distincts([FromBody] DatatableDistinctsRequest req, CancellationToken ct)
+    {
+        return Ok(await DatatableFilterApplier.DistinctsAsync(
+            Filtered(req.Filters, req.Params), req.Column, req.Search, Filterable, 50, (q, token) => q.ToListAsync(token), ct));
+    }
 }
 
 public class CustomerDto

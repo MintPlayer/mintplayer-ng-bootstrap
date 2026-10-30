@@ -7,16 +7,22 @@ import type {
   DatatableFetchResponse,
   SelectionChangeEventDetail,
   RowEventDetail,
+  DatatableFetch,
+  DatatableFilter,
+  DatatableFilters,
   DistinctValue,
-  FilterChangeDetail,
+  DistinctValues,
+  DistinctsRequest,
   FilterContext,
   FilterOperator,
 } from '@mintplayer/react-bootstrap/datatable';
 import './DatatablePage.css';
 
-// In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
-// hit the api subdomain (CORS-allowed in apps/api/Program.cs).
-const API_BASE = import.meta.env.PROD ? 'https://api.bootstrap.mintplayer.com' : '';
+// In dev, /api is proxied to localhost:5000 by vite.config.mts — for the
+// browser; the server render (a `stateKey` table's prefetch) has no proxy and
+// no origin, so it calls the API directly. In prod we hit the api subdomain
+// (CORS-allowed in apps/api/Program.cs).
+const API_BASE = import.meta.env.PROD ? 'https://api.bootstrap.mintplayer.com' : import.meta.env.SSR ? 'http://localhost:5000' : '';
 
 interface Artist {
   id: number;
@@ -43,15 +49,50 @@ const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
   eq: '=', neq: '≠', lt: '<', lte: '≤', gt: '>', gte: '≥',
 };
 
-function compare(value: number, operator: FilterOperator, operand: number): boolean {
-  switch (operator) {
-    case 'eq': return value === operand;
-    case 'neq': return value !== operand;
-    case 'lt': return value < operand;
-    case 'lte': return value <= operand;
-    case 'gt': return value > operand;
-    case 'gte': return value >= operand;
-  }
+// ─── Server-side filters (#448): the apps/api customers endpoints ───────────
+interface Customer {
+  id: number;
+  name: string;
+  country: string;
+  email: string;
+  createdAt: string;
+}
+type CustomerParams = { search: string };
+
+const postJson = async <T,>(path: string, body: unknown, signal: AbortSignal): Promise<T> => {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) throw new Error(`${path}: ${res.status}`);
+  return res.json() as Promise<T>;
+};
+
+// The request is the API's body as-is: page, perPage, sortColumns, filters, params.
+const fetchCustomers: DatatableFetch<Customer, CustomerParams> = ({ signal, ...req }) =>
+  postJson('/api/customers/table', req, signal);
+const distinctsCustomers = ({ signal, ...req }: DistinctsRequest<CustomerParams>) =>
+  postJson<DistinctValues>('/api/customers/distincts', req, signal);
+
+const COUNTRIES: DistinctValue[] = ['BE', 'NL', 'FR', 'DE', 'IT'].map((value) => ({ value, label: value }));
+const BENELUX = COUNTRIES.filter((c) => c.value === 'BE' || c.value === 'NL');
+
+function valuesSummary(filter: DatatableFilter | undefined): string | undefined {
+  if (!filter?.values.length) return undefined;
+  const list = filter.values.length <= 2 ? filter.values.join(', ') : `${filter.values.length} selected`;
+  return filter.inverse ? `not ${list}` : list;
+}
+
+// A fixed locale and timezone: the server render and the browser must print the
+// same text, or hydration fails (and a server's timezone is rarely the reader's).
+const INSTANT_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+const formatInstant = (iso: string) => `${INSTANT_FORMAT.format(new Date(iso))} UTC`;
+
+function comparisonSummary(filter: DatatableFilter | undefined): string | undefined {
+  if (!filter?.operator || filter.operand == null) return undefined;
+  return `${OPERATOR_SYMBOLS[filter.operator]} ${formatInstant(String(filter.operand))}`;
 }
 
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
@@ -112,53 +153,37 @@ const FILL_VIRTUAL_SOURCE = `// The parent's height replaces the default virtual
   <BsDatatable fill virtualScroll itemSize={40} columns={COLUMNS} data={rows} />
 </div>`;
 
-const FILTER_SOURCE = `// filterable is the whole opt-in: with no filterMode the built-in
-// panel renders — search, include/exclude, a checkbox list of the
-// column's distinct values, and clear. No React code behind it.
-const columns: DatatableColumnDef[] = COLUMNS.map((col) =>
-  col.name === 'name'
-    ? { ...col, filterable: true,
-        filterActive: nameSelection.length > 0,   // visual only; the meaning is yours
-        filterSummary: nameSummary }
-    : col,
-);
-
-const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
-const [nameInverse, setNameInverse] = useState(false);
-
-// A column asking a different question — still the built-in panel.
-const founded = { ...col, filterable: true,
-  filterMode: 'comparison', filterInputType: 'number' };
-
-// One handler, one discriminated union: switching on \`mode\` means the
-// comparison branch cannot read \`selected\`, and vice versa.
-const onFilterChange = useCallback((d: FilterChangeDetail) => {
-  if (d.mode === 'values' && d.column === 'name') {
-    setNameSelection(d.selected);   // [] when the user clears
-    setNameInverse(d.inverse);      // the include/exclude toggle
-  } else if (d.mode === 'comparison' && d.column === 'founded') {
-    setFoundedOperator(d.operator); // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
-    setFoundedOperand(d.operand as number | null);   // null = cleared
-  }
-}, []);
-
-// ARTISTS is the UNFILTERED master copy. The value lists are computed from
-// the rows the element holds, so filtering the source would remove the
-// values needed to widen the filter again.
-const rows = ARTISTS.filter(a => {
-  if (nameSelection.length === 0) return true;
-  const hit = nameSelection.some(v => v.value === a.name);
-  return nameInverse ? !hit : hit;
+const FILTER_SOURCE = `// The table owns the filter UI and the filters model; the SERVER filters.
+const [filters, setFilters] = useState<DatatableFilters>({
+  Country: { values: ['BE', 'NL'], inverse: false },
 });
+const [search, setSearch] = useState('');
 
-// The table does not hold every row? Then it cannot compute a value list,
-// and says so rather than guessing from the page it has. Supply one:
-//   <BsDatatable distincts={async ({ column, search, signal }) =>
-//     (await fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal })).json()} />
-// Resolve null for a column to hand that one back to the local path.
+const columns: DatatableColumnDef[] = [
+  // A checkbox list of the column's distinct values, from \`distincts\`.
+  { name: 'name', filterable: true },
+  { name: 'country', filterable: true, filterMode: 'custom' },
+  // Local time in the box, a UTC instant on the wire.
+  { name: 'createdAt', filterable: true, filterMode: 'comparison',
+    filterInputType: 'datetime', filterOperators: ['gte', 'lt'] },
+];
 
-<BsDatatable columns={columns} data={rows} onFilterChange={onFilterChange}
-  virtualScroll itemSize={40} />`;
+// The API takes { page, perPage, sortColumns, filters, params } as-is.
+const fetchCustomers: DatatableFetch<Customer, Params> = ({ signal, ...req }) =>
+  postJson('/api/customers/table', req, signal);
+// Faceted: computed over the OTHER columns' filters.
+const distincts = ({ signal, ...req }: DistinctsRequest<Params>) =>
+  postJson<DistinctValues>('/api/customers/distincts', req, signal);
+
+// stateKey + <MpTransferStateProvider> in the entries: the server render
+// fetches page 1 and the browser hydrates with it, fetching nothing.
+<BsDatatable pagination stateKey="customers"
+  columns={columns} fetch={fetchCustomers} distincts={distincts}
+  filters={filters} onFiltersChange={setFilters}
+  fetchParams={{ search }}
+  filter={({ ctx }) => (
+    <button type="button" onClick={() => ctx.apply(BENELUX, false)}>Benelux</button>
+  )} />`;
 
 // ─── Lazy windowed-fetch demo (real API: 1000 seeded orders) ─────────────────
 // One `fetch` callback drives the whole table: the WC calls it for page 1 and
@@ -313,112 +338,59 @@ export function DatatablePage() {
     setSelectedRows(d.selectedRows as TreeItem[]);
   }, []);
 
-  // ─── Column filters ───────────────────────────────────────────────────────
-  // The component holds no filter state and defines no predicate model: it
-  // collects a selection and emits it. The master copy, the predicate,
-  // `filterActive` and `filterSummary` are all this page's.
+  // ─── Column filters (server-side, #448) ───────────────────────────────────
+  // The table owns the filter UI and the `filters` model, never the filtering:
+  // `fetch` sends the model to the API, which turns it into SQL. The page only
+  // says what a filter is called (`filterSummary`).
   const [showFilters, setShowFilters] = useState(true);
-  const [nameSelection, setNameSelection] = useState<DistinctValue[]>([]);
-  const [nameInverse, setNameInverse] = useState(false);
-  const [foundedOperator, setFoundedOperator] = useState<FilterOperator>('gte');
-  const [foundedOperand, setFoundedOperand] = useState<number | null>(null);
-  const [genreStartsWith, setGenreStartsWith] = useState('');
-
-  // ARTISTS is the UNFILTERED master copy. `data` gets the filtered view, and
-  // the value lists are computed from the rows the element holds — so filtering
-  // the source would remove the values needed to widen the filter again.
-  const filteredArtists = ARTISTS.filter(
-    (a) =>
-      (nameSelection.length === 0
-        ? true
-        : nameInverse
-          ? !nameSelection.some((v) => v.value === a.name)
-          : nameSelection.some((v) => v.value === a.name)) &&
-      (foundedOperand === null ? true : compare(a.founded, foundedOperator, foundedOperand)) &&
-      (genreStartsWith === ''
-        ? true
-        : a.genre.toLowerCase().startsWith(genreStartsWith.toLowerCase())),
+  // Seeded, so the server render already filters.
+  const [customerFilters, setCustomerFilters] = useState<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerTotal, setCustomerTotal] = useState<number | null>(null);
+  const fetchCustomersCounted = useCallback<DatatableFetch<Customer, CustomerParams>>(
+    (req) =>
+      fetchCustomers(req).then((response) => {
+        setCustomerTotal(response.totalRecords);
+        return response;
+      }),
+    [],
   );
-
-  const nameSummary =
-    nameSelection.length === 0
-      ? undefined
-      : nameSelection.length === 1
-        ? nameSelection[0].label
-        : `${nameSelection.length} selected`;
-
-  // One handler, one discriminated union: switching on `mode` means the
-  // comparison branch cannot read `selected` and the values branch cannot read
-  // `operand` — the compiler enforces the real runtime shape.
-  const onFilterChange = useCallback((d: FilterChangeDetail) => {
-    if (d.mode === 'values' && d.column === 'name') {
-      setNameSelection(d.selected);
-      setNameInverse(d.inverse);
-      return;
-    }
-    if (d.mode === 'comparison' && d.column === 'founded') {
-      setFoundedOperator(d.operator);
-      setFoundedOperand(d.operand === null ? null : Number(d.operand));
-    }
-  }, []);
 
   // An override panel, for the case neither built-in question fits: the
   // column sets `filterMode: 'custom'` and the table's `filter` slot renders
-  // it, as ordinary JSX. The other columns keep their built-in panels.
+  // it, as ordinary JSX. Its commands write the same `filters` model.
   //
   // The classes below are the PAGE's (see DatatablePage.css). Bootstrap's
   // `.form-control` is only styled inside `bs-*` components in this workspace.
-  const filterPanel = ({ column }: { column: DatatableColumnDef; ctx: FilterContext }): ReactNode =>
-    column.name === 'genre' && (
-      <div className="demo-filter-panel">
-        <label className="demo-filter-label" htmlFor="react-filter-genre">Genre starts with</label>
-        <input
-          id="react-filter-genre"
-          type="text"
-          className="demo-filter-input"
-          value={genreStartsWith}
-          onChange={(e) => setGenreStartsWith(e.target.value)}
-        />
-      </div>
-    );
+  const filterPanel = ({ ctx }: { column: DatatableColumnDef; ctx: FilterContext }): ReactNode => (
+    <div className="demo-filter-panel">
+      <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => ctx.apply(BENELUX, false)}>Benelux</button>
+      {COUNTRIES.map((country) => (
+        <button key={String(country.value)} type="button" className="btn btn-sm btn-outline-secondary" onClick={() => ctx.apply([country], false)}>
+          {country.label}
+        </button>
+      ))}
+      <button type="button" className="btn btn-sm btn-link" onClick={() => ctx.clear()}>Everywhere</button>
+    </div>
+  );
 
-  const filterColumns: DatatableColumnDef[] = COLUMNS.map((col) => {
-    if (!showFilters) return col;
-    // No filterMode: the built-in value list renders.
-    // That is the whole opt-in.
-    if (col.name === 'name') {
-      return {
-        ...col,
-        filterable: true,
-        filterActive: nameSelection.length > 0,
-        filterSummary: nameSummary,
-      };
-    }
-    // Comparison mode: still the built-in panel, asking a different question.
-    if (col.name === 'founded') {
-      return {
-        ...col,
-        filterable: true,
-        filterMode: 'comparison',
-        filterInputType: 'number',
-        filterActive: foundedOperand !== null,
-        filterSummary:
-          foundedOperand === null
-            ? undefined
-            : `${OPERATOR_SYMBOLS[foundedOperator]} ${foundedOperand}`,
-      };
-    }
-    if (col.name === 'genre') {
-      return {
-        ...col,
-        filterable: true,
-        filterActive: genreStartsWith !== '',
-        filterMode: 'custom',
-        filterSummary: genreStartsWith || undefined,
-      };
-    }
-    return col;
-  });
+  const customerColumns: DatatableColumnDef[] = [
+    // No filterMode: the built-in value list, listed by the API (`distincts`).
+    { name: 'name', label: 'Name', filterable: showFilters, filterSummary: valuesSummary(customerFilters['name']) },
+    { name: 'email', label: 'Email', sortable: false },
+    { name: 'country', label: 'Country', filterable: showFilters, filterMode: 'custom', filterSummary: valuesSummary(customerFilters['country']) },
+    // A datetime comparison: typed in local time, sent as a UTC instant.
+    {
+      name: 'createdAt',
+      label: 'Created',
+      filterable: showFilters,
+      filterMode: 'comparison',
+      filterInputType: 'datetime',
+      filterOperators: ['gte', 'lt'],
+      format: (row) => formatInstant((row as Customer).createdAt),
+      filterSummary: comparisonSummary(customerFilters['createdAt']),
+    },
+  ];
 
   return (
     <div className="demo-page">
@@ -607,15 +579,17 @@ export function DatatablePage() {
           A filterable column gets a <strong>built-in panel</strong> for free: a
           search box, an include/exclude toggle, a checkbox list of the column's
           distinct values, and a clear button. It lives in the shared core, so
-          there is no React code behind it at all &mdash; the <em>Artist</em>{' '}
-          column below just sets <code>filterable</code>.
+          there is no React code behind it at all &mdash; the <em>Name</em>{' '}
+          column below just sets <code>filterable</code>, with its values listed
+          by the server (<code>distincts</code>).
         </p>
         <p>
           A checkbox list is the wrong question for a quantity, so a column can
           ask a different one: <code>filterMode: 'comparison'</code> renders an
           operator (=, &ne;, &lt;, &le;, &gt;, &ge;) and a single input, with{' '}
           <code>filterInputType</code> choosing <code>number</code> (the
-          default) or <code>date</code> &mdash; the <em>Founded</em> column
+          default), <code>date</code> (a calendar day) or <code>datetime</code>{' '}
+          (local time in, a UTC instant out) &mdash; the <em>Created</em> column
           below. Still the built-in panel: no slot, no styling of your own.
           Narrow the list with <code>filterOperators</code> when only some
           operators make sense.
@@ -635,7 +609,7 @@ export function DatatablePage() {
         <p>
           When neither built-in question fits, set{' '}
           <code>filterMode: 'custom'</code> on the column and render the panel
-          in the table's <code>filter</code> slot &mdash; <em>Genre</em> does.
+          in the table's <code>filter</code> slot &mdash; <em>Country</em> does.
           The slot receives the column and a context with the loaded values and
           the search, apply and clear commands.{' '}
           <strong>That markup is yours, so you style it</strong> &mdash;
@@ -644,16 +618,16 @@ export function DatatablePage() {
         </p>
         <p>
           The panel is a native popover in the top layer, so it is not clipped
-          by the scroll container and not hidden behind the sticky header
-          &mdash; this demo runs in virtual-scroll mode, where both would
-          otherwise happen.
+          by the scroll container and not hidden behind the sticky header.
         </p>
         <p>
-          <strong>The component decides nothing about what a filter means.</strong>{' '}
-          It collects a selection and emits it on{' '}
-          <code>onFilterChange</code>; this page holds the unfiltered master
-          copy, applies the selection, and sets <code>filterActive</code> and{' '}
-          <code>filterSummary</code> back on the column.
+          <strong>Filtering happens on the server.</strong> The table keeps the
+          active filters in a two-way <code>filters</code> /{' '}
+          <code>onFiltersChange</code> model and sends them, with your own{' '}
+          <code>fetchParams</code>, in every <code>fetch</code> and{' '}
+          <code>distincts</code> request; it never filters rows itself. With{' '}
+          <code>stateKey</code> and an <code>MpTransferStateProvider</code>, the
+          server render fetches the first page and the browser hydrates with it.
         </p>
         <p className="text-body-secondary small">
           <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
@@ -672,18 +646,32 @@ export function DatatablePage() {
           Show the filter row
         </label>
 
+        <label className="form-label" htmlFor="react-customer-search">
+          Name contains (sent as <code>fetchParams</code>)
+        </label>
+        <input
+          id="react-customer-search"
+          type="search"
+          className="form-control mb-3"
+          value={customerSearch}
+          onChange={(e) => setCustomerSearch(e.target.value)}
+        />
+
         <BsDatatable
-          className="windowed-table"
-          columns={filterColumns}
-          data={filteredArtists}
-          virtualScroll
-          itemSize={40}
-          rowKey={(row: unknown) => String((row as Artist).id)}
-          onFilterChange={onFilterChange}
+          pagination
+          stateKey="customers"
+          perPage={10}
+          columns={customerColumns}
+          fetch={fetchCustomersCounted}
+          distincts={distinctsCustomers}
+          filters={customerFilters}
+          onFiltersChange={setCustomerFilters}
+          fetchParams={{ search: customerSearch }}
+          rowKey={(row: unknown) => String((row as Customer).id)}
           filter={filterPanel}
         />
         <small className="text-body-secondary">
-          Showing {filteredArtists.length} of {ARTISTS.length} artists.
+          {customerTotal ?? '…'} customer(s) match. The model: <code>{JSON.stringify(customerFilters)}</code>
         </small>
 
         <BsCodeSnippet code={FILTER_SOURCE} language="tsx" />

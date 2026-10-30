@@ -110,8 +110,34 @@ export interface ComponentCore<I, S, P, E = Record<never, never>, C = undefined,
   readonly consume?: CoreContext<C>;
   /** The context this component hands its descendants, with `provide` computing the value. */
   readonly provides?: CoreContext<PC>;
-  /** Internal state, seeded from the first inputs. */
-  state?(inputs: Readonly<I>): S;
+  /**
+   * Internal state, seeded from the first inputs. `seed` is what `prefetch`
+   * resolved for these inputs, on the server after it settles and on the client
+   * from the transfer state (#448); absent when there is none.
+   */
+  state?(inputs: Readonly<I>, seed?: unknown): S;
+  /**
+   * Server only: data the first render needs, loaded before the server
+   * serializes. The bridges run it through `runPrefetch`
+   * (`@mintplayer/ui-core/transfer-state`), which owns the timeout; the result
+   * must be JSON, because it is handed to the client under `transferKey`.
+   * Return undefined when there is nothing to load.
+   */
+  prefetch?(inputs: Readonly<I>, signal: AbortSignal): Promise<unknown> | undefined;
+  /**
+   * The key the prefetched seed is transferred under: request identity, never
+   * instance identity, so server and client agree whatever else renders around
+   * them. Undefined turns both the prefetch and the transfer off.
+   */
+  transferKey?(inputs: Readonly<I>): string | undefined;
+  /**
+   * A seed that arrives after the state was created: the inputs that name the
+   * prefetch (a `fetch`, a `stateKey`) were delivered late, after an async step
+   * of the consumer's own. Returns the state with the seed applied, or `state`
+   * unchanged when the seed answers another query. Called before those inputs
+   * reach `inputsChanged`, so the core can recognise its seeded data there.
+   */
+  adopt?(state: Readonly<S>, inputs: Readonly<I>, seed: unknown): S;
   /** The template's props. Pure. */
   view(args: ViewArgs<I, S, C, E>): P;
   /**
