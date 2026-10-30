@@ -16,8 +16,10 @@ diffing their class selectors gives exactly six classes Bootstrap ships and the 
 | `.w-25` `.w-50` `.w-75` `.w-100` | `utilities/width.scss` | `"width": (values: auto, responsive: true)` replaces Bootstrap's entry whole |
 | `.text-wrap` `.text-nowrap` | `utilities/white-space.scss` | `"white-space": (values: …)` replaces Bootstrap's `class: text` entry, so the classes become `.white-space-*` |
 
-`overflow.scss` also replaces Bootstrap's `"overflow-x"`, but its list is a superset of Bootstrap's
-(`auto hidden visible scroll`), so nothing is lost. `cursor.scss` adds a key Bootstrap does not have.
+`overflow.scss` also replaced Bootstrap's `"overflow-x"`, but its list repeated Bootstrap's
+(`auto hidden visible scroll`), so nothing was lost — by coincidence, not by design. `cursor.scss`
+used a key Bootstrap 5.3 does not define, so it was safe only until a release adds one. Both are
+covered by D1.
 
 ### Why it only broke now
 
@@ -37,11 +39,19 @@ with Bootstrap's.
   This holds for every patch, not only the two that lost classes: `cursor` (`mp-cursor`) and
   `overflow-x` (`mp-overflow-x`, only the values Bootstrap lacks) also moved to keys of their own, so
   a future Bootstrap that defines `cursor` or extends `overflow-x` is never replaced by ours.
+  Class names are unchanged for consumers (`.cursor-*`, `.overflow-x-*`, `.white-space-*`). Making
+  `width` responsive also adds `.w-{sm,md,lg,xl,xxl}-{25,50,75,100}` next to `.w-{bp}-auto`.
+- **D1a. `white-space.scss` stays.** Bootstrap ships only `.text-wrap` and `.text-nowrap`; the
+  patch adds `break-spaces none normal nowrap pre pre-line pre-wrap revert` as `.white-space-*`,
+  which keeps the shipped bundle more complete. Nothing in the repo uses them, but dropping them
+  would remove classes consumers may rely on.
 - **D2.** Regression spec `ui-core/_conformance/bootstrap-baseline-superset.spec.ts` compiles both
   sheets with `sass` and requires the baseline's class set to be a superset of stock Bootstrap's. It
   pins the issue's own assertions too (`.w-100{width:100%!important}`, `.w-md-auto`). A second check
   reads every `styles/utilities/*.scss` and fails on a literal entry under a non-`mp-` key, so a
-  patch cannot replace a key Bootstrap only adds in a later release.
+  patch cannot replace a key Bootstrap only adds in a later release. It reads the files with `fs`:
+  vitest serves `.scss?raw` as an empty string, which made a first `import.meta.glob` version pass
+  against the unfixed patches.
 
 ## 2. A seeded first page drops the consumer's fetch metadata
 
@@ -63,9 +73,11 @@ and no header, and never recovers.
 - **D4. `pageLoad` output: `{ request, result, seeded }`** fires for every response the table
   applies (root page, virtual window, tree children) and once for a seeded page.
   `request` is the `DatatableFetchRequest` without its `signal` (`DatatablePageRequest`), so it can
-  be stored. `result` is the `DatatableFetchResponse` including `extra`. `seeded` is `true` only for
-  the page that came from the transfer. The consumer rebuilds its state from `pageLoad` on both paths
-  and needs no side channel in `fetch`.
+  be stored. `result` is `{ data, totalRecords, extra? }` as the table applied it (`totalRecords`
+  falls back to the row count when the response omits it). `seeded` is `true` only for the page that
+  came from the transfer. On the client, the consumer rebuilds its state from `pageLoad` on both
+  paths. Names per front: Angular `(pageload)`, React `onPageLoad` (the detail, not an event), Vue
+  `@pageload`, Lit a bubbling `pageload` `CustomEvent`.
 - **D5. Client only.** `pageLoad` is emitted from `attach` (the seed the state was created with) and
   from `inputsChanged` (a seed adopted for a late `fetch`). Both run only on the client, after the
   first render, so it fires once per seeded page. The server's own fetch already ran the consumer's code.
