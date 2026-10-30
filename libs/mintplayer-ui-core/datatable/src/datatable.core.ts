@@ -53,7 +53,7 @@ import type {
   FilterSelection,
 } from './types/filter';
 import { DEFAULT_DATATABLE_LABELS, type DatatableLabels } from './types/labels';
-import type { DatatableFetch, TreeIdKey, TreeRowExpandDetail, TreeSelectionStrategy } from './types/tree';
+import type { DatatableFetch, DatatableFetchResponse, DatatablePageLoadDetail, DatatablePageRequest, TreeIdKey, TreeRowExpandDetail, TreeSelectionStrategy } from './types/tree';
 
 /**
  * The datatable's core (PRD #437 D10): what the generated Angular, React, Vue
@@ -143,6 +143,8 @@ export interface DatatableState {
   fetchedKey: string | null;
   /** The late `fetch` that `adopt` applied the server's seed for: only that function keeps `fetched` as its page 1, once. */
   seededFor: DatatableFetch<any, any> | null;
+  /** The `extra` of the response `fetched` came from: what `pageLoad` reports for a seeded page (#450). */
+  fetchedExtra: JsonValue | undefined;
   totalRecords: number | null;
   pageCache: ReadonlyMap<number, readonly unknown[]>;
   childCache: ReadonlyMap<unknown, readonly unknown[]>;
@@ -194,6 +196,8 @@ export interface DatatableEvents {
   rowExpand: TreeRowExpandDetail;
   rowCollapse: TreeRowExpandDetail;
   loadError: DatatableLoadErrorDetail;
+  /** Every response the table applies, and the seeded page 1 (`seeded: true`), which `fetch` never answered on the client. */
+  pageLoad: DatatablePageLoadDetail;
   filtersChange: DatatableFilters;
 }
 
@@ -241,22 +245,30 @@ const queryOf = (inputs: Readonly<DatatableInputs>): QueryState => ({
   filters: requestFilters(inputs.filters),
 });
 
+const pageRequest = (inputs: Readonly<DatatableInputs>, s: QueryState, parentId: unknown | null, page: number): DatatablePageRequest => ({
+  parentId,
+  page,
+  perPage: s.perPage,
+  sortColumns: [...s.sortColumns],
+  filters: requestFilters(s.filters),
+  params: inputs.fetchParams ?? undefined,
+});
 const fetchPage = (inputs: Readonly<DatatableInputs>, s: QueryState, parentId: unknown | null, page: number, signal: AbortSignal) =>
-  inputs.fetch!({
-    parentId,
-    page,
-    perPage: s.perPage,
-    sortColumns: [...s.sortColumns],
-    filters: requestFilters(s.filters),
-    params: inputs.fetchParams ?? undefined,
-    signal,
-  });
+  inputs.fetch!({ ...pageRequest(inputs, s, parentId, page), signal });
+/** A response as `pageLoad` reports it: the rows, the total and the consumer's `extra`, when it has one. */
+const pageResult = (data: unknown[], totalRecords: number | null | undefined, extra: JsonValue | undefined): DatatableFetchResponse => ({
+  data,
+  totalRecords: totalRecords ?? data.length,
+  ...(extra === undefined ? {} : { extra }),
+});
 
 /** What `prefetch` resolves and the client is seeded with: page 1 of the query named by `key`. */
 interface DatatableSeed {
   key: string;
   rows: unknown[];
   totalRecords: number | null;
+  /** The response's `extra`, verbatim (#450). */
+  extra?: JsonValue;
 }
 const isSeed = (seed: unknown): seed is DatatableSeed =>
   !!seed && typeof (seed as DatatableSeed).key === 'string' && Array.isArray((seed as DatatableSeed).rows);
@@ -383,6 +395,7 @@ export const datatableCore = defineCore<
       fetched: seeded ? [...seeded.rows] : null,
       fetchedKey: seeded?.key ?? null,
       seededFor: null,
+      fetchedExtra: seeded?.extra,
       totalRecords: seeded ? total(seeded.totalRecords) : null,
       pageCache: new Map(),
       childCache: new Map(),
@@ -425,13 +438,18 @@ export const datatableCore = defineCore<
     const query = queryOf(inputs);
     const page = inputs.virtualScroll ? 1 : query.page;
     return fetchPage(inputs, query, null, page, signal).then(
-      (resp): DatatableSeed => ({ key: requestKeyOf(inputs, query), rows: [...(resp?.data ?? [])], totalRecords: total(resp?.totalRecords) }),
+      (resp): DatatableSeed => ({
+        key: requestKeyOf(inputs, query),
+        rows: [...(resp?.data ?? [])],
+        totalRecords: total(resp?.totalRecords),
+        ...(resp?.extra === undefined ? {} : { extra: resp.extra }),
+      }),
     );
   },
   adopt: (state, inputs, seed) => {
     const query = queryOf(inputs);
     if (!inputs.fetch || !isSeed(seed) || seed.key !== requestKeyOf(inputs, query)) return state;
-    return { ...state, ...query, fetched: [...seed.rows], fetchedKey: seed.key, seededFor: inputs.fetch, totalRecords: total(seed.totalRecords), fetching: false };
+    return { ...state, ...query, fetched: [...seed.rows], fetchedKey: seed.key, seededFor: inputs.fetch, fetchedExtra: seed.extra, totalRecords: total(seed.totalRecords), fetching: false };
   },
   view: ({ inputs, state, id, hydrated, label }) => {
     const model = modelOf(inputs, state);
@@ -540,6 +558,13 @@ export const datatableCore = defineCore<
       pendingChildren.clear();
     };
     const request = (parentId: unknown | null, page: number) => fetchPage(api.inputs(), api.state(), parentId, page, abort.signal);
+    const pageLoaded = (parentId: unknown | null, page: number, result: DatatableFetchResponse, seeded: boolean) =>
+      api.emit('pageLoad', { request: pageRequest(api.inputs(), api.state(), parentId, page), result, seeded });
+    /** The seeded page 1 (#450): the consumer's `fetch` did not run on the client, so this is its only copy of the response. */
+    const seedLoaded = () => {
+      const s = api.state();
+      pageLoaded(null, api.inputs().virtualScroll ? 1 : s.page, pageResult([...(s.fetched ?? [])], s.totalRecords, s.fetchedExtra), true);
+    };
 
     const loadPage = async (page: number) => {
       if (!api.inputs().fetch) return;
@@ -549,8 +574,9 @@ export const datatableCore = defineCore<
         const resp = await request(null, page);
         if (g !== generation || !api.inputs().fetch) return;
         const rows = [...(resp?.data ?? [])];
-        api.setState({ fetched: rows, fetchedKey: lastKey, seededFor: null, totalRecords: total(resp?.totalRecords), fetching: false });
+        api.setState({ fetched: rows, fetchedKey: lastKey, seededFor: null, fetchedExtra: resp?.extra, totalRecords: total(resp?.totalRecords), fetching: false });
         announcer.announce(labels().announceLoaded(rows.length));
+        pageLoaded(null, page, pageResult(rows, resp?.totalRecords, resp?.extra), false);
       } catch (error) {
         if (g === generation) api.setState({ fetching: false });
         failed(error);
@@ -565,10 +591,12 @@ export const datatableCore = defineCore<
         if (g !== generation || !api.inputs().fetch) return;
         pendingPages.delete(page);
         const known = total(resp?.totalRecords);
+        const rows = [...(resp?.data ?? [])];
         api.setState({
-          pageCache: new Map([...api.state().pageCache, [page, [...(resp?.data ?? [])]]]),
+          pageCache: new Map([...api.state().pageCache, [page, rows]]),
           ...(known === null ? {} : { totalRecords: known }),
         });
+        pageLoaded(null, page, pageResult(rows, resp?.totalRecords, resp?.extra), false);
       } catch (error) {
         pendingPages.delete(page);
         failed(error);
@@ -587,6 +615,7 @@ export const datatableCore = defineCore<
           childCache: new Map([...api.state().childCache, [parentId, data]]),
           childTotals: new Map([...api.state().childTotals, [parentId, resp?.totalRecords ?? data.length]]),
         });
+        pageLoaded(parentId, 1, pageResult(data, resp?.totalRecords, resp?.extra), false);
       } catch (error) {
         pendingChildren.delete(parentId);
         failed(error);
@@ -1350,11 +1379,12 @@ export const datatableCore = defineCore<
             // Any other fetch identity is a new source and reloads.
             lastKey = s.fetchedKey;
             api.setState({ seededFor: null });
+            seedLoaded();
           } else {
             // A new source: its count, pages and children are all unknown.
             invalidate();
             lastKey = null;
-            api.setState({ fetched: null, fetchedKey: null, seededFor: null, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
+            api.setState({ fetched: null, fetchedKey: null, seededFor: null, fetchedExtra: undefined, totalRecords: null, pageCache: new Map(), childCache: new Map(), childTotals: new Map(), fetching: !!inputs.fetch });
           }
         }
         if (inputs.sortColumns !== prev.sortColumns && !sameSort(inputs.sortColumns ?? [], s.sortColumns)) {
@@ -1401,6 +1431,9 @@ export const datatableCore = defineCore<
         schedule();
       },
     });
+
+    // A page 1 seeded with the state (not adopted later: inputsChanged reports that one).
+    if (api.state().fetchedKey !== null && api.state().seededFor === null) seedLoaded();
 
     return () => {
       controllers.delete(host);

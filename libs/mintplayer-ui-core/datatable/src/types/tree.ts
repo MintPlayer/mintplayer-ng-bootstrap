@@ -54,6 +54,26 @@ export interface DatatableFetchRequest<P extends JsonValue = JsonValue> {
 export interface DatatableFetchResponse<T = unknown> {
   data: T[];
   totalRecords: number;
+  /**
+   * Whatever else the consumer reads off its own response (the columns a server
+   * query decides, the actions it disables), handed back on `pageLoad` (#450).
+   * A seeded page 1 transfers it with its rows, so it must be JSON there.
+   */
+  extra?: JsonValue;
+}
+
+/** A `DatatableFetchRequest` without its `signal`: what `pageLoad` reports, safe to keep. */
+export type DatatablePageRequest<P extends JsonValue = JsonValue> = Omit<DatatableFetchRequest<P>, 'signal'>;
+
+/**
+ * `pageLoad`: one response the table applied (a root page, a virtual window, a
+ * tree node's children), or the page 1 it was seeded with from the server, in
+ * which case `fetch` was not called on the client (`seeded: true`, #450).
+ */
+export interface DatatablePageLoadDetail<T = unknown, P extends JsonValue = JsonValue> {
+  request: DatatablePageRequest<P>;
+  result: DatatableFetchResponse<T>;
+  seeded: boolean;
 }
 
 /**

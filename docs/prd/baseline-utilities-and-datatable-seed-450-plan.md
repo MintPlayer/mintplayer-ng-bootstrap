@@ -12,7 +12,7 @@ starts with a spec that fails for the reason in the issue, then the fix turns it
 | M3 | Red: core specs for `extra` in the seed and `pageLoad` on the fetched, seeded and adopted paths |
 | M4 | Green: `DatatableFetchResponse.extra`, `DatatablePageLoadDetail`, `pageLoad` in the core + manifest |
 | M5 | Red → green: Angular `renderApplication` + hydration spec (the issue's spec) |
-| M6 | Docs: datatable demo note on `pageLoad` / `extra`; recompile fronts |
+| M6 | Docs: manifest doc for `pageLoad`, `extra` JSDoc; recompile fronts |
 | M7 | One verification pass: ui-core + ng-bootstrap tests, compile-components check, lib builds |
 
 ## S1: output emitted from attach

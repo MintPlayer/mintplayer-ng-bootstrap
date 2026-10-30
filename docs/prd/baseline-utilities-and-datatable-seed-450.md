@@ -65,6 +65,10 @@ and no header, and never recovers.
 - **D5. Client only.** `pageLoad` is emitted from `attach` (the seed the state was created with) and
   from `inputsChanged` (a seed adopted for a late `fetch`). Both run only on the client, after the
   first render, so it fires once per seeded page. The server's own fetch already ran the consumer's code.
+  A consumer that needs its metadata in the server HTML (Spark's columns) therefore records it in
+  `fetch`, which runs on the server and on every client fetch, and in `pageLoad` when `seeded` is
+  true. Pinned by `ng-bootstrap/datatable/src/datatable-ssr-pageload.spec.ts`, which also asserts the
+  hydrated grid has cells and a header. See [S1](./spikes/issue-450/S1-emit-at-attach.md).
 - **D6. Lit has no seed.** `mp-datatable` gets `pageLoad` for fetched pages like every front; the
   seeded path is unreachable there (the Lit controller passes no seed), unchanged by this issue.
 - Rejected: an optional `seed` hook next to `fetch` (issue proposal 2). It would be a second callback
