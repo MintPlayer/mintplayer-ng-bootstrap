@@ -76,6 +76,7 @@ export default {
         rowExpand: { type: 'TreeRowExpandDetail', doc: 'A tree row expanded.' },
         rowCollapse: { type: 'TreeRowExpandDetail', doc: 'A tree row collapsed.' },
         loadError: { type: 'DatatableLoadErrorDetail', doc: 'A `fetch` call rejected.' },
+        pageLoad: { type: 'DatatablePageLoadDetail', doc: 'A response the table applied, or the page 1 it was seeded with on the server (`seeded: true`, `fetch` not called); carries the response `extra`.' },
         filtersChange: { type: 'DatatableFilters', doc: 'The column filters, after the user changed them; `fetch` (or the consumer, over `data`) applies them.' },
       },
       methods: {

@@ -1,12 +1,15 @@
 @use "sass:map";
 
-//Generate utilites for white-space
+// Generate the .overflow-x-* values Bootstrap lacks. Bootstrap owns the
+// "overflow-x" key (auto hidden visible scroll), and merging into it would
+// replace that entry whole (#450), so these live under a key of their own.
 $utilities: map.merge(
   $utilities,
   (
-    "overflow-x": (
+    "mp-overflow-x": (
       property: overflow-x,
-      values: auto clip hidden overlay revert scroll unset visible
+      class: overflow-x,
+      values: clip overlay revert unset
     ),
   )
 );

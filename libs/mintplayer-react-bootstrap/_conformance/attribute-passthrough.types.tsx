@@ -109,7 +109,7 @@ export const everyWrapperProbes = [
   <BsCardSubtitle role="none" id="x" tabIndex={-1} />,
   <BsCardText role="none" id="x" tabIndex={-1} />,
   <BsCardTitle role="none" id="x" tabIndex={-1} />,
-  <BsCheckbox role="none" id="x" tabIndex={-1} />,
+  <BsCheckbox id="x" tabIndex={-1} />,
   <BsCodeSnippet role="none" id="x" tabIndex={-1} />,
   <BsDatatable role="none" id="x" tabIndex={-1} />,
   <BsDatepicker role="none" id="x" tabIndex={-1} />,
@@ -153,7 +153,7 @@ export const everyWrapperProbes = [
   <BsTimelineItem role="none" id="x" tabIndex={-1} />,
   <BsTimeList role="none" id="x" tabIndex={-1} />,
   <BsTimepicker role="none" id="x" tabIndex={-1} />,
-  <BsToggleButton role="none" id="x" tabIndex={-1} />,
+  <BsToggleButton id="x" tabIndex={-1} />,
   <BsTreeSelect role="none" id="x" tabIndex={-1} />,
   <BsTreeview role="none" id="x" tabIndex={-1} />,
   <BsTypeahead id="x" tabIndex={-1} />,
@@ -163,6 +163,11 @@ export const everyWrapperProbes = [
   // The board is a region by contract (#440).
   // @ts-expect-error role is not an accepted prop
   <BsTileManager tiles={[]} role="none" />,
+  // A native checkbox keeps its own role: role="button" on it hides the only state AT can read.
+  // @ts-expect-error role is not an accepted prop
+  <BsCheckbox role="none" />,
+  // @ts-expect-error role is not an accepted prop
+  <BsToggleButton role="none" />,
 ];
 
 /**

@@ -585,6 +585,15 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         <code>stateKey</code> and the <code>mpTransferState</code> plugin, the
         server render fetches the first page and the browser hydrates with it.
       </p>
+      <p>
+        Because the browser skips <code>fetch</code> for that first page,
+        anything else your <code>fetch</code> reads off its response (the columns
+        a server query decides, say) belongs in the response's <code>extra</code>,
+        which must be JSON. <code>@pageload</code> hands it back for every page
+        the table applies, with <code>seeded: true</code> for the page that came
+        from the server. Record it in <code>fetch</code> too:
+        <code>@pageload</code> fires in the browser only.
+      </p>
       <p class="text-body-secondary small">
         <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,
         <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to its

@@ -383,3 +383,81 @@ describe('datatableCore server seed (#448)', () => {
     expect(state.fetching).toBe(true);
   });
 });
+
+describe('datatableCore pageLoad (#450)', () => {
+  const extra = { columns: ['name', 'year'], disabledActions: ['delete'] };
+  const page = { data: [{ id: 1 }], totalRecords: 41, extra };
+  const inputs = (o: Partial<DatatableInputs> = {}) =>
+    ({
+      columns: COLUMNS,
+      fetch: vi.fn(() => Promise.resolve(page)),
+      stateKey: 'artists',
+      fetchParams: { search: 'm' },
+      sortColumns: [],
+      page: 1,
+      perPage: 20,
+      virtualScroll: false,
+      ...o,
+    }) as unknown as DatatableInputs;
+
+  /** Hosts the core like a front: records every output it emits. */
+  const host = (first: DatatableInputs, seed: unknown) => {
+    let current = first;
+    let state = datatableCore.state(first, seed);
+    const emitted: { name: string; detail: unknown }[] = [];
+    const runtime = coreRuntime(datatableCore, {
+      inputs: () => current,
+      state: () => state,
+      setState: (next) => (state = next),
+      emit: (name, detail) => emitted.push({ name, detail }),
+    });
+    runtime.inputs(current);
+    const pageLoads = () => emitted.filter((e) => e.name === 'pageLoad').map((e) => e.detail);
+    return {
+      runtime,
+      pageLoads,
+      adopt: (next: DatatableInputs, seedValue: unknown) => {
+        state = datatableCore.adopt!(state, next, seedValue);
+        current = next;
+        runtime.inputs(next);
+      },
+    };
+  };
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+  const request = { parentId: null, page: 1, perPage: 20, sortColumns: [], filters: {}, params: { search: 'm' } };
+
+  it('keeps the response extra in the seed', async () => {
+    const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
+    expect(JSON.parse(JSON.stringify(seed))).toMatchObject({ extra });
+  });
+
+  it('fires pageLoad once, seeded, with the extra intact, and does not fetch the seeded page', async () => {
+    const seed = JSON.parse(JSON.stringify(await datatableCore.prefetch!(inputs(), new AbortController().signal)));
+    const client = inputs();
+    const h = host(client, seed);
+    h.runtime.attachTo(document.createElement('div'));
+    await settle();
+    expect(client.fetch).not.toHaveBeenCalled();
+    expect(h.pageLoads()).toEqual([{ request, result: { data: page.data, totalRecords: 41, extra }, seeded: true }]);
+  });
+
+  it('fires pageLoad unseeded for a fetched page, with the extra and without the signal', async () => {
+    const client = inputs();
+    const h = host(client, undefined);
+    h.runtime.attachTo(document.createElement('div'));
+    await settle();
+    expect(client.fetch).toHaveBeenCalledTimes(1);
+    expect(h.pageLoads()).toEqual([{ request, result: page, seeded: false }]);
+  });
+
+  it('fires pageLoad seeded once for a seed adopted with a late fetch', async () => {
+    const seed = JSON.parse(JSON.stringify(await datatableCore.prefetch!(inputs(), new AbortController().signal)));
+    const h = host(inputs({ fetch: null }), undefined);
+    const late = inputs();
+    h.adopt(late, seed);
+    h.runtime.attachTo(document.createElement('div'));
+    await settle();
+    expect(late.fetch).not.toHaveBeenCalled();
+    expect(h.pageLoads()).toEqual([{ request, result: { data: page.data, totalRecords: 41, extra }, seeded: true }]);
+  });
+});

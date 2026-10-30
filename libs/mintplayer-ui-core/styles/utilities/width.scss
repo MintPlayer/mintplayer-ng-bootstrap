@@ -1,14 +1,10 @@
 @use "sass:map";
 
-//Generate utilites for width
+// Make Bootstrap's width utilities responsive (.w-md-auto, ...). Merge INTO
+// Bootstrap's entry: replacing it whole dropped .w-25 .. .w-100 (#450).
 $utilities: map.merge(
     $utilities,
     (
-        "width": (
-            property: width,
-            class: w,
-            values: auto,
-            responsive: true
-        ),
+        "width": map.merge(map.get($utilities, "width"), (responsive: true)),
     )
 );

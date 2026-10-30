@@ -629,6 +629,16 @@ export function DatatablePage() {
           <code>stateKey</code> and an <code>MpTransferStateProvider</code>, the
           server render fetches the first page and the browser hydrates with it.
         </p>
+        <p>
+          Because the browser skips <code>fetch</code> for that first page,
+          anything else your <code>fetch</code> reads off its response (the
+          columns a server query decides, say) belongs in the response&apos;s{' '}
+          <code>extra</code>, which must be JSON. <code>onPageLoad</code> hands it
+          back for every page the table applies, with <code>seeded: true</code>{' '}
+          for the page that came from the server. Record it in{' '}
+          <code>fetch</code> too: <code>onPageLoad</code> fires in the browser
+          only.
+        </p>
         <p className="text-body-secondary small">
           <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
           <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to

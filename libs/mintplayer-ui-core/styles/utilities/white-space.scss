@@ -1,11 +1,14 @@
 @use "sass:map";
 
-//Generate utilites for white-space
+// Generate .white-space-* utilities. Bootstrap already owns the "white-space"
+// key (.text-wrap / .text-nowrap), and merging into it would replace that entry
+// whole (#450), so these live under a key of their own.
 $utilities: map.merge(
   $utilities,
   (
-    "white-space": (
+    "mp-white-space": (
       property: white-space,
+      class: white-space,
       values: break-spaces none normal nowrap pre pre-line pre-wrap revert
     ),
   )

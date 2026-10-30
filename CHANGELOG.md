@@ -873,6 +873,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Added
 
+- **Datatable `pageLoad` output and response `extra` (issue #450).** `DatatableFetchResponse` takes an optional
+  `extra` (JSON) for whatever else `fetch` reads off its response, and the seeded first page transfers it
+  with its rows. `pageLoad` (`(pageload)`, `onPageLoad`, `@pageload`, Lit `pageload`) fires with
+  `{ request, result, seeded }` for every response the table applies and, in the browser, once for the page
+  seeded from the server (`seeded: true`, `fetch` not called). Record the metadata in `fetch` as well:
+  `pageLoad` does not fire during the server render.
 - **The component compiler nests templates (issue #437).** A D10 template may call **partials**: recursive sibling
   `.view.vue` files with no manifest, folded into each front. It may also **compose** another generated element
   (`<mp-x>`) of any group, its own included, with inputs, outputs, `v-model:x` (a `ModelBinding<T>` from
@@ -983,6 +989,11 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Fixed
 
+- **The Bootstrap baseline ships every Bootstrap utility again (issue #450).** `.w-25`, `.w-50`, `.w-75`, `.w-100`,
+  `.text-wrap` and `.text-nowrap` were missing from `@mintplayer/ui-core/styles/bootstrap` since the #437 baseline:
+  the width and white-space patches replaced Bootstrap's utility entries instead of extending them. The width
+  utilities are now responsive too (`.w-md-50`, `.w-lg-auto`, ...). The workspace's own `.cursor-*`,
+  `.overflow-x-*` and `.white-space-*` classes are unchanged and no longer share a key with Bootstrap.
 - **React fronts map `colspan`, `rowspan`, `minlength` and `maxlength`** to their React prop names; the
   datatable's loading and empty cells no longer log `Invalid DOM property` (found in #448).
 

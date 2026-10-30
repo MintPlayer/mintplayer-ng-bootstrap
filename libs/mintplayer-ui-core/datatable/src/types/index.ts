@@ -16,6 +16,8 @@ export type {
   DatatableFetch,
   DatatableFetchRequest,
   DatatableFetchResponse,
+  DatatablePageLoadDetail,
+  DatatablePageRequest,
   TreeExpandedIdsChangeDetail,
   TreeIdKey,
   TreeRowExpandDetail,

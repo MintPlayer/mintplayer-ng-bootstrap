@@ -106,7 +106,8 @@ describe('BsTileManager (Vue front)', () => {
   });
 
   it('a consumer role does not replace the region', () => {
-    const other = mount(BsTileManager as never, { props: { tiles: TILES, role: 'none' }, attachTo: document.body });
+    // The props type refuses role (the region is the contract); the cast lets this prove the runtime guard too.
+    const other = mount(BsTileManager as never, { props: { tiles: TILES, role: 'none' } as never, attachTo: document.body });
     expect((other.element as HTMLElement).getAttribute('role')).toBe('region');
     other.unmount();
   });
