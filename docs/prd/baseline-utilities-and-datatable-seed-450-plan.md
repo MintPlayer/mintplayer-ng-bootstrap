@@ -56,6 +56,21 @@ Decision: emit from `attach` / `inputsChanged` directly, no microtask deferral.
   - **No SSR:** a plain browser bootstrap fetches page 1 once, `seeded: false`; cells + header.
   The first version of this spec had `provideClientHydration` on the client only, so the browser
   re-rendered destructively (NG0505) and the hydration path was never exercised.
+- `libs/mintplayer-react-bootstrap/_conformance/behaviour/BsDatatable.ssr.spec.tsx` and
+  `libs/mintplayer-vue-bootstrap/_conformance/behaviour/BsDatatable.ssr.spec.ts`: the same three
+  scenarios, wired like the demos (React `renderToPipeableStream` + `onAllReady` +
+  `MpTransferStateProvider`, then `hydrateRoot`; Vue `createSSRApp` + `mpTransferState` +
+  `renderToString`, then `mount`). Each asserts no hydration error (React `onRecoverableError`,
+  Vue's hydration warnings) and server-cell identity. With the seeded emit removed, the SSR-with-
+  `stateKey` case fails in both. React uses fixed columns: see PRD D5 on its streaming render.
+
+## Found along the way
+
+- The React and Vue spec type-checks (`typecheck-a11y`, `vue-tsc -p tsconfig.spec.json`) had been
+  red since #439/#441: the passthrough guards probed `BsCheckbox`, `BsToggleButton` (React) and
+  `BsTileManager` (Vue) with a consumer `role`, which their props correctly refuse (a native
+  checkbox keeps its role; the board is a region). React moves them to the `@ts-expect-error` list
+  next to `BsTypeahead`; the Vue runtime guard test casts its props.
 
 ## Verification (M7, local)
 
@@ -66,4 +81,6 @@ Decision: emit from `attach` / `inputsChanged` directly, no microtask deferral.
   web-components (`tsc -p tsconfig.lib.json`): passed.
 - After M2b only the baseline spec was re-run (11 passed): the change touched the utility patches
   and that spec alone.
+- SSR specs: Angular 3, React 3, Vue 3 passed (+ Vue tile-manager 14). React
+  `_conformance/tsconfig.json` and Vue `tsconfig.spec.json` type-checks: clean.
 - Not run locally: the full ng-bootstrap suite, the lib builds and e2e. CI on #451 covers them.

@@ -85,6 +85,12 @@ and no header, and never recovers.
   `fetch`, which runs on the server and on every client fetch, and in `pageLoad` when `seeded` is
   true. Pinned by `ng-bootstrap/datatable/src/datatable-ssr-pageload.spec.ts`, which also asserts the
   hydrated grid has cells and a header. See [S1](./spikes/issue-450/S1-emit-at-attach.md).
+  **React differs here (measured):** a streaming React server render re-renders only the suspended
+  datatable once its prefetch resolves, never the consumer around it, so a React consumer cannot
+  render server HTML from what its `fetch` recorded. Metadata the server markup needs is loaded
+  before the render (a route loader); in the browser `onPageLoad` still delivers `extra` on every
+  path. Angular re-runs change detection before serializing, and Vue awaits `onServerPrefetch`
+  before rendering, so both can record in `fetch`.
 - **D6. Lit has no seed.** `mp-datatable` gets `pageLoad` for fetched pages like every front; the
   seeded path is unreachable there (the Lit controller passes no seed), unchanged by this issue.
 - Rejected: an optional `seed` hook next to `fetch` (issue proposal 2). It would be a second callback
