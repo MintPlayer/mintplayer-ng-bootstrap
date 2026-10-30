@@ -468,7 +468,7 @@ export class DatatablesComponent {
   protected readonly benelux = this.countries.filter((c) => ['BE', 'NL'].includes(String(c.value)));
 
   protected readonly snippetFilterHtml = dedent`
-    <bs-datatable pagination stateKey="customers"
+    <bs-datatable [virtualScroll]="true" [itemSize]="40" stateKey="customers"
       [columns]="columns()" [fetch]="fetch" [distincts]="distincts"
       [(filters)]="filters" [fetchParams]="params()" [rowKey]="rowKey">
 

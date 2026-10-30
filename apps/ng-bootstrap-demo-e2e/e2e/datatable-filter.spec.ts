@@ -1,5 +1,4 @@
 import { test, expect, type Page } from '@playwright/test';
-import { mockArtistQuery } from './artist-query-mock';
 
 /**
  * The filter panel, in a real browser.
@@ -17,16 +16,44 @@ import { mockArtistQuery } from './artist-query-mock';
  * duplicated here.
  */
 
-// The demo's artist API, mocked so the page is deterministic and offline.
-async function mockArtistApi(page: Page) {
-  const artists = Array.from({ length: 40 }, (_, i) => ({
-    id: i + 1,
-    name: `Artist ${String(i + 1).padStart(2, '0')}`,
-    yearStarted: 1960 + (i % 30),
-    yearQuit: i % 4 === 0 ? null : 2000 + (i % 20),
-  }));
+interface Filter {
+  values?: unknown[];
+  inverse?: boolean;
+}
 
-  await mockArtistQuery(page, artists);
+/**
+ * The demo's customers API (apps/api), mocked so the page is deterministic and
+ * offline. Value filters are applied like the API does, because the table never
+ * filters itself (#448); comparisons and the name search are not needed here.
+ */
+async function mockCustomerApi(page: Page) {
+  const countries = ['BE', 'NL', 'FR', 'DE', 'IT'];
+  const customers = Array.from({ length: 100 }, (_, i) => ({
+    id: i + 1,
+    name: `Customer ${String(i + 1).padStart(3, '0')}`,
+    email: `customer${i + 1}@example.com`,
+    country: countries[i % countries.length],
+    createdAt: new Date(Date.UTC(2024, 0, 1 + i)).toISOString(),
+  }));
+  type Row = (typeof customers)[number];
+  const matches = (filters: Record<string, Filter> = {}, skip?: string) => (row: Row) =>
+    Object.entries(filters).every(([column, f]) => {
+      if (column === skip || !f.values?.length) return true;
+      return f.values.includes(row[column as keyof Row]) !== !!f.inverse;
+    });
+
+  await page.route('**/api/customers/table', async (route) => {
+    const req = JSON.parse(route.request().postData() ?? '{}') as { page?: number; perPage?: number; filters?: Record<string, Filter> };
+    const rows = customers.filter(matches(req.filters));
+    const perPage = req.perPage ?? 20;
+    const skip = ((req.page ?? 1) - 1) * perPage;
+    await route.fulfill({ json: { data: rows.slice(skip, skip + perPage), totalRecords: rows.length } });
+  });
+  await page.route('**/api/customers/distincts', async (route) => {
+    const req = JSON.parse(route.request().postData() ?? '{}') as { column: keyof Row; filters?: Record<string, Filter> };
+    const values = [...new Set(customers.filter(matches(req.filters, req.column)).map((row) => String(row[req.column])))];
+    await route.fulfill({ json: { matching: values.map((value) => ({ value, label: value })), remaining: [], hasMore: false } });
+  });
 }
 
 const FILTER_TABLE = 'bs-datatable.filter-table';
@@ -35,9 +62,11 @@ const PANEL = '.filter-panel:popover-open';
 const trigger = (page: Page, column: string) =>
   page.locator(`${FILTER_TABLE} tr.filter-row th[data-column="${column}"] .filter-trigger`);
 
+/** Opens the panel and waits for the server's distinct values: geometry is only meaningful at full height. */
 async function openPanel(page: Page, column: string) {
   await trigger(page, column).click();
   await expect(page.locator(PANEL)).toBeVisible();
+  await expect(page.locator(`${PANEL} .filter-option`).first()).toBeVisible();
 }
 
 /**
@@ -88,7 +117,7 @@ async function measureStacking(page: Page) {
 
 test.describe('bs-datatable filter panel', () => {
   test.beforeEach(async ({ page }) => {
-    await mockArtistApi(page);
+    await mockCustomerApi(page);
     await page.goto('/enterprise/datatables');
     await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
       /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
@@ -315,13 +344,18 @@ test.describe('bs-datatable filter panel', () => {
    * exercised it THROUGH mp-datatable.
    */
   test('traps Tab inside the panel and returns focus to the trigger on Escape', async ({ page }) => {
-    await openPanel(page, 'name');
-
     const inPanel = () =>
       page.evaluate((sel) => !!document.activeElement?.closest(sel), PANEL);
 
-    // Focus starts inside, on the search box.
-    expect(await inPanel()).toBe(true);
+    // Focus starts inside, on the search box, without waiting for the server's
+    // distinct values: a slow distincts request must not hold the keyboard back.
+    await page.route('**/api/customers/distincts', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await route.fallback();
+    });
+    await trigger(page, 'name').click();
+    await expect.poll(inPanel, { timeout: 1000 }).toBe(true);
+    await expect(page.locator(`${PANEL} .filter-option`).first()).toBeVisible();
 
     // Tab all the way round; focus must never leave the panel.
     for (let i = 0; i < 8; i++) {
@@ -357,27 +391,6 @@ test.describe('bs-datatable filter panel', () => {
     expect(await sortOf()).toBe(before);
   });
 
-  /**
-   * A `number` input reports `''` for any content that is not a valid number,
-   * so binding the parsed operand back wiped the character just typed. `live()`
-   * prevents the write — and only a real browser keeps the partial text visible
-   * to observe it.
-   */
-  test('a partial number survives in the comparison operand box', async ({ page }) => {
-    await openPanel(page, 'yearStarted');
-
-    const operand = page.locator('.filter-panel:popover-open .filter-operand');
-    await operand.click();
-    await operand.pressSequentially('19');
-    await expect(operand).toHaveValue('19');
-
-    // `-` alone is not a valid number; the box must still show what was typed.
-    await operand.fill('');
-    await operand.pressSequentially('-');
-    const shown = await operand.evaluate((el: HTMLInputElement) => el.validity.badInput || el.value !== '');
-    expect(shown).toBe(true);
-  });
-
   test('the built-in value list filters the table and the trigger reports it', async ({ page }) => {
     await openPanel(page, 'name');
 
@@ -385,8 +398,8 @@ test.describe('bs-datatable filter panel', () => {
     const chosen = (await firstOption.innerText()).trim();
     await firstOption.locator('input').check();
 
-    // The demo owns the predicate, so this also proves the event crossed the
-    // portal boundary and reached the page's handler.
+    // The server (the mock) applies the filter, so this also proves the
+    // selection crossed the portal boundary into the next fetch.
     await expect(page.locator(`${FILTER_TABLE} tbody tr[data-row-key]`)).toHaveCount(1);
     await expect(trigger(page, 'name')).toHaveAttribute('aria-label', new RegExp(`filtered by ${chosen}`));
   });

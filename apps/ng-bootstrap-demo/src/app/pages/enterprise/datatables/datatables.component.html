@@ -335,7 +335,8 @@
 </p>
 <p>
   The panel is a native popover in the top layer, so it is not clipped by the
-  table's scroll container and is not hidden behind the sticky header.
+  table's scroll container and is not hidden behind the sticky header &mdash;
+  this demo runs in virtual-scroll mode, where both would otherwise happen.
 </p>
 <p>
   <strong>Filtering happens on the server.</strong> The table keeps the active
@@ -387,10 +388,10 @@
 <input id="customer-search" class="form-control mb-3" type="search"
   [ngModel]="customerSearch()" (ngModelChange)="customerSearch.set($event)" />
 
-<bs-datatable class="filter-table"
-  pagination
+<bs-datatable class="flex-grow-1 filter-table"
   stateKey="customers"
-  [perPage]="10"
+  [virtualScroll]="true"
+  [itemSize]="40"
   [columns]="customerColumns()"
   [fetch]="fetchCustomers"
   [distincts]="distinctsCustomers"
