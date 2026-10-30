@@ -122,7 +122,7 @@ const postJson = async <T,>(path: string, body: unknown, signal: AbortSignal): P
 
 const showFilters = ref(true);
 // Seeded, so the server render already filters.
-const customerFilters = ref<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+const customerFilters = ref<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
 const customerSearch = ref('');
 const customerTotal = ref<number | null>(null);
 const customerParams = computed<CustomerParams>(() => ({ search: customerSearch.value }));
@@ -151,28 +151,33 @@ function valuesSummary(filter: DatatableFilter | undefined): string | undefined 
   return filter.inverse ? `not ${list}` : list;
 }
 
+// A fixed locale and timezone: the server render and the browser must print the
+// same text, or hydration fails (and a server's timezone is rarely the reader's).
+const INSTANT_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+const formatInstant = (iso: string) => `${INSTANT_FORMAT.format(new Date(iso))} UTC`;
+
 function comparisonSummary(filter: DatatableFilter | undefined): string | undefined {
   if (!filter?.operator || filter.operand == null) return undefined;
-  return `${OPERATOR_SYMBOLS[filter.operator]} ${new Date(String(filter.operand)).toLocaleDateString()}`;
+  return `${OPERATOR_SYMBOLS[filter.operator]} ${formatInstant(String(filter.operand))}`;
 }
 
 // Country uses an override panel (`filterMode: 'custom'` + the table's
 // `#filter` slot, see the template). Its commands write the same model.
 const customerColumns = computed<DatatableColumnDef[]>(() => [
   // No filterMode: the built-in value list, listed by the API (`distincts`).
-  { name: 'Name', label: 'Name', filterable: showFilters.value, filterSummary: valuesSummary(customerFilters.value['Name']) },
-  { name: 'Email', label: 'Email', sortable: false },
-  { name: 'Country', label: 'Country', filterable: showFilters.value, filterMode: 'custom', filterSummary: valuesSummary(customerFilters.value['Country']) },
+  { name: 'name', label: 'Name', filterable: showFilters.value, filterSummary: valuesSummary(customerFilters.value['name']) },
+  { name: 'email', label: 'Email', sortable: false },
+  { name: 'country', label: 'Country', filterable: showFilters.value, filterMode: 'custom', filterSummary: valuesSummary(customerFilters.value['country']) },
   // A datetime comparison: typed in local time, sent as a UTC instant.
   {
-    name: 'CreatedAt',
+    name: 'createdAt',
     label: 'Created',
     filterable: showFilters.value,
     filterMode: 'comparison',
     filterInputType: 'datetime',
     filterOperators: ['gte', 'lt'],
-    format: (row) => new Date((row as Customer).createdAt).toLocaleString(),
-    filterSummary: comparisonSummary(customerFilters.value['CreatedAt']),
+    format: (row) => formatInstant((row as Customer).createdAt),
+    filterSummary: comparisonSummary(customerFilters.value['createdAt']),
   },
 ]);
 
@@ -190,7 +195,7 @@ const FILTER_SOURCE = `<!-- Filters are always applied by the server: the table 
 
 <script setup lang="ts">
 // The model: column name → { values, inverse } or { operator, operand }.
-const customerFilters = ref<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+const customerFilters = ref<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
 
 const fetchCustomers: DatatableFetch<Customer, CustomerParams> = ({ signal, ...req }) =>
   postJson('/api/customers/table', req, signal);   // page, perPage, sortColumns, filters, params
@@ -198,9 +203,9 @@ const distinctsCustomers = ({ signal, ...req }: DistinctsRequest<CustomerParams>
   postJson('/api/customers/distincts', req, signal);
 
 const customerColumns = computed<DatatableColumnDef[]>(() => [
-  { name: 'Name', label: 'Name', filterable: true },          // built-in value list
-  { name: 'Country', label: 'Country', filterable: true, filterMode: 'custom' },
-  { name: 'CreatedAt', label: 'Created', filterable: true,     // a UTC instant on the wire
+  { name: 'name', label: 'Name', filterable: true },          // built-in value list
+  { name: 'country', label: 'Country', filterable: true, filterMode: 'custom' },
+  { name: 'createdAt', label: 'Created', filterable: true,     // a UTC instant on the wire
     filterMode: 'comparison', filterInputType: 'datetime', filterOperators: ['gte', 'lt'] },
 ]);
 <\/script>`;

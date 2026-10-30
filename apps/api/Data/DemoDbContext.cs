@@ -10,6 +10,17 @@ public class DemoDbContext(DbContextOptions<DemoDbContext> options) : DbContext(
     public DbSet<LineItem> LineItems => Set<LineItem>();
     public DbSet<TreeItem> TreeItems => Set<TreeItem>();
 
+    // Every DateTime is stored as UTC, but SQLite hands it back as Unspecified, which serializes
+    // without a "Z" and a browser then reads as local time. Restore the kind on read (#448 D10).
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+    }
+
+    private sealed class UtcDateTimeConverter() : Microsoft.EntityFrameworkCore.Storage.ValueConversion.ValueConverter<DateTime, DateTime>(
+        v => v.Kind == DateTimeKind.Utc ? v : v.ToUniversalTime(),
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Order>(b =>

@@ -425,8 +425,8 @@ export class DatatablesComponent {
   showFilters = signal(true);
 
   /** Two-way with the table. Seeded, so the server render already filters. */
-  customerFilters = signal<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
-  customerSort = signal<SortColumn[]>([{ property: 'Name', direction: 'ascending' }]);
+  customerFilters = signal<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
+  customerSort = signal<SortColumn[]>([{ property: 'name', direction: 'ascending' }]);
   /** The page's own query context, next to the column filters: `fetchParams`. */
   customerSearch = signal('');
   customerParams = computed<CustomerParams>(() => ({ search: this.customerSearch() }));
@@ -439,27 +439,27 @@ export class DatatablesComponent {
     });
   distinctsCustomers = this.customerService.distincts;
   customerKey = (row: unknown) => String((row as Customer).id);
-  formatCreated = (row: unknown) => new Date((row as Customer).createdAt).toLocaleString();
+  formatCreated = (row: unknown) => formatInstant((row as Customer).createdAt);
 
   customerColumns = computed<DatatableColumnDef[]>(() => {
     const filterable = this.showFilters();
     const filters = this.customerFilters();
     return [
       // No filterMode: a checkbox list of distinct names, from the API's distincts.
-      { name: 'Name', label: 'Name', filterable, filterSummary: valuesSummary(filters['Name']) },
-      { name: 'Email', label: 'Email', sortable: false },
+      { name: 'name', label: 'Name', filterable, filterSummary: valuesSummary(filters['name']) },
+      { name: 'email', label: 'Email', sortable: false },
       // Custom mode: the *bsDatatableFilter template renders this panel.
-      { name: 'Country', label: 'Country', filterable, filterMode: 'custom', filterSummary: valuesSummary(filters['Country']) },
+      { name: 'country', label: 'Country', filterable, filterMode: 'custom', filterSummary: valuesSummary(filters['country']) },
       // A datetime comparison: typed in local time, sent as a UTC instant.
       {
-        name: 'CreatedAt',
+        name: 'createdAt',
         label: 'Created',
         filterable,
         filterMode: 'comparison',
         filterInputType: 'datetime',
         filterOperators: ['gte', 'lt'],
         format: this.formatCreated,
-        filterSummary: comparisonSummary(filters['CreatedAt']),
+        filterSummary: comparisonSummary(filters['createdAt']),
       },
     ];
   });
@@ -483,21 +483,21 @@ export class DatatablesComponent {
 
   protected readonly snippetFilterTs = dedent`
     // Two-way: the user's filters land here, and a value set here filters the table.
-    filters = signal<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+    filters = signal<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
     // Your own query context, sent with every request. Must be JSON.
     params = computed(() => ({ search: this.search() }));
 
     columns = computed<DatatableColumnDef[]>(() => [
       // A checkbox list of the column's distinct values, from [distincts].
-      { name: 'Name', filterable: true },
-      { name: 'Country', filterable: true, filterMode: 'custom' },
+      { name: 'name', filterable: true },
+      { name: 'country', filterable: true, filterMode: 'custom' },
       // Local time in the box, a UTC instant on the wire.
-      { name: 'CreatedAt', filterable: true, filterMode: 'comparison',
+      { name: 'createdAt', filterable: true, filterMode: 'comparison',
         filterInputType: 'datetime', filterOperators: ['gte', 'lt'] },
     ]);
 
     // The server applies { page, perPage, sortColumns, filters, params }:
-    //   filters: { Country: { values: ['BE','NL'], inverse: false },
+    //   filters: { country: { values: ['BE','NL'], inverse: false },
     //              CreatedAt: { values: [], inverse: false, operator: 'gte',
     //                           operand: '2026-01-01T00:00:00.000Z' } }
     fetch: DatatableFetch<Customer, Params> = ({ signal, ...req }) =>
@@ -517,7 +517,12 @@ function valuesSummary(filter: DatatableFilter | undefined): string | undefined 
   return filter.inverse ? `not ${list}` : list;
 }
 
+// A fixed locale and timezone: the server render and the browser must print the
+// same text, or hydration fails (and a server's timezone is rarely the reader's).
+const INSTANT_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+const formatInstant = (iso: string) => `${INSTANT_FORMAT.format(new Date(iso))} UTC`;
+
 function comparisonSummary(filter: DatatableFilter | undefined): string | undefined {
   if (!filter?.operator || filter.operand == null) return undefined;
-  return `${OPERATOR_SYMBOLS[filter.operator]} ${new Date(String(filter.operand)).toLocaleDateString()}`;
+  return `${OPERATOR_SYMBOLS[filter.operator]} ${formatInstant(String(filter.operand))}`;
 }

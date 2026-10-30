@@ -85,9 +85,14 @@ function valuesSummary(filter: DatatableFilter | undefined): string | undefined 
   return filter.inverse ? `not ${list}` : list;
 }
 
+// A fixed locale and timezone: the server render and the browser must print the
+// same text, or hydration fails (and a server's timezone is rarely the reader's).
+const INSTANT_FORMAT = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' });
+const formatInstant = (iso: string) => `${INSTANT_FORMAT.format(new Date(iso))} UTC`;
+
 function comparisonSummary(filter: DatatableFilter | undefined): string | undefined {
   if (!filter?.operator || filter.operand == null) return undefined;
-  return `${OPERATOR_SYMBOLS[filter.operator]} ${new Date(String(filter.operand)).toLocaleDateString()}`;
+  return `${OPERATOR_SYMBOLS[filter.operator]} ${formatInstant(String(filter.operand))}`;
 }
 
 const SIMPLE_SOURCE = `<BsDatatable columns={COLUMNS} data={ARTISTS} />`;
@@ -156,10 +161,10 @@ const [search, setSearch] = useState('');
 
 const columns: DatatableColumnDef[] = [
   // A checkbox list of the column's distinct values, from \`distincts\`.
-  { name: 'Name', filterable: true },
-  { name: 'Country', filterable: true, filterMode: 'custom' },
+  { name: 'name', filterable: true },
+  { name: 'country', filterable: true, filterMode: 'custom' },
   // Local time in the box, a UTC instant on the wire.
-  { name: 'CreatedAt', filterable: true, filterMode: 'comparison',
+  { name: 'createdAt', filterable: true, filterMode: 'comparison',
     filterInputType: 'datetime', filterOperators: ['gte', 'lt'] },
 ];
 
@@ -339,7 +344,7 @@ export function DatatablePage() {
   // says what a filter is called (`filterSummary`).
   const [showFilters, setShowFilters] = useState(true);
   // Seeded, so the server render already filters.
-  const [customerFilters, setCustomerFilters] = useState<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+  const [customerFilters, setCustomerFilters] = useState<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerTotal, setCustomerTotal] = useState<number | null>(null);
   const fetchCustomersCounted = useCallback<DatatableFetch<Customer, CustomerParams>>(
@@ -371,19 +376,19 @@ export function DatatablePage() {
 
   const customerColumns: DatatableColumnDef[] = [
     // No filterMode: the built-in value list, listed by the API (`distincts`).
-    { name: 'Name', label: 'Name', filterable: showFilters, filterSummary: valuesSummary(customerFilters['Name']) },
-    { name: 'Email', label: 'Email', sortable: false },
-    { name: 'Country', label: 'Country', filterable: showFilters, filterMode: 'custom', filterSummary: valuesSummary(customerFilters['Country']) },
+    { name: 'name', label: 'Name', filterable: showFilters, filterSummary: valuesSummary(customerFilters['name']) },
+    { name: 'email', label: 'Email', sortable: false },
+    { name: 'country', label: 'Country', filterable: showFilters, filterMode: 'custom', filterSummary: valuesSummary(customerFilters['country']) },
     // A datetime comparison: typed in local time, sent as a UTC instant.
     {
-      name: 'CreatedAt',
+      name: 'createdAt',
       label: 'Created',
       filterable: showFilters,
       filterMode: 'comparison',
       filterInputType: 'datetime',
       filterOperators: ['gte', 'lt'],
-      format: (row) => new Date((row as Customer).createdAt).toLocaleString(),
-      filterSummary: comparisonSummary(customerFilters['CreatedAt']),
+      format: (row) => formatInstant((row as Customer).createdAt),
+      filterSummary: comparisonSummary(customerFilters['createdAt']),
     },
   ];
 

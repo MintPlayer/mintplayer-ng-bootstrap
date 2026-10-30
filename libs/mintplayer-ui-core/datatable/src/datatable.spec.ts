@@ -1,16 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  activeFilter,
   bucketDistincts,
   connectDatatable,
   datatableModel,
   defaultRowKey,
   filterOptionsOf,
   localDistincts,
+  operandText,
   parseOperand,
+  requestFilters,
+  selectionFromFilter,
+  withFilter,
   type DatatableFilterCommands,
   type DatatableModelInput,
   type DatatableOptions,
 } from './datatable';
+import { datatableCore, requestKeyOf, type DatatableInputs } from './datatable.core';
 import type { DatatableColumnDef } from './types/column-def';
 import { DEFAULT_DATATABLE_LABELS } from './types/labels';
 
@@ -227,5 +233,100 @@ describe('filter helpers', () => {
     const selection = { values: [{ value: NaN, label: 'NaN' }], inverse: false };
     const values = { matching: [{ value: NaN, label: 'NaN' }, { value: 1, label: '1' }], remaining: [], hasMore: false };
     expect(filterOptionsOf(selection, values).map((v) => v.label)).toEqual(['NaN', '1']);
+  });
+
+  it('turns a local datetime into the UTC instant it names, and shows it back as local text (#448 D10)', () => {
+    const instant = parseOperand('2026-03-01T09:30', 'datetime') as string;
+    expect(instant).toMatch(/Z$/);
+    expect(instant).toBe(new Date(2026, 2, 1, 9, 30).toISOString());
+    expect(operandText(instant, 'datetime')).toBe('2026-03-01T09:30');
+    expect(parseOperand('2026-03-01', 'datetime')).toBeNull();
+    expect(operandText(42, 'number')).toBe('42');
+  });
+
+  it('sends only active filters, and drops an emptied column from the model', () => {
+    expect(activeFilter({ values: [], inverse: true }, 'values')).toBeNull();
+    expect(activeFilter({ values: [{ value: 'BE', label: 'Belgium' }], inverse: true }, 'values')).toEqual({ values: ['BE'], inverse: true });
+    expect(activeFilter({ values: [], inverse: false, operator: 'gte', operand: null }, 'comparison')).toBeNull();
+    expect(activeFilter({ values: [], inverse: false, operator: 'gte', operand: 3 }, 'comparison')).toEqual({ values: [], inverse: false, operator: 'gte', operand: 3 });
+
+    const filters = { a: { values: ['x'], inverse: false }, b: { values: [], inverse: true } };
+    expect(requestFilters(filters)).toEqual({ a: filters.a });
+    expect(requestFilters(null)).toEqual({});
+    expect(withFilter(filters, 'a', null)).toEqual({ b: filters.b });
+  });
+
+  it('labels a model value from the known list, else by the labels', () => {
+    const known = [{ value: 'BE', label: 'Belgium' }];
+    expect(selectionFromFilter({ values: ['BE', 'NL'], inverse: false }, undefined, known, DEFAULT_DATATABLE_LABELS).values).toEqual([
+      { value: 'BE', label: 'Belgium' },
+      { value: 'NL', label: DEFAULT_DATATABLE_LABELS.filterValue('NL') },
+    ]);
+    expect(selectionFromFilter(undefined, { operator: 'lt' }, known, DEFAULT_DATATABLE_LABELS)).toEqual({ values: [], inverse: false, operator: 'lt', operand: null });
+  });
+});
+
+describe('datatableCore server seed (#448)', () => {
+  const page = { data: [{ id: 1 }], totalRecords: 41 };
+  const inputs = (o: Partial<DatatableInputs> = {}) =>
+    ({
+      columns: COLUMNS,
+      fetch: vi.fn(() => Promise.resolve(page)),
+      stateKey: 'artists',
+      filters: { name: { values: ['Muse'], inverse: false } },
+      fetchParams: { search: 'm' },
+      sortColumns: [],
+      page: 1,
+      perPage: 20,
+      virtualScroll: false,
+      ...o,
+    }) as unknown as DatatableInputs;
+
+  it('keys the request canonically: key order and inactive filters never change it', () => {
+    const a = inputs({ fetchParams: { x: 1, y: 2 } });
+    const b = inputs({ fetchParams: { y: 2, x: 1 }, filters: { name: { values: ['Muse'], inverse: false }, year: { values: [], inverse: false } } });
+    expect(datatableCore.transferKey!(a)).toBe(datatableCore.transferKey!(b));
+    expect(datatableCore.transferKey!(a)).toMatch(/^mp-dt:artists:/);
+    expect(datatableCore.transferKey!(inputs({ fetchParams: { x: 2, y: 2 } }))).not.toBe(datatableCore.transferKey!(a));
+  });
+
+  it('names a non-JSON fetchParams', () => {
+    expect(() => datatableCore.transferKey!(inputs({ fetchParams: { since: new Date() } as never }))).toThrow(/fetchParams\.since is a Date/);
+  });
+
+  it('has nothing to transfer without stateKey or fetch', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    expect(datatableCore.transferKey!(inputs({ stateKey: null }))).toBeUndefined();
+    expect(datatableCore.prefetch!(inputs({ stateKey: null }), new AbortController().signal)).toBeUndefined();
+    expect(datatableCore.transferKey!(inputs({ fetch: null }))).toBeUndefined();
+    warn.mockRestore();
+  });
+
+  it('prefetches page 1 with the filters and params, and seeds the state it answers', async () => {
+    const i = inputs();
+    const signal = new AbortController().signal;
+    const seed = await datatableCore.prefetch!(i, signal);
+    expect(i.fetch).toHaveBeenCalledWith({
+      parentId: null,
+      page: 1,
+      perPage: 20,
+      sortColumns: [],
+      filters: { name: { values: ['Muse'], inverse: false } },
+      params: { search: 'm' },
+      signal,
+    });
+    const state = datatableCore.state(i, seed);
+    expect(state.fetched).toEqual(page.data);
+    expect(state.totalRecords).toBe(41);
+    expect(state.fetching).toBe(false);
+    expect(state.fetchedKey).toBe(requestKeyOf(i, state));
+  });
+
+  it('ignores a seed for another query, and renders loading instead', async () => {
+    const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
+    const state = datatableCore.state(inputs({ fetchParams: { search: 'q' } }), seed);
+    expect(state.fetched).toBeNull();
+    expect(state.fetchedKey).toBeNull();
+    expect(state.fetching).toBe(true);
   });
 });

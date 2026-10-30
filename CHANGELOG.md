@@ -10,6 +10,30 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Datatable filters are a two-way model applied by the server (issue #448).** A `fetch` table never
+  filters rows itself any more; it sends the active filters with every request.
+  - **`filters` model** (`[(filters)]`, `v-model:filters`, `filters` + `onFiltersChange`, Lit `filters`
+    property + `filterschange`) replaces the `filterSelection` / `filterActive` column fields and the
+    `filterChange` output. Its shape is `Record<column, { values, inverse } | { operator, operand }>`
+    without labels; a column's values are labelled from the distincts list, else by `labels.filterValue`.
+    **Migration**: bind `filters`, and turn it into your query in `fetch`.
+  - `DatatableFetchRequest` and `DistinctsRequest` gain `filters` and `params`; `fetchParams` (JSON only —
+    a `Date`, function or class instance throws `NonJsonValueError` naming the path) is sent as `params`.
+    Distincts are faceted: they carry every *other* column's filter.
+  - A filter change resets to page 1 and refetches; typing an operand is debounced (300 ms).
+  - `filterInputType: 'datetime'` takes local wall-clock time and sends the UTC instant it names
+    (`…Z`); `'date'` stays a calendar `yyyy-mm-dd`.
+- **SSR first page for `fetch` tables (issue #448).** Set `stateKey` and the server render fetches page 1
+  (with the filters and params), renders it, and transfers it, so the browser hydrates without fetching.
+  Without `stateKey` the server renders the loading state and warns once.
+  - Angular: nothing to add; `provideMachineSsr({ prefetchTimeout })` changes the 3000 ms default.
+  - React: wrap the app in `<MpTransferStateProvider store={store} server>` on the server and
+    `<MpTransferStateProvider>` in the browser, render with `renderToPipeableStream` + `onAllReady`, and put
+    `serializeTransferState(store)` (`@mintplayer/ui-core/transfer-state`) in the head.
+  - Vue: `app.use(mpTransferState({ store, server }))` and the same head script.
+  - A `format` callback on an SSR table must print the same text on the server and in the browser: pass
+    an explicit locale and `timeZone` to `Intl.DateTimeFormat` rather than `toLocaleString()`.
+
 - **Outputs no longer share a name with a native DOM event (issue #437).** Angular, Vue and Lit listen to a
   lowercased output name on the element, which also catches the native event of that name bubbling from inside
   the component, such as `selectionchange` from a filter `<input>` or `animationend` from a slide. The compiler
@@ -956,6 +980,9 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     applyFetchState })`.
 
 ### Fixed
+
+- **React fronts map `colspan`, `rowspan`, `minlength` and `maxlength`** to their React prop names; the
+  datatable's loading and empty cells no longer log `Invalid DOM property` (found in #448).
 
 - **Angular SSR renders a generated component's bound two-way inputs (issue #437).** A generated Angular
   component used to seed its core from its inputs in the constructor, before Angular had bound them. On the client
