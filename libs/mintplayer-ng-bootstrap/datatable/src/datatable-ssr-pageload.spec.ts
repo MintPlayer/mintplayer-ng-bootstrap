@@ -12,22 +12,30 @@ import { BsDatatableComponent } from './generated/datatable.component.generated'
  * Before #450 the seed kept rows and total only, and the hydrated grid kept
  * its rows with no cells and no header.
  *
+ * The same consumer must work with no server render at all, and with a server
+ * render that has no `stateKey` (no prefetch): there the browser fetches page 1
+ * itself and `(pageload)` reports it with `seeded: false`.
+ *
  * `renderApplication` needs the server platform and hydration the browser one,
- * so this file tears each down before the next (vitest isolates files).
+ * so each step tears the previous platform down (vitest isolates files).
  */
 const EXTRA = { columns: ['name', 'year'], disabledActions: ['delete'] };
 const ROWS = [{ id: 1, name: 'A Sky Full of Stars', year: 2014 }];
+const SHELL = '<html><head></head><body><bs-query-grid></bs-query-grid></body></html>';
 
-const calls = { server: 0, client: 0 };
-const loads: { phase: 'server' | 'client'; detail: DatatablePageLoadDetail }[] = [];
-let phase: 'server' | 'client' = 'server';
+type Phase = 'server' | 'client';
+let calls: Record<Phase, number>;
+let loads: { phase: Phase; detail: DatatablePageLoadDetail }[];
+let phase: Phase;
+let stateKey: string | null;
 
 @Component({
   selector: 'bs-query-grid',
   imports: [BsDatatableComponent],
-  template: `<bs-datatable stateKey="songs" [perPage]="10" [columns]="columns()" [fetch]="fetch" (pageload)="onPageLoad($event)" />`,
+  template: `<bs-datatable [stateKey]="stateKey" [perPage]="10" [columns]="columns()" [fetch]="fetch" (pageload)="onPageLoad($event)" />`,
 })
 class QueryGridComponent {
+  readonly stateKey = stateKey;
   readonly columns = signal<DatatableColumnDef[]>([]);
   readonly fetch: DatatableFetch = async () => {
     calls[phase]++;
@@ -47,40 +55,89 @@ class QueryGridComponent {
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 
-describe('bs-datatable seeded page 1 hands the consumer its fetch result (#450)', () => {
-  beforeAll(() => destroyPlatform());
-  afterAll(() => destroyPlatform());
+async function renderOnServer(): Promise<string> {
+  phase = 'server';
+  const html = await renderApplication(
+    // provideClientHydration on the server too: without it the server writes no hydration info
+    // and the browser re-renders from scratch (NG0505), which is not the path a real app takes.
+    (context) => bootstrapApplication(QueryGridComponent, { providers: [provideServerRendering(), provideClientHydration()] }, context),
+    { document: SHELL, url: '/' },
+  );
+  destroyPlatform();
+  return html;
+}
 
-  it('fires pageload once on the client, seeded, with extra intact, and never fetches page 1 there', async () => {
-    const html = await renderApplication(
-      (context) => bootstrapApplication(QueryGridComponent, { providers: [provideServerRendering()] }, context),
-      { document: '<html><head></head><body><bs-query-grid></bs-query-grid></body></html>', url: '/' },
-    );
+/** Boots the browser app on `html`: hydrating it when it is server output, rendering from scratch when it is the bare shell. */
+async function bootInBrowser(html: string, hydrate: boolean, beforeBoot: () => void = () => undefined) {
+  phase = 'client';
+  document.open();
+  document.write(html);
+  document.close();
+  beforeBoot();
+  const app = await bootstrapApplication(QueryGridComponent, { providers: hydrate ? [provideClientHydration()] : [] });
+  const appRef = app.injector.get(ApplicationRef);
+  await appRef.whenStable();
+  await settle();
+  await appRef.whenStable();
+  return app;
+}
+
+const clientLoads = () => loads.filter((l) => l.phase === 'client').map((l) => l.detail);
+const cells = () => [...document.querySelectorAll('bs-datatable tbody td')].map((td) => td.textContent?.trim());
+const headers = () => document.querySelectorAll('bs-datatable thead th').length;
+const request = { parentId: null, page: 1, perPage: 10, sortColumns: [], filters: {}, params: undefined };
+const result = { data: ROWS, totalRecords: 1, extra: EXTRA };
+
+describe('bs-datatable with and without a server render (#450)', () => {
+  beforeAll(() => destroyPlatform());
+  beforeEach(() => {
+    calls = { server: 0, client: 0 };
+    loads = [];
+  });
+  afterEach(() => destroyPlatform());
+
+  it('server render with stateKey: pageload fires once in the browser, seeded, extra intact, no browser fetch', async () => {
+    stateKey = 'songs';
+    const html = await renderOnServer();
     expect(calls.server).toBe(1);
     expect(html).toContain('A Sky Full of Stars');
-    destroyPlatform();
 
-    phase = 'client';
-    document.open();
-    document.write(html);
-    document.close();
-    const app = await bootstrapApplication(QueryGridComponent, { providers: [provideClientHydration()] });
-    await app.injector.get(ApplicationRef).whenStable();
-    await settle();
-    await app.injector.get(ApplicationRef).whenStable();
-
+    let serverCell: Element | null = null;
+    const app = await bootInBrowser(html, true, () => (serverCell = document.querySelector('bs-datatable tbody td')));
+    // Hydrated, not re-rendered: the server's cell is the one on the page.
+    expect(serverCell).not.toBeNull();
+    expect(document.querySelector('bs-datatable tbody td')).toBe(serverCell);
     expect(calls.client).toBe(0);
     expect(loads.filter((l) => l.phase === 'server')).toEqual([]);
-    expect(loads.filter((l) => l.phase === 'client').map((l) => l.detail)).toEqual([
-      {
-        request: { parentId: null, page: 1, perPage: 10, sortColumns: [], filters: {}, params: undefined },
-        result: { data: ROWS, totalRecords: 1, extra: EXTRA },
-        seeded: true,
-      },
-    ]);
-    const cells = [...document.querySelectorAll('bs-datatable tbody td')].map((td) => td.textContent?.trim());
-    expect(cells).toContain('A Sky Full of Stars');
-    expect(document.querySelectorAll('bs-datatable thead th').length).toBeGreaterThan(0);
+    expect(clientLoads()).toEqual([{ request, result, seeded: true }]);
+    expect(cells()).toContain('A Sky Full of Stars');
+    expect(headers()).toBeGreaterThan(0);
+    app.destroy();
+  });
+
+  it('server render without stateKey: no prefetch, the browser fetches page 1 and pageload reports it unseeded', async () => {
+    stateKey = null;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const html = await renderOnServer();
+    warn.mockRestore();
+    expect(calls.server).toBe(0);
+    expect(html).not.toContain('A Sky Full of Stars');
+
+    const app = await bootInBrowser(html, true);
+    expect(calls.client).toBe(1);
+    expect(clientLoads()).toEqual([{ request, result, seeded: false }]);
+    expect(cells()).toContain('A Sky Full of Stars');
+    expect(headers()).toBeGreaterThan(0);
+    app.destroy();
+  });
+
+  it('no server render: the browser fetches page 1 once, pageload reports it unseeded, and the grid renders', async () => {
+    stateKey = 'songs';
+    const app = await bootInBrowser(SHELL, false);
+    expect(calls).toEqual({ server: 0, client: 1 });
+    expect(clientLoads()).toEqual([{ request, result, seeded: false }]);
+    expect(cells()).toContain('A Sky Full of Stars');
+    expect(headers()).toBeGreaterThan(0);
     app.destroy();
   });
 });

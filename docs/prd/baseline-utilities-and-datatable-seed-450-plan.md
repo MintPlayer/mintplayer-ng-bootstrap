@@ -46,10 +46,16 @@ Decision: emit from `attach` / `inputsChanged` directly, no microtask deferral.
   `extra` survives `prefetch`; `pageLoad` fires once with `seeded: true` on attach and `fetch` is not
   called; a fetched page fires `seeded: false` with its `extra` and no `signal`; an adopted seed fires
   `seeded: true` once.
-- `libs/mintplayer-ng-bootstrap/datatable/src/datatable-ssr-pageload.spec.ts`: server
-  `renderApplication` with a `fetch` that returns `extra`, then `provideClientHydration` from the
-  serialized HTML: `pageload` once, `seeded: true`, `extra` intact, no client `fetch`, and the
-  hydrated grid has cells and a header.
+- `libs/mintplayer-ng-bootstrap/datatable/src/datatable-ssr-pageload.spec.ts`, the same consumer
+  (columns from the response) in all three ways an app can run it:
+  - **SSR with `stateKey`:** server `renderApplication` with a `fetch` that returns `extra`, then
+    real hydration (`provideClientHydration` on both sides; the server cell is the same DOM node
+    afterwards): `pageload` once, `seeded: true`, `extra` intact, no browser `fetch`, cells + header.
+  - **SSR without `stateKey`:** no server fetch, no rows in the server HTML; the browser fetches
+    page 1 once and `pageload` reports it with `seeded: false`; cells + header.
+  - **No SSR:** a plain browser bootstrap fetches page 1 once, `seeded: false`; cells + header.
+  The first version of this spec had `provideClientHydration` on the client only, so the browser
+  re-rendered destructively (NG0505) and the hydration path was never exercised.
 
 ## Verification (M7, local)
 
