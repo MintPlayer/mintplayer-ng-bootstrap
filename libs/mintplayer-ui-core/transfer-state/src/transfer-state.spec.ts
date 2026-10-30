@@ -53,14 +53,17 @@ describe('canonicalJson', () => {
 
 describe('transfer store', () => {
   it('serializes into a script that cannot be broken out of, and reads back', () => {
+    // The two line separators built from char codes: as literals they end a regex or string in some toolchains.
+    const separators = String.fromCharCode(0x2028, 0x2029);
+    const hostile = `</script><!-- & ${separators}`;
     const store = createTransferStore();
-    store.set('k', { html: '</script><!-- &   ' });
+    store.set('k', { html: hostile });
     const script = serializeTransferState(store);
     expect(script).not.toMatch(/<\/script>.*<\/script>/s);
-    expect(script.slice(script.indexOf('>') + 1, script.lastIndexOf('<'))).not.toMatch(/[<>&  ]/);
     const json = script.slice(script.indexOf('>') + 1, script.lastIndexOf('</script>'));
+    expect([...'<>&', ...separators].filter((c) => json.includes(c))).toEqual([]);
     const doc = { getElementById: (id: string) => (id === 'mp-state' ? ({ textContent: json } as HTMLElement) : null) };
-    expect(readTransferState(doc).get('k')).toEqual({ html: '</script><!-- &   ' });
+    expect(readTransferState(doc).get('k')).toEqual({ html: hostile });
   });
 
   it('reads an empty store when there is no script or it is not an object', () => {
@@ -75,8 +78,8 @@ describe('transfer store', () => {
 });
 
 describe('runPrefetch', () => {
-  const core = (prefetch: (signal: AbortSignal) => Promise<unknown> | undefined, key: string | undefined = 'k') => ({
-    transferKey: () => key,
+  const core = (prefetch: (signal: AbortSignal) => Promise<unknown> | undefined, key: string | null = 'k') => ({
+    transferKey: () => key ?? undefined,
     prefetch: (_inputs: unknown, signal: AbortSignal) => prefetch(signal),
   });
 
@@ -85,7 +88,7 @@ describe('runPrefetch', () => {
   });
 
   it('resolves null without a key, without a prefetch, or when the core has nothing to fetch', async () => {
-    expect(await runPrefetch(core(() => Promise.resolve(1), undefined), {})).toBeNull();
+    expect(await runPrefetch(core(() => Promise.resolve(1), null), {})).toBeNull();
     expect(await runPrefetch({ transferKey: () => 'k' }, {})).toBeNull();
     expect(await runPrefetch(core(() => undefined), {})).toBeNull();
   });

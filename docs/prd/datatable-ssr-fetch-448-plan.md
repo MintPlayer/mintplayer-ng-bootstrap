@@ -2,8 +2,9 @@
 
 PRD: [datatable-ssr-fetch-448.md](./datatable-ssr-fetch-448.md) (decisions D1–D10 in §12)
 
-Status: **Grilled, not started** (2026-10-30). The branch will be `feat/448-datatable-ssr-fetch`,
-targeting `master`. Everything in this repo lands in **one PR**. The Spark work (M10) follows the
+Status: **S1–S5 and M1–M8 done** (2026-10-30) on `feat/448-datatable-ssr-fetch`, targeting
+`master`; spike results in `spikes/issue-448/`. M9 (sweep + PR) in progress; M10 (Spark) waits for the
+publish. Everything in this repo lands in **one PR**. The Spark work (M10) follows the
 publish in the Spark repo, as the same unit of work.
 
 Spike artifacts go in `docs/prd/spikes/issue-448/`, one short `S<n>-*.md` per spike, recording what
