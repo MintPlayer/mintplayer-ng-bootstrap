@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';
 import { Color } from '@mintplayer/ng-bootstrap';
@@ -12,7 +13,8 @@ import {
   type DatatableFetch,
   type DatatableFetchRequest,
   type DistinctValue,
-  type FilterChangeDetail,
+  type DatatableFilter,
+  type DatatableFilters,
   type FilterOperator,
   type SortColumn,
 } from '@mintplayer/ng-bootstrap/datatable';
@@ -27,6 +29,7 @@ import { Artist } from '../../../entities/artist';
 import { ArtistService } from '../../../services/artist/artist.service';
 import { TreeItem } from '../../../entities/tree-item';
 import { TreeItemService } from '../../../services/tree-item/tree-item.service';
+import { CustomerService, type Customer, type CustomerParams } from '../../../services/customer/customer.service';
 
 /** Mirrors the component's own operator glyphs for the trigger summary. */
 const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
@@ -38,29 +41,12 @@ const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
   gte: '≥',
 };
 
-function compare(value: number, operator: FilterOperator, operand: number): boolean {
-  switch (operator) {
-    case 'eq':
-      return value === operand;
-    case 'neq':
-      return value !== operand;
-    case 'lt':
-      return value < operand;
-    case 'lte':
-      return value <= operand;
-    case 'gt':
-      return value > operand;
-    case 'gte':
-      return value >= operand;
-  }
-}
-
 @Component({
   selector: 'demo-datatables',
   templateUrl: './datatables.component.html',
   styleUrls: ['./datatables.component.scss'],
   imports: [
-    FormsModule,
+    FormsModule, JsonPipe,
     BsDatatableComponent, BsDatatableCellDirective, BsDatatableFilterDirective, BsDatatableHeaderDirective, BsDatatableRowDirective,
     BsSelectComponent, BsSelectOption,
     BsCodeSnippetComponent,
@@ -77,6 +63,7 @@ export class DatatablesComponent {
 
   private artistService = inject(ArtistService);
   private treeItemService = inject(TreeItemService);
+  private customerService = inject(CustomerService);
 
   mode = signal<'pagination' | 'virtualScroll'>('pagination');
   virtualScroll = computed(() => this.mode() === 'virtualScroll');
@@ -429,201 +416,108 @@ export class DatatablesComponent {
     }
   `;
 
-  // ─── Column filters ───────────────────────────────────────────────────────
-  // The component holds no filter state and defines no predicate model: it
-  // collects a selection and emits it. Everything below — the master copy, the
-  // predicate, `filterActive`, `filterSummary` — belongs to this page, which is
-  // what lets the same row drive a client-side match here and a server query
-  // somewhere else.
+  // ─── Column filters (server-side, #448) ───────────────────────────────────
+  // The table owns the filter UI and the `filters` model, never the filtering:
+  // `fetch` sends the model to the API, which turns it into SQL. The page only
+  // says what a filter is called (`filterSummary`).
 
   /** Drives `filterable` on the columns. No filterable column, no filter row. */
   showFilters = signal(true);
 
-  /**
-   * The UNFILTERED master copy. `[data]` is bound to the filtered view, so
-   * without this the first selection would be the last: the value lists are
-   * computed from the rows the element holds, and filtering the source would
-   * remove the values the user needs in order to widen the filter again.
-   */
-  allArtists = signal<Artist[]>([]);
+  /** Two-way with the table. Seeded, so the server render already filters. */
+  customerFilters = signal<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+  customerSort = signal<SortColumn[]>([{ property: 'Name', direction: 'ascending' }]);
+  /** The page's own query context, next to the column filters: `fetchParams`. */
+  customerSearch = signal('');
+  customerParams = computed<CustomerParams>(() => ({ search: this.customerSearch() }));
+  customerTotal = signal<number | null>(null);
 
-  constructor() {
-    // One page big enough to hold the lot. A consumer with more rows than that
-    // would supply `[distincts]` instead — the element reports that it has no
-    // values rather than computing a list from the page it happens to hold.
-    this.artistService
-      .pageArtists(<PaginationRequest>{
-        page: 1,
-        perPage: 500,
-        sortColumns: [{ property: 'Name', direction: 'ascending' }],
-      })
-      .then((response) => this.allArtists.set(response?.data ?? []));
-  }
+  fetchCustomers: DatatableFetch<Customer, CustomerParams> = (req) =>
+    this.customerService.fetch(req).then((response) => {
+      this.customerTotal.set(response.totalRecords);
+      return response;
+    });
+  distinctsCustomers = this.customerService.distincts;
+  customerKey = (row: unknown) => String((row as Customer).id);
+  formatCreated = (row: unknown) => new Date((row as Customer).createdAt).toLocaleString();
 
-  /** Selected distinct values for the Artist column, from the built-in panel. */
-  nameSelection = signal<DistinctValue[]>([]);
-  /** The panel's include/exclude toggle. */
-  nameInverse = signal(false);
-  /** Comparison-mode state for `yearStarted`, straight off the event. */
-  yearOperator = signal<FilterOperator>('gte');
-  yearOperand = signal<number | null>(null);
-  /** The override panel's own state — something the component could not guess. */
-  activeOnly = signal(false);
-
-  nameSummary = computed(() => {
-    const selected = this.nameSelection();
-    if (selected.length === 0) return undefined;
-    if (selected.length === 1) return selected[0].label;
-    return `${selected.length} selected`;
-  });
-
-  yearSummary = computed(() => {
-    const operand = this.yearOperand();
-    return operand === null ? undefined : `${OPERATOR_SYMBOLS[this.yearOperator()]} ${operand}`;
-  });
-
-  filteredArtists = computed(() => {
-    const selected = this.nameSelection();
-    const inverse = this.nameInverse();
-    const operator = this.yearOperator();
-    const operand = this.yearOperand();
-    const activeOnly = this.activeOnly();
-    return this.allArtists()
-      .filter((a) => {
-        if (selected.length === 0) return true;
-        const hit = selected.some((v) => v.value === a.name);
-        return inverse ? !hit : hit;
-      })
-      .filter((a) => (operand === null ? true : compare(a.yearStarted ?? 0, operator, operand)))
-      .filter((a) => (activeOnly ? a.yearQuit == null : true));
-  });
-
-  filterSort = signal<SortColumn[]>([{ property: 'name', direction: 'ascending' }]);
-
-  /**
-   * The columns, rebuilt whenever a filter's state changes: `filterActive` and
-   * `filterSummary` are the page's to say, because only the page knows what
-   * its filter did.
-   */
-  filterColumns = computed<DatatableColumnDef[]>(() => {
+  customerColumns = computed<DatatableColumnDef[]>(() => {
     const filterable = this.showFilters();
+    const filters = this.customerFilters();
     return [
-      // No filterMode: the built-in panel lists every distinct name in the data.
+      // No filterMode: a checkbox list of distinct names, from the API's distincts.
+      { name: 'Name', label: 'Name', filterable, filterSummary: valuesSummary(filters['Name']) },
+      { name: 'Email', label: 'Email', sortable: false },
+      // Custom mode: the *bsDatatableFilter template renders this panel.
+      { name: 'Country', label: 'Country', filterable, filterMode: 'custom', filterSummary: valuesSummary(filters['Country']) },
+      // A datetime comparison: typed in local time, sent as a UTC instant.
       {
-        name: 'name',
-        label: 'Artist',
-        filterable,
-        filterActive: this.nameSelection().length > 0,
-        filterSummary: this.nameSummary(),
-      },
-      // Comparison mode: a year is a quantity, so an operator and one number
-      // beats ticking every distinct year. Still the built-in panel.
-      {
-        name: 'yearStarted',
-        label: 'Year started',
+        name: 'CreatedAt',
+        label: 'Created',
         filterable,
         filterMode: 'comparison',
-        filterInputType: 'number',
-        filterActive: this.yearOperand() !== null,
-        filterSummary: this.yearSummary(),
-      },
-      // Custom mode: the *bsDatatableFilter template renders this panel.
-      {
-        name: 'yearQuit',
-        label: 'Year quit',
-        sortable: false,
-        filterable,
-        filterMode: 'custom',
-        filterActive: this.activeOnly(),
+        filterInputType: 'datetime',
+        filterOperators: ['gte', 'lt'],
+        format: this.formatCreated,
+        filterSummary: comparisonSummary(filters['CreatedAt']),
       },
     ];
   });
 
-  /**
-   * One handler for both panels. `mode` discriminates the union, so the
-   * comparison branch cannot read `selected` and the values branch cannot read
-   * `operand` — the compiler enforces what the runtime shape actually is.
-   */
-  onFilterChange(detail: FilterChangeDetail) {
-    if (detail.mode === 'values' && detail.column === 'name') {
-      this.nameSelection.set(detail.selected);
-      this.nameInverse.set(detail.inverse);
-      return;
-    }
-    if (detail.mode === 'comparison' && detail.column === 'yearStarted') {
-      this.yearOperator.set(detail.operator);
-      this.yearOperand.set(detail.operand === null ? null : Number(detail.operand));
-    }
-  }
+  protected readonly countries: DistinctValue[] = ['BE', 'NL', 'FR', 'DE', 'IT'].map((value) => ({ value, label: value }));
+  protected readonly benelux = this.countries.filter((c) => ['BE', 'NL'].includes(String(c.value)));
 
   protected readonly snippetFilterHtml = dedent`
-    <!-- filterable drives the row: with none, there is no second header row. -->
-    <bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters">Show the filter row</bs-checkbox>
+    <bs-datatable pagination stateKey="customers"
+      [columns]="columns()" [fetch]="fetch" [distincts]="distincts"
+      [(filters)]="filters" [fetchParams]="params()" [rowKey]="rowKey">
 
-    <bs-datatable [columns]="filterColumns()" [data]="filteredArtists()" [rowKey]="rowKey"
-      (filterchange)="onFilterChange($event)">
-
-      <!-- The escape hatch, for the column with filterMode: 'custom'. Style
-           this markup yourself: it is your DOM, and .form-control is only
-           styled inside bs-* components here. -->
+      <!-- The escape hatch, for the column with filterMode: 'custom'. Its
+           commands write the same filters model the built-in panels do. -->
       <ng-template bsDatatableFilter let-ctx="ctx">
-        <div class="demo-filter-panel">
-          <label class="demo-filter-check">
-            <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
-            <span>Still active only</span>
-          </label>
-        </div>
+        <button type="button" (click)="ctx.apply(benelux, false)">Benelux</button>
+        <button type="button" (click)="ctx.clear()">Everywhere</button>
       </ng-template>
     </bs-datatable>
   `;
 
   protected readonly snippetFilterTs = dedent`
-    // Bind [data] to the FILTERED view but keep the unfiltered master copy:
-    // the value lists are computed from the rows the element holds, so
-    // filtering the source would remove the values needed to widen the filter.
-    allArtists = signal<Artist[]>([]);
+    // Two-way: the user's filters land here, and a value set here filters the table.
+    filters = signal<DatatableFilters>({ Country: { values: ['BE', 'NL'], inverse: false } });
+    // Your own query context, sent with every request. Must be JSON.
+    params = computed(() => ({ search: this.search() }));
 
-    nameSelection = signal<DistinctValue[]>([]);
-    nameInverse = signal(false);
-    yearOperator = signal<FilterOperator>('gte');
-    yearOperand = signal<number | null>(null);
-
-    filterColumns = computed<DatatableColumnDef[]>(() => [
-      // Default: a checkbox list of the column's distinct values, with
-      // search, include/exclude and clear. No template, no wiring.
-      { name: 'name', label: 'Artist', filterable: this.showFilters(),
-        filterActive: this.nameSelection().length > 0, filterSummary: this.nameSummary() },
-      // Comparison mode: an operator and one number. The right shape for a
-      // quantity — ticking forty individual years is not a filter.
-      { name: 'yearStarted', label: 'Year started', filterable: this.showFilters(),
-        filterMode: 'comparison', filterInputType: 'number',
-        filterActive: this.yearOperand() !== null, filterSummary: this.yearSummary() },
-      // Custom mode: the bsDatatableFilter template renders the panel.
-      { name: 'yearQuit', label: 'Year quit', filterable: this.showFilters(),
-        filterMode: 'custom', filterActive: this.activeOnly() },
+    columns = computed<DatatableColumnDef[]>(() => [
+      // A checkbox list of the column's distinct values, from [distincts].
+      { name: 'Name', filterable: true },
+      { name: 'Country', filterable: true, filterMode: 'custom' },
+      // Local time in the box, a UTC instant on the wire.
+      { name: 'CreatedAt', filterable: true, filterMode: 'comparison',
+        filterInputType: 'datetime', filterOperators: ['gte', 'lt'] },
     ]);
 
-    // One handler, one discriminated union. Switching on \`mode\` means the
-    // comparison branch cannot read \`selected\` and the values branch cannot
-    // read \`operand\` — the compiler enforces the real runtime shape.
-    onFilterChange(detail: FilterChangeDetail) {
-      if (detail.mode === 'values' && detail.column === 'name') {
-        this.nameSelection.set(detail.selected);   // [] when the user clears
-        this.nameInverse.set(detail.inverse);      // the include/exclude toggle
-        return;
-      }
-      if (detail.mode === 'comparison' && detail.column === 'yearStarted') {
-        this.yearOperator.set(detail.operator);    // 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
-        this.yearOperand.set(detail.operand as number | null);   // null = cleared
-      }
-    }
+    // The server applies { page, perPage, sortColumns, filters, params }:
+    //   filters: { Country: { values: ['BE','NL'], inverse: false },
+    //              CreatedAt: { values: [], inverse: false, operator: 'gte',
+    //                           operand: '2026-01-01T00:00:00.000Z' } }
+    fetch: DatatableFetch<Customer, Params> = ({ signal, ...req }) =>
+      firstValueFrom(this.http.post<DatatableFetchResponse<Customer>>('/api/customers/table', req));
+    // Value lists are faceted: computed over the OTHER columns' filters.
+    distincts = ({ signal, ...req }: DistinctsRequest<Params>) =>
+      firstValueFrom(this.http.post<DistinctValues>('/api/customers/distincts', req));
 
-    // The table does not hold every row? Then it cannot compute a value list,
-    // and it says so rather than guessing from the page it has. Supply one:
-    //   [distincts]="loadDistincts"
-    //   loadDistincts: DatatableDistincts = async ({ column, search, signal }) =>
-    //     fetch(\`/api/distincts/\${column}?q=\${search}\`, { signal }).then(r => r.json());
-    // Resolve null for a column to hand that one back to the local path.
-    // Comparison columns never ask — that panel shows no list.
+    // stateKey: the server render fetches page 1 and hands it to the browser
+    // (TransferState), so the table hydrates with rows and fetches nothing.
   `;
+}
+
+function valuesSummary(filter: DatatableFilter | undefined): string | undefined {
+  if (!filter?.values.length) return undefined;
+  const list = filter.values.length <= 2 ? filter.values.join(', ') : `${filter.values.length} selected`;
+  return filter.inverse ? `not ${list}` : list;
+}
+
+function comparisonSummary(filter: DatatableFilter | undefined): string | undefined {
+  if (!filter?.operator || filter.operand == null) return undefined;
+  return `${OPERATOR_SYMBOLS[filter.operator]} ${new Date(String(filter.operand)).toLocaleDateString()}`;
 }

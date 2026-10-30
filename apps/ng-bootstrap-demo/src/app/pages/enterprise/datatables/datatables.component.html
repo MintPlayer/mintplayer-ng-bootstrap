@@ -298,16 +298,17 @@
   A filterable column gets a <strong>built-in panel</strong> for free: a search
   box, an include/exclude toggle, a checkbox list of the column's distinct
   values, and a clear button. It lives in the shared core, so React and Vue
-  get the same panel with no code of their own. The <em>Artist</em> column below uses
-  it as-is.
+  get the same panel with no code of their own. The <em>Name</em> column below uses
+  it as-is, with its values listed by the server (<code>[distincts]</code>).
 </p>
 <p>
   A checkbox list is the wrong question for a quantity, so a column can ask a
   different one: <code>filterMode: 'comparison'</code> renders an operator
   (<code>=</code>, <code>&ne;</code>, <code>&lt;</code>, <code>&le;</code>,
   <code>&gt;</code>, <code>&ge;</code>) and a single input, with
-  <code>filterInputType</code> choosing <code>number</code> (the default) or
-  <code>date</code> &mdash; the <em>Year started</em> column below. Still the
+  <code>filterInputType</code> choosing <code>number</code> (the default),
+  <code>date</code> (a calendar day) or <code>datetime</code> (typed in local time,
+  sent as a UTC instant) &mdash; the <em>Created</em> column below. Still the
   built-in panel: no template and no styling of your own. Narrow the operator
   list with <code>filterOperators</code> when only some make sense.
 </p>
@@ -326,7 +327,7 @@
 <p>
   When neither built-in question fits, set <code>filterMode: 'custom'</code> on
   the column and render the panel in a <code>*bsDatatableFilter</code> template
-  &mdash; the <em>Year quit</em> column does. The template receives the column
+  &mdash; the <em>Country</em> column does. The template receives the column
   and a context with the loaded values and the search, apply and clear commands.
   <strong>That markup is yours, so you style it yourself</strong>: Bootstrap's
   <code>.form-control</code> is only styled inside <code>bs-*</code> components
@@ -334,15 +335,16 @@
 </p>
 <p>
   The panel is a native popover in the top layer, so it is not clipped by the
-  table's scroll container and is not hidden behind the sticky header &mdash;
-  this demo runs in virtual-scroll mode, where both would otherwise happen.
+  table's scroll container and is not hidden behind the sticky header.
 </p>
 <p>
-  <strong>The component decides nothing about what a filter means.</strong> It
-  collects a selection and emits it; the page below holds an unfiltered master
-  copy, applies the selection itself, and sets <code>filterActive</code> and
-  <code>filterSummary</code> back on the column. That is what lets the same row
-  drive a client-side match here and a server query elsewhere.
+  <strong>Filtering happens on the server.</strong> The table keeps the active
+  filters in a two-way <code>[(filters)]</code> model and sends them, with your
+  own <code>[fetchParams]</code>, in every <code>fetch</code> and
+  <code>distincts</code> request; it never filters rows itself. With
+  <code>stateKey</code>, the server render fetches the first page (filters
+  included) and hands it to the browser, so the table hydrates with rows and
+  fetches nothing &mdash; view this page with JavaScript off to see it.
 </p>
 <p class="text-muted small">
   <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;
@@ -381,33 +383,39 @@
   Show the filter row
 </bs-checkbox>
 
-<bs-datatable class="flex-grow-1 filter-table"
-  [virtualScroll]="true"
-  [itemSize]="40"
-  [columns]="filterColumns()"
-  [data]="filteredArtists()"
-  [(sortColumns)]="filterSort"
-  [rowKey]="rowKey"
-  (filterchange)="onFilterChange($event)">
+<label class="form-label" for="customer-search">Name contains (sent as <code>fetchParams</code>)</label>
+<input id="customer-search" class="form-control mb-3" type="search"
+  [ngModel]="customerSearch()" (ngModelChange)="customerSearch.set($event)" />
+
+<bs-datatable class="filter-table"
+  pagination
+  stateKey="customers"
+  [perPage]="10"
+  [columns]="customerColumns()"
+  [fetch]="fetchCustomers"
+  [distincts]="distinctsCustomers"
+  [(filters)]="customerFilters"
+  [fetchParams]="customerParams()"
+  [(sortColumns)]="customerSort"
+  [rowKey]="customerKey">
 
   <!-- The escape hatch: a panel the component could not have guessed, for the
        column with filterMode 'custom'. Its markup is the page's own, so the
-       page styles it (see the .demo-filter-* rules). -->
+       page styles it (see the .demo-filter-* rules); its commands write the
+       same filters model the built-in panels do. -->
   <ng-template bsDatatableFilter let-ctx="ctx">
     <div class="demo-filter-panel">
-      <label class="demo-filter-check">
-        <input type="checkbox" [ngModel]="activeOnly()" (ngModelChange)="activeOnly.set($event)" />
-        <span>Still active only</span>
-      </label>
-      <p class="demo-filter-hint">
-        {{ ctx.values?.matching?.length ?? 0 }} distinct value(s) in view.
-      </p>
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="ctx.apply(benelux, false)">Benelux</button>
+      @for (country of countries; track country.value) {
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="ctx.apply([country], false)">{{ country.label }}</button>
+      }
+      <button type="button" class="btn btn-sm btn-link" (click)="ctx.clear()">Everywhere</button>
     </div>
   </ng-template>
 </bs-datatable>
 
 <small class="text-muted">
-  Showing {{ filteredArtists().length }} of {{ allArtists().length }} artist(s).
+  {{ customerTotal() ?? '…' }} customer(s) match. The model: <code>{{ customerFilters() | json }}</code>
 </small>
 
 <bs-code-snippet [code]="snippetFilterHtml" [language]="'html'"></bs-code-snippet>
