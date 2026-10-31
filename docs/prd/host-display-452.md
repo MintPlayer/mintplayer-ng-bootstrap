@@ -27,6 +27,7 @@ React and Vue render the same classes on a `<div>`, and the Lit card is a shadow
 | `bs-accordion` | `.accordion` | none | **fix** — inline host: a consumer's vertical margin (`mb-*`, `my-*`) is ignored |
 | `bs-tile-manager`, `bs-pagination`, `bs-progress`, `bs-slider` | — | `d-block` utility | **fix** — same `!important` fight, moved to `:host` |
 | `bs-checkbox` / `bs-toggle-button` | — | `d-inline-block` utility | **fix** — same, moved to `:host` |
+| `bs-list-group` | — (its `ul.list-group` is one level in) | none | **fix** — `:host { display: block }` |
 | `bs-card-link` | `.card-link` | none | inline is correct (it is a link) |
 | `bs-card` | `.card` | Bootstrap `display: flex` | nothing to do |
 | `bs-card-group` | `.card-group` | intentionally none (its own comment) | nothing to do |
@@ -60,6 +61,29 @@ block }`, tag-anchored and `@mps-global`).
   unlike the `!important` utility). The tile manager's shared sheet is NOT extended with
   `bs-tile-manager`: the Lit front registers that sheet, and the WC scoping conformance spec
   requires every compound to carry the scope or the `mp-` host tag.
+
+## A list group in a card (regression found during review)
+
+Before #437 a list group inside an Angular card had square corners and a `-1px` margin, so its
+border overlapped the card's border and the neighbouring header/footer border. Two things broke that:
+
+- Bootstrap's `.card > .list-group` rules never match in Angular, because the `ul.list-group` sits
+  inside the `<bs-list-group>` host, a grandchild of the card.
+- `bs-list-group` still re-imported Bootstrap's list-group partial through `:host ::ng-deep`. That is
+  unlayered CSS, so it out-ranked any layered component rule (and duplicated the baseline, C4/C5).
+  Its template also carried a redundant `mt-0` (`!important`), which would cancel a negative top margin.
+
+Fix: the component sheet and `mt-0` are gone (the baseline styles `.list-group`), the host gets
+`:host { display: block }`, and the card sheet adds
+`bs-card > bs-list-group > .list-group { border-radius: 0; margin: -1px }`. `bs-card` installs the
+sheet as well, so a card whose only child is a list group gets it too. React and Vue render
+`ul.list-group` directly under `div.card`, where Bootstrap's own `.card > .list-group` rules apply.
+
+Measured on `/basic/containers/card`: `ul.list-group` radius `0px`, margin `-1px`, first and last
+item radius `0px`, single borders against the card, header and footer.
+
+Out of scope (not a visible bug today): about 20 other `ng-bootstrap` component sheets still use
+the same `:host ::ng-deep { @import bootstrap partial }` pattern.
 
 ## Note for consumers (changelog)
 

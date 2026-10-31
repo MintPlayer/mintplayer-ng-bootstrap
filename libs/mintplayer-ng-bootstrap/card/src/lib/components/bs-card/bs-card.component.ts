@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { cardColorClasses } from '@mintplayer/ui-core/card';
+import { useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { CARD_SCOPE, cardColorClasses, cardScopedStyles } from '@mintplayer/ui-core/card';
 
 /**
  * The card root (PRD #437 wave A). The host IS the Bootstrap `.card`: no
@@ -22,4 +23,10 @@ export class BsCardComponent {
     const c = this.color();
     return ['card', ...cardColorClasses(c === undefined ? null : Color[c], this.outline())];
   });
+
+  constructor() {
+    // The card sheet also styles a <bs-list-group> child, which installs
+    // nothing of the card's own: the card installs it too (#452).
+    useScopedStyles(CARD_SCOPE, cardScopedStyles);
+  }
 }
