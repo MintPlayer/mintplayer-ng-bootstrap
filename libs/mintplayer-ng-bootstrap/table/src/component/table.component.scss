@@ -1,5 +1,8 @@
 :host ::ng-deep {
-    .nowrap th, td {
+    // Both cell selectors anchored on .nowrap (set only when responsive): the
+    // former "th, td" list made every td of every bs-table nowrap.
+    .nowrap th,
+    .nowrap td {
         white-space: nowrap;
     }
 }
