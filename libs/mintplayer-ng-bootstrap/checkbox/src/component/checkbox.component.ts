@@ -43,9 +43,9 @@ import { BsCheckboxType } from '../types/checkbox-type';
     directive: BsControlValidityDirective,
     inputs: ['errorMessages'],
   }],
-  host: {
-    'class': 'd-inline-block',
-  },
+  // A :host rule, not a d-inline-block utility: its !important fought every
+  // d-* a consumer put on the host (#452).
+  styles: [':host { display: inline-block; }'],
 })
 export class BsCheckboxComponent {
 

@@ -28,9 +28,9 @@ import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
   templateUrl: './pagination.component.html',
   imports: [MpPropsDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    'class': 'd-block',
-  },
+  // A :host rule, not a d-block utility: its !important fought every d-* a
+  // consumer put on the host (#452).
+  styles: [':host { display: block; }'],
 })
 export class BsPaginationComponent {
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;

@@ -12,7 +12,13 @@
 
 // Lets block-size animate to and from auto (below). It inherits, so the root
 // covers every row and its ::details-content.
+//
+// display: Bootstrap declares none on .accordion (upstream it sits on a <div>),
+// but the Angular host <bs-accordion> is a custom element, inline by default:
+// a consumer's mb-3 / my-* on it was ignored vertically (#452). Layered, so a
+// consumer's own display still wins.
 .accordion {
+  display: block;
   interpolate-size: allow-keywords;
 }
 

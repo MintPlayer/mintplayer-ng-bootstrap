@@ -1,4 +1,7 @@
 :host {
+    // Not a d-block host utility: its !important fought a consumer's d-* (#452).
+    display: block;
+
     // Configuration
     @import "node_modules/bootstrap/scss/functions";
     @import "node_modules/bootstrap/scss/variables";

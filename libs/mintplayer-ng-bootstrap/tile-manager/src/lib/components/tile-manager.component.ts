@@ -73,7 +73,9 @@ export interface BsTileColumnCountChange {
   templateUrl: './tile-manager.component.html',
   imports: [NgTemplateOutlet, MpPropsDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'd-block' },
+  // A :host rule, not a d-block utility: its !important fought every d-* a
+  // consumer put on the host (#452).
+  styles: [':host { display: block; }'],
 })
 export class BsTileManagerComponent<T extends MintTile = MintTile> {
   /** The `*bsTile` block: the tile markup, and through its `of` the tiles themselves. */

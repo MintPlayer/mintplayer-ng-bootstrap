@@ -1,6 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
+import { useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { CARD_SCOPE, cardImgClass, cardScopedStyles, type CardImagePosition } from '@mintplayer/ui-core/card';
 
 /**
  * Card image. `position` switches the rendered shape; `src` and `alt` map
@@ -65,4 +66,10 @@ export class BsCardImgComponent {
   // its filename, while alt="" marks it decorative and silences it. Absent
   // input therefore means decorative, never unlabelled.
   readonly altAttr = computed(() => this.alt() ?? '');
+
+  constructor() {
+    // The host carries `.card-img-*` (`width: 100%`), which an inline box
+    // ignores: the card sheet gives it a block display of its own (#452).
+    useScopedStyles(CARD_SCOPE, cardScopedStyles);
+  }
 }

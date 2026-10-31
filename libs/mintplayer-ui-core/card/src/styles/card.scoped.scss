@@ -1,0 +1,26 @@
+// The card's stylesheet (#452). Bootstrap styles the card itself; the only thing
+// it cannot know is that the Angular front's parts are custom elements.
+//
+// The Angular front renders each part as its own host carrying the Bootstrap
+// class (<bs-card-body class="card-body">). A custom element is display:inline,
+// and Bootstrap never declares a display on .card-body / .card-header /
+// .card-footer / .card-title / .card-text / .card-img-*, because upstream they
+// sit on a <div>, <h5>, <p> or <img>. The hosts were blocks only while .card is
+// flex (flex items are blockified); a d-block on <bs-card> made them inline, and
+// an inline box paints its vertical padding without laying it out.
+//
+// The rule ships in @layer mp.components, so a consumer's own CSS and
+// Bootstrap's !important d-* utilities both still win over it. React and Vue
+// render these classes on native block elements, so they never install this.
+// Anchored on the Angular tags, so it matches nothing else.
+
+/*! @mps-global */
+bs-card-header,
+bs-card-body,
+bs-card-footer,
+bs-card-title,
+bs-card-subtitle,
+bs-card-text,
+bs-card-img {
+  display: block;
+}

@@ -5,6 +5,12 @@
  * inputs to Bootstrap classes, so it lives here once.
  */
 
+/**
+ * Registry key of the card sheet (styles/card.scoped.scss), which gives the
+ * Angular part hosts a block display of their own (#452).
+ */
+export const CARD_SCOPE = 'card';
+
 /** The colour names a card, header or footer accepts. */
 export const CARD_COLORS = [
   'primary',

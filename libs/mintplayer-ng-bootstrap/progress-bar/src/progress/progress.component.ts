@@ -7,7 +7,6 @@ import { Component, input, ChangeDetectionStrategy} from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[style.height.px]': 'height()',
-    '[class.d-block]': 'true',
     '[class.overflow-hidden]': 'true',
   },
 })
