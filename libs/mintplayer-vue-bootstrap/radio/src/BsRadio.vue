@@ -12,6 +12,9 @@ import { computed, inject, useAttrs, useId } from 'vue';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
 import { radioGroupKey } from './radio-group-key';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+installBootstrap(bootstrapForms);
 
 defineOptions({ inheritAttrs: false });
 

@@ -8,6 +8,7 @@ import {
   inputGroupScopedStyles,
   type InputGroupSize,
 } from '@mintplayer/ui-core/input-group';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 // A plain div.input-group (PRD #437 wave A): the page baseline's
 // .input-group > * rules reach the children as written; the scoped sheet adds
@@ -16,6 +17,7 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<{ size?: InputGroupSize }>(), { size: 'md' });
 const attrs = useAttrs();
 
+installBootstrap(bootstrapForms);
 installLightStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
 
 const classes = computed(() => inputGroupClasses(props.size));

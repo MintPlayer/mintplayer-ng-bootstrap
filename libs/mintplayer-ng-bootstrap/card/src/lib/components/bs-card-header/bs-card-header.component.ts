@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { capColorClasses } from '@mintplayer/ui-core/card';
+import { useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { CARD_SCOPE, capColorClasses, cardScopedStyles } from '@mintplayer/ui-core/card';
 
 /**
  * Card header. A nav inside it takes Bootstrap's own `card-header-tabs` or
@@ -21,4 +22,9 @@ export class BsCardHeaderComponent {
     const c = this.color();
     return ['card-header', ...capColorClasses(c === undefined ? null : Color[c])];
   });
+
+  constructor() {
+    // Block display of its own (#452), not borrowed from the card's flex.
+    useScopedStyles(CARD_SCOPE, cardScopedStyles);
+  }
 }

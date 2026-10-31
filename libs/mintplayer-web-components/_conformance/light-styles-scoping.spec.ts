@@ -110,6 +110,9 @@ const installedKeysInSource = (): string[] =>
  */
 const documentSheets = () =>
   getLightStyleEntries()
+    // Bootstrap part sheets (`bootstrap-<partial>`, #452) are stock Bootstrap in
+    // @layer mp.bootstrap: page-level by contract, exactly like the baseline.
+    .filter((entry) => !entry.key.startsWith('bootstrap-'))
     .map((entry) => ({ key: entry.key, css: entry.cssText }))
     .filter((s) => s.css.trim().length > 0);
 

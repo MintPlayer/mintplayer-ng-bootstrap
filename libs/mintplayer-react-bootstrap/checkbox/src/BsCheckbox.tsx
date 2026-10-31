@@ -8,6 +8,7 @@ import {
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 type InputAttributes = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -42,6 +43,7 @@ export interface BsCheckboxProps extends InputAttributes {
  * accepted, it is part of the contract (`switch` / `button`). The ref is the input.
  */
 export const BsCheckbox = forwardRef<HTMLInputElement, BsCheckboxProps>(function BsCheckbox(props, ref) {
+  installBootstrap(bootstrapForms);
   const {
     type = 'checkbox',
     color = 'primary',

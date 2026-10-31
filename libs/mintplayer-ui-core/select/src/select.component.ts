@@ -7,7 +7,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'select',
-  style: { scope: 'select' },
+  style: { scope: 'select', bootstrap: ['forms'] },
   components: {
     select: {
       core: 'selectCore',

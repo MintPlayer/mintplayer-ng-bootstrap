@@ -9,6 +9,7 @@ import {
   type DropdownSelectEventDetail,
 } from '@mintplayer/ui-core/dropdown-menu';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 /* Omits React's native `onSelect` (a text-selection event) because this
    component's `onSelect` is the menu-item selection and collides by name. */
@@ -39,6 +40,7 @@ export const BsDropdownMenu = forwardRef<HTMLUListElement | null, BsDropdownMenu
   { maxHeight, onSelect, className, style, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapDropdown);
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
   const menuRef = useRef<HTMLUListElement>(null);

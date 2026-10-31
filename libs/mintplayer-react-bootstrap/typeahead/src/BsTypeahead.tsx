@@ -12,6 +12,7 @@ import {
 } from '@mintplayer/ui-core/typeahead';
 import { useMachine } from '../../machine/src/useMachine';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 type InputAttributes = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
@@ -110,6 +111,7 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
       }),
   );
 
+  installBootstrap(bootstrapForms, bootstrapDropdown);
   installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
   // Props → machine. The machine's setters are idempotent on equal values, so

@@ -5,6 +5,8 @@ import { ClickOutsideDirective } from '@mintplayer/ng-click-outside';
 import { BS_DEVELOPMENT } from '@mintplayer/ng-bootstrap';
 import { BsOverlayStackService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsDropdownDirective } from '../dropdown/dropdown.directive';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
 
 @Directive({
   selector: '[bsDropdownMenu]',
@@ -29,6 +31,7 @@ export class BsDropdownMenuDirective extends ClickOutsideDirective {
   private stackToken: symbol | null = null;
 
   constructor() {
+    useBootstrap(bootstrapDropdown);
     super();
 
     effect(() => {

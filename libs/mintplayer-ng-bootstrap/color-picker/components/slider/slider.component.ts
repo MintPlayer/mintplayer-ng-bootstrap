@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, computed, Directive, ElementRef, in
   styleUrls: ['./slider.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    'class': 'd-block position-relative',
+    'class': 'position-relative',
     'role': 'slider',
     'aria-valuemin': '0',
     'aria-orientation': 'horizontal',

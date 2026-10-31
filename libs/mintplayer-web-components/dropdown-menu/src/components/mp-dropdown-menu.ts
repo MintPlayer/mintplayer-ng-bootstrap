@@ -8,6 +8,7 @@ import {
   dropdownMenuScopedStyles,
   type DropdownSelectEventDetail,
 } from '@mintplayer/ui-core/dropdown-menu';
+import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 /** The consumer names the menu on the element itself; the bag must not overwrite it. */
 const NAMING = new Set(['aria-label', 'aria-labelledby']);
@@ -78,6 +79,7 @@ export class MpDropdownMenu extends ReactiveElement {
 }
 
 if (typeof document !== 'undefined' && document.head) {
+  installBootstrap(bootstrapDropdown);
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 }
 

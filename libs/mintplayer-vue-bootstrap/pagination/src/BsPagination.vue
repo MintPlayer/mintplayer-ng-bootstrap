@@ -12,6 +12,9 @@ import {
   type PaginationLabels,
   type PaginationSize,
 } from '@mintplayer/ui-core/pagination';
+import { bootstrapPagination, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+installBootstrap(bootstrapPagination);
 
 defineOptions({ inheritAttrs: false });
 

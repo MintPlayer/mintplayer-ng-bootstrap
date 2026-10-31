@@ -11,7 +11,7 @@ import {
   input,
 } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {
   ACCORDION_SCOPE,
   accordionKeydown,
@@ -24,6 +24,7 @@ import {
   connectAccordionTab,
 } from '@mintplayer/ui-core/accordion';
 import { BsAccordionTabComponent } from '../accordion-tab/accordion-tab.component';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * `<bs-accordion>` — Bootstrap accordion on native `<details name>` (#437).
@@ -79,6 +80,7 @@ export class BsAccordionComponent {
   );
 
   constructor() {
+    useBootstrap(bootstrapAccordion);
     useScopedStyles(ACCORDION_SCOPE, accordionScopedStyles);
     // `toggle` does not bubble, so a host listener never hears it: one
     // capture-phase listener on the root hears every row.

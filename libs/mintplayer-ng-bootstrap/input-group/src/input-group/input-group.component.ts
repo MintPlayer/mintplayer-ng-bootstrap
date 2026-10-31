@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, HostAttributeToken, computed, inject, input } from '@angular/core';
-import { useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {
   INPUT_GROUP_SCOPE,
   inputGroupClasses,
@@ -7,6 +7,7 @@ import {
   inputGroupScopedStyles,
   type InputGroupSize,
 } from '@mintplayer/ui-core/input-group';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 export type BsInputGroupSize = InputGroupSize;
 
@@ -47,6 +48,7 @@ export class BsInputGroupComponent {
     );
 
   constructor() {
+    useBootstrap(bootstrapForms);
     useScopedStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
   }
 }

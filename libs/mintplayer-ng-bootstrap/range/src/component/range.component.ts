@@ -1,5 +1,7 @@
 import { Component, ElementRef, input, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { BsRangeValueAccessor } from '../value-accessor/range-value-accessor';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'bs-range',
@@ -8,6 +10,10 @@ import { BsRangeValueAccessor } from '../value-accessor/range-value-accessor';
   hostDirectives: [BsRangeValueAccessor],
 })
 export class BsRangeComponent {
+  constructor() {
+    useBootstrap(bootstrapForms);
+  }
+
   readonly slider = viewChild.required<ElementRef<HTMLInputElement>>('slider');
 
   readonly min = input(0);

@@ -3,6 +3,9 @@
 // no core, so SSR emits the finished card and the page baseline styles it.
 import { computed } from 'vue';
 import { cardColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+installBootstrap(bootstrapCard);
 
 defineOptions({ inheritAttrs: false });
 

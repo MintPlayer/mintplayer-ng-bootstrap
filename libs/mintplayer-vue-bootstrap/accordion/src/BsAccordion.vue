@@ -10,6 +10,7 @@ import {
 import { cloneVNode, computed, Fragment, provide, useId, useSlots, useTemplateRef, type VNode } from 'vue';
 import BsAccordionItem from './BsAccordionItem.vue';
 import { ACCORDION_CONTEXT } from './accordion-context';
+import { bootstrapAccordion, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * `BsAccordion` — Bootstrap accordion on native `<details name>` (#437).
@@ -25,6 +26,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ tabToggle: [change: AccordionTabToggle] }>();
 
+installBootstrap(bootstrapAccordion);
 installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
 // useId, not the instance uid: it matches between the server render and hydration.

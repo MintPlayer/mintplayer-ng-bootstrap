@@ -1,0 +1,22 @@
+// @mintplayer/ui-core/styles/bootstrap-parts — opt into Bootstrap partials page-wide.
+//
+// Bootstrap ships per component (#452): a component installs the parts its own
+// markup uses, and the page baseline (bootstrap.scss) carries only the page-level
+// partials. Markup that uses Bootstrap's component classes WITHOUT a component
+// (a raw `.table`, `.form-control`, `.card`…) opts in here, by part name:
+//
+//   @use '@mintplayer/ui-core/styles/bootstrap-parts';
+//   @include bootstrap-parts.include(tables, forms, card);
+//
+// The rules land in @layer mp.bootstrap, like the baseline and the parts the
+// components install, so nothing about the cascade changes. A part that is both
+// included here and installed by a component is the same rules twice in one layer.
+@use 'sass:meta';
+
+@mixin include($names...) {
+  @layer mp.bootstrap {
+    @each $name in $names {
+      @include meta.load-css('parts/#{$name}.bootstrap');
+    }
+  }
+}
