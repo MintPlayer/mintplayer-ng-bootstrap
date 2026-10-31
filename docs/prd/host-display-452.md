@@ -80,5 +80,6 @@ it `mt-auto` footers, `card-img-overlay` sizing, etc.). Drop it.
 - Specs: the card, tile-manager, pagination, checkbox, progress-bar, color-picker and accordion
   suites (26 files) + `web-components/_conformance/light-styles-scoping.spec.ts`.
 
-Observed, not fixed here: in the accordion demo the nested accordion's computed `margin-top` is `0px`,
-so the existing `.accordion .accordion { margin: -1px }` rule does not match there.
+Checked and ruled out: in the accordion demo the nested accordion's computed margin is `0px`. The
+`.accordion .accordion` rule does match, but the demo's `.multi-level` theme sets
+`--bs-accordion-border-width: 0`, so `calc(-1 * 0)` is correct.
