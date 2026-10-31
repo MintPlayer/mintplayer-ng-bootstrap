@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { cardColorClasses, type CardColor } from '@mintplayer/ui-core/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
@@ -17,8 +18,9 @@ export interface BsCardProps extends HTMLAttributes<HTMLDivElement> {
  * Merges an incoming `className` and spreads remaining props.
  */
 export const BsCard = forwardRef<HTMLDivElement, PropsWithChildren<BsCardProps>>(
-  ({ className, color, outline = false, ...rest }, ref) => (
-    <div ref={ref} className={cx('card', ...cardColorClasses(color, outline), className)} {...rest} />
-  ),
+  ({ className, color, outline = false, ...rest }, ref) => {
+    installBootstrap(bootstrapCard);
+    return <div ref={ref} className={cx('card', ...cardColorClasses(color, outline), className)} {...rest} />;
+  },
 );
 BsCard.displayName = 'BsCard';

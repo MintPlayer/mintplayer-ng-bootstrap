@@ -84,10 +84,19 @@ describe('scope stamping (S15)', () => {
   });
 
   it('takes one kebab-case literal scope per group and refuses the old styles list', () => {
-    expect(groupStyle({ style: { scope: 'tree-select' } }, 'x')).toEqual({ scope: 'tree-select', sheet: 'treeSelectScopedStyles', from: null });
+    expect(groupStyle({ style: { scope: 'tree-select' } }, 'x')).toEqual({ scope: 'tree-select', sheet: 'treeSelectScopedStyles', from: null, bootstrap: [], bootstrapModule: '@mintplayer/ui-core/bootstrap' });
     expect(groupStyle({}, 'x')).toBeNull();
     expect(() => groupStyle({ style: { scope: 'TREE_SCOPE' } }, 'x')).toThrow();
     expect(() => groupStyle({ styles: [{ scope: 'A', sheet: 'a' }] }, 'x')).toThrow(/S15/);
+  });
+
+  it('installs the named Bootstrap parts in Bootstrap order and refuses unknown ones (#452)', () => {
+    expect(groupStyle({ style: { scope: 'navbar', bootstrap: ['dropdown', 'navbar', 'nav'] } }, 'x').bootstrap).toEqual([
+      'bootstrapDropdown',
+      'bootstrapNav',
+      'bootstrapNavbar',
+    ]);
+    expect(() => groupStyle({ style: { scope: 'x', bootstrap: ['bootstrap'] } }, 'x')).toThrow(/unknown Bootstrap part/);
   });
 });
 

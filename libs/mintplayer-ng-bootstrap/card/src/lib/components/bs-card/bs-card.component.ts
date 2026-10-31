@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { cardColorClasses } from '@mintplayer/ui-core/card';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * The card root (PRD #437 wave A). The host IS the Bootstrap `.card`: no
@@ -16,6 +18,10 @@ import { cardColorClasses } from '@mintplayer/ui-core/card';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardComponent {
+  constructor() {
+    useBootstrap(bootstrapCard);
+  }
+
   readonly color = input<Color | undefined>(undefined);
   readonly outline = input(false);
 

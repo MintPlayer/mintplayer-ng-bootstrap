@@ -1,4 +1,10 @@
 @forward '../../../libs/mintplayer-ng-bootstrap/bootstrap';
+@use '../../../libs/mintplayer-ui-core/styles/bootstrap-parts';
+
+// Demo pages also use Bootstrap's component classes on plain markup (a raw
+// .table, .form-control, .card…), which no component installs: the demo opts
+// into those parts page-wide (#452). A component installs its own parts.
+@include bootstrap-parts.include(containers, grid, tables, forms, dropdown, button-group, nav, card, badge, alert, progress);
 
 // `min-height`, not `height`: a fixed 100% pins <html> to the viewport, and
 // `bs-sticky-footer` anchors its absolutely-positioned footer to <html>'s

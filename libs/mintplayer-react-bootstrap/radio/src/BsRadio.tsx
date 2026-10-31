@@ -3,6 +3,7 @@ import { createContext, forwardRef, useContext, useId, useState } from 'react';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 /** What `BsRadioGroup` hands its radios. `value` is `undefined` when the group is uncontrolled. */
 export interface RadioGroupContextValue {
@@ -46,6 +47,7 @@ export interface BsRadioProps extends InputAttributes {
  * The ref is the input.
  */
 export const BsRadio = forwardRef<HTMLInputElement, BsRadioProps>(function BsRadio(props, ref) {
+  installBootstrap(bootstrapForms);
   const {
     type = 'radio',
     color = 'secondary',

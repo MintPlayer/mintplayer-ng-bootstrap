@@ -1,0 +1,4 @@
+// Bootstrap's close partial, shipped only with the components that render it
+// (#452). Compiled verbatim into @layer mp.bootstrap by the ui-core codegen.
+@import "config";
+@import "bootstrap/scss/close";

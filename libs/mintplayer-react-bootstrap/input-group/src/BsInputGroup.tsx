@@ -8,6 +8,7 @@ import {
   inputGroupScopedStyles,
   type InputGroupSize,
 } from '@mintplayer/ui-core/input-group';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -25,6 +26,7 @@ export interface BsInputGroupProps extends HTMLAttributes<HTMLDivElement> {
  */
 export const BsInputGroup = forwardRef<HTMLDivElement, PropsWithChildren<BsInputGroupProps>>(
   ({ className, size = 'md', role, ...rest }, ref) => {
+    installBootstrap(bootstrapForms);
     installLightStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
     const named = rest['aria-label'] != null || rest['aria-labelledby'] != null;
     return (

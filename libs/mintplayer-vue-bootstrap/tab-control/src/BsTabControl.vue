@@ -12,6 +12,7 @@ import {
   type TabsPosition,
 } from '@mintplayer/ui-core/tab-control';
 import BsTabPage from './BsTabPage.vue';
+import { bootstrapNav, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 type PageSlots = { header?: () => VNode[]; default?: () => VNode[] };
 
@@ -43,6 +44,7 @@ export default defineComponent({
   },
   emits: { 'update:modelValue': (_tabId: string) => true },
   setup(props, { slots, emit, attrs }) {
+    installBootstrap(bootstrapNav);
     installLightStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
 
     // useId: the same on the server and at hydration.

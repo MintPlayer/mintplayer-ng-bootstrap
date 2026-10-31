@@ -14,6 +14,7 @@ import {
   typeaheadScopedStyles,
   TypeaheadState,
 } from '@mintplayer/ui-core/typeahead';
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 const html = scopedHtml(TYPEAHEAD_SCOPE);
 let instanceCounter = 0;
@@ -334,6 +335,7 @@ export class MpTypeahead<T = unknown> extends FormAssociatedMixin(LitElement) {
   }
 }
 
+installBootstrap(bootstrapForms, bootstrapDropdown);
 installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-typeahead')) {

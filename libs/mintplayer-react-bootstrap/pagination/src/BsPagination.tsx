@@ -7,6 +7,7 @@ import {
   type PaginationSize,
 } from '@mintplayer/ui-core/pagination';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapPagination, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 export interface BsPaginationProps extends Omit<React.HTMLAttributes<HTMLElement>, 'children'> {
   pageNumbers?: number[];
@@ -32,6 +33,7 @@ export interface BsPaginationProps extends Omit<React.HTMLAttributes<HTMLElement
  * which is also the ref.
  */
 export const BsPagination = forwardRef<HTMLElement, BsPaginationProps>(function BsPagination(props, ref) {
+  installBootstrap(bootstrapPagination);
   const {
     pageNumbers = [],
     selectedPageNumber,

@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'datetime-picker',
-  style: { scope: 'datetime-picker' },
+  style: { scope: 'datetime-picker', bootstrap: ['forms'] },
   components: {
     'datetime-picker': {
       core: 'datetimePickerCore',

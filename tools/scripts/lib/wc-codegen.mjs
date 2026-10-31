@@ -91,9 +91,15 @@ export const LAYER_ORDER = '@layer mp.bootstrap, mp.components;';
  * stay the very first rule, so it is hoisted above the order statement.
  */
 export function wrapInComponentsLayer(css) {
+  return wrapInLayer(css, 'mp.components');
+}
+
+/** Put compiled CSS in the named `mp.*` layer, after the order statement (a
+ *  leading `@charset` must stay first). */
+export function wrapInLayer(css, layer) {
   const charset = /^@charset "[^"]*";\s*/.exec(css);
   const body = (charset ? css.slice(charset[0].length) : css).trim();
-  return `${charset ? charset[0].trim() + '\n' : ''}${LAYER_ORDER}\n@layer mp.components {\n${body}\n}`;
+  return `${charset ? charset[0].trim() + '\n' : ''}${LAYER_ORDER}\n@layer ${layer} {\n${body}\n}`;
 }
 
 /** Returns true iff it actually wrote. Byte-identical output is left alone so

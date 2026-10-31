@@ -1,6 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {
   DROPDOWN_MENU_SCOPE,
   attachDropdownMenu,
@@ -9,6 +9,7 @@ import {
   type DropdownSelectEventDetail,
 } from '@mintplayer/ui-core/dropdown-menu';
 import { BS_DROPDOWN_MENU_CONTEXT } from '../tokens/menu-context.token';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * `<bs-dropdown-menu>` — a Bootstrap `.dropdown-menu` list (#437). Used
@@ -51,6 +52,7 @@ export class BsDropdownMenuComponent {
   });
 
   constructor() {
+    useBootstrap(bootstrapDropdown);
     useScopedStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
     const destroyRef = inject(DestroyRef);
     afterNextRender(() => {

@@ -61,7 +61,8 @@ function consumerNode(text = 'consumer'): HTMLElement {
 /** Every selector in every installed light-tier sheet. */
 function allSelectors(): { key: string; selector: string }[] {
   const out: { key: string; selector: string }[] = [];
-  for (const entry of getLightStyleEntries()) {
+  // Bootstrap part sheets (#452) are stock Bootstrap, page-level by contract.
+  for (const entry of getLightStyleEntries().filter((e) => !e.key.startsWith('bootstrap-'))) {
     postcss.parse(entry.cssText).walkRules((rule) => {
       for (const p of ancestors(rule)) {
         if (p.type === 'atrule' && /^(-\w+-)?keyframes$/i.test(p.name ?? '')) return;

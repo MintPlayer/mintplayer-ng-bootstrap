@@ -8,6 +8,7 @@ import {
   type DropdownSelectEventDetail,
 } from '@mintplayer/ui-core/dropdown-menu';
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * `BsDropdownMenu` — a Bootstrap `.dropdown-menu` list rendered from the
@@ -23,6 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ select: [detail: DropdownSelectEventDetail] }>();
 
+installBootstrap(bootstrapDropdown);
 installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
 const menu = useTemplateRef<HTMLUListElement>('menu');

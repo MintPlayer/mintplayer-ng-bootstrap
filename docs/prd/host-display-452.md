@@ -94,6 +94,63 @@ are deliberate: a consumer who never uses a card bundles none of the card's CSS.
 duplicates to remove. The card-part display rule follows the same principle: the ui-core card sheet
 is imported only by the card part components.
 
+## Per-component Bootstrap (owner decision, 2026-10-31)
+
+**Goal.** Bootstrap CSS ships per component again: a consumer who never uses a card bundles none
+of `.card`. #437 broke this. `ui-core/styles/_bootstrap-stack.scss` loaded EVERY partial into the
+page baseline, because the components that used to carry their partial (inside a web component, or
+the WC `_styles` copies) became headless and the partial had nowhere else to go.
+
+**Global (page-level) stays global**, exactly the pre-#437 Angular set: config, `root`, `reboot`,
+`type`, `images`, `buttons` (+ the `--bs-primary` re-bind), `helpers`, the utility API + the workspace
+utility patches. Everything else ships with a component.
+
+**Mechanism (chosen over per-front `:host ::ng-deep`):** one sheet per Bootstrap partial
+(`ui-core/styles/parts/<partial>.bootstrap.scss` → codegen → `<partial>.bootstrap.styles.ts`, verbatim CSS
+in `@layer mp.bootstrap`), exported as `BootstrapPart` objects (`bootstrapForms`, …) from a new
+`@mintplayer/ui-core/bootstrap` entry. A front installs the parts
+its markup uses through the existing registry (`useScopedStyles` in Angular, `installLightStyles`
+elsewhere): once per page, SSR-written into the head, tree-shaken when unused. It works where
+`:host ::ng-deep` cannot, on a host that IS the Bootstrap element (`bs-card` is `.card`:
+`[_nghost] .card` never matches it), and it serves React, Vue and Lit too. The existing
+`:host ::ng-deep @import` sheets of the Angular-only components stay as they are.
+
+### What was built
+
+1. **Part sheets + codegen.** 26 part sources under `ui-core/styles/parts/` (shipped with the package,
+   so Sass consumers can load them too), sharing `_config.scss` (functions, variables, maps, mixins).
+   Codegen suffix `.bootstrap.scss`: compiled verbatim (no rescoping; Bootstrap's classes are the
+   contract) into `@layer mp.bootstrap`. The pagination target-size patch moved from the stack into
+   the pagination part.
+2. **The baseline shrank** to the page-level set. `bootstrap-baseline-superset.spec.ts` now checks
+   baseline ∪ parts ⊇ stock Bootstrap, and that no component class is left in the baseline.
+3. **Compiler:** `style: { scope, bootstrap: [...] }`; names are validated against the part list and
+   installed in Bootstrap's own order, before the group's sheet, in all four emitters.
+4. **Manifests**, from the classes each group's templates and bags actually emit (an inventory, then
+   read by hand; a word like `row` or `popover` in a string is not a class):
+
+   | Group | Parts |
+   |---|---|
+   | carousel | carousel |
+   | datatable | forms (`form-check-input`, `form-text`), pagination (its pager) |
+   | datepicker, datetime-picker, timepicker, otp-input, phone-input, select, signature-pad, scheduler | forms |
+   | navbar | nav, navbar, dropdown |
+   | query-builder | forms, button-group |
+
+   Not given a part, on purpose: code-snippet and file-manager style their own `.toast` /
+   `.breadcrumb-item` (they were shadow-root elements, never under Bootstrap's rules); the tree,
+   dock, ribbon and calendar hits were `row` / `popover` / `placeholder` as words or attributes.
+5. **Hand-written fronts:** accordion → accordion, dropdown-menu → dropdown, input-group → forms,
+   tab-control → nav, typeahead → forms + dropdown (Angular, React, Vue, and the light-DOM Lit
+   elements); card → card, pagination → pagination, checkbox / radio (toggle buttons render through
+   them) → forms (Angular, React, Vue; Lit `mp-radio`). Angular-only: range, floating label, form →
+   forms; `bsDropdownMenu` → dropdown. Shadow-root Lit elements keep their own `_styles` copies.
+6. **Demos** use Bootstrap classes on plain markup (`.table`, `.form-select`, `.card`, …), which no
+   component installs. They opt in page-wide with the new
+   `@include bootstrap-parts.include(...)` (`@mintplayer/ui-core/styles/bootstrap-parts`), which is
+   also what a consumer does for the same need.
+7. **Docs:** CLAUDE.md C1, C2 and C4 rewritten to the per-component rule.
+
 ## Note for consumers (changelog)
 
 `d-block` on `<bs-card>` is wrong regardless of this fix: it removes the card's flex column (and with

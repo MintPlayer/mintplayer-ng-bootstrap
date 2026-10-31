@@ -3,6 +3,7 @@ import { createRef, ref, type Ref } from 'lit/directives/ref.js';
 import { props } from '@mintplayer/web-components/machine';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import { isToggleButtonColor, type ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 export type MpRadioType = RadioType;
 
@@ -250,6 +251,7 @@ export class MpRadio extends LitElement {
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-radio')) {
+  installBootstrap(bootstrapForms);
   customElements.define('mp-radio', MpRadio);
 }
 

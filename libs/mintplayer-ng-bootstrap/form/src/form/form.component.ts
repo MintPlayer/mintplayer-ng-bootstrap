@@ -1,4 +1,6 @@
 import { Component, input, output, ChangeDetectionStrategy} from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'bs-form',
@@ -6,6 +8,10 @@ import { Component, input, output, ChangeDetectionStrategy} from '@angular/core'
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsFormComponent {
+  constructor() {
+    useBootstrap(bootstrapForms);
+  }
+
   readonly action = input<string | undefined>(undefined);
   readonly method = input<'GET' | 'POST' | 'PUT' | 'DELETE' | undefined>(undefined);
 

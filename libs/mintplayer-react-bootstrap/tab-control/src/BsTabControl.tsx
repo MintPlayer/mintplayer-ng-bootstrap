@@ -12,6 +12,7 @@ import {
   type TabsPosition,
 } from '@mintplayer/ui-core/tab-control';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapNav, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 export interface BsTabPageProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   /** The page's identity in `activeTab` / `onTabActivate`. Defaults to its position. */
@@ -62,6 +63,7 @@ export const BsTabControl = forwardRef<HTMLDivElement | null, BsTabControlProps>
   { activeTab, border, selectFirstTab = true, tabsPosition, onTabActivate, className, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapNav);
   installLightStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
 
   const reactId = useId();

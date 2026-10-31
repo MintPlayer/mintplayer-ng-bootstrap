@@ -17,6 +17,9 @@ import {
   type CheckboxType,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+installBootstrap(bootstrapForms);
 
 defineOptions({ inheritAttrs: false });
 

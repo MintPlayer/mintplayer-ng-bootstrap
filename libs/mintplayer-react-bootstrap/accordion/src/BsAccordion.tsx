@@ -13,6 +13,7 @@ import {
   type AccordionTabToggle,
 } from '@mintplayer/ui-core/accordion';
 import { reactProps } from '../../machine/src/react-props';
+import { bootstrapAccordion, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 export interface BsAccordionProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Allow several tabs to stay open at once. */
@@ -87,6 +88,7 @@ export const BsAccordion = forwardRef<HTMLDivElement | null, BsAccordionProps>(f
   { multi, highlightActiveTab, onTabToggle, className, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapAccordion);
   installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
   const reactId = useId();

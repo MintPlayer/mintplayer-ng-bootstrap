@@ -14,7 +14,8 @@ import {
   type PaginationLabels,
 } from '@mintplayer/ui-core/pagination';
 import { takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * Bootstrap's `.pagination` markup, rendered by this component's own
@@ -33,6 +34,10 @@ import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
   styles: [':host { display: block; }'],
 })
 export class BsPaginationComponent {
+  constructor() {
+    useBootstrap(bootstrapPagination);
+  }
+
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly hostAria = takeHostAria(this.host);
 

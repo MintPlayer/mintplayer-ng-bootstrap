@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'navbar',
-  style: { scope: 'navbar' },
+  style: { scope: 'navbar', bootstrap: ['nav', 'navbar', 'dropdown'] },
   components: {
     navbar: {
       core: 'navbarCore',

@@ -3,3 +3,9 @@
 // JavaScript disabled. A published consumer @uses @mintplayer/ui-core/styles/bootstrap
 // (or links the prebuilt @mintplayer/ui-core/styles/bootstrap.css) instead.
 @use '../../../libs/mintplayer-ui-core/styles/bootstrap';
+
+// Demo pages also use Bootstrap's component classes on plain markup (a raw
+// .table, .form-select, .card…), which no component installs: the demo opts
+// into those parts page-wide (#452). A component installs its own parts.
+@use '../../../libs/mintplayer-ui-core/styles/bootstrap-parts';
+@include bootstrap-parts.include(tables, forms, dropdown, button-group, nav, card, badge, alert, spinners);

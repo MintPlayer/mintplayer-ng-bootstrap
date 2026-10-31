@@ -21,6 +21,7 @@ import {
   type TypeaheadProvider,
 } from '@mintplayer/ui-core/typeahead';
 import { useMachine } from '../../machine/src/useMachine';
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
 defineOptions({ inheritAttrs: false });
 
@@ -82,6 +83,7 @@ const [machine, state] = useMachine(
     }),
 );
 
+installBootstrap(bootstrapForms, bootstrapDropdown);
 installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
 watch(() => props.provider, (provider) => (machine.provider = provider), { immediate: true });

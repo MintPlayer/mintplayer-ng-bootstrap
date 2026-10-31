@@ -26,6 +26,16 @@ export function useScopedStyles(key: string, cssText: string): void {
 }
 
 /**
+ * Install Bootstrap part sheets (`@mintplayer/ui-core/bootstrap`, #452) from an
+ * Angular front, the same way as {@link useScopedStyles}: once per page, and
+ * written into the server `DOCUMENT` during SSR. Pass them in Bootstrap's own
+ * order. Call from the component's constructor (an injection context).
+ */
+export function useBootstrap(...parts: readonly { readonly key: string; readonly css: string }[]): void {
+  for (const part of parts) useScopedStyles(part.key, part.css);
+}
+
+/**
  * Angular SSR defect (platform-server 22): `_annotateForHydration` records the
  * hydration paths, and only THEN `insertEventRecordScript` adds the replay
  * `<script>` right after `#ng-event-dispatch-contract` in `<body>`. A node

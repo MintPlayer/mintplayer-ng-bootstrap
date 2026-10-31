@@ -241,18 +241,30 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
 
 ### Bootstrap layering (PRD §6, C1–C6)
 
-- **C1. Bootstrap is a page-level prerequisite.** Templates use plain Bootstrap classes (`form-control`,
-  `dropdown-menu`, `nav-tabs`, `table`, …) and the page's Bootstrap styles them.
-- **C2. One baseline:** `@mintplayer/ui-core/styles/bootstrap.scss` (every partial the catalog uses, plus the
-  workspace patches and utilities). Angular's `_bootstrap.scss` re-exports it; React and Vue apps import it
-  instead of `bootstrap.min.css`.
+- **C1. Bootstrap ships PER COMPONENT (#452, owner decision).** A consumer who never renders a card must
+  bundle none of `.card`. Templates use plain Bootstrap classes (`form-control`, `dropdown-menu`, `nav-tabs`, …),
+  and the component that renders them installs the matching **part sheet** from `@mintplayer/ui-core/bootstrap`
+  (one stock partial each, sources `ui-core/styles/parts/<partial>.bootstrap.scss` → codegen → verbatim CSS in
+  `@layer mp.bootstrap`): a D10 manifest lists them as `style: { scope, bootstrap: ['forms', …] }`, a
+  hand-written front calls `useBootstrap(...)` (Angular) or `installBootstrap(...)` (React/Vue/Lit). Once per
+  page, SSR-written into the head like a scoped sheet. **Never add a component partial to the page baseline** —
+  give the component a part. The Angular-only `:host ::ng-deep { @import partial }` sheets (alert, badge,
+  breadcrumb, list-group, modal, toast, …) are the older form of the same rule: keep them.
+- **C2. The page baseline** (`@mintplayer/ui-core/styles/bootstrap.scss`) holds only the PAGE-LEVEL partials:
+  root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
+  workspace patches. Angular's `_bootstrap.scss` re-exports it; React and Vue apps import it instead of
+  `bootstrap.min.css`. Plain markup that uses component classes without a component opts in page-wide with
+  `@include bootstrap-parts.include(tables, forms, …)` from `@mintplayer/ui-core/styles/bootstrap-parts` (the
+  demos do). `_conformance/bootstrap-baseline-superset.spec.ts` checks baseline ∪ parts ⊇ stock Bootstrap and
+  that the baseline stays free of component classes.
 - **C3. Cascade layers.** The baseline is `@layer mp.bootstrap`, every scoped sheet `@layer mp.components`,
   ordered once at the top of the baseline. Component rules beat Bootstrap regardless of specificity, a
   consumer's unlayered CSS beats both (theming needs no `!important`), and Bootstrap's `!important`
   utilities still win.
 - **C4. A scoped sheet carries only what Bootstrap lacks** — layout, state on native carriers
   (`details[open] > .dropdown-menu`), component parts, focus rings, reduced motion — and **never imports a
-  Bootstrap partial** (functions, variables and mixins only). `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts`
+  Bootstrap partial** (functions, variables and mixins only): the partial goes in through `style.bootstrap`
+  instead, so it is shipped once, layered, and verbatim. `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts`
   enforces it.
 - **C5. No front has a shadow root**, so no front imports partials. (The hand-written shadow-root Lit
   elements are the exception and re-declare what they use from `web-components/_styles`.)

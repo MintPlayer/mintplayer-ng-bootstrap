@@ -12,7 +12,7 @@ import {
   signal,
 } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {
   connectTabControl,
   resolveActiveTab,
@@ -24,6 +24,7 @@ import {
 } from '@mintplayer/ui-core/tab-control';
 import { BsTabPageComponent } from '../tab-page/tab-page.component';
 import { BsTabsPosition } from '../tabs-position';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * `<bs-tab-control>` — Bootstrap nav-tabs over one native radio per tab (#437).
@@ -89,6 +90,7 @@ export class BsTabControlComponent {
   );
 
   constructor() {
+    useBootstrap(bootstrapNav);
     useScopedStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
     afterNextRender(() => this.enhanced.set(true));
   }

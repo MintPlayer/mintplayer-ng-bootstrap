@@ -20,10 +20,11 @@ import {
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
 import { BsControlValidityDirective, BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap } from '@mintplayer/ng-bootstrap/machine';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
 import { BsCheckboxType } from '../types/checkbox-type';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * A native `<input type=checkbox>` in Bootstrap's `.form-check` /
@@ -110,6 +111,7 @@ export class BsCheckboxComponent {
   });
 
   constructor() {
+    useBootstrap(bootstrapForms);
     // `indeterminate` has no attribute, so it is a browser-only property write;
     // aria-checked="mixed" in the bag already carries it in the SSR output.
     afterRenderEffect(() => {
