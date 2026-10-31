@@ -1,0 +1,16 @@
+:host ::ng-deep {
+    // Configuration
+    @import "node_modules/bootstrap/scss/functions";
+    @import "node_modules/bootstrap/scss/variables";
+    @import "node_modules/bootstrap/scss/variables-dark";
+    @import "node_modules/bootstrap/scss/mixins";
+
+    // Layout & components
+    @import "node_modules/bootstrap/scss/list-group";
+}
+
+// The host is a custom element: a block of its own, not only inside a flex
+// parent such as a card (#452).
+:host {
+    display: block;
+}

@@ -24,14 +24,3 @@ bs-card-text,
 bs-card-img {
   display: block;
 }
-
-// A list group in a card. Bootstrap's .card > .list-group rules never match in
-// Angular: the ul.list-group sits inside the <bs-list-group> host, a grandchild
-// of the card. As the Angular card always did, the list squares its corners
-// and pulls 1px out on every side, so its border overlaps the card's border
-// and the neighbouring header/footer border instead of doubling them.
-/*! @mps-global */
-bs-card > bs-list-group > .list-group {
-  border-radius: 0;
-  margin: -1px;
-}

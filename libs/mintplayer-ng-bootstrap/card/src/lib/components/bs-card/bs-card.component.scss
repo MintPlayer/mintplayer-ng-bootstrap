@@ -1,0 +1,13 @@
+// A list group in a card (#452). Bootstrap's .card > .list-group rules never
+// match in Angular: the ul.list-group sits inside the <bs-list-group> host, a
+// grandchild of the card. As the Angular card always did, the list squares its
+// corners and pulls 1px out on every side, so its border overlaps the card's
+// border and the neighbouring header/footer border instead of doubling them.
+//
+// bs-list-group ships its own scoped copy of Bootstrap's list-group, which is
+// unlayered ([_nghost] .list-group, 0,2,0). This rule is scoped to the card and
+// out-ranks it on specificity ([_nghost] > bs-list-group > .list-group, 0,2,2).
+:host > ::ng-deep bs-list-group > .list-group {
+    border-radius: 0;
+    margin: -1px;
+}

@@ -69,21 +69,30 @@ border overlapped the card's border and the neighbouring header/footer border. T
 
 - Bootstrap's `.card > .list-group` rules never match in Angular, because the `ul.list-group` sits
   inside the `<bs-list-group>` host, a grandchild of the card.
-- `bs-list-group` still re-imported Bootstrap's list-group partial through `:host ::ng-deep`. That is
-  unlayered CSS, so it out-ranked any layered component rule (and duplicated the baseline, C4/C5).
-  Its template also carried a redundant `mt-0` (`!important`), which would cancel a negative top margin.
+- `bs-list-group` ships its own scoped copy of Bootstrap's list-group partial (`:host ::ng-deep`),
+  so that the CSS is bundled only when a consumer uses the list group. That copy is unlayered, so a
+  layered `mp.components` rule can never override it. Its template also carried a redundant `mt-0`
+  (`!important`), which cancelled a negative top margin.
 
-Fix: the component sheet and `mt-0` are gone (the baseline styles `.list-group`), the host gets
-`:host { display: block }`, and the card sheet adds
-`bs-card > bs-list-group > .list-group { border-radius: 0; margin: -1px }`. `bs-card` installs the
-sheet as well, so a card whose only child is a list group gets it too. React and Vue render
-`ul.list-group` directly under `div.card`, where Bootstrap's own `.card > .list-group` rules apply.
+Fix, keeping every style shipped with the component that needs it:
+
+- `bs-card.component.scss` (the card's own scoped sheet):
+  `:host > ::ng-deep bs-list-group > .list-group { border-radius: 0; margin: -1px }`, which compiles to
+  `[_nghost] > bs-list-group > .list-group` (0,2,2) and out-ranks the list group's
+  `[_nghost] .list-group` (0,2,0).
+- `bs-list-group`: keeps its scoped partial, gains `:host { display: block }` in that same sheet,
+  and drops the redundant `mt-0` (reboot and `.list-group` already zero the margin).
+
+React and Vue render `ul.list-group` directly under `div.card`, where Bootstrap's own
+`.card > .list-group` rules apply.
 
 Measured on `/basic/containers/card`: `ul.list-group` radius `0px`, margin `-1px`, first and last
 item radius `0px`, single borders against the card, header and footer.
 
-Out of scope (not a visible bug today): about 20 other `ng-bootstrap` component sheets still use
-the same `:host ::ng-deep { @import bootstrap partial }` pattern.
+**Per-component shipping is a design rule here.** The `:host ::ng-deep { @import partial }` sheets
+are deliberate: a consumer who never uses a card bundles none of the card's CSS. They are not
+duplicates to remove. The card-part display rule follows the same principle: the ui-core card sheet
+is imported only by the card part components.
 
 ## Note for consumers (changelog)
 
