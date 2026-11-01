@@ -4,6 +4,10 @@ import { BsPhoneInput } from '@mintplayer/vue-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/vue-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/vue-bootstrap/phone-input';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapForms);
 
 // v-model is the E.164 string, or null while empty.
 const phone = ref<string | null>(null);

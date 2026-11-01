@@ -23,6 +23,8 @@ import {
 } from '@mintplayer/ng-bootstrap/list-group';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap';
 
 // SVG data URLs keep the visual baseline deterministic. The Playwright spec
 // would otherwise depend on an external placeholder service responding
@@ -61,6 +63,11 @@ function makePlaceholder(width: number, height: number, label: string): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapNav);
+  }
+
   readonly colors = Color;
   readonly colorKeys: ReadonlyArray<keyof typeof Color> = [
     'primary',

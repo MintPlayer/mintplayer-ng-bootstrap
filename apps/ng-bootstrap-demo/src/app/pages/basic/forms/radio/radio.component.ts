@@ -5,6 +5,8 @@ import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapTables } from '@mintplayer/ui-core/bootstrap';
 
 interface Row {
   id: string;
@@ -30,6 +32,11 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RadioComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapTables);
+  }
+
 
   // 1. Group, adjacent, template-driven
   readonly selectedFruit = signal<string>('apple');

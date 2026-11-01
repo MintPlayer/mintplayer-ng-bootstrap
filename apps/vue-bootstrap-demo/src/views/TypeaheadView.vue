@@ -2,6 +2,10 @@
 import { ref } from 'vue';
 import { BsTypeahead, inMemoryTypeaheadProvider, type TypeaheadRequest } from '@mintplayer/vue-bootstrap/typeahead';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap, bootstrapTables } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapTables);
 
 interface Artist {
   id: number;

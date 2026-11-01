@@ -3,6 +3,10 @@ import { ref } from 'vue';
 import { BsCarousel, BsCarouselItem } from '@mintplayer/vue-bootstrap/carousel';
 import type { CarouselAnimation, CarouselOrientation, CarouselSlideChangeEventDetail } from '@mintplayer/vue-bootstrap/carousel';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapForms);
 
 const animation = ref<CarouselAnimation>('slide');
 const orientation = ref<CarouselOrientation>('horizontal');

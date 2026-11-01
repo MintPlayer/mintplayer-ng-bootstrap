@@ -23,6 +23,8 @@ import type {
   SortDescriptor,
 } from '@mintplayer/ng-bootstrap/query-builder';
 import { emptyGroup } from '@mintplayer/ng-bootstrap/query-builder';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainers, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 interface PagedResult<T> {
   items: T[];
@@ -137,6 +139,8 @@ export class QueryBuilderDemoComponent {
   };
 
   constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapContainers, bootstrapForms);
     this.refreshSchema();
 
     effect(() => {

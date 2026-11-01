@@ -6,6 +6,8 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainers } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'demo-scrollspy',
@@ -26,6 +28,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScrollspyComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapContainers);
+  }
+
   readonly colors = Color;
   readonly isModalOpen = signal(false);
 

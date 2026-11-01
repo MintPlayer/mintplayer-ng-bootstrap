@@ -3,6 +3,8 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'demo-priority-nav',
@@ -17,6 +19,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PriorityNavComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapForms);
+  }
+
   links = [
     { label: 'Home',     priority: 1, hideBelow: 'sm' as const },
     { label: 'Products', priority: 2, hideBelow: 'md' as const },

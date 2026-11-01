@@ -5,6 +5,8 @@ import { BsOtpInputComponent } from '@mintplayer/ng-bootstrap/otp-input';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainers, bootstrapAlert } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'demo-otp-input',
@@ -14,6 +16,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OtpInputDemoComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapContainers, bootstrapAlert);
+  }
+
   // Classic OTP — template-driven with auto-submit on complete.
   readonly classicCode = signal<string | undefined>(undefined);
   readonly classicSubmitted = signal<string | null>(null);

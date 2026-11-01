@@ -3,6 +3,7 @@ import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/react-bootstrap/phone-input';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 const SOURCE = `<BsPhoneInput
   value={phone}
@@ -20,6 +21,8 @@ const GROUP_SOURCE = `{/* The group joins a whole phone input: its outer
 </BsInputGroup>`;
 
 export function PhoneInputPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms);
   const [phone, setPhone] = useState<string | null>(null);
   const [detail, setDetail] = useState<PhoneChangeEventDetail | null>(null);
   const [locale, setLocale] = useState('');

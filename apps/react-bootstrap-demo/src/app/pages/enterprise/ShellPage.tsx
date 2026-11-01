@@ -1,4 +1,5 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapTables } from '@mintplayer/ui-core/bootstrap';
 
 const SNIPPET_BASIC = `import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
@@ -54,6 +55,8 @@ const SNIPPET_EXTERNAL = `// Hide the built-in hamburger and drive the toggle fr
 </BsShell>`;
 
 export function ShellPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapTables);
   return (
     <div className="demo-page">
       <h1>Shell</h1>

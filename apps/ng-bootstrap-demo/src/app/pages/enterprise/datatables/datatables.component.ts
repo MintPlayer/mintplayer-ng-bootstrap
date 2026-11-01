@@ -30,6 +30,8 @@ import { ArtistService } from '../../../services/artist/artist.service';
 import { TreeItem } from '../../../entities/tree-item';
 import { TreeItemService } from '../../../services/tree-item/tree-item.service';
 import { CustomerService, type Customer, type CustomerParams } from '../../../services/customer/customer.service';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 /** Mirrors the component's own operator glyphs for the trigger summary. */
 const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
@@ -58,6 +60,11 @@ const OPERATOR_SYMBOLS: Record<FilterOperator, string> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatatablesComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapForms);
+  }
+
 
   protected readonly colors = Color;
 

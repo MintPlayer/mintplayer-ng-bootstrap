@@ -32,6 +32,8 @@ import {
   type TimelineSelectable,
 } from '@mintplayer/ng-bootstrap/timeline';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'demo-timeline',
@@ -60,6 +62,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapForms);
+  }
+
   /** Shared seed data — a list of project milestones. */
   protected readonly milestones = signal<TimelineItem[]>([
     { id: 'kickoff', title: 'Kickoff', description: 'Project scoping and team assembly.', time: '2026-01-10', icon: 'bi bi-flag', color: '#6c757d' },

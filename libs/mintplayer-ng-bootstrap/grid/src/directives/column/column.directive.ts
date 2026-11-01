@@ -1,4 +1,6 @@
 import { Directive, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapGrid } from '@mintplayer/ui-core/bootstrap';
 
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
@@ -7,6 +9,10 @@ import { Directive, computed, input } from '@angular/core';
   },
 })
 export class BsGridColumnDirective {
+  // Bootstrap's grid CSS ships with the directive, not page-wide (#452).
+  constructor() {
+    useBootstrap(bootstrapGrid);
+  }
 
   xxs = input<number | undefined>(undefined);
   xs = input<number | undefined>(undefined);
@@ -50,5 +56,8 @@ export class BsGridColumnDirective {
   },
 })
 export class BsGridColDirective {
+  constructor() {
+    useBootstrap(bootstrapGrid);
+  }
   readonly col = input<undefined>(undefined);
 }

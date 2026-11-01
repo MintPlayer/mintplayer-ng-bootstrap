@@ -22,6 +22,8 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
 import { makeMockFileSystem } from './mock-data';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms, bootstrapAlert, bootstrapProgress } from '@mintplayer/ui-core/bootstrap';
 
 type DemoLocale = 'en' | 'nl' | 'fr';
 
@@ -191,6 +193,8 @@ export class FileManagerDemoComponent {
   iconResolver: FileManagerIconResolver = (iconKey) => this.icons().get(iconKey);
 
   constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapForms, bootstrapAlert, bootstrapProgress);
     this.preloadIcons([
       'folder', 'folder-fill', 'file', 'file-earmark',
       'file-text', 'file-pdf', 'file-word', 'file-excel',

@@ -9,6 +9,7 @@ import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './TileManagerPage.scss';
+import { installBootstrap, bootstrapForms, bootstrapBadge, bootstrapAlert } from '@mintplayer/ui-core/bootstrap';
 
 const STORAGE_KEY = 'tile-manager-demo-layouts-v2';
 
@@ -66,6 +67,8 @@ const toggled = (ids: ReadonlySet<string>, id: string): ReadonlySet<string> =>
   ids.has(id) ? new Set([...ids].filter((x) => x !== id)) : new Set([...ids, id]);
 
 export function TileManagerPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms, bootstrapBadge, bootstrapAlert);
   const [stackBelow, setStackBelow] = useState(576);
   const [gap, setGap] = useState(12);
   const [editing, setEditing] = useState(true);

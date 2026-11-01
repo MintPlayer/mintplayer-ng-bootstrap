@@ -12,6 +12,10 @@ import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
 import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/vue-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapForms);
 
 const milestones: TimelineItem[] = [
   { id: 'kickoff', title: 'Kickoff',         description: 'Project scoping and team assembly.', time: '2026-01-10', icon: 'bi bi-flag',           color: '#6c757d' },

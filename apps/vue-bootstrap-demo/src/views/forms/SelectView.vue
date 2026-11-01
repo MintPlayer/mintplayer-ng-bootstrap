@@ -2,6 +2,10 @@
 import { computed, ref } from 'vue';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapForms);
 
 interface Dish {
   id: number;

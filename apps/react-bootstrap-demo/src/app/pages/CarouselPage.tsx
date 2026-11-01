@@ -3,6 +3,7 @@ import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel
 import type { CarouselAnimation, CarouselOrientation } from '@mintplayer/react-bootstrap/carousel';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './CarouselPage.css';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 const BASIC_SOURCE = `<BsCarousel indicators interval={4000} aria-label="Animal photos"
   onSlideChange={(detail) => setIndex(detail.index)}>
@@ -21,6 +22,8 @@ const IMAGES = [
 ] as const;
 
 export function CarouselPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms);
   const [animation, setAnimation] = useState<CarouselAnimation>('slide');
   const [orientation, setOrientation] = useState<CarouselOrientation>('horizontal');
   const [paused, setPaused] = useState(false);

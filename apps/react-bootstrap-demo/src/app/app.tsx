@@ -3,6 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './shell/AppShell';
 import { HomePage } from './pages/HomePage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
+import { installBootstrap, bootstrapSpinners } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * React.lazy() expects a module with a `default` export. Our pages use
@@ -59,6 +60,8 @@ const ChartsPage       = lazyNamed(() => import('./pages/enterprise/ChartsPage')
 const ThemingPage      = lazyNamed(() => import('./pages/ThemingPage'),      'ThemingPage');
 
 function PageFallback() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapSpinners);
   return (
     <div className="demo-page text-body-secondary">
       <div className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />

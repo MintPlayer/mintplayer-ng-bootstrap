@@ -17,6 +17,7 @@ import type {
   FilterOperator,
 } from '@mintplayer/react-bootstrap/datatable';
 import './DatatablePage.css';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts — for the
 // browser; the server render (a `stateKey` table's prefetch) has no proxy and
@@ -308,6 +309,8 @@ const fetchTree = useCallback(
 />`;
 
 export function DatatablePage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms);
   const [fetchedPages, setFetchedPages] = useState<number[]>([]);
   const [selectedRows, setSelectedRows] = useState<TreeItem[]>([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);

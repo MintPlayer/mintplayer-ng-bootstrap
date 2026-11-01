@@ -9,6 +9,7 @@ import {
   type SortDescriptor,
 } from '@mintplayer/web-components/query-builder';
 import type { DatatableColumnDef } from '@mintplayer/react-bootstrap/datatable';
+import { installBootstrap, bootstrapForms, bootstrapSpinners } from '@mintplayer/ui-core/bootstrap';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).
@@ -41,6 +42,8 @@ const withCustomDateEditor = (schema: EntitySchema[]): EntitySchema[] =>
   schema.map((e) => ({ ...e, fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)) }));
 
 export function QueryBuilderPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms, bootstrapSpinners);
   const [schema, setSchema] = useState<EntitySchema[]>([]);
   const [rootEntity, setRootEntity] = useState('orders');
   const [query, setQuery] = useState<Expression>(() => emptyGroup());

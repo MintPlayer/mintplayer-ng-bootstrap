@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsTypeahead, inMemoryTypeaheadProvider, type TypeaheadRequest } from '@mintplayer/react-bootstrap/typeahead';
+import { installBootstrap, bootstrapTables } from '@mintplayer/ui-core/bootstrap';
 
 interface Artist {
   id: number;
@@ -43,6 +44,8 @@ const snippet = `<BsTypeahead
 />`;
 
 export function TypeaheadPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapTables);
   const [aborted, setAborted] = useState(0);
   const [selected, setSelected] = useState<Artist | null>(null);
   const [value, setValue] = useState('');

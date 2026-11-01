@@ -18,6 +18,8 @@ import {
 } from '@mintplayer/ng-bootstrap/tile-manager';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainers, bootstrapForms, bootstrapBadge, bootstrapAlert } from '@mintplayer/ui-core/bootstrap';
 
 const STORAGE_KEY = 'tile-manager-demo-layouts-v2';
 
@@ -83,6 +85,8 @@ export class TileManagerComponent {
   private readonly board = viewChild.required(BsTileManagerComponent, { read: ElementRef });
 
   constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapContainers, bootstrapForms, bootstrapBadge, bootstrapAlert);
     effect(() => {
       const layouts = this.layouts();
       try {

@@ -7,6 +7,10 @@ import {
   type BsThemeToggleMode,
 } from '@mintplayer/vue-bootstrap/theming';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap, bootstrapButtonGroup } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapButtonGroup);
 
 const { mode, effectiveMode, setMode } = useBsTheme();
 

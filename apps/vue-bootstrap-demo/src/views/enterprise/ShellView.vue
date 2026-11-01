@@ -3,6 +3,10 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SNIPPET_BASIC = `<script setup lang="ts">
 import { BsShell } from '@mintplayer/vue-bootstrap/shell';
+import { installBootstrap, bootstrapTables } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapTables);
 <\/script>
 
 <template>

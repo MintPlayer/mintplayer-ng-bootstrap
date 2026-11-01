@@ -10,6 +10,10 @@ import {
   type SortDescriptor,
 } from '@mintplayer/vue-bootstrap/query-builder';
 import type { DatatableColumnDef } from '@mintplayer/vue-bootstrap/datatable';
+import { installBootstrap, bootstrapForms, bootstrapSpinners } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+installBootstrap(bootstrapForms, bootstrapSpinners);
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).

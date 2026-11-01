@@ -5,6 +5,8 @@ import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapTables } from '@mintplayer/ui-core/bootstrap';
 
 interface Row {
   id: string;
@@ -30,6 +32,11 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CheckboxComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapTables);
+  }
+
 
   // 1. Single, template-driven
   readonly agreed = signal(false);

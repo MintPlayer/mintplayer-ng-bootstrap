@@ -6,6 +6,7 @@ import {
   type BsThemeToggleMode,
 } from '@mintplayer/react-bootstrap/theming';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapButtonGroup } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * A custom cycle: light and dark only (no auto), localized to Dutch. Built by
@@ -88,6 +89,8 @@ const CONFIG_SNIPPET = `import { configureBsTheme } from '@mintplayer/react-boot
 configureBsTheme({ cookieDomain: '.example.com' });`;
 
 export function ThemingPage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapButtonGroup);
   const { mode, effectiveMode, setMode } = useBsTheme();
 
   return (

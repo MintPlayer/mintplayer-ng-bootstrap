@@ -13,6 +13,7 @@ import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './TimelinePage.css';
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 // Shared seed data — a list of project milestones.
 const MILESTONES: TimelineItem[] = [
@@ -66,6 +67,8 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
 </BsTimeline>`;
 
 export function TimelinePage() {
+  // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+  installBootstrap(bootstrapForms);
   const [orientation, setOrientation] = useState<TimelineOrientation>('vertical');
   const [align, setAlign] = useState<TimelineAlign>('start');
   const [selectable, setSelectable] = useState<TimelineSelectable>('none');

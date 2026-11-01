@@ -16,6 +16,8 @@ import {
 } from '@mintplayer/ng-bootstrap/theming';
 import { RouterLink } from '@angular/router';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 
 /** Dutch strings for the default cycle: the localization example. */
 const DUTCH: Readonly<Record<string, Pick<BsThemeToggleMode, 'label' | 'announcement'>>> = {
@@ -53,6 +55,11 @@ interface ApiEntry {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ThemingComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapForms);
+  }
+
   private readonly theme = inject(BsThemeService);
   protected readonly colors = Color;
 

@@ -146,9 +146,12 @@ elsewhere): once per page, SSR-written into the head, tree-shaken when unused. I
    them) → forms (Angular, React, Vue; Lit `mp-radio`). Angular-only: range, floating label, form →
    forms; `bsDropdownMenu` → dropdown. Shadow-root Lit elements keep their own `_styles` copies.
 6. **Demos** use Bootstrap classes on plain markup (`.table`, `.form-select`, `.card`, …), which no
-   component installs. They opt in page-wide with the new
-   `@include bootstrap-parts.include(...)` (`@mintplayer/ui-core/styles/bootstrap-parts`), which is
-   also what a consumer does for the same need.
+   component installs. Each such page installs its parts from its own page component
+   (`useBootstrap(...)` in Angular, `installBootstrap(...)` in React/Vue), which is also what a consumer
+   does for the same need. No demo's global stylesheet bundles a part (owner: "the goal is to not have the
+   angular/react/vue app's their globally loaded stylesheets bundle per-component styles"); there is no
+   page-wide opt-in. The grid directives (`bsRow`, `[col]`, `[md]`…) and `bsColFormLabel` install grid /
+   forms themselves, since outside `bs-grid` they had relied on the page-wide copy.
 7. **Docs:** CLAUDE.md C1, C2 and C4 rewritten to the per-component rule.
 8. **Source order → sublayers.** Splitting one stylesheet into a baseline plus parts lost Bootstrap's
    source order between equal-specificity rules: the navbar part, installed after the baseline,

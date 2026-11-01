@@ -253,9 +253,9 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
 - **C2. The page baseline** (`@mintplayer/ui-core/styles/bootstrap.scss`) holds only the PAGE-LEVEL partials:
   root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
   workspace patches. Angular's `_bootstrap.scss` re-exports it; React and Vue apps import it instead of
-  `bootstrap.min.css`. Plain markup that uses component classes without a component opts in page-wide with
-  `@include bootstrap-parts.include(tables, forms, …)` from `@mintplayer/ui-core/styles/bootstrap-parts` (the
-  demos do). `_conformance/bootstrap-baseline-superset.spec.ts` checks baseline ∪ parts ⊇ stock Bootstrap and
+  `bootstrap.min.css`. **No app stylesheet bundles a part page-wide** (no global opt-in exists): plain markup that uses component
+  classes without a component (a raw `.table`, `.form-label`) installs its parts from the component that renders
+  it — the demo pages call `useBootstrap(...)` / `installBootstrap(...)` in the page component. `_conformance/bootstrap-baseline-superset.spec.ts` checks baseline ∪ parts ⊇ stock Bootstrap and
   that the baseline stays free of component classes.
 - **C3. Cascade layers.** The baseline is `@layer mp.bootstrap`, every scoped sheet `@layer mp.components`,
   ordered once at the top of the baseline. Component rules beat Bootstrap regardless of specificity, a

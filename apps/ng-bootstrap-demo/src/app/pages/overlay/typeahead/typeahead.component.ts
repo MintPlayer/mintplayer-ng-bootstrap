@@ -5,6 +5,8 @@ import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTypeaheadComponent, BsTypeaheadItemDirective, inMemoryTypeaheadProvider, TypeaheadRequest } from '@mintplayer/ng-bootstrap/typeahead';
 import { dedent } from 'ts-dedent';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapGrid, bootstrapForms, bootstrapTables } from '@mintplayer/ui-core/bootstrap';
 
 interface Artist {
   id: number;
@@ -28,6 +30,11 @@ const ARTISTS: Artist[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypeaheadComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: its parts ship with the page, not the global stylesheet (#452).
+    useBootstrap(bootstrapGrid, bootstrapForms, bootstrapTables);
+  }
+
   /** Angular forms: the same control bound template-driven and reactive. */
   protected readonly formsValue = signal<string>('');
   protected readonly formsControl = new FormControl<string>('', { nonNullable: true });
