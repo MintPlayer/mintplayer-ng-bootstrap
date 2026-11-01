@@ -10,6 +10,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   checkboxClasses,
@@ -110,6 +112,8 @@ export class BsCheckboxComponent {
   });
 
   constructor() {
+    // #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="checkbox").
+    useBootstrap(bootstrapForms);
     // `indeterminate` has no attribute, so it is a browser-only property write;
     // aria-checked="mixed" in the bag already carries it in the SSR output.
     afterRenderEffect(() => {

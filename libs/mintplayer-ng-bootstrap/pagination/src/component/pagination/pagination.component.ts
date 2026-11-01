@@ -7,6 +7,8 @@ import {
   input,
   model,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap';
 import { Size } from '@mintplayer/ng-bootstrap';
 import {
   connectPagination,
@@ -33,6 +35,11 @@ import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
   },
 })
 export class BsPaginationComponent {
+  constructor() {
+    // #452: the pagination partial ships with this component, scoped to the elements it stamps (data-mps="pagination").
+    useBootstrap(bootstrapPagination);
+  }
+
   private readonly host = inject(ElementRef).nativeElement as HTMLElement;
   private readonly hostAria = takeHostAria(this.host);
 

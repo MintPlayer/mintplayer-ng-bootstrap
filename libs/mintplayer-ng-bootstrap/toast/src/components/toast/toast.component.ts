@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapToasts, bootstrapTransitions } from '@mintplayer/ui-core/bootstrap';
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 export type BsToastPoliteness = 'polite' | 'assertive';
@@ -18,6 +20,8 @@ export class BsToastComponent {
   private readonly host = inject(ElementRef) as ElementRef<HTMLElement>;
 
   constructor() {
+    // #452: the toasts and transitions partials ship with this component, scoped to the elements it stamps (data-mps="toast").
+    useBootstrap(bootstrapToasts, bootstrapTransitions);
     // The old channel was role/aria-live ON the toast div — but the toast and
     // its text mount in one task (ngTemplateOutlet), which most SRs never
     // announce. The shared announcer region pre-exists, so routing the text

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapSpinners } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -8,6 +10,11 @@ import { Color } from '@mintplayer/ng-bootstrap';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsSpinnerComponent {
+  constructor() {
+    // #452: the spinners partial ships with this component, scoped to the elements it stamps (data-mps="spinner").
+    useBootstrap(bootstrapSpinners);
+  }
+
   readonly colors = Color;
 
   type = input<'border' | 'grow'>('border');

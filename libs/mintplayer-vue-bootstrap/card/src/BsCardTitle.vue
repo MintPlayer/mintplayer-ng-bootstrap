@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { installBootstrap, bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+// #452: the card partial ships with this component, scoped to the elements it stamps (data-mps="card").
+installBootstrap(bootstrapCard);
 defineOptions({ inheritAttrs: false });
 </script>
 
 <template>
-  <div class="card-title" v-bind="$attrs">
+  <div data-mps="card" class="card-title" v-bind="$attrs">
     <slot />
   </div>
 </template>

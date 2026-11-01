@@ -122,7 +122,19 @@ export interface GroupStyle {
   readonly scope: string;
   /** Module exporting the sheet; default the group's entry. */
   readonly from?: string;
+  /**
+   * The Bootstrap partials the group's markup uses (`'forms'`, `'dropdown'`…).
+   * Bootstrap ships per component (#452): every front installs these part
+   * sheets from `@mintplayer/ui-core/bootstrap` before the group's own sheet.
+   */
+  readonly bootstrap?: readonly BootstrapPartName[];
 }
+
+export type BootstrapPartName =
+  | 'containers' | 'grid' | 'tables' | 'forms' | 'transitions' | 'dropdown' | 'button-group' | 'nav'
+  | 'navbar' | 'card' | 'accordion' | 'breadcrumb' | 'pagination' | 'badge' | 'alert' | 'progress'
+  | 'list-group' | 'close' | 'toasts' | 'modal' | 'tooltip' | 'popover' | 'carousel' | 'spinners'
+  | 'offcanvas' | 'placeholders';
 
 export interface ComponentGroup {
   /** The entry point name; also the generated entry in every front lib. */

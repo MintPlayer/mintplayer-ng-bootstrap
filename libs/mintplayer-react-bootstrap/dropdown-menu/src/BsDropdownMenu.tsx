@@ -1,3 +1,4 @@
+import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import * as React from 'react';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
@@ -39,6 +40,7 @@ export const BsDropdownMenu = forwardRef<HTMLUListElement | null, BsDropdownMenu
   { maxHeight, onSelect, className, style, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapDropdown);
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
   const menuRef = useRef<HTMLUListElement>(null);

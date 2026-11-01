@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
 
 /**
  * Card body — explicit wrapper. No auto-padding workaround like the previous
@@ -9,7 +11,12 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'bs-card-body',
   template: '<ng-content></ng-content>',
-  host: { class: 'card-body' },
+  host: { '[attr.data-mps]': '"card"', class: 'card-body' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BsCardBodyComponent {}
+export class BsCardBodyComponent {
+  constructor() {
+    // #452: the card partial ships with this component, scoped to the elements it stamps (data-mps="card").
+    useBootstrap(bootstrapCard);
+  }
+}

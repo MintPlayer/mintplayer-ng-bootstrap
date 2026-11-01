@@ -1,30 +1,4 @@
-:host ::ng-deep {
-    @import 'node_modules/bootstrap/scss/functions';
-    @import 'node_modules/bootstrap/scss/variables';
-    @import 'node_modules/bootstrap/scss/variables-dark';
-    @import 'node_modules/bootstrap/scss/mixins';
-    // @import 'node_modules/bootstrap/scss/bootstrap-utilities.scss';
-    // @import 'node_modules/bootstrap/scss/utilities';
-    @import 'node_modules/bootstrap/scss/spinners';
-    // @import 'node_modules/bootstrap/scss/utilities/api';
-
-    // For some reason, the above imports do not apply the animation
-    .spinner-border {
-        animation: .75s linear infinite spinner-border;
-    }
-
-    .spinner-grow {
-        animation: .75s linear infinite spinner-grow;
-    }
-
-    // The manual re-declarations above (needed because the imported partial's
-    // animation did not survive the ::ng-deep scope) also discarded
-    // Bootstrap's prefers-reduced-motion override — restore it: reduce slows
-    // the spin (Bootstrap's own choice: a frozen spinner reads as hung).
-    @media (prefers-reduced-motion: reduce) {
-        .spinner-border,
-        .spinner-grow {
-            animation-duration: 1.5s;
-        }
-    }
-}
+// The spinners partial is installed by the component (#452, useBootstrap).
+// It is page-level CSS, so its @keyframes and its prefers-reduced-motion
+// override apply unchanged: the re-declarations the old ng-deep copy needed
+// (Angular renamed the keyframes inside the emulated scope) are gone.

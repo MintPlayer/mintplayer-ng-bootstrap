@@ -1,6 +1,10 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
 import { cardColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+// #452: the card partial ships with the card, scoped to the elements it stamps.
+installBootstrap(bootstrapCard);
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -13,12 +17,12 @@ export interface BsCardProps extends HTMLAttributes<HTMLDivElement> {
 
 /**
  * The card root (PRD #437 wave A): a plain `div.card`, no custom element and
- * no core, so SSR emits the finished card and the page baseline styles it.
+ * no core, so SSR emits the finished card and the card part (#452) styles it.
  * Merges an incoming `className` and spreads remaining props.
  */
 export const BsCard = forwardRef<HTMLDivElement, PropsWithChildren<BsCardProps>>(
   ({ className, color, outline = false, ...rest }, ref) => (
-    <div ref={ref} className={cx('card', ...cardColorClasses(color, outline), className)} {...rest} />
+    <div ref={ref} data-mps="card" className={cx('card', ...cardColorClasses(color, outline), className)} {...rest} />
   ),
 );
 BsCard.displayName = 'BsCard';

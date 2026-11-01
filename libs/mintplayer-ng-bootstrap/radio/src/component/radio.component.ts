@@ -8,6 +8,8 @@ import {
   input,
   model,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   connectRadio,
@@ -100,6 +102,8 @@ export class BsRadioComponent {
   });
 
   constructor() {
+    // #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="radio").
+    useBootstrap(bootstrapForms);
     // Keep `[(isToggled)]` honest in a group, where a sibling's selection unchecks this radio.
     effect(() => {
       if (this.resolvedGroup()) this.isToggled.set(this.checked());

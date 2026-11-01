@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { installBootstrap, bootstrapCard } from '@mintplayer/ui-core/bootstrap';
 // The card root (PRD #437 wave A): a plain div.card, no custom element and
-// no core, so SSR emits the finished card and the page baseline styles it.
+// no core, so SSR emits the finished card and the card part (#452) styles it.
 import { computed } from 'vue';
 import { cardColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+
+// #452: the card partial ships with this component, scoped to the elements it stamps (data-mps="card").
+installBootstrap(bootstrapCard);
 
 defineOptions({ inheritAttrs: false });
 
@@ -12,7 +16,7 @@ const classes = computed(() => ['card', ...cardColorClasses(props.color, props.o
 </script>
 
 <template>
-  <div :class="classes" v-bind="$attrs">
+  <div data-mps="card" :class="classes" v-bind="$attrs">
     <slot />
   </div>
 </template>

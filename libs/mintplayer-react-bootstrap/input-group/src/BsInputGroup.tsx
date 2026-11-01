@@ -1,3 +1,4 @@
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
@@ -25,6 +26,7 @@ export interface BsInputGroupProps extends HTMLAttributes<HTMLDivElement> {
  */
 export const BsInputGroup = forwardRef<HTMLDivElement, PropsWithChildren<BsInputGroupProps>>(
   ({ className, size = 'md', role, ...rest }, ref) => {
+    installBootstrap(bootstrapForms);
     installLightStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
     const named = rest['aria-label'] != null || rest['aria-labelledby'] != null;
     return (

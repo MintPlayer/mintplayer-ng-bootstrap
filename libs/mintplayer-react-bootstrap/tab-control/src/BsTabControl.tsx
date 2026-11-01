@@ -1,3 +1,4 @@
+import { bootstrapNav, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import * as React from 'react';
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
@@ -62,6 +63,7 @@ export const BsTabControl = forwardRef<HTMLDivElement | null, BsTabControlProps>
   { activeTab, border, selectFirstTab = true, tabsPosition, onTabActivate, className, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapNav);
   installLightStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
 
   const reactId = useId();

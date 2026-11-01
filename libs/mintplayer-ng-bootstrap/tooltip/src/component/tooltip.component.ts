@@ -1,5 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapTooltip } from '@mintplayer/ui-core/bootstrap';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
@@ -18,6 +20,11 @@ import { TOOLTIP_ID } from '../providers/tooltip-id.provider';
   },
 })
 export class BsTooltipComponent {
+  constructor() {
+    // #452: the tooltip partial ships with this component, scoped to the elements it stamps (data-mps="tooltip").
+    useBootstrap(bootstrapTooltip);
+  }
+
   template = inject<TemplateRef<any>>(TOOLTIP_CONTENT);
   tooltipId = inject(TOOLTIP_ID);
 

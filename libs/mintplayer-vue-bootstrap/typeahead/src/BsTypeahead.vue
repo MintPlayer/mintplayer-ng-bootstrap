@@ -11,6 +11,7 @@
  */
 import { computed, onBeforeUnmount, onMounted, shallowRef, useAttrs, useId, useTemplateRef, watch } from 'vue';
 import { trackOpenSide } from '@mintplayer/ui-core/overlay';
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   connect,
@@ -82,6 +83,7 @@ const [machine, state] = useMachine(
     }),
 );
 
+installBootstrap(bootstrapForms, bootstrapDropdown);
 installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
 watch(() => props.provider, (provider) => (machine.provider = provider), { immediate: true });

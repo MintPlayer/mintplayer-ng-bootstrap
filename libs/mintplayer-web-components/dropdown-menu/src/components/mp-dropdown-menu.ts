@@ -1,3 +1,4 @@
+import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { ReactiveElement } from 'lit';
 import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import { applyHostProps, EMPTY_HOST_PROPS } from '@mintplayer/web-components/machine';
@@ -78,6 +79,7 @@ export class MpDropdownMenu extends ReactiveElement {
 }
 
 if (typeof document !== 'undefined' && document.head) {
+  installBootstrap(bootstrapDropdown);
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 }
 

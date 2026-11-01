@@ -1,3 +1,4 @@
+import { bootstrapForms, bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
@@ -21,7 +22,7 @@ import {
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { isObservable, Observable } from 'rxjs';
 import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
-import { machineSignal, MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { machineSignal, MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import { abortError } from '@mintplayer/ui-core/async';
 import { preHydrationValue } from '@mintplayer/ui-core/forms';
 import { trackOpenSide } from '@mintplayer/ui-core/overlay';
@@ -123,6 +124,7 @@ export class BsTypeaheadComponent<T = unknown> implements ControlValueAccessor {
 
   constructor() {
     const host = inject(ElementRef).nativeElement as HTMLElement;
+    useBootstrap(bootstrapForms, bootstrapDropdown);
     useScopedStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
     this.machine = new TypeaheadMachine<T>({
       id: this.id,

@@ -1,5 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, input, TemplateRef } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapPopover, bootstrapTransitions } from '@mintplayer/ui-core/bootstrap';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
@@ -21,6 +23,11 @@ import { BsPopoverContextService } from '../services/popover-context.service';
   },
 })
 export class BsPopoverComponent {
+  constructor() {
+    // #452: the popover and transitions partials ship with this component, scoped to the elements it stamps (data-mps="popover").
+    useBootstrap(bootstrapPopover, bootstrapTransitions);
+  }
+
   template = inject<TemplateRef<any>>(POPOVER_CONTENT);
   popoverId = inject(POPOVER_ID);
   context = inject(BsPopoverContextService);

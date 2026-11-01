@@ -1,4 +1,6 @@
 import { afterNextRender, Component, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
 
@@ -14,6 +16,8 @@ export class OffcanvasHeaderComponent {
   private context = inject(BsOffcanvasContextService, { optional: true });
 
   constructor() {
+    // #452: the offcanvas partial ships with this component, scoped to the elements it stamps (data-mps="offcanvas").
+    useBootstrap(bootstrapOffcanvas);
     afterNextRender(() => {
       const headerDiv = this.el.nativeElement.querySelector<HTMLElement>('.offcanvas-header')!;
       let id = headerDiv.id;

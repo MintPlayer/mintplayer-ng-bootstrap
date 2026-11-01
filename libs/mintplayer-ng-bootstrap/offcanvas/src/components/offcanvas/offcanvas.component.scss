@@ -1,14 +1,5 @@
-:host ::ng-deep {
-    // Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-
-    // Layout & components
-    @import "node_modules/bootstrap/scss/modal";
-    @import "node_modules/bootstrap/scss/offcanvas";
-}
+// The modal (backdrop) and offcanvas partials are installed by the component
+// (#452, useBootstrap).
 
 .offcanvas {
     &.oc-max-width {

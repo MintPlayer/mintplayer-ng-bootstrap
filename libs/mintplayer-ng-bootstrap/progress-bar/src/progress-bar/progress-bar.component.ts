@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapProgress } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({
@@ -7,6 +9,7 @@ import { Color } from '@mintplayer/ng-bootstrap';
   styleUrls: ['./progress-bar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[attr.data-mps]': '"progress"',
     '[class.progress-bar]': 'true',
     '[class.progress-bar-striped]': 'striped()',
     '[class.progress-bar-animated]': 'animated()',
@@ -21,6 +24,11 @@ import { Color } from '@mintplayer/ng-bootstrap';
   },
 })
 export class BsProgressBarComponent {
+  constructor() {
+    // #452: the progress partial ships with this component, scoped to the elements it stamps (data-mps="progress").
+    useBootstrap(bootstrapProgress);
+  }
+
 
   minimum = input<number>(0);
   maximum = input<number>(100);

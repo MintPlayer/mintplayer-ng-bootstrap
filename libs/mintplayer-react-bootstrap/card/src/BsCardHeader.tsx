@@ -1,6 +1,10 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
 import { capColorClasses, type CardColor } from '@mintplayer/ui-core/card';
+import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+
+// #452: the card partial ships with the card, scoped to the elements it stamps.
+installBootstrap(bootstrapCard);
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -16,7 +20,7 @@ interface BsCardHeaderProps extends HTMLAttributes<HTMLDivElement> {
  */
 export const BsCardHeader = forwardRef<HTMLDivElement, PropsWithChildren<BsCardHeaderProps>>(
   ({ className, color, ...rest }, ref) => (
-    <div ref={ref} className={cx('card-header', ...capColorClasses(color), className)} {...rest} />
+    <div ref={ref} data-mps="card" className={cx('card-header', ...capColorClasses(color), className)} {...rest} />
   ),
 );
 BsCardHeader.displayName = 'BsCardHeader';

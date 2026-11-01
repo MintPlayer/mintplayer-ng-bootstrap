@@ -6,6 +6,7 @@ import {
   type PaginationLabels,
   type PaginationSize,
 } from '@mintplayer/ui-core/pagination';
+import { bootstrapPagination, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { reactProps } from '../../machine/src/react-props';
 
 export interface BsPaginationProps extends Omit<React.HTMLAttributes<HTMLElement>, 'children'> {
@@ -44,6 +45,8 @@ export const BsPagination = forwardRef<HTMLElement, BsPaginationProps>(function 
     onPageChange,
     ...rest
   } = props;
+  // #452: the pagination partial ships with the component, scoped to the elements stamped below.
+  installBootstrap(bootstrapPagination);
   const [ownPage, setOwnPage] = useState(defaultSelectedPageNumber);
   const current = selectedPageNumber ?? ownPage;
   const view = connectPagination({
@@ -63,14 +66,15 @@ export const BsPagination = forwardRef<HTMLElement, BsPaginationProps>(function 
   };
 
   return (
-    <nav {...reactProps(view.nav)} {...rest} ref={ref}>
-      <ul className={view.listClass}>
+    <nav data-mps="pagination" {...reactProps(view.nav)} {...rest} ref={ref}>
+      <ul data-mps="pagination" className={view.listClass}>
         {view.entries.map((entry) => (
-          <li key={entry.key} className={entry.itemClass}>
+          <li key={entry.key} data-mps="pagination" className={entry.itemClass}>
             {entry.kind === 'gap' ? (
-              <span {...reactProps(entry.attrs)}>{entry.text}</span>
+              <span data-mps="pagination" {...reactProps(entry.attrs)}>{entry.text}</span>
             ) : view.tag === 'a' ? (
               <a
+                data-mps="pagination"
                 {...reactProps(entry.attrs)}
                 href={entry.href ?? undefined}
                 onClick={(event) => {
@@ -82,7 +86,7 @@ export const BsPagination = forwardRef<HTMLElement, BsPaginationProps>(function 
                 {entry.text}
               </a>
             ) : (
-              <button {...reactProps(entry.attrs)} onClick={() => select(entry.target)}>
+              <button data-mps="pagination" {...reactProps(entry.attrs)} onClick={() => select(entry.target)}>
                 {entry.text}
               </button>
             )}

@@ -1,3 +1,4 @@
+import { bootstrapAccordion, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { LitElement, html, type TemplateResult } from 'lit';
 import { adoptLightStyles, installLightStyles } from '@mintplayer/web-components/light-dom';
 import { props } from '@mintplayer/web-components/machine';
@@ -266,6 +267,7 @@ export class MpAccordion extends LitElement {
   }
 }
 
+if (typeof document !== 'undefined' && document.head) installBootstrap(bootstrapAccordion);
 if (typeof document !== 'undefined' && document.head) installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-accordion')) {

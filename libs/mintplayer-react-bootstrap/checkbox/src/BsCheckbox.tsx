@@ -7,6 +7,7 @@ import {
   type CheckboxType,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
+import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { reactProps } from '../../machine/src/react-props';
 
 type InputAttributes = Omit<
@@ -80,6 +81,8 @@ export const BsCheckbox = forwardRef<HTMLInputElement, BsCheckboxProps>(function
     errorText: errorText ?? null,
   };
   const bags = connectCheckbox(state, rootId, consumerDescribedBy);
+  // #452: the forms partial ships with the control, scoped to the elements stamped below.
+  installBootstrap(bootstrapForms);
   const classes = checkboxClasses(type, color, invalid);
   const inputId = consumerId ?? String(bags.input.id);
 
@@ -93,6 +96,7 @@ export const BsCheckbox = forwardRef<HTMLInputElement, BsCheckboxProps>(function
   const control = (
     <input
       ref={inputRef}
+      data-mps="checkbox"
       className={[classes.input, className].filter(Boolean).join(' ')}
       {...reactProps(bags.input)}
       {...rest}
@@ -109,22 +113,22 @@ export const BsCheckbox = forwardRef<HTMLInputElement, BsCheckboxProps>(function
     />
   );
 
-  const feedback = bags.feedback && <div {...reactProps(bags.feedback.attrs)}>{bags.feedback.text}</div>;
+  const feedback = bags.feedback && <div data-mps="checkbox" {...reactProps(bags.feedback.attrs)}>{bags.feedback.text}</div>;
 
   if (classes.root === null) {
     return (
       <>
         {control}
-        <label className={classes.label} htmlFor={inputId}>{children}</label>
+        <label data-mps="checkbox" className={classes.label} htmlFor={inputId}>{children}</label>
         {feedback}
       </>
     );
   }
   return (
     <>
-      <label className={classes.root}>
+      <label data-mps="checkbox" className={classes.root}>
         {control}
-        <span className={classes.label}>{children}</span>
+        <span data-mps="checkbox" className={classes.label}>{children}</span>
       </label>
       {feedback}
     </>

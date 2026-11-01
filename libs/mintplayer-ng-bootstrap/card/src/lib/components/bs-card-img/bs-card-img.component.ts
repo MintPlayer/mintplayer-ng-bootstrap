@@ -1,5 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
 import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
 
 /**
@@ -24,13 +26,13 @@ import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
   template: `
     <ng-template #projected><ng-content></ng-content></ng-template>
     <ng-template #imgTpl>
-      <img [class]="imgClass()" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
+      <img data-mps="card" [class]="imgClass()" [attr.src]="srcAttr()" [attr.alt]="altAttr()" />
     </ng-template>
 
     @switch (position()) {
       @case ('overlay') {
         <ng-container *ngTemplateOutlet="imgTpl"></ng-container>
-        <div class="card-img-overlay">
+        <div data-mps="card" class="card-img-overlay">
           <ng-container *ngTemplateOutlet="projected"></ng-container>
         </div>
       }
@@ -44,10 +46,15 @@ import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
       }
     }
   `,
-  host: { '[class]': 'hostClass()' },
+  host: { '[attr.data-mps]': '"card"', '[class]': 'hostClass()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardImgComponent {
+  constructor() {
+    // #452: the card partial ships with this component, scoped to the elements it stamps (data-mps="card").
+    useBootstrap(bootstrapCard);
+  }
+
   readonly position = input<CardImagePosition>('top');
   readonly src = input<string | undefined>(undefined);
   readonly alt = input<string | undefined>(undefined);

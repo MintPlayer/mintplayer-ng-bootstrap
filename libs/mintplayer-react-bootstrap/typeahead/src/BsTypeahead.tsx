@@ -1,3 +1,4 @@
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import * as React from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { trackOpenSide } from '@mintplayer/ui-core/overlay';
@@ -110,6 +111,7 @@ export function BsTypeahead<T = unknown>(props: BsTypeaheadProps<T>): React.Reac
       }),
   );
 
+  installBootstrap(bootstrapForms, bootstrapDropdown);
   installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
   // Props → machine. The machine's setters are idempotent on equal values, so

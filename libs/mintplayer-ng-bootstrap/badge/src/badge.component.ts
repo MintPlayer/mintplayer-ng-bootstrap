@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapBadge } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 // `.badge` paints white text, and `bg-{color}` sets only the background: white
@@ -19,6 +21,11 @@ const pairedColorClasses: Partial<Record<Color, string>> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsBadgeComponent {
+  constructor() {
+    // #452: the badge partial ships with this component, scoped to the elements it stamps (data-mps="badge").
+    useBootstrap(bootstrapBadge);
+  }
+
   colors = Color;
 
   type = input<Color>(Color.primary);

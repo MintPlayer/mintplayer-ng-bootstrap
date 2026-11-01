@@ -1,21 +1,14 @@
-:host ::ng-deep {
-    // Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-
-    // Layout & components
-    @import "node_modules/bootstrap/scss/transitions";
-    @import "node_modules/bootstrap/scss/modal";
-
-    // The *bsModal structural directive forces a wrapper element between
-    // .modal-content and the user's modal-header / modal-body / modal-footer.
-    // For scrollable modals Bootstrap relies on a flex chain from .modal-content
-    // straight to .modal-body — the wrapper breaks that chain. `display: contents`
-    // removes the wrapper from layout while keeping the DOM intact, so the
-    // header/body/footer become the effective flex children of .modal-content.
-    .modal-dialog-scrollable .modal-content > * {
-        display: contents;
-    }
+// The modal and transitions partials are installed by the component (#452,
+// useBootstrap).
+//
+// The *bsModal structural directive forces a wrapper element between
+// .modal-content and the user's modal-header / modal-body / modal-footer.
+// For scrollable modals Bootstrap relies on a flex chain from .modal-content
+// straight to .modal-body — the wrapper breaks that chain. `display: contents`
+// removes the wrapper from layout while keeping the DOM intact, so the
+// header/body/footer become the effective flex children of .modal-content.
+// The wrapper is the consumer's template, hence ::ng-deep after our own
+// (scoped) .modal-content.
+.modal-dialog-scrollable .modal-content > ::ng-deep * {
+    display: contents;
 }

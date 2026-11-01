@@ -1,3 +1,4 @@
+import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 import { LitElement, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { repeat } from 'lit/directives/repeat.js';
@@ -334,6 +335,7 @@ export class MpTypeahead<T = unknown> extends FormAssociatedMixin(LitElement) {
   }
 }
 
+installBootstrap(bootstrapForms, bootstrapDropdown);
 installLightStyles(TYPEAHEAD_SCOPE, typeaheadScopedStyles);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-typeahead')) {

@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapListGroup } from '@mintplayer/ui-core/bootstrap';
 
 @Component({
   selector: 'bs-list-group-item',
@@ -6,6 +8,7 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   styleUrls: ['./list-group-item.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    '[attr.data-mps]': '"list-group"',
     '[class.list-group-item]': 'true',
     'role': 'listitem',
     '[class.active]': 'active()',
@@ -17,6 +20,11 @@ import { Component, ChangeDetectionStrategy, input } from '@angular/core';
   },
 })
 export class BsListGroupItemComponent {
+  constructor() {
+    // #452: the list-group partial ships with this component, scoped to the elements it stamps (data-mps="list-group").
+    useBootstrap(bootstrapListGroup);
+  }
+
   readonly active = input(false);
   readonly disabled = input(false);
 }

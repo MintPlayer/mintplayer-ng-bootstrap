@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, model } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap';
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({
@@ -19,6 +21,8 @@ export class BsPlaceholderComponent {
   private wasLoading = false;
 
   constructor() {
+    // #452: the placeholders partial ships with this component, scoped to the elements it stamps (data-mps="placeholder").
+    useBootstrap(bootstrapPlaceholders);
     effect(() => {
       const isLoading = this.isLoading();
       if (this.wasLoading && !isLoading) {

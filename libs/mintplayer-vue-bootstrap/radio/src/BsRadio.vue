@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
 /**
  * A native <input type=radio> in Bootstrap's .form-check / .btn-check markup
  * (#437), with the ARIA contract from @mintplayer/ui-core/radio. Inside a
@@ -12,6 +13,9 @@ import { computed, inject, useAttrs, useId } from 'vue';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
 import { radioGroupKey } from './radio-group-key';
+
+// #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="radio").
+installBootstrap(bootstrapForms);
 
 defineOptions({ inheritAttrs: false });
 
@@ -84,12 +88,12 @@ function onChange(event: Event): void {
 
 <template>
   <template v-if="classes.root === null">
-    <input type="radio" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
-    <label :class="classes.label" :for="inputId()"><slot /></label>
+    <input data-mps="radio" type="radio" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <label data-mps="radio" :class="classes.label" :for="inputId()"><slot /></label>
   </template>
-  <label v-else :class="classes.root">
-    <input type="radio" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
-    <span :class="classes.label"><slot /></span>
+  <label data-mps="radio" v-else :class="classes.root">
+    <input data-mps="radio" type="radio" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <span data-mps="radio" :class="classes.label"><slot /></span>
   </label>
-  <div v-if="bags.feedback" v-bind="bags.feedback.attrs">{{ bags.feedback.text }}</div>
+  <div data-mps="radio" v-if="bags.feedback" v-bind="bags.feedback.attrs">{{ bags.feedback.text }}</div>
 </template>
