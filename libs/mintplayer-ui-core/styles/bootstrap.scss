@@ -15,10 +15,15 @@
 // card bundles none of .card. Do not add a component partial here; give the
 // component a part instead.
 //
-// mp.bootstrap has one sublayer per partial, in stock Bootstrap's import order,
-// because the baseline and the parts are separate sheets that reach the page in
-// any order while Bootstrap relies on source order between equal-specificity
-// rules (.fixed-top must beat .navbar). The list must match
+// mp.bootstrap has four sublayers: base, components, helpers, utilities. The
+// baseline and the parts are separate sheets that reach the page in any order,
+// so base must be first and helpers/utilities last (.fixed-top must beat
+// .navbar). Buttons and EVERY component part share `components`: Bootstrap's
+// cross-partial overrides are specificity-based and often point backwards
+// (.card > .list-group lives before list-group), which a layer per partial
+// broke. Inside `components` the registry inserts the part sheets in stock
+// order; buttons has no equal-specificity tie with any part, so its position
+// (this sheet, usually first) does not matter. The list must match
 // BOOTSTRAP_SUBLAYERS in tools/scripts/lib/wc-codegen.mjs (checked by
 // bootstrap-baseline-superset.spec.ts).
 //
@@ -28,13 +33,13 @@
 @use 'sass:meta';
 
 @layer mp.bootstrap, mp.components;
-@layer mp.bootstrap.base, mp.bootstrap.containers, mp.bootstrap.grid, mp.bootstrap.tables, mp.bootstrap.forms, mp.bootstrap.buttons, mp.bootstrap.transitions, mp.bootstrap.dropdown, mp.bootstrap.button-group, mp.bootstrap.nav, mp.bootstrap.navbar, mp.bootstrap.card, mp.bootstrap.accordion, mp.bootstrap.breadcrumb, mp.bootstrap.pagination, mp.bootstrap.badge, mp.bootstrap.alert, mp.bootstrap.progress, mp.bootstrap.list-group, mp.bootstrap.close, mp.bootstrap.toasts, mp.bootstrap.modal, mp.bootstrap.tooltip, mp.bootstrap.popover, mp.bootstrap.carousel, mp.bootstrap.spinners, mp.bootstrap.offcanvas, mp.bootstrap.placeholders, mp.bootstrap.helpers, mp.bootstrap.utilities;
+@layer mp.bootstrap.base, mp.bootstrap.components, mp.bootstrap.helpers, mp.bootstrap.utilities;
 
 @layer mp.bootstrap.base {
   @include meta.load-css('baseline/base');
 }
 
-@layer mp.bootstrap.buttons {
+@layer mp.bootstrap.components {
   @include meta.load-css('baseline/buttons');
 }
 

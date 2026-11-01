@@ -113,21 +113,35 @@ export function wrapInComponentsLayer(css) {
 }
 
 /**
- * The sublayers of `mp.bootstrap`, in stock Bootstrap's import order (#452).
- * The page baseline and the per-component part sheets are separate sheets that
- * reach the page in any order, while Bootstrap relies on source order between
- * equal-specificity rules (`.fixed-top` in helpers must beat `.navbar`'s
- * `position: relative`). A sublayer per partial restores that order whatever
- * the install order: base = root/reboot/type/images, then the parts, with
- * buttons, helpers and the utility API where bootstrap.scss imports them.
- * The baseline (ui-core/styles/bootstrap.scss) repeats this list verbatim;
- * bootstrap-baseline-superset.spec.ts holds the two together.
+ * The sublayers of `mp.bootstrap` (#452). The page baseline and the
+ * per-component part sheets are separate sheets that reach the page in any
+ * order, while Bootstrap relies on stock source order between them:
+ *
+ * - base (root/reboot/type/images) comes first, helpers and the utility API
+ *   last (`.fixed-top` must beat `.navbar`'s `position: relative`); those three
+ *   get sublayers of their own;
+ * - every component partial, and the buttons of the baseline, share ONE layer,
+ *   `components`. Bootstrap's cross-partial overrides are specificity-based and
+ *   often point backwards (`.card > .list-group` lives in card, BEFORE
+ *   list-group; `.navbar-expand .offcanvas` in navbar, before offcanvas). A
+ *   layer per partial let the later layer win regardless of specificity and
+ *   broke ~100 of them (measured); one shared layer lets specificity decide
+ *   again. The equal-specificity ties between partials (`.card-header-tabs`
+ *   over `.nav-tabs`) are kept by the registry, which inserts part sheets in
+ *   BOOTSTRAP_PARTIAL_ORDER whatever the install order.
+ *
+ * The baseline (ui-core/styles/bootstrap.scss) repeats the order statement
+ * verbatim; bootstrap-baseline-superset.spec.ts holds the two together.
  */
-export const BOOTSTRAP_SUBLAYERS = [
-  'base', 'containers', 'grid', 'tables', 'forms', 'buttons', 'transitions', 'dropdown', 'button-group',
+export const BOOTSTRAP_SUBLAYERS = ['base', 'components', 'helpers', 'utilities'];
+
+/** The component partials (and the baseline's buttons) in stock bootstrap.scss
+ *  import order: the order the registry keeps between part sheets. */
+export const BOOTSTRAP_PARTIAL_ORDER = [
+  'containers', 'grid', 'tables', 'forms', 'buttons', 'transitions', 'dropdown', 'button-group',
   'nav', 'navbar', 'card', 'accordion', 'breadcrumb', 'pagination', 'badge', 'alert', 'progress',
   'list-group', 'close', 'toasts', 'modal', 'tooltip', 'popover', 'carousel', 'spinners', 'offcanvas',
-  'placeholders', 'helpers', 'utilities',
+  'placeholders',
 ];
 
 /** The order statement every Bootstrap part sheet starts with. */

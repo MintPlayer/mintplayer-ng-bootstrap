@@ -1,6 +1,6 @@
 // The per-component Bootstrap parts (#452, docs/prd/per-component-styles-452.md).
-// Each is one stock partial in its own `mp.bootstrap.<partial>` sublayer, in two
-// variants under ONE registry key:
+// Each is one stock partial in the shared `mp.bootstrap.components` sublayer, in
+// two variants under ONE registry key:
 //
 // - `bootstrap<Partial>`: attribute-scoped, `:where([data-mps])` on the leftmost
 //   class the partial owns. It matches only DOM a @mintplayer component rendered
@@ -8,6 +8,10 @@
 // - `bootstrap<Partial>Page`: verbatim stock Bootstrap, for raw Bootstrap markup a
 //   page component renders itself. Installing it replaces the scoped copy (it
 //   matches a superset with identical specificity), so a page never holds two.
+//
+// `order` is the partial's position in stock bootstrap.scss: the registry keeps
+// part sheets in that order, so equal-specificity ties between partials
+// (`.card-header-tabs` over `.nav-tabs`) resolve as in stock Bootstrap.
 //
 // Object literals only, so a bundler drops every part nobody imports, and each
 // part rides the lazy chunk of the component (or page) that installs it.
@@ -45,57 +49,59 @@ export interface BootstrapPart {
   readonly css: string;
   /** The verbatim variant: it replaces a scoped copy already installed under `key`. */
   readonly page: boolean;
+  /** Position of the partial in stock bootstrap.scss (BOOTSTRAP_PARTIAL_ORDER). */
+  readonly order: number;
 }
 
-export const bootstrapContainers: BootstrapPart = { key: 'bootstrap-containers', css: containersBootstrapStyles, page: false };
-export const bootstrapContainersPage: BootstrapPart = { key: 'bootstrap-containers', css: containersBootstrapPageStyles, page: true };
-export const bootstrapGrid: BootstrapPart = { key: 'bootstrap-grid', css: gridBootstrapStyles, page: false };
-export const bootstrapGridPage: BootstrapPart = { key: 'bootstrap-grid', css: gridBootstrapPageStyles, page: true };
-export const bootstrapTables: BootstrapPart = { key: 'bootstrap-tables', css: tablesBootstrapStyles, page: false };
-export const bootstrapTablesPage: BootstrapPart = { key: 'bootstrap-tables', css: tablesBootstrapPageStyles, page: true };
-export const bootstrapForms: BootstrapPart = { key: 'bootstrap-forms', css: formsBootstrapStyles, page: false };
-export const bootstrapFormsPage: BootstrapPart = { key: 'bootstrap-forms', css: formsBootstrapPageStyles, page: true };
-export const bootstrapTransitions: BootstrapPart = { key: 'bootstrap-transitions', css: transitionsBootstrapStyles, page: false };
-export const bootstrapTransitionsPage: BootstrapPart = { key: 'bootstrap-transitions', css: transitionsBootstrapPageStyles, page: true };
-export const bootstrapDropdown: BootstrapPart = { key: 'bootstrap-dropdown', css: dropdownBootstrapStyles, page: false };
-export const bootstrapDropdownPage: BootstrapPart = { key: 'bootstrap-dropdown', css: dropdownBootstrapPageStyles, page: true };
-export const bootstrapButtonGroup: BootstrapPart = { key: 'bootstrap-button-group', css: buttonGroupBootstrapStyles, page: false };
-export const bootstrapButtonGroupPage: BootstrapPart = { key: 'bootstrap-button-group', css: buttonGroupBootstrapPageStyles, page: true };
-export const bootstrapNav: BootstrapPart = { key: 'bootstrap-nav', css: navBootstrapStyles, page: false };
-export const bootstrapNavPage: BootstrapPart = { key: 'bootstrap-nav', css: navBootstrapPageStyles, page: true };
-export const bootstrapNavbar: BootstrapPart = { key: 'bootstrap-navbar', css: navbarBootstrapStyles, page: false };
-export const bootstrapNavbarPage: BootstrapPart = { key: 'bootstrap-navbar', css: navbarBootstrapPageStyles, page: true };
-export const bootstrapCard: BootstrapPart = { key: 'bootstrap-card', css: cardBootstrapStyles, page: false };
-export const bootstrapCardPage: BootstrapPart = { key: 'bootstrap-card', css: cardBootstrapPageStyles, page: true };
-export const bootstrapAccordion: BootstrapPart = { key: 'bootstrap-accordion', css: accordionBootstrapStyles, page: false };
-export const bootstrapAccordionPage: BootstrapPart = { key: 'bootstrap-accordion', css: accordionBootstrapPageStyles, page: true };
-export const bootstrapBreadcrumb: BootstrapPart = { key: 'bootstrap-breadcrumb', css: breadcrumbBootstrapStyles, page: false };
-export const bootstrapBreadcrumbPage: BootstrapPart = { key: 'bootstrap-breadcrumb', css: breadcrumbBootstrapPageStyles, page: true };
-export const bootstrapPagination: BootstrapPart = { key: 'bootstrap-pagination', css: paginationBootstrapStyles, page: false };
-export const bootstrapPaginationPage: BootstrapPart = { key: 'bootstrap-pagination', css: paginationBootstrapPageStyles, page: true };
-export const bootstrapBadge: BootstrapPart = { key: 'bootstrap-badge', css: badgeBootstrapStyles, page: false };
-export const bootstrapBadgePage: BootstrapPart = { key: 'bootstrap-badge', css: badgeBootstrapPageStyles, page: true };
-export const bootstrapAlert: BootstrapPart = { key: 'bootstrap-alert', css: alertBootstrapStyles, page: false };
-export const bootstrapAlertPage: BootstrapPart = { key: 'bootstrap-alert', css: alertBootstrapPageStyles, page: true };
-export const bootstrapProgress: BootstrapPart = { key: 'bootstrap-progress', css: progressBootstrapStyles, page: false };
-export const bootstrapProgressPage: BootstrapPart = { key: 'bootstrap-progress', css: progressBootstrapPageStyles, page: true };
-export const bootstrapListGroup: BootstrapPart = { key: 'bootstrap-list-group', css: listGroupBootstrapStyles, page: false };
-export const bootstrapListGroupPage: BootstrapPart = { key: 'bootstrap-list-group', css: listGroupBootstrapPageStyles, page: true };
-export const bootstrapClose: BootstrapPart = { key: 'bootstrap-close', css: closeBootstrapStyles, page: false };
-export const bootstrapClosePage: BootstrapPart = { key: 'bootstrap-close', css: closeBootstrapPageStyles, page: true };
-export const bootstrapToasts: BootstrapPart = { key: 'bootstrap-toasts', css: toastsBootstrapStyles, page: false };
-export const bootstrapToastsPage: BootstrapPart = { key: 'bootstrap-toasts', css: toastsBootstrapPageStyles, page: true };
-export const bootstrapModal: BootstrapPart = { key: 'bootstrap-modal', css: modalBootstrapStyles, page: false };
-export const bootstrapModalPage: BootstrapPart = { key: 'bootstrap-modal', css: modalBootstrapPageStyles, page: true };
-export const bootstrapTooltip: BootstrapPart = { key: 'bootstrap-tooltip', css: tooltipBootstrapStyles, page: false };
-export const bootstrapTooltipPage: BootstrapPart = { key: 'bootstrap-tooltip', css: tooltipBootstrapPageStyles, page: true };
-export const bootstrapPopover: BootstrapPart = { key: 'bootstrap-popover', css: popoverBootstrapStyles, page: false };
-export const bootstrapPopoverPage: BootstrapPart = { key: 'bootstrap-popover', css: popoverBootstrapPageStyles, page: true };
-export const bootstrapCarousel: BootstrapPart = { key: 'bootstrap-carousel', css: carouselBootstrapStyles, page: false };
-export const bootstrapCarouselPage: BootstrapPart = { key: 'bootstrap-carousel', css: carouselBootstrapPageStyles, page: true };
-export const bootstrapSpinners: BootstrapPart = { key: 'bootstrap-spinners', css: spinnersBootstrapStyles, page: false };
-export const bootstrapSpinnersPage: BootstrapPart = { key: 'bootstrap-spinners', css: spinnersBootstrapPageStyles, page: true };
-export const bootstrapOffcanvas: BootstrapPart = { key: 'bootstrap-offcanvas', css: offcanvasBootstrapStyles, page: false };
-export const bootstrapOffcanvasPage: BootstrapPart = { key: 'bootstrap-offcanvas', css: offcanvasBootstrapPageStyles, page: true };
-export const bootstrapPlaceholders: BootstrapPart = { key: 'bootstrap-placeholders', css: placeholdersBootstrapStyles, page: false };
-export const bootstrapPlaceholdersPage: BootstrapPart = { key: 'bootstrap-placeholders', css: placeholdersBootstrapPageStyles, page: true };
+export const bootstrapContainers: BootstrapPart = { key: 'bootstrap-containers', css: containersBootstrapStyles, page: false, order: 0 };
+export const bootstrapContainersPage: BootstrapPart = { key: 'bootstrap-containers', css: containersBootstrapPageStyles, page: true, order: 0 };
+export const bootstrapGrid: BootstrapPart = { key: 'bootstrap-grid', css: gridBootstrapStyles, page: false, order: 1 };
+export const bootstrapGridPage: BootstrapPart = { key: 'bootstrap-grid', css: gridBootstrapPageStyles, page: true, order: 1 };
+export const bootstrapTables: BootstrapPart = { key: 'bootstrap-tables', css: tablesBootstrapStyles, page: false, order: 2 };
+export const bootstrapTablesPage: BootstrapPart = { key: 'bootstrap-tables', css: tablesBootstrapPageStyles, page: true, order: 2 };
+export const bootstrapForms: BootstrapPart = { key: 'bootstrap-forms', css: formsBootstrapStyles, page: false, order: 3 };
+export const bootstrapFormsPage: BootstrapPart = { key: 'bootstrap-forms', css: formsBootstrapPageStyles, page: true, order: 3 };
+export const bootstrapTransitions: BootstrapPart = { key: 'bootstrap-transitions', css: transitionsBootstrapStyles, page: false, order: 5 };
+export const bootstrapTransitionsPage: BootstrapPart = { key: 'bootstrap-transitions', css: transitionsBootstrapPageStyles, page: true, order: 5 };
+export const bootstrapDropdown: BootstrapPart = { key: 'bootstrap-dropdown', css: dropdownBootstrapStyles, page: false, order: 6 };
+export const bootstrapDropdownPage: BootstrapPart = { key: 'bootstrap-dropdown', css: dropdownBootstrapPageStyles, page: true, order: 6 };
+export const bootstrapButtonGroup: BootstrapPart = { key: 'bootstrap-button-group', css: buttonGroupBootstrapStyles, page: false, order: 7 };
+export const bootstrapButtonGroupPage: BootstrapPart = { key: 'bootstrap-button-group', css: buttonGroupBootstrapPageStyles, page: true, order: 7 };
+export const bootstrapNav: BootstrapPart = { key: 'bootstrap-nav', css: navBootstrapStyles, page: false, order: 8 };
+export const bootstrapNavPage: BootstrapPart = { key: 'bootstrap-nav', css: navBootstrapPageStyles, page: true, order: 8 };
+export const bootstrapNavbar: BootstrapPart = { key: 'bootstrap-navbar', css: navbarBootstrapStyles, page: false, order: 9 };
+export const bootstrapNavbarPage: BootstrapPart = { key: 'bootstrap-navbar', css: navbarBootstrapPageStyles, page: true, order: 9 };
+export const bootstrapCard: BootstrapPart = { key: 'bootstrap-card', css: cardBootstrapStyles, page: false, order: 10 };
+export const bootstrapCardPage: BootstrapPart = { key: 'bootstrap-card', css: cardBootstrapPageStyles, page: true, order: 10 };
+export const bootstrapAccordion: BootstrapPart = { key: 'bootstrap-accordion', css: accordionBootstrapStyles, page: false, order: 11 };
+export const bootstrapAccordionPage: BootstrapPart = { key: 'bootstrap-accordion', css: accordionBootstrapPageStyles, page: true, order: 11 };
+export const bootstrapBreadcrumb: BootstrapPart = { key: 'bootstrap-breadcrumb', css: breadcrumbBootstrapStyles, page: false, order: 12 };
+export const bootstrapBreadcrumbPage: BootstrapPart = { key: 'bootstrap-breadcrumb', css: breadcrumbBootstrapPageStyles, page: true, order: 12 };
+export const bootstrapPagination: BootstrapPart = { key: 'bootstrap-pagination', css: paginationBootstrapStyles, page: false, order: 13 };
+export const bootstrapPaginationPage: BootstrapPart = { key: 'bootstrap-pagination', css: paginationBootstrapPageStyles, page: true, order: 13 };
+export const bootstrapBadge: BootstrapPart = { key: 'bootstrap-badge', css: badgeBootstrapStyles, page: false, order: 14 };
+export const bootstrapBadgePage: BootstrapPart = { key: 'bootstrap-badge', css: badgeBootstrapPageStyles, page: true, order: 14 };
+export const bootstrapAlert: BootstrapPart = { key: 'bootstrap-alert', css: alertBootstrapStyles, page: false, order: 15 };
+export const bootstrapAlertPage: BootstrapPart = { key: 'bootstrap-alert', css: alertBootstrapPageStyles, page: true, order: 15 };
+export const bootstrapProgress: BootstrapPart = { key: 'bootstrap-progress', css: progressBootstrapStyles, page: false, order: 16 };
+export const bootstrapProgressPage: BootstrapPart = { key: 'bootstrap-progress', css: progressBootstrapPageStyles, page: true, order: 16 };
+export const bootstrapListGroup: BootstrapPart = { key: 'bootstrap-list-group', css: listGroupBootstrapStyles, page: false, order: 17 };
+export const bootstrapListGroupPage: BootstrapPart = { key: 'bootstrap-list-group', css: listGroupBootstrapPageStyles, page: true, order: 17 };
+export const bootstrapClose: BootstrapPart = { key: 'bootstrap-close', css: closeBootstrapStyles, page: false, order: 18 };
+export const bootstrapClosePage: BootstrapPart = { key: 'bootstrap-close', css: closeBootstrapPageStyles, page: true, order: 18 };
+export const bootstrapToasts: BootstrapPart = { key: 'bootstrap-toasts', css: toastsBootstrapStyles, page: false, order: 19 };
+export const bootstrapToastsPage: BootstrapPart = { key: 'bootstrap-toasts', css: toastsBootstrapPageStyles, page: true, order: 19 };
+export const bootstrapModal: BootstrapPart = { key: 'bootstrap-modal', css: modalBootstrapStyles, page: false, order: 20 };
+export const bootstrapModalPage: BootstrapPart = { key: 'bootstrap-modal', css: modalBootstrapPageStyles, page: true, order: 20 };
+export const bootstrapTooltip: BootstrapPart = { key: 'bootstrap-tooltip', css: tooltipBootstrapStyles, page: false, order: 21 };
+export const bootstrapTooltipPage: BootstrapPart = { key: 'bootstrap-tooltip', css: tooltipBootstrapPageStyles, page: true, order: 21 };
+export const bootstrapPopover: BootstrapPart = { key: 'bootstrap-popover', css: popoverBootstrapStyles, page: false, order: 22 };
+export const bootstrapPopoverPage: BootstrapPart = { key: 'bootstrap-popover', css: popoverBootstrapPageStyles, page: true, order: 22 };
+export const bootstrapCarousel: BootstrapPart = { key: 'bootstrap-carousel', css: carouselBootstrapStyles, page: false, order: 23 };
+export const bootstrapCarouselPage: BootstrapPart = { key: 'bootstrap-carousel', css: carouselBootstrapPageStyles, page: true, order: 23 };
+export const bootstrapSpinners: BootstrapPart = { key: 'bootstrap-spinners', css: spinnersBootstrapStyles, page: false, order: 24 };
+export const bootstrapSpinnersPage: BootstrapPart = { key: 'bootstrap-spinners', css: spinnersBootstrapPageStyles, page: true, order: 24 };
+export const bootstrapOffcanvas: BootstrapPart = { key: 'bootstrap-offcanvas', css: offcanvasBootstrapStyles, page: false, order: 25 };
+export const bootstrapOffcanvasPage: BootstrapPart = { key: 'bootstrap-offcanvas', css: offcanvasBootstrapPageStyles, page: true, order: 25 };
+export const bootstrapPlaceholders: BootstrapPart = { key: 'bootstrap-placeholders', css: placeholdersBootstrapStyles, page: false, order: 26 };
+export const bootstrapPlaceholdersPage: BootstrapPart = { key: 'bootstrap-placeholders', css: placeholdersBootstrapPageStyles, page: true, order: 26 };

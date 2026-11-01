@@ -36,7 +36,8 @@ retired model (framework components wrapping `<mp-*>` web components, shadow-roo
 Bootstrap global). Where they conflict with these invariants, the invariants win.
 
 **Styling design: `docs/prd/per-component-styles-452.md`** (#452) — attribute-scoped Bootstrap parts,
-one sublayer per partial in stock order, installed per component. Read it before changing any styling.
+one shared `mp.bootstrap.components` layer kept in stock order by the registry, installed per component.
+Read it before changing any styling.
 (`docs/prd/per-component-styles-restart.md` is the history of the first attempt.)
 
 ## What this workspace is
@@ -298,10 +299,13 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
   workspace patches (`styles/baseline/*`). Angular's `_bootstrap.scss` re-exports it; React and Vue apps
   import it instead of `bootstrap.min.css`.
-- **C3. Cascade layers.** The baseline declares the order once: `mp.bootstrap.<sublayer>` for base, every
-  partial in STOCK `bootstrap.scss` order, helpers and utilities, then `mp.components`. Every part repeats
-  the statement. This preserves Bootstrap's source-order semantics across separately loaded sheets (a
-  later `.fixed-top` beats `.navbar`). Component rules beat Bootstrap regardless of specificity, a
+- **C3. Cascade layers.** The baseline declares the order once: `mp.bootstrap.{base, components, helpers,
+  utilities}`, then `mp.components`; every part repeats the statement. **Every part (and the baseline's
+  buttons) shares the ONE `mp.bootstrap.components` layer**, so specificity between partials decides as in
+  stock Bootstrap (`.card > .list-group` beats `.list-group`; a layer PER partial broke ~96 such overrides,
+  measured). Equal-specificity ties follow stock order because the registry inserts part sheets sorted by
+  `part.order` (`BOOTSTRAP_PARTIAL_ORDER`): `<style>` tags, adopted sheets, SSR output and shadow mirrors
+  alike. Helpers and utilities stay later layers (a `.fixed-top` beats `.navbar`). Component rules beat Bootstrap regardless of specificity, a
   consumer's unlayered CSS beats both (theming needs no `!important`), and Bootstrap's `!important`
   utilities still win.
 - **C4. A scoped sheet carries only what Bootstrap lacks** — layout, state on native carriers

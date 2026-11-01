@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { DatetimePickerInputs } from '@mintplayer/ui-core/datetime-picker';
 import { BsDatetimePickerValueAccessor } from './value-accessor/datetime-picker-value-accessor';
 

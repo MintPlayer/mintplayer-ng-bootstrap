@@ -104,8 +104,9 @@ export const isLightScss = (file) => file.endsWith('.light.scss');
 export const isScopedScss = (file) => file.endsWith('.scoped.scss');
 
 // Per-component Bootstrap parts of @mintplayer/ui-core (#452): one stock
-// partial each, in its own `mp.bootstrap.<partial>` sublayer, so a front
-// installs only the partials its markup uses. Two variants per module:
+// partial each, in the shared `mp.bootstrap.components` sublayer (stock order
+// between parts is kept by the registry), so a front installs only the
+// partials its markup uses. Two variants per module:
 // `cardBootstrapStyles`, attribute-scoped with `:where([data-mps])`
 // (lib/scope-bootstrap.mjs) for components, and `cardBootstrapPageStyles`,
 // verbatim, for raw Bootstrap markup a page renders.
@@ -226,7 +227,8 @@ export async function processBootstrapStyles(scssPath, repoRoot = REPO_ROOT) {
   const camel = toCamelCase(base);
 
   const compiled = compileScss(scssPath, repoRoot).trimEnd();
-  const layer = `mp.bootstrap.${base}`;
+  // Every part shares one layer; the registry keeps stock order between them (#452).
+  const layer = 'mp.bootstrap.components';
   const next = buildBootstrapPartModule({
     scoped: wrapInLayer(scopeBootstrapPart(compiled, base).css.trimEnd(), layer),
     page: wrapInLayer(compiled, layer),

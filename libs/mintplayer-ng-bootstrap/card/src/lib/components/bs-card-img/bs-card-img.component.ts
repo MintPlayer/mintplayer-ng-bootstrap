@@ -47,6 +47,10 @@ import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
     }
   `,
   host: { '[attr.data-mps]': '"card"', '[class]': 'hostClass()' },
+  // The host is a custom element, inline by default; Bootstrap's card parts need
+  // a block box (#452 issue 2). Unlayered, so it beats the layered card part,
+  // while Bootstrap's !important display utilities (d-none) still win.
+  styles: ':host { display: block; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardImgComponent {

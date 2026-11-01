@@ -1,5 +1,6 @@
-// Baseline sublayer mp.bootstrap.buttons: between forms and transitions, where
-// stock bootstrap.scss imports it.
+// Baseline buttons, in the shared mp.bootstrap.components sublayer with every
+// component part, so specificity decides between them as in stock Bootstrap
+// (.input-group-lg > .btn, in forms, must beat .btn).
 @import "../parts/config";
 @import "bootstrap/scss/buttons";
 

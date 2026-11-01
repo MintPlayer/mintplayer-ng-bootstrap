@@ -21,7 +21,8 @@ import {
   type CheckboxState,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
-import { BsControlValidityDirective, BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';

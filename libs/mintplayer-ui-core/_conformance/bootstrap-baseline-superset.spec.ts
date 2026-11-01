@@ -20,6 +20,7 @@ import { compile, Logger } from 'sass';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { BOOTSTRAP_PARTIAL_ORDER, BOOTSTRAP_SUBLAYERS } from '../../../tools/scripts/lib/wc-codegen.mjs';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const options = { loadPaths: [join(repoRoot, 'node_modules')], logger: Logger.silent, quietDeps: true };
@@ -48,21 +49,23 @@ describe('Bootstrap baseline', () => {
     expect([...classesOf(stockCss)].filter((name) => !shipped.has(name))).toEqual([]);
   });
 
-  it('orders the mp.bootstrap sublayers as stock bootstrap.scss imports its partials', () => {
-    // Baseline and parts are separate sheets installed in any order, so the
-    // sublayer order is what keeps .fixed-top (helpers) above .navbar's
-    // position: relative. Config imports emit no CSS; root..images are "base".
+  it('declares base, components, helpers, utilities, and keeps the partial order stock', () => {
+    // Baseline and parts are separate sheets installed in any order: base must
+    // come first and helpers/utilities last (.fixed-top over .navbar's
+    // position: relative). Buttons and every part share `components`, where
+    // specificity decides as in stock; the registry keeps stock order between
+    // parts (BOOTSTRAP_PARTIAL_ORDER). Config imports emit no CSS; root..images are "base".
+    expect(baselineCss).toContain(`@layer ${BOOTSTRAP_SUBLAYERS.map((name: string) => `mp.bootstrap.${name}`).join(', ')};`);
+    expect(BOOTSTRAP_SUBLAYERS).toEqual(['base', 'components', 'helpers', 'utilities']);
     const config = ['mixins/banner', 'functions', 'variables', 'variables-dark', 'maps', 'mixins', 'utilities'];
     const base = ['root', 'reboot', 'type', 'images'];
     const stock = [...readFileSync(join(repoRoot, 'node_modules/bootstrap/scss/bootstrap.scss'), 'utf8').matchAll(/@import "([^"]+)"/g)]
       .map((m) => m[1])
-      .filter((name) => !config.includes(name) && !base.includes(name))
-      .map((name) => (name === 'utilities/api' ? 'utilities' : name));
-    const expected = `@layer ${['base', ...stock].map((name) => `mp.bootstrap.${name}`).join(', ')};`;
-    expect(baselineCss).toContain(expected);
-    // Every part names a sublayer of its own; buttons and helpers stay in the baseline.
+      .filter((name) => !config.includes(name) && !base.includes(name) && !['helpers', 'utilities/api'].includes(name));
+    expect(BOOTSTRAP_PARTIAL_ORDER).toEqual(stock);
+    // Every partial but buttons is a part; buttons stays in the baseline.
     const partNames = Object.keys(parts).map((name) => name.replace('.bootstrap.scss', ''));
-    expect(stock.filter((name) => !partNames.includes(name))).toEqual(['buttons', 'helpers', 'utilities']);
+    expect(stock.filter((name) => !partNames.includes(name))).toEqual(['buttons']);
   });
 
   it('ships no component partial page-wide', () => {

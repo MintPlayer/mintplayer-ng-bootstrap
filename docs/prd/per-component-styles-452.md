@@ -87,7 +87,7 @@ existing ui-core `codegen` target compiles each one into a TypeScript string mod
 - **`bootstrap<Partial>`**: attribute-scoped (§3.2). Every component installs this one.
 - **`bootstrap<Partial>Page`**: verbatim. Only for raw Bootstrap markup that a page component renders.
 
-Both variants are wrapped in `@layer mp.bootstrap.<partial>` (§3.3) and share **one registry key**,
+Both variants are wrapped in `@layer mp.bootstrap.components` (§3.3) and share **one registry key**,
 `bootstrap-<partial>`. **A page never holds two copies of a partial.** The verbatim variant matches a
 superset of what the scoped one matches, with identical specificity (§3.2). So installing `…Page` when the
 scoped copy is already present replaces the copy's text, and the reverse is a no-op. SSR collects the
@@ -133,19 +133,39 @@ The Bootstrap copy is rewritten so that it matches only stamped elements.
    `:where([data-mps])`, on an owned compound, except the listed verbatim rules. No scoped selector matches a
    decoy tree of unstamped elements that use our class names (the existing light-styles decoy approach).
 
-### 3.3 Order: one sublayer per partial, in stock Bootstrap order
+### 3.3 Order: one shared components layer, part sheets kept in stock order
 
 Splitting Bootstrap into separate sheets breaks the source order it relies on. The first attempt hit this:
 `.navbar { position: relative }` beat `.fixed-top`. So the baseline declares, once, at its top:
 
 ```
-@layer mp.bootstrap.{base, containers, grid, tables, forms, buttons, transitions, dropdown, button-group,
-  nav, navbar, card, accordion, breadcrumb, pagination, badge, alert, progress, list-group, close, toasts,
-  modal, tooltip, popover, carousel, spinners, offcanvas, placeholders, helpers, utilities}, mp.components;
+@layer mp.bootstrap.base, mp.bootstrap.components, mp.bootstrap.helpers, mp.bootstrap.utilities;
 ```
 
-Every part sheet repeats that statement, so its position is fixed even if it loads first. One codegen
-constant is the source of truth. A spec checks that the baseline's statement matches it.
+(followed by `mp.components`). Every part sheet repeats the statement, so its position is fixed even if it
+loads first. One codegen constant (`BOOTSTRAP_SUBLAYERS`) is the source of truth; a spec checks the baseline.
+
+**Why not one sublayer per partial.** That was the first version of this PRD. It is wrong: a later layer
+beats an earlier one *regardless of specificity*, while stock Bootstrap is one sheet in which a more
+specific rule of an earlier partial beats a less specific one of a later partial. Measured on 5.3, a layer
+per partial breaks about 96 such overrides: navbar > offcanvas 84 (`.navbar-expand-lg .offcanvas`),
+forms > buttons 6, dropdown > nav 3, card > list-group 2 (`.card > .list-group`, issue 3), alert > close 1.
+
+So every part (and the baseline's buttons) sits in ONE layer, `mp.bootstrap.components`, where specificity
+decides as it does in stock Bootstrap. What is left to source order is the equal-specificity ties between
+partials (`.card-header-tabs` after `.nav-tabs`, `.navbar-nav .nav-link` after `.nav-link`, offcanvas after
+navbar). Each part carries `order`, its index in stock `bootstrap.scss` (`BOOTSTRAP_PARTIAL_ORDER`), and the
+registry inserts part sheets in that order whatever order components install them:
+
+- in the browser, a part is adopted at its sorted position among the adopted sheets; if a server-rendered
+  part `<style data-mp-order>` with a higher order is already in the head, it is written as a `<style>`
+  right before that tag instead (adopted sheets cascade after every `<style>`);
+- Angular SSR writes into `DOCUMENT.head` at the sorted position; React/Vue `collectScopedStyles()` emits
+  sorted, with `data-mp-order`;
+- `adoptLightStyles` mirrors into a shadow root in the same order.
+
+The baseline's buttons (stock order 4) never tie with a part at equal specificity, so they need no
+ordering.
 
 ### 3.4 Install: the existing registry, identical in every front
 
@@ -196,18 +216,18 @@ The inventory is in §9.
 ## 4. The four observed issues
 
 1. **Global partials.** Fixed by §3.
-2. **Angular card part hosts render `display: inline`.** `bs-card-body` / `-header` / `-footer` / `-img`
-   and the other hosts listed in the restart brief get `display: block` (or `flex`) in the component's own
-   scoped sheet, as a `:host`-equivalent rule on the group scope. They lose the `d-block` utility, which
-   used `!important` and fought `d-none`.
-3. **A list group in a card** lost `border-radius: 0` and `margin: -1px`. Stock `.card > .list-group` (card
-   part) now sits in the `card` sublayer, after `list-group`. That is the stock order, so it wins again.
-   This only holds once the list group's partial is layered too (Q1).
+2. **Angular card part hosts render `display: inline`.** `bs-card-header` / `-body` / `-footer` /
+   `-title` / `-subtitle` / `-text` / `-img` get `:host { display: block }` in the component's own styles.
+   The subtitle, text and title lose the `d-block` utility, which used `!important` and fought `d-none`.
+3. **A list group in a card** lost `border-radius: 0` and `margin: -1px`. Stock `.card > .list-group`
+   (0,2,0) beats `.list-group` (0,1,0) again because both now sit in the one shared layer (§3.3). (The
+   first version claimed the card partial follows list-group in stock order; it does not. Stock
+   list-group comes after card, and only specificity makes the card rule win.)
 4. **Table nowrap.** `.nowrap th, td` becomes `.table-responsive.nowrap :is(th, td)` (exact selector to
    check against the table's markup), so only the cells of a responsive table are affected.
 
-Also in this PR: split the `ng-bootstrap/a11y` barrel so `control-validity` (and with it `@angular/forms`)
-is a separate entry.
+Also in this PR: split the `ng-bootstrap/a11y` barrel. `BsControlValidityDirective` (and with it
+`@angular/forms`) moves to the nested entry `@mintplayer/ng-bootstrap/a11y/forms`.
 
 ## 5. Owner decisions (2026-11-01)
 
@@ -227,6 +247,20 @@ is a separate entry.
 
   Converting the Angular-only components into full D10 cores is a separate task, with an issue to be
   filed. In this PR they only gain stamping and a part install.
+- **Q3. One shared components layer + an ordered registry** (§3.3), replacing the layer per partial.
+- **Q4. Breaking changes, documented in the CHANGELOG:**
+  - `@mintplayer/ng-bootstrap/container` and `/table-styles` are deleted: `bs-grid` / `bs-table`
+    install the containers and tables parts; raw markup installs `bootstrapContainersPage` /
+    `bootstrapTablesPage`;
+  - `BsControlValidityDirective` moves to `@mintplayer/ng-bootstrap/a11y/forms`;
+  - Bootstrap's component partials are no longer in the global stylesheet.
+- **Q5. React/Vue SSR collect a per-process superset (accepted).** The registry is process-wide, so a
+  React or Vue SSR response carries every part an earlier request installed. That is correct, only
+  heavier. Angular writes into each request's `DOCUMENT` and is exact. A per-request collector is a
+  later improvement.
+
+`mp-card` (a slot-based Lit element) installs `bootstrapCardPage`: its children are raw consumer markup
+(`<div class="card-body">`), which no component stamps.
 
 ## 6. Docs updated in this PR
 
@@ -257,7 +291,7 @@ is a separate entry.
   - `@angular/forms` is no longer in `main`.
 - **Visual:** the card, list-group-in-card, table, navbar `fixed-top`, forms and modal pages in all three
   demos, with JS on and with JS off. SSR HTML carries the part `<style>` tags.
-- **Specs:** the scoping conformance spec and the layer-order spec; the existing scoped-style and passthrough
+- **Specs:** the scoping conformance spec, the layer-order spec and the registry order specs; the existing scoped-style and passthrough
   suites; one run of the unit and e2e sweep at the end.
 
 ## 9. Inventory: which partials each component needs
@@ -276,8 +310,8 @@ is a separate entry.
 | forms | checkbox, radio, toggle-button, select, input-group, datepicker, datetime-picker, timepicker, phone-input, otp-input, signature-pad, scheduler; ng form / `bsFormControl` / floating-labels / range |
 | forms, button-group | query-builder |
 | grid | ng grid directives |
-| containers | ng container |
-| tables | ng table |
+| containers | ng grid (`bs-grid`; the `container` entry is deleted) |
+| tables | ng table (the `table-styles` entry is deleted) |
 
 The Angular-only components alert, badge, breadcrumb, button-group, close, list-group, progress, spinner,
 placeholder and tooltip each need their own partial. A few need more:

@@ -10,6 +10,29 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Bootstrap's component partials ship per component (issue #452).** The global stylesheet
+  (`@mintplayer/ng-bootstrap/bootstrap.scss`, `@mintplayer/ui-core/styles/bootstrap`) now holds only the
+  page-level baseline: root, reboot, type, images, buttons, helpers and utilities. Each component installs
+  the partials its markup uses (`.card`, `.list-group`, `.form-control`, `.modal`, …) once per page, scoped to
+  the DOM it rendered (`:where([data-mps])`, stock specificity), in its own lazy chunk and in the SSR head.
+  - **Raw Bootstrap markup you write yourself** (`<div class="card">`, `<table class="table">`, a plain
+    `.form-control`) is no longer styled by the global sheet. Install the verbatim part from the page that
+    renders it: Angular `useBootstrap(bootstrapCardPage)` (`@mintplayer/ng-bootstrap/machine`) in the
+    constructor, React/Vue/plain `installBootstrap(bootstrapCardPage)`; the parts come from
+    `@mintplayer/ui-core/bootstrap`.
+  - Sub-classes on content you project into a component (`<h5 class="card-title">` inside `bs-card-body`)
+    are not styled by the scoped part: use the component (`bs-card-title`) or install the `…Page` part.
+  - `@mintplayer/ng-bootstrap/container` and `@mintplayer/ng-bootstrap/table-styles` are removed. `bs-grid`
+    and `bs-table` install the containers and tables parts; raw markup installs `bootstrapContainersPage` /
+    `bootstrapTablesPage`.
+  - `@layer mp.bootstrap` now has sublayers `base, components, helpers, utilities`; every partial sits in
+    `mp.bootstrap.components`. CSS that adds rules to `@layer mp.bootstrap` directly now lands after them.
+  - The Angular card parts (`bs-card-header`, `-body`, `-footer`, `-title`, `-subtitle`, `-text`, `-img`)
+    are `display: block` hosts and no longer carry the `d-block` class.
+- **`BsControlValidityDirective` moved to `@mintplayer/ng-bootstrap/a11y/forms` (issue #452)**, so
+  `@mintplayer/ng-bootstrap/a11y` no longer pulls `@angular/forms` into your bundle. **Migration**: change the
+  import path.
+
 - **Datatable filters are a two-way model applied by the server (issue #448).** A `fetch` table never
   filters rows itself any more; it sends the active filters with every request.
   - **`filters` model** (`[(filters)]`, `v-model:filters`, `filters` + `onFiltersChange`, Lit `filters`

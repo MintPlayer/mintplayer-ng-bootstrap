@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { TimepickerInputs } from '@mintplayer/ui-core/timepicker';
 import { BsTimepickerValueAccessor } from './value-accessor/timepicker-value-accessor';
 

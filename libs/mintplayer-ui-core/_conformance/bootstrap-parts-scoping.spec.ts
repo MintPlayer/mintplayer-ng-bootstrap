@@ -13,7 +13,7 @@
  * - structure: every selector carries the guard exactly once, top-level, right
  *   after the LEFTMOST class the partial owns; only class-less selectors
  *   (`:root`, `[data-bs-theme]` token blocks) ship without one;
- * - layering: the order statements first, then one `mp.bootstrap.<partial>` block;
+ * - layering: the order statements first, then one `mp.bootstrap.components` block;
  * - decoy: no scoped selector matches an unstamped tree that uses the classes;
  *   a stamped copy of the same tree is matched (positive control).
  */
@@ -21,7 +21,7 @@ import postcss from 'postcss';
 import selectorParser from 'postcss-selector-parser';
 // The ownership table is the codegen's; the spec holds the output to it.
 import { OWNED_CLASSES, SCOPE_GUARD } from '../../../tools/scripts/lib/scope-bootstrap.mjs';
-import { BOOTSTRAP_SUBLAYERS } from '../../../tools/scripts/lib/wc-codegen.mjs';
+import { BOOTSTRAP_PARTIAL_ORDER, BOOTSTRAP_SUBLAYERS } from '../../../tools/scripts/lib/wc-codegen.mjs';
 
 type PartModule = Record<string, string>;
 const modules = import.meta.glob<PartModule>('../styles/parts/*.bootstrap.styles.ts', { eager: true });
@@ -49,8 +49,8 @@ function selectorsOf(css: string): string[] {
 const isGuard = (node: selectorParser.Node) => node.type === 'pseudo' && String(node) === SCOPE_GUARD;
 
 describe('Bootstrap parts', () => {
-  it('compiles one module per sublayer that is not page-level', () => {
-    const expected = BOOTSTRAP_SUBLAYERS.filter((name: string) => !['base', 'buttons', 'helpers', 'utilities'].includes(name));
+  it('compiles one module per component partial (buttons stays in the baseline)', () => {
+    const expected = BOOTSTRAP_PARTIAL_ORDER.filter((name: string) => name !== 'buttons');
     expect(parts.map((part) => part.name).sort()).toEqual([...expected].sort());
     expect(parts.every((part) => typeof part.scoped === 'string' && typeof part.page === 'string')).toBe(true);
   });
@@ -66,12 +66,12 @@ describe.each(parts)('part "$name"', ({ name, scoped, page }) => {
     expect(scoped).not.toBe(page);
   });
 
-  it('starts with the layer order and keeps every rule in its own sublayer', () => {
+  it('starts with the layer order and keeps every rule in the shared components sublayer', () => {
     const top = postcss.parse(scoped).nodes.filter((node) => node.type !== 'comment');
     expect(top.map((node) => (node as postcss.AtRule).name)).toEqual(['layer', 'layer', 'layer']);
     expect((top[0] as postcss.AtRule).params).toBe('mp.bootstrap, mp.components');
     expect((top[1] as postcss.AtRule).params).toBe(BOOTSTRAP_SUBLAYERS.map((s: string) => `mp.bootstrap.${s}`).join(', '));
-    expect((top[2] as postcss.AtRule).params).toBe(`mp.bootstrap.${name}`);
+    expect((top[2] as postcss.AtRule).params).toBe('mp.bootstrap.components');
   });
 
   it('guards exactly the leftmost owned class of every selector that has a class', () => {

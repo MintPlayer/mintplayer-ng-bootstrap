@@ -78,6 +78,47 @@ describe('installLightStyles — replace', () => {
   });
 });
 
+// #452: Bootstrap parts share one cascade layer, so the registry keeps them in
+// stock order whatever the install order (equal-specificity ties).
+const orderedKeys = (parent: ParentNode, keys: string[]): string[] =>
+  [...parent.querySelectorAll('style[data-mp-light-styles]')]
+    .map((el) => el.getAttribute('data-mp-light-styles')!)
+    .filter((key) => keys.includes(key));
+
+describe('installLightStyles — order', () => {
+  it('writes ordered <style> tags sorted by order, whatever the install order', () => {
+    installLightStyles('t-o10', 'a{}', { order: 110 });
+    installLightStyles('t-o3', 'b{}', { order: 103 });
+    installLightStyles('t-o7', 'c{}', { order: 107 });
+    expect(orderedKeys(document.head, ['t-o3', 't-o7', 't-o10'])).toEqual(['t-o3', 't-o7', 't-o10']);
+    expect(styleFor('t-o7')?.getAttribute('data-mp-order')).toBe('107');
+  });
+
+  it('writeScopedStyleTag (the server DOCUMENT) sorts the same way', () => {
+    writeScopedStyleTag(document, 't-w9', 'a{}', { order: 129 });
+    writeScopedStyleTag(document, 't-w2', 'b{}', { order: 122 });
+    expect(orderedKeys(document.head, ['t-w2', 't-w9'])).toEqual(['t-w2', 't-w9']);
+  });
+
+  it('a replacing install keeps the position of the first', () => {
+    installLightStyles('t-p5', '.x:where([data-mps]){}', { order: 135 });
+    installLightStyles('t-p6', 'y{}', { order: 136 });
+    installLightStyles('t-p5', '.x{}', { order: 135, replace: true });
+    expect(orderedKeys(document.head, ['t-p5', 't-p6'])).toEqual(['t-p5', 't-p6']);
+    expect(styleFor('t-p5')?.textContent).toBe('.x{}');
+  });
+
+  it('collectScopedStyles emits ordered sheets sorted, with their order', () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    installLightStyles('t-s8', 'a{}', { order: 148 });
+    installLightStyles('t-s1', 'b{}', { order: 141 });
+    head.mockRestore();
+    const tags = collectScopedStyles();
+    expect(tags.indexOf('"t-s1"')).toBeLessThan(tags.indexOf('"t-s8"'));
+    expect(tags).toContain('<style data-mp-light-styles="t-s1" data-mp-order="141">b{}</style>');
+  });
+});
+
 describe('adoptLightStyles', () => {
   it('mirrors current and future sheets into a shadow root', () => {
     installLightStyles('t-c', 'mp-c{color:red}');
@@ -166,6 +207,43 @@ describe('installLightStyles — constructable stylesheets', () => {
     const entry = getLightStyleEntries().find((e) => e.key === 't-sheet-f')!;
     expect(entry.sheet).toBeInstanceOf(CSSStyleSheet);
     expect(document.adoptedStyleSheets).toContain(entry.sheet);
+  });
+
+  const sheetOf = (key: string) => getLightStyleEntries().find((e) => e.key === key)!.sheet!;
+
+  it('adopts ordered sheets at their sorted position', () => {
+    installLightStyles('t-a10', 'a{}', { order: 210 });
+    installLightStyles('t-a3', 'b{}', { order: 203 });
+    installLightStyles('t-a7', 'c{}', { order: 207 });
+    const order = document.adoptedStyleSheets.filter((s) => [sheetOf('t-a3'), sheetOf('t-a7'), sheetOf('t-a10')].includes(s));
+    expect(order).toEqual([sheetOf('t-a3'), sheetOf('t-a7'), sheetOf('t-a10')]);
+  });
+
+  it('writes a <style> before a later server-rendered part instead of adopting after it', () => {
+    // Adopted sheets cascade after every <style>, so a part that must precede
+    // a server-rendered (marker <style>) part has to be a <style> too.
+    const ssr = document.createElement('style');
+    ssr.setAttribute('data-mp-light-styles', 't-ssr5');
+    ssr.setAttribute('data-mp-order', '305');
+    document.head.appendChild(ssr);
+    installLightStyles('t-ssr5', '', { order: 305 });
+    installLightStyles('t-c2', 'a{}', { order: 302 });
+    installLightStyles('t-c9', 'b{}', { order: 309 });
+    expect(orderedKeys(document.head, ['t-c2', 't-ssr5'])).toEqual(['t-c2', 't-ssr5']);
+    expect(document.adoptedStyleSheets).not.toContain(sheetOf('t-c2'));
+    expect(document.adoptedStyleSheets).toContain(sheetOf('t-c9'));
+    expect(styleFor('t-c9')).toBeNull();
+  });
+
+  it('mirrors ordered sheets into a shadow root in order', () => {
+    installLightStyles('t-m9', 'a{}', { order: 409 });
+    installLightStyles('t-m1', 'b{}', { order: 401 });
+    const root = document.createElement('div').attachShadow({ mode: 'open' });
+    const dispose = adoptLightStyles(root);
+    installLightStyles('t-m5', 'c{}', { order: 405 });
+    const order = root.adoptedStyleSheets.filter((s) => [sheetOf('t-m1'), sheetOf('t-m5'), sheetOf('t-m9')].includes(s));
+    expect(order).toEqual([sheetOf('t-m1'), sheetOf('t-m5'), sheetOf('t-m9')]);
+    dispose();
   });
 
   it('mirrors sheets into a shadow root once, without duplicates', () => {

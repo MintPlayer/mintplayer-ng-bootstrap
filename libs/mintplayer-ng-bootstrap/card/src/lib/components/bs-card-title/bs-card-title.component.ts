@@ -10,12 +10,14 @@ import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
   template: '<ng-content></ng-content>',
   host: {
     '[attr.data-mps]': '"card"',
-    // d-block: the host is a custom element, inline by default, and the
-    // title's margin needs a block box.
-    class: 'card-title d-block',
+    class: 'card-title',
     role: 'heading',
     '[attr.aria-level]': 'level()',
   },
+  // The host is a custom element, inline by default; Bootstrap's card parts need
+  // a block box (#452 issue 2). Unlayered, so it beats the layered card part,
+  // while Bootstrap's !important display utilities (d-none) still win.
+  styles: ':host { display: block; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardTitleComponent {

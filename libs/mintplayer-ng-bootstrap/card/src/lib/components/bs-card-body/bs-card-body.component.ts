@@ -12,6 +12,10 @@ import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
   selector: 'bs-card-body',
   template: '<ng-content></ng-content>',
   host: { '[attr.data-mps]': '"card"', class: 'card-body' },
+  // The host is a custom element, inline by default; Bootstrap's card parts need
+  // a block box (#452 issue 2). Unlayered, so it beats the layered card part,
+  // while Bootstrap's !important display utilities (d-none) still win.
+  styles: ':host { display: block; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCardBodyComponent {

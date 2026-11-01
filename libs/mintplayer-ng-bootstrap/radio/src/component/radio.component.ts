@@ -18,7 +18,8 @@ import {
   type RadioState,
 } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
-import { BsControlValidityDirective, BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
 import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 import { BsRadioType } from '../types/radio-type';

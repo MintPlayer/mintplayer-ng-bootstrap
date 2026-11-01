@@ -1,6 +1,6 @@
 import { DOCUMENT, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import type { BootstrapPart } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapInstallOptions, type BootstrapPart } from '@mintplayer/ui-core/bootstrap';
 import { installLightStyles, writeScopedStyleTag, type InstallOptions } from '@mintplayer/ui-core/scoped-styles';
 
 /**
@@ -35,7 +35,7 @@ export function useScopedStyles(key: string, cssText: string, options: InstallOp
  * the constructor (an injection context).
  */
 export function useBootstrap(...parts: readonly BootstrapPart[]): void {
-  parts.forEach((part) => useScopedStyles(part.key, part.css, { replace: part.page }));
+  parts.forEach((part) => useScopedStyles(part.key, part.css, bootstrapInstallOptions(part)));
 }
 
 /**

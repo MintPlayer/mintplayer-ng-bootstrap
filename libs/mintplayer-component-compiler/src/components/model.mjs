@@ -230,10 +230,15 @@ export function styleImports(model) {
   ];
 }
 
-/** The group's sheet install, as `<call>('<scope>', <sheet>);`, or none. */
+/**
+ * The group's sheet install, as `<call>('<scope>', <sheet>);`, or none. Its
+ * Bootstrap parts go first, each with its stock `order` so the registry keeps
+ * Bootstrap's order between part sheets (#452). A component always installs the
+ * scoped variant, which never replaces an installed copy.
+ */
 export const styleInstall = (model, call) =>
   model.style
-    ? [...model.style.bootstrap.map((part) => `${call}(${part}.key, ${part}.css);`), `${call}('${model.style.scope}', ${model.style.sheet});`].join(' ')
+    ? [...model.style.bootstrap.map((part) => `${call}(${part}.key, ${part}.css, { order: ${part}.order });`), `${call}('${model.style.scope}', ${model.style.sheet});`].join(' ')
     : null;
 
 /** A host bag stamped with the group's scope (Angular and Lit render no root element to stamp). */
