@@ -171,7 +171,7 @@ export class CardComponent {
   protected readonly snippetListGroupHtml = dedent`
     <bs-card class="d-block">
       <bs-card-header>List of elements</bs-card-header>
-      <bs-list-group>
+      <bs-list-group [flush]="true">
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
         <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
         <bs-list-group-item>Morbi leo risus</bs-list-group-item>

@@ -30,8 +30,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - The Angular card parts (`bs-card-header`, `-body`, `-footer`, `-title`, `-subtitle`, `-text`, `-img`)
     are `display: block` hosts and no longer carry the `d-block` class.
   - `bs-list-group`'s host is now the `.list-group` (`role="list"`); the inner `<ul>` is gone. Stock
-    `.card > .list-group` therefore applies to a list group in a `bs-card`, and `class="list-group-flush"`
-    on `<bs-list-group>` works.
+    `.card > .list-group` therefore applies to a list group in a `bs-card`.
 - **`BsControlValidityDirective` moved to `@mintplayer/ng-bootstrap/a11y/forms` (issue #452)**, so
   `@mintplayer/ng-bootstrap/a11y` no longer pulls `@angular/forms` into your bundle. **Migration**: change the
   import path.
@@ -898,6 +897,10 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     full-width table.
 
 ### Added
+
+- **`bs-list-group` `[flush]` input (issue #452).** Applies Bootstrap's `.list-group-flush` (no outer
+  borders, no rounded corners), so a list group in a `bs-card` sits edge to edge inside the card's border.
+  It replaces the `.card-body { margin: -1px }` the card shipped before #308.
 
 - **Datatable `pageLoad` output and response `extra` (issue #450).** `DatatableFetchResponse` takes an optional
   `extra` (JSON) for whatever else `fetch` reads off its response, and the seeded first page transfers it
