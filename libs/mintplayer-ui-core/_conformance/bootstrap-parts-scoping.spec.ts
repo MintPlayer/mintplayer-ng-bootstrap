@@ -17,7 +17,10 @@
  * - decoy: no scoped selector matches an unstamped tree that uses the classes;
  *   a stamped copy of the same tree is matched (positive control).
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import postcss from 'postcss';
+import type { BootstrapPart } from '../bootstrap/src/bootstrap-part';
 import selectorParser from 'postcss-selector-parser';
 // The ownership table is the codegen's; the spec holds the output to it.
 import { OWNED_CLASSES, SCOPE_GUARD } from '../../../tools/scripts/lib/scope-bootstrap.mjs';
@@ -53,6 +56,26 @@ describe('Bootstrap parts', () => {
     const expected = BOOTSTRAP_PARTIAL_ORDER.filter((name: string) => name !== 'buttons');
     expect(parts.map((part) => part.name).sort()).toEqual([...expected].sort());
     expect(parts.every((part) => typeof part.scoped === 'string' && typeof part.page === 'string')).toBe(true);
+  });
+
+  it('exports each part from its OWN module, with its stock order', () => {
+    // Bundlers assign whole modules to chunks: one module holding every part put
+    // all part CSS into the app shell's chunk (measured, React demo). One module
+    // per part lets each ride the lazy chunk of whoever installs it.
+    const partModules = import.meta.glob<Record<string, BootstrapPart>>('../bootstrap/src/parts/*.part.ts', { eager: true });
+    const found = Object.entries(partModules).map(([path, mod]) => {
+      const name = /([\w-]+)\.part\.ts$/.exec(path)![1];
+      const values = Object.values(mod);
+      return { name, keys: values.map((p) => p.key), orders: values.map((p) => p.order), pages: values.map((p) => p.page) };
+    });
+    expect(found.map((m) => m.name).sort()).toEqual(parts.map((part) => part.name).sort());
+    found.forEach(({ name, keys, orders, pages }) => {
+      expect(keys).toEqual([`bootstrap-${name}`, `bootstrap-${name}`]);
+      expect(orders).toEqual([BOOTSTRAP_PARTIAL_ORDER.indexOf(name), BOOTSTRAP_PARTIAL_ORDER.indexOf(name)]);
+      expect([...pages].sort()).toEqual([false, true]);
+    });
+    const barrel = readFileSync(resolve(import.meta.dirname, '../bootstrap/src/parts.ts'), 'utf8');
+    expect(barrel.split('\n').filter((line) => /^(import|export const)\b/.test(line))).toEqual([]);
   });
 
   it('has an ownership entry for every part', () => {

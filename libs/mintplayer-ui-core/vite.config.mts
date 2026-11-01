@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import { coverageConfigDefaults } from 'vitest/config';
 import dts from 'vite-plugin-dts';
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { copyPackageJson } from '../../tools/vite/copy-package-json.mts';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
@@ -12,6 +13,16 @@ export default defineConfig(() => {
   // re-exports `<entry>/src`, so `<entry>/index.mjs` + `<entry>/index.d.ts`
   // land at the same path and become `@mintplayer/ui-core/<entry>`.
   const entries = discoverEntries(import.meta.dirname, { requireBarrel: true });
+  // #452: every Bootstrap part is its own OUTPUT module too (bootstrap/parts/<p>.mjs,
+  // re-exported by bootstrap/index.mjs; not a subpath export). A consumer's bundler
+  // assigns whole modules to chunks, so a single bootstrap/index.mjs holding every
+  // part would put all of their CSS in the chunk of the first importer (the shell).
+  const partsDir = resolve(import.meta.dirname, 'bootstrap/src/parts');
+  const partEntries = Object.fromEntries(
+    readdirSync(partsDir)
+      .filter((file) => file.endsWith('.part.ts'))
+      .map((file) => [`bootstrap/parts/${file.replace(/\.part\.ts$/, '')}`, resolve(partsDir, file)]),
+  );
   const outDir = resolve(import.meta.dirname, '../../dist/libs/mintplayer-ui-core');
 
   return {
@@ -36,7 +47,7 @@ export default defineConfig(() => {
       reportCompressedSize: true,
       target: 'es2022',
       lib: {
-        entry: entries,
+        entry: { ...entries, ...partEntries },
         formats: ['es' as const],
         fileName: (_format, entryName) => `${entryName}.mjs`,
       },

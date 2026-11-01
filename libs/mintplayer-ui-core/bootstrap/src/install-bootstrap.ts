@@ -1,5 +1,5 @@
 import { installLightStyles, type InstallOptions } from '@mintplayer/ui-core/scoped-styles';
-import type { BootstrapPart } from './parts';
+import type { BootstrapPart } from './bootstrap-part';
 
 /**
  * Install Bootstrap parts at document level through the scoped-style registry
