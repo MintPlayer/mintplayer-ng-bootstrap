@@ -2,6 +2,19 @@
 
 Project-wide technical conventions for the `@mintplayer/*-bootstrap` workspace. Read this before adding components.
 
+## INVARIANTS — never change these, and ask before touching anything near them
+
+1. **Bootstrap styles ship PER COMPONENT** (#452, owner decision). A consumer app's globally loaded
+   stylesheet (Angular/React/Vue, including the demos) must bundle **no** component partial (card,
+   list-group, modal, forms, …). Never move a partial into `ui-core/styles/bootstrap.scss`,
+   `_bootstrap-stack.scss` or any app `styles.scss`, and never add a global opt-in. The page baseline is
+   page-level only (C2).
+2. **The Angular `:host ::ng-deep { @import bootstrap/scss/<partial> }` sheets are deliberate.** They are
+   not "duplicates of the baseline". Never delete them. To beat one, win on specificity in the
+   overriding component's own sheet.
+3. If something "looks wrong" with styling, the fix is local to the component (its part sheet or scoped
+   sheet). **"Make it global again" is never the fix.** If you think it is, stop and ask.
+
 ## What this workspace is
 
 A multi-framework Bootstrap component system. Since #437 (2026-10) every component is **a framework-neutral
@@ -98,11 +111,11 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   component inside it starves it (issue #408 again, one level up). Any such host must mirror the
   registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
   `mp-accordion` and `mp-shell` do it. `_conformance/light-styles-nesting.spec.ts` enforces it.
-- **Do not import a Bootstrap partial into a component sheet at all** (C4 under "Bootstrap
-  layering" below). The page ships the whole baseline, so a rescoped copy is a duplicate that
-  silently WINS on specificity (`.btn[data-mps=…]` beats `.btn`) and makes the page's own theming
-  unoverridable. Only a shadow-root element, which the page's CSS cannot reach, re-declares what it
-  needs (the `_styles/*.styles.scss` partial copies).
+- **Do not `@import` a Bootstrap partial into a light-tier `.light.scss` / scoped sheet** (C4 below).
+  A component's partial ships through its **part sheet** (`style.bootstrap` / `useBootstrap` /
+  `installBootstrap`, C1), never as a rescoped copy (`.btn[data-mps=…]` would beat the consumer's
+  theming) and **never by moving it into the page baseline** (see INVARIANTS). Only a shadow-root
+  element, which the page's CSS cannot reach, re-declares what it needs (`_styles/*.styles.scss`).
 - **Every document-level sheet goes through `installLightStyles` — light tier or not.** A slot-based
   component that needs document CSS for its slotted content (`mp-card`: `::slotted()` cannot reach
   `.card-title` inside a body, nor out-rank Bootstrap's `.card-header`) installs it through the
@@ -266,7 +279,8 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   Bootstrap partial** (functions, variables and mixins only): the partial goes in through `style.bootstrap`
   instead, so it is shipped once, layered, and verbatim. `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts`
   enforces it.
-- **C5. No front has a shadow root**, so no front imports partials. (The hand-written shadow-root Lit
+- **C5. No front has a shadow root**, so no front `@import`s partials into its scoped sheet; it gets
+  them through part sheets (C1). This does NOT apply to the Angular `:host ::ng-deep` sheets (keep them). (The hand-written shadow-root Lit
   elements are the exception and re-declare what they use from `web-components/_styles`.)
 - **C6. Dark mode is page-level**: `[data-bs-theme]` on `<html>` reaches every front. `@container
   style(--mp-color-mode)` queries exist only for shadow-root elements.
