@@ -97,7 +97,7 @@ export class CardComponent {
   readonly activePill = signal<typeof this.pillPages[number]>('Inbox');
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>Header</bs-card-header>
       <bs-card-body>
         <bs-card-title>Card title</bs-card-title>
@@ -131,7 +131,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetSimpleHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-body>
         <bs-card-title>Simple card</bs-card-title>
         <bs-card-text>Basic card with only body content.</bs-card-text>
@@ -140,7 +140,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetHeaderBodyFooterHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>Header</bs-card-header>
       <bs-card-body>
         <bs-card-title>Body title</bs-card-title>
@@ -154,7 +154,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetNestedHtml = dedent`
-    <bs-card class="d-block" style="max-width: 24rem;">
+    <bs-cardstyle="max-width: 24rem;">
       <bs-card-body>
         <bs-card-title>Outer card</bs-card-title>
         <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
@@ -169,7 +169,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetListGroupHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>List of elements</bs-card-header>
       <bs-list-group [flush]="true">
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
@@ -181,7 +181,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageTopHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-cardstyle="max-width: 320px;">
       <bs-card-img position="top" [src]="imageUrl" alt="placeholder"></bs-card-img>
       <bs-card-body>
         <bs-card-title>Top image</bs-card-title>
@@ -191,7 +191,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageBottomHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-cardstyle="max-width: 320px;">
       <bs-card-body>
         <bs-card-title>Bottom image</bs-card-title>
         <bs-card-text>Text above the image, inside the body.</bs-card-text>
@@ -201,7 +201,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageOverlayHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-cardstyle="max-width: 320px;">
       <bs-card-img position="overlay" [src]="imageUrl" alt="background">
         <bs-card-title>Overlaid title</bs-card-title>
         <bs-card-text>Overlaid description.</bs-card-text>
@@ -210,7 +210,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorFilledHtml = dedent`
-    <bs-card class="d-block" [color]="colors.primary">
+    <bs-card[color]="colors.primary">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>text-bg-primary applied to the host.</bs-card-text>
@@ -219,7 +219,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorOutlineHtml = dedent`
-    <bs-card class="d-block" [color]="colors.primary" [outline]="true">
+    <bs-card[color]="colors.primary" [outline]="true">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>border border-primary bg-transparent applied to the host.</bs-card-text>
@@ -228,7 +228,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetIndependentColorsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
       <bs-card-body>
         <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
@@ -257,7 +257,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetHorizontalHtml = dedent`
-    <bs-card class="d-block" style="max-width: 540px;">
+    <bs-cardstyle="max-width: 540px;">
       <bs-grid>
         <div bsRow class="g-0">
           <div [md]="4">
@@ -275,7 +275,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetNavTabsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>
         <ul class="nav nav-tabs card-header-tabs">
           @for (page of tabPages; track page) {
@@ -313,7 +313,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetNavPillsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>
         <ul class="nav nav-pills card-header-pills">
           @for (page of pillPages; track page) {
