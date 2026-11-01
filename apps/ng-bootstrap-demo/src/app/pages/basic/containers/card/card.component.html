@@ -198,7 +198,7 @@
 
 <bs-card class="mb-3">
     <bs-card-header>
-        <ul class="nav card-header-tabs">
+        <ul class="nav nav-tabs card-header-tabs">
             @for (page of tabPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activeTab()" href="#"
@@ -209,17 +209,24 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
-        <bs-card-text>The &lt;ul class="nav card-header-tabs"&gt; carries Bootstrap's own class; click a tab to switch the body content.</bs-card-text>
+        <bs-card-text>The &lt;ul class="nav nav-tabs card-header-tabs"&gt; carries Bootstrap's own classes; click a tab to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
 <bs-code-snippet [code]="snippetNavTabsHtml" [language]="'html'"></bs-code-snippet>
 
+<p>
+    The <code>&lt;ul class="nav"&gt;</code> is your own markup, so no component installs Bootstrap's nav
+    styles for it: the page that renders it installs them, and they load with that page only.
+</p>
+
+<bs-code-snippet [code]="snippetNavTs" [language]="'ts'"></bs-code-snippet>
+
 <h2>Header with nav-pills</h2>
 
 <bs-card class="mb-3">
     <bs-card-header>
-        <ul class="nav card-header-pills">
+        <ul class="nav nav-pills card-header-pills">
             @for (page of pillPages; track page) {
                 <li class="nav-item">
                     <a class="nav-link" [class.active]="page === activePill()" href="#"
@@ -230,7 +237,7 @@
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>
-        <bs-card-text>The nav carries <code>card-header-pills</code>; click a pill to switch the body content.</bs-card-text>
+        <bs-card-text>The nav carries <code>nav-pills card-header-pills</code>; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 

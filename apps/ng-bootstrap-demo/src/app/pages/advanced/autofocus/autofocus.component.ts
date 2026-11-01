@@ -13,6 +13,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AutofocusComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+
 
   protected readonly snippetBasicHtml = dedent`
     <input type="text" name="name" autofocus>
@@ -27,12 +32,7 @@ export class AutofocusComponent {
       templateUrl: './my-autofocus-demo.component.html',
       imports: [FocusOnLoadDirective],
     })
-    export class MyAutofocusDemoComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapFormsPage);
-  }
-}
+    export class MyAutofocusDemoComponent {}
   `;
 
 }

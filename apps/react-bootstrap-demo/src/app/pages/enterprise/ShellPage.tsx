@@ -1,4 +1,8 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapTablesPage);
 
 const SNIPPET_BASIC = `import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
@@ -30,10 +34,6 @@ const SNIPPET_HEIGHT = `/* The shell becomes its own scroll region (top bar + si
 
 const SNIPPET_STATE = `import { useState } from 'react';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
-import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
-
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapTablesPage);
 
 function Layout() {
   // 'auto' is responsive; 'show'/'hide' force the sidebar open/closed.

@@ -55,6 +55,11 @@ interface ApiEntry {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ThemingComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+
   private readonly theme = inject(BsThemeService);
   protected readonly colors = Color;
 
@@ -148,12 +153,7 @@ export class ThemingComponent {
       imports: [BsThemeToggleComponent],
       template: \`<bs-theme-toggle />\`,
     })
-    export class NavbarComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapFormsPage);
-  }
-}
+    export class NavbarComponent {}
   `;
 
   protected readonly localizedToggleSnippet = dedent`

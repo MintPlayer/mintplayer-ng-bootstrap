@@ -63,6 +63,11 @@ function makePlaceholder(width: number, height: number, label: string): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapNavPage, bootstrapCardPage);
+  }
+
   readonly colors = Color;
   readonly colorKeys: ReadonlyArray<keyof typeof Color> = [
     'primary',
@@ -122,12 +127,7 @@ export class CardComponent {
         BsCardTextComponent,
       ],
     })
-    export class MyCardDemoComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapNavPage, bootstrapCardPage);
-  }
-}
+    export class MyCardDemoComponent {}
   `;
 
   protected readonly snippetSimpleHtml = dedent`
@@ -277,7 +277,7 @@ export class CardComponent {
   protected readonly snippetNavTabsHtml = dedent`
     <bs-card class="d-block">
       <bs-card-header>
-        <ul class="nav card-header-tabs">
+        <ul class="nav nav-tabs card-header-tabs">
           @for (page of tabPages; track page) {
             <li class="nav-item">
               <a class="nav-link" [class.active]="page === activeTab()" href="#"
@@ -293,10 +293,29 @@ export class CardComponent {
     </bs-card>
   `;
 
+  // Raw <ul class="nav …"> is consumer markup: no component installs the nav
+  // part for it, so the page does (the verbatim variant, in its own chunk).
+  protected readonly snippetNavTs = dedent`
+    import { Component, signal } from '@angular/core';
+    import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+    import { bootstrapNavPage } from '@mintplayer/ui-core/bootstrap';
+
+    @Component({ … })
+    export class MyCardNavDemoComponent {
+      readonly tabPages = ['Profile', 'Activity', 'Settings'] as const;
+      readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
+
+      constructor() {
+        // The page renders raw .nav markup, so it installs Bootstrap's nav styles itself.
+        useBootstrap(bootstrapNavPage);
+      }
+    }
+  `;
+
   protected readonly snippetNavPillsHtml = dedent`
     <bs-card class="d-block">
       <bs-card-header>
-        <ul class="nav card-header-pills">
+        <ul class="nav nav-pills card-header-pills">
           @for (page of pillPages; track page) {
             <li class="nav-item">
               <a class="nav-link" [class.active]="page === activePill()" href="#"

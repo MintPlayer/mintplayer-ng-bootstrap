@@ -28,6 +28,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ScrollspyComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapContainersPage, bootstrapModalPage);
+  }
+
   readonly colors = Color;
   readonly isModalOpen = signal(false);
 
@@ -56,12 +61,7 @@ export class ScrollspyComponent {
       templateUrl: './my-scrollspy-demo.component.html',
       imports: [BsScrollspyComponent, BsScrollspyDirective],
     })
-    export class MyScrollspyDemoComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapContainersPage, bootstrapModalPage);
-  }
-}
+    export class MyScrollspyDemoComponent {}
   `;
 
   protected readonly snippetModalHtml = dedent`
