@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapNavPage, bootstrapCardPage } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 import {
   BsCardBodyComponent,
@@ -120,7 +122,12 @@ export class CardComponent {
         BsCardTextComponent,
       ],
     })
-    export class MyCardDemoComponent {}
+    export class MyCardDemoComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapNavPage, bootstrapCardPage);
+  }
+}
   `;
 
   protected readonly snippetSimpleHtml = dedent`

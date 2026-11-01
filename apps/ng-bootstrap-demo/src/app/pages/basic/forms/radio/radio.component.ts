@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
 import { JsonPipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { dedent } from 'ts-dedent';
@@ -30,6 +32,11 @@ interface Row {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RadioComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapTablesPage);
+  }
+
 
   // 1. Group, adjacent, template-driven
   readonly selectedFruit = signal<string>('apple');

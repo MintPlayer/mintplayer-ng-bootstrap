@@ -3,6 +3,11 @@ import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './shell/AppShell';
 import { HomePage } from './pages/HomePage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
+import { installBootstrap, bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap';
+
+// The shell renders a raw Bootstrap spinner (the route fallback), so the shell installs the verbatim
+// spinners part itself, never the global stylesheet (#452).
+installBootstrap(bootstrapSpinnersPage);
 
 /**
  * React.lazy() expects a module with a `default` export. Our pages use

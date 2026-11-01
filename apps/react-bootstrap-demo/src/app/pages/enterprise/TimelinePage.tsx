@@ -12,6 +12,10 @@ import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage);
 import './TimelinePage.css';
 
 // Shared seed data — a list of project milestones.

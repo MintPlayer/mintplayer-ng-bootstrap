@@ -28,6 +28,10 @@ import {
   BsThemeToggle,
   useBsTheme,
 } from '@mintplayer/vue-bootstrap/theming';
+import { installBootstrap, bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapButtonGroupPage);
 
 // Custom modes: any subset, order, or extra entry. Localize by spreading
 // the defaults and overriding label (the NEXT action) and announcement

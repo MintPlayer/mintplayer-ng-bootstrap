@@ -3,6 +3,10 @@ import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/react-bootstrap/phone-input';
+import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage);
 
 const SOURCE = `<BsPhoneInput
   value={phone}

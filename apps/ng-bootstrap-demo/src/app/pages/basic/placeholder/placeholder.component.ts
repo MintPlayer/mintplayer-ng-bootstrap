@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapCardPage } from '@mintplayer/ui-core/bootstrap';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
@@ -49,6 +51,8 @@ export class PlaceholderComponent {
 
 
   constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapCardPage);
     setTimeout(() => this.isLoading = false, 3000);
   }
 

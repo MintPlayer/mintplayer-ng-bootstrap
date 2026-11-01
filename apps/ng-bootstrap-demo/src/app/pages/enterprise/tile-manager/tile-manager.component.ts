@@ -1,4 +1,6 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainersPage, bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
@@ -83,6 +85,8 @@ export class TileManagerComponent {
   private readonly board = viewChild.required(BsTileManagerComponent, { read: ElementRef });
 
   constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapContainersPage, bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage);
     effect(() => {
       const layouts = this.layouts();
       try {

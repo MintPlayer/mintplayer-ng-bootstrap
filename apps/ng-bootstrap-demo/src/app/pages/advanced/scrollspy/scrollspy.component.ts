@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainersPage, bootstrapModalPage } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
@@ -54,7 +56,12 @@ export class ScrollspyComponent {
       templateUrl: './my-scrollspy-demo.component.html',
       imports: [BsScrollspyComponent, BsScrollspyDirective],
     })
-    export class MyScrollspyDemoComponent {}
+    export class MyScrollspyDemoComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapContainersPage, bootstrapModalPage);
+  }
+}
   `;
 
   protected readonly snippetModalHtml = dedent`

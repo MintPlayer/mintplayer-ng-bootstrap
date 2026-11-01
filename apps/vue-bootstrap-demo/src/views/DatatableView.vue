@@ -16,6 +16,10 @@ import type {
   DistinctsRequest,
   FilterOperator,
 } from '@mintplayer/vue-bootstrap/datatable';
+import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage);
 
 // Dev: /api is proxied to localhost:5000 by vite.config; prod hits the API
 // subdomain (CORS-allowed in apps/api/Program.cs). The dev SSR render has no

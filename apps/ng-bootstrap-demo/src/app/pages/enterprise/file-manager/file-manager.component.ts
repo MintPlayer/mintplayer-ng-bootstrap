@@ -1,6 +1,8 @@
 /// <reference types="../../../../types" />
 
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapFormsPage, bootstrapAlertPage, bootstrapProgressPage } from '@mintplayer/ui-core/bootstrap';
 import { FormsModule } from '@angular/forms';
 import {
   BsFileManagerComponent,
@@ -191,6 +193,8 @@ export class FileManagerDemoComponent {
   iconResolver: FileManagerIconResolver = (iconKey) => this.icons().get(iconKey);
 
   constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage, bootstrapAlertPage, bootstrapProgressPage);
     this.preloadIcons([
       'folder', 'folder-fill', 'file', 'file-earmark',
       'file-text', 'file-pdf', 'file-word', 'file-excel',

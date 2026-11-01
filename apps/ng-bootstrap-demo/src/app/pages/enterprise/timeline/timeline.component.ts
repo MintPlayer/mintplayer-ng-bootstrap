@@ -6,6 +6,8 @@ import {
   model,
   signal,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
@@ -60,6 +62,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TimelineComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+
   /** Shared seed data — a list of project milestones. */
   protected readonly milestones = signal<TimelineItem[]>([
     { id: 'kickoff', title: 'Kickoff', description: 'Project scoping and team assembly.', time: '2026-01-10', icon: 'bi bi-flag', color: '#6c757d' },

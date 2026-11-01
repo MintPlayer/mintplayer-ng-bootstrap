@@ -1,5 +1,7 @@
 import { A11yModule } from '@angular/cdk/a11y';
 import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
@@ -19,6 +21,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FocusTrapComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapModalPage);
+  }
+
 
   isOpen = false;
   colors = Color;

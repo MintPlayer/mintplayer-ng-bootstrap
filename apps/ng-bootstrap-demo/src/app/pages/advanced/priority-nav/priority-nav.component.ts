@@ -1,4 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
@@ -17,6 +19,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PriorityNavComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+
   links = [
     { label: 'Home',     priority: 1, hideBelow: 'sm' as const },
     { label: 'Products', priority: 2, hideBelow: 'md' as const },

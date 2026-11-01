@@ -6,6 +6,10 @@ import {
   type BsThemeToggleMode,
 } from '@mintplayer/react-bootstrap/theming';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapButtonGroupPage);
 
 /**
  * A custom cycle: light and dark only (no auto), localized to Dutch. Built by

@@ -1,6 +1,8 @@
 import { DemoFormStateComponent } from '../../../components/form-state/form-state.component';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapGridPage, bootstrapFormsPage, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTypeaheadComponent, BsTypeaheadItemDirective, inMemoryTypeaheadProvider, TypeaheadRequest } from '@mintplayer/ng-bootstrap/typeahead';
@@ -28,6 +30,11 @@ const ARTISTS: Artist[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypeaheadComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapGridPage, bootstrapFormsPage, bootstrapTablesPage);
+  }
+
   /** Angular forms: the same control bound template-driven and reactive. */
   protected readonly formsValue = signal<string>('');
   protected readonly formsControl = new FormControl<string>('', { nonNullable: true });

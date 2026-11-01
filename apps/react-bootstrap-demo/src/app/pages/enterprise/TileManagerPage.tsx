@@ -8,6 +8,10 @@ import {
 import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap, bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage);
 import './TileManagerPage.scss';
 
 const STORAGE_KEY = 'tile-manager-demo-layouts-v2';

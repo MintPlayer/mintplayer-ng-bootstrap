@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
@@ -146,7 +148,12 @@ export class ThemingComponent {
       imports: [BsThemeToggleComponent],
       template: \`<bs-theme-toggle />\`,
     })
-    export class NavbarComponent {}
+    export class NavbarComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+}
   `;
 
   protected readonly localizedToggleSnippet = dedent`
