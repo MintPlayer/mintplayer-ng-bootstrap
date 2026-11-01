@@ -87,8 +87,17 @@ Globally, an app loads only the **page-level** Bootstrap from the installation s
 reboot, type, images, buttons, helpers and utilities. Do not import Bootstrap's component partials
 into your global stylesheet.
 
-> Work in progress (#452): on `master` the baseline still contains every Bootstrap partial. Moving
-> them into the components that use them is the open work.
+**Raw Bootstrap markup of your own** (a `<table class="table">`, a `<div class="alert">`) is not styled
+by a component's copy of the partial: that copy only matches elements a component rendered (see
+Encapsulation). Install the partial from the page that renders the markup, so it rides that page's chunk:
+
+```ts
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+// Angular: useBootstrap(bootstrapTablesPage) in the page component's constructor
+// React / Vue / plain TS: installBootstrap(bootstrapTablesPage)
+```
+
+A page never holds two copies of a partial: the page variant replaces a component's scoped copy.
 
 ### Encapsulation
 
@@ -101,7 +110,9 @@ uses for `_ngcontent`.
 - **Page CSS also reaches the component's internals.** A global `td { padding: 0 }` affects these
   components too. This is deliberate: emulated encapsulation behaves the same way everywhere else.
 - **The component's styles cannot leak out** onto your markup. Every rule is anchored to an element the
-  build stamped, and conformance suites enforce this on every build.
+  build stamped, and conformance suites enforce this on every build. That includes the Bootstrap
+  partials the components ship: their copy is scoped with `:where([data-mps])`, so your own `.card` or
+  `.table` elsewhere on the page is untouched, and specificity stays exactly Bootstrap's.
 - **Theming needs no `!important`.** Bootstrap sits in `@layer mp.bootstrap` and the component sheets
   in `@layer mp.components`, so your unlayered CSS beats both.
 

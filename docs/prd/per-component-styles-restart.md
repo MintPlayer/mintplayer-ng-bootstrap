@@ -1,6 +1,7 @@
 # Per-component styles — restart brief (issue #452)
 
-Status: **investigation not started on master** (2026-11-01). A first attempt lives on branch
+Status: **superseded by `per-component-styles-452.md`** (2026-11-01), which holds the measurements, the
+design and the owner's decisions. This file remains the record of the first attempt. A first attempt lives on branch
 `fix/452-card-part-host-display` (PR #453). The owner chose to restart from master. Use that branch as
 reference material, not as the plan. This file is the handoff: read it before touching any styling.
 

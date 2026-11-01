@@ -22,20 +22,22 @@ Project-wide technical conventions for the `@mintplayer/*-bootstrap` workspace. 
    styles must be able to ride in the lazy-loaded chunk of the page that uses it, and load only when the
    user visits that page. Anything that forces them into the main bundle (a global stylesheet import, a
    side-effect import in a shared barrel, a root-level provider that pulls a component in) is a bug.
-5. **The Angular `:host ::ng-deep { @import "bootstrap/scss/<partial>" }` component sheets** (alert, badge,
-   breadcrumb, list-group, modal, toast, tooltip, …) are deliberate: they are the per-component shipping
-   of a partial. They are not "duplicates of the baseline" — never delete them. To beat one of their
-   rules, win on specificity in the overriding component's own sheet.
+5. **One copy of a partial, shipped by the component, in every framework.** A component ships its partial
+   by installing the compiled Bootstrap PART (`@mintplayer/ui-core` `bootstrap<Partial>`, through the
+   scoped-style registry — see "Bootstrap layering"). That works the same in Angular, React, Vue and Lit.
+   Nothing else may ship a second copy: no `:host ::ng-deep { @import partial }` sheet (the 19 Angular ones
+   were replaced by parts in #452), no `@import` of a partial into a scoped sheet, no global copy. A
+   component never contains rules that depend on how a consumer nests or wraps it ("the card knows about
+   list groups") — Bootstrap's own cross-component rules, in Bootstrap's order, do that.
 
 **Docs precedence.** `CLAUDE.md`, the root README and the library READMEs describe the current
 architecture. `docs/prd/*` and `docs/issue_*` are historical decision records: many describe the
 retired model (framework components wrapping `<mp-*>` web components, shadow-root components, all of
 Bootstrap global). Where they conflict with these invariants, the invariants win.
 
-**Known violation on master (open work, issue #452):** since #437 `ui-core/styles/_bootstrap-stack.scss`
-loads EVERY Bootstrap partial into the global baseline, contradicting invariants 1, 2 and 4, and the
-"Bootstrap layering" section below still describes that state. Read
-`docs/prd/per-component-styles-restart.md` before changing any styling.
+**Styling design: `docs/prd/per-component-styles-452.md`** (#452) — attribute-scoped Bootstrap parts,
+one sublayer per partial in stock order, installed per component. Read it before changing any styling.
+(`docs/prd/per-component-styles-restart.md` is the history of the first attempt.)
 
 ## What this workspace is
 
@@ -134,11 +136,11 @@ Encapsulation is preserved at build time instead of by the boundary, the way Ang
   registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
   `mp-accordion` and `mp-shell` do it. `_conformance/light-styles-nesting.spec.ts` enforces it.
 - **Do not `@import` a Bootstrap partial into a light-tier `.light.scss` / scoped sheet** (C4 under
-  "Bootstrap layering" below): a rescoped copy (`.btn[data-mps=…]`) silently WINS on specificity and
-  makes the consumer's theming unoverridable. The component still ships the partial itself — verbatim
-  and layered, alongside its scoped sheet (INVARIANTS 1) — never by moving it into the page baseline.
-  Only a shadow-root element, which the page's CSS cannot reach, re-declares what it needs (the
-  `_styles/*.styles.scss` partial copies).
+  "Bootstrap layering" below): the light rewriter would produce `.btn[data-mps=…]`, which raises
+  specificity and breaks Bootstrap's ordering. The component installs the compiled PART instead
+  (`bootstrap<Partial>`, scoped with `:where([data-mps])`, specificity unchanged) — never by moving it
+  into the page baseline. Only a shadow-root element, which the page's CSS cannot reach, re-declares what
+  it needs (the `_styles/*.styles.scss` partial copies).
 - **Every document-level sheet goes through `installLightStyles` — light tier or not.** A slot-based
   component that needs document CSS for its slotted content (`mp-card`: `::slotted()` cannot reach
   `.card-title` inside a body, nor out-rank Bootstrap's `.card-header`) installs it through the
@@ -228,7 +230,9 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   template may not write one. A group that renders another core's markup `@use`s that core's sheet with its own
   scope (`tree-select` → treeview, `navbar` → dropdown-menu, `datepicker` → calendar); a reusable sheet takes
   `$scope: <name> !default` for its final-form selectors. Hand-written fronts (accordion, input-group, shell,
-  tab-control, tile-manager, typeahead, sparkline, dropdown-menu) still stamp their own scope.
+  tab-control, tile-manager, typeahead, sparkline, dropdown-menu, and every Angular-only component) stamp
+  their own scope. The Bootstrap partials a group's markup uses are listed in the manifest
+  (`style: { scope, bootstrap: ['card', 'nav'] }`); the compiler emits their install in every front.
 - **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
   a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
   (`<name>/src/templates/*.view.vue`) and a plain-data manifest (`<name>/src/<name>.component.ts`, `import type`
@@ -275,33 +279,38 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
 - **Import lists go stale on every conversion:** `no-custom-elements-in-fronts` and the scoping specs list
   components explicitly; prune or extend them in the same commit.
 
-### Bootstrap layering (PRD §6, C1–C6)
+### Bootstrap layering (#452, `docs/prd/per-component-styles-452.md`)
 
-> **This section's C1/C2 describe the #437 state that violates the INVARIANTS** (every partial in the
-> global baseline). The target is below; master does not implement it yet. See
-> `docs/prd/per-component-styles-restart.md`.
-
-- **C1. Bootstrap ships PER COMPONENT (target).** Templates use plain Bootstrap classes (`form-control`,
-  `dropdown-menu`, `nav-tabs`, `table`, …), and the component that renders them ships the matching stock
-  partial with itself — once per page, layered, verbatim, written into the head during SSR like a scoped
-  sheet, and in the component's own (lazy) chunk. **Never add a component partial to the page baseline.**
+- **C1. Bootstrap ships PER COMPONENT, as compiled parts.** Templates use plain Bootstrap classes
+  (`form-control`, `dropdown-menu`, `nav-tabs`, `table`, …). Each component partial is compiled once in
+  ui-core (`styles/parts/<partial>.bootstrap.scss` → a generated string module) and the component that
+  renders it installs it (`useBootstrap(...)` in Angular, `installBootstrap(...)` elsewhere, or the
+  manifest's `bootstrap: [...]`) through the scoped-style registry: once per page, written into the head
+  during SSR, imported only by that component so it rides the component's lazy chunk. **Never add a
+  component partial to the page baseline, and there is no global opt-in.**
+- **C1a. Attribute scoping.** A part matches only DOM a @mintplayer component rendered: the leftmost
+  compound carrying a class the partial owns gets `:where([data-mps])` (presence, not value — partials
+  cross components; `:where` — specificity stays stock). Every component stamps its own elements (the
+  compiler for D10 groups, by hand elsewhere), never projected consumer content. Raw Bootstrap markup on a
+  consumer's page installs the verbatim `bootstrap<Partial>Page` from that page; it replaces the scoped
+  copy under the same registry key, so a page never holds two copies.
 - **C2. The page baseline** `@mintplayer/ui-core/styles/bootstrap.scss` holds only the PAGE-LEVEL partials:
   root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
-  workspace patches. Angular's `_bootstrap.scss` re-exports it; React and Vue apps import it instead of
-  `bootstrap.min.css`. No app stylesheet adds component partials to it, and no global opt-in exists.
-  (Master today: `_bootstrap-stack.scss` still loads every partial — the open #452 work.)
-- **C3. Cascade layers.** The baseline is `@layer mp.bootstrap`, every scoped sheet `@layer mp.components`,
-  ordered once at the top of the baseline. Component rules beat Bootstrap regardless of specificity, a
+  workspace patches (`styles/baseline/*`). Angular's `_bootstrap.scss` re-exports it; React and Vue apps
+  import it instead of `bootstrap.min.css`.
+- **C3. Cascade layers.** The baseline declares the order once: `mp.bootstrap.<sublayer>` for base, every
+  partial in STOCK `bootstrap.scss` order, helpers and utilities, then `mp.components`. Every part repeats
+  the statement. This preserves Bootstrap's source-order semantics across separately loaded sheets (a
+  later `.fixed-top` beats `.navbar`). Component rules beat Bootstrap regardless of specificity, a
   consumer's unlayered CSS beats both (theming needs no `!important`), and Bootstrap's `!important`
   utilities still win.
 - **C4. A scoped sheet carries only what Bootstrap lacks** — layout, state on native carriers
-  (`details[open] > .dropdown-menu`), component parts, focus rings, reduced motion — and **never imports a
-  Bootstrap partial** (functions, variables and mixins only): the partial ships beside it, verbatim and
-  layered (C1), not rescoped inside it. `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts`
-  enforces it.
-- **C5. No front has a shadow root**, so no front `@import`s partials into its scoped sheet. This does NOT
-  apply to the Angular `:host ::ng-deep` sheets (INVARIANTS 5 — keep them). (The hand-written shadow-root
-  Lit elements are the exception and re-declare what they use from `web-components/_styles`.)
+  (`details[open] > .dropdown-menu`), component parts, host `display`, focus rings, reduced motion — and
+  **never imports a Bootstrap partial** (functions, variables and mixins only): the part ships it.
+  `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts` enforces it.
+- **C5. No front has a shadow root**, so no front `@import`s partials anywhere, and no Angular component
+  has a `:host ::ng-deep` partial sheet. (The hand-written shadow-root Lit elements are the exception and
+  re-declare what they use from `web-components/_styles`.)
 - **C6. Dark mode is page-level**: `[data-bs-theme]` on `<html>` reaches every front. `@container
   style(--mp-color-mode)` queries exist only for shadow-root elements.
 
