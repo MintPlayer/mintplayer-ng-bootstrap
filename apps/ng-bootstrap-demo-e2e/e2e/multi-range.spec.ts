@@ -71,9 +71,15 @@ test.describe('multi-range', () => {
     await page.keyboard.press('ArrowLeft');
     await page.keyboard.press('ArrowLeft');
 
-    const after = await readSlider(page, 'RTL range');
-    expect(after.thumbs[0].value).toBe(18);
-    expect(after.trackRight - after.thumbs[0].centerX).toBeGreaterThan(before.trackRight - before.thumbs[0].centerX);
+    // The native input commits the value synchronously; the tooltip follows on the
+    // next render, so poll the geometry instead of reading it once.
+    expect((await readSlider(page, 'RTL range')).thumbs[0].value).toBe(18);
+    await expect
+      .poll(async () => {
+        const after = await readSlider(page, 'RTL range');
+        return after.trackRight - after.thumbs[0].centerX;
+      })
+      .toBeGreaterThan(before.trackRight - before.thumbs[0].centerX);
   });
 
   test('ArrowRight on a focused RTL thumb decreases value AND moves it rightward', async ({ page }) => {
@@ -84,9 +90,13 @@ test.describe('multi-range', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
 
-    const after = await readSlider(page, 'RTL range');
-    expect(after.thumbs[1].value).toBe(83);
-    expect(after.trackRight - after.thumbs[1].centerX).toBeLessThan(before.trackRight - before.thumbs[1].centerX);
+    expect((await readSlider(page, 'RTL range')).thumbs[1].value).toBe(83);
+    await expect
+      .poll(async () => {
+        const after = await readSlider(page, 'RTL range');
+        return after.trackRight - after.thumbs[1].centerX;
+      })
+      .toBeLessThan(before.trackRight - before.thumbs[1].centerX);
   });
 
   test('a press on the bare track moves the nearest thumb there and focuses it', async ({ page }) => {

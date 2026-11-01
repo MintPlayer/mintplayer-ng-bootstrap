@@ -5,9 +5,10 @@ import { expect, test, type Page } from '@playwright/test';
  * card is plain Bootstrap markup with no sheet of its own; the probes use the
  * classes the fronts emit (ui-core/card).
  *
- * The React demo loads Bootstrap's full CSS, the setup closest to downstream
- * apps: Bootstrap's own `.text-bg-*` and `.card-*` rules are on the page, so
- * any document-level card rule that out-ranks them is a leak. The probes are
+ * Since #452 the card partial ships with the card as an attribute-scoped part
+ * (`:where([data-mps])`): it styles the cards the component rendered and
+ * nothing else. The page-level helpers (`.text-bg-*`) stay global, so any
+ * document-level card rule that out-ranks them is a leak. The probes are
  * appended by the test; the demo page stays unchanged.
  */
 
@@ -50,7 +51,7 @@ const appendProbes = (page: Page) =>
   });
 
 const computed = (page: Page, selector: string, property: string) =>
-  page.locator(selector).evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop), property);
+  page.locator(selector).first().evaluate((el, prop) => getComputedStyle(el).getPropertyValue(prop), property);
 
 for (const mode of ['light', 'dark'] as const) {
   test.describe(`card global styles (#432) — ${mode}`, () => {
@@ -82,7 +83,7 @@ for (const mode of ['light', 'dark'] as const) {
       expect(await computed(page, '#probe-filled-title', 'color')).toBe(WHITE);
     });
 
-    test("a plain Bootstrap card keeps Bootstrap's own styling", async ({ page }) => {
+    test("a component-rendered card keeps Bootstrap's own styling", async ({ page }) => {
       // Bootstrap: .card { --bs-card-cap-bg: rgba(var(--bs-body-color-rgb), 0.03) }
       const bodyColorRgb = await page.evaluate(() =>
         getComputedStyle(document.documentElement)
@@ -91,7 +92,14 @@ for (const mode of ['light', 'dark'] as const) {
           .map((channel) => channel.trim())
           .join(', '),
       );
-      expect(await computed(page, '#probe-card-header', 'background-color')).toBe(`rgba(${bodyColorRgb}, 0.03)`);
+      expect(await computed(page, '.card-header[data-mps]:not([id^=probe])', 'background-color')).toBe(`rgba(${bodyColorRgb}, 0.03)`);
+    });
+
+    test('the scoped card part does not reach raw card markup the page did not install it for (#452)', async ({ page }) => {
+      // A consumer's own <div class="card"> is styled only once its page installs
+      // bootstrapCardPage; the part the BsCard components installed stays on them.
+      expect(await computed(page, '#probe-card', 'border-top-width')).toBe('0px');
+      expect(await computed(page, '#probe-card-header', 'background-color')).toBe('rgba(0, 0, 0, 0)');
     });
   });
 }
