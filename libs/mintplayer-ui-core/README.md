@@ -16,17 +16,23 @@ component compiler (`libs/mintplayer-component-compiler`) generates the four fro
 ## The Bootstrap baseline
 
 `@mintplayer/ui-core/styles/bootstrap` (SCSS) or the prebuilt `styles/bootstrap.css` is the
-page-level Bootstrap every component relies on. Load it once per page, before any component sheet:
+page-level Bootstrap. Load it once per page, before any component sheet:
 
 - Angular: `@use '@mintplayer/ng-bootstrap/bootstrap';` forwards it.
 - React, Vue, plain web components: `@use '@mintplayer/ui-core/styles/bootstrap';`, or link the CSS.
 
-It is all of Bootstrap 5.3 in `@layer mp.bootstrap`, below the components (`@layer mp.components`).
-Your own unlayered CSS beats both, so theming needs no `!important`. Dark mode is page-level:
-`data-bs-theme` on `<html>`.
+It is meant to hold only the page-level partials: root, reboot, type, images, buttons, helpers and
+the utility API. **Component partials (card, forms, table, modal, …) ship with the component that
+renders them**, never globally, so an app bundles only the Bootstrap it uses.
 
-Every Bootstrap class is present (a conformance spec compares the compiled sheet with stock
-Bootstrap). On top of it, the baseline adds:
+> Work in progress (#452): on `master` this baseline still contains every Bootstrap partial. Moving
+> them into the components that use them is the open work.
+
+It sits in `@layer mp.bootstrap`, below the components (`@layer mp.components`). Your own unlayered
+CSS beats both, so theming needs no `!important`. Dark mode is page-level: `data-bs-theme` on
+`<html>`.
+
+On top of Bootstrap, the baseline adds these utilities:
 
 | Classes | Values |
 |---|---|

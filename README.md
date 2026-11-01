@@ -38,7 +38,12 @@ Or add the stylesheet in your `styles.scss`
     @import '@mintplayer/ng-bootstrap/bootstrap.scss';
 
 ## Components
-Every web component is showcased in three sibling demo apps — one per framework — so you can pick the wrapper layer that matches your stack. They render the **same** underlying `<mp-*>` / `<mint-*>` web component; only the wrapper API differs.
+Every component is one framework-neutral TypeScript core in `@mintplayer/ui-core` (state, keyboard,
+ARIA, async lifecycles), consumed by four fronts that each render their own HTML: Angular
+(`@mintplayer/ng-bootstrap`), React (`@mintplayer/react-bootstrap`), Vue (`@mintplayer/vue-bootstrap`)
+and Lit web components (`@mintplayer/web-components`, for apps without a framework). The Angular,
+React and Vue components do **not** wrap or render a web component. Each component is showcased in
+three sibling demo apps, one per framework.
 
 ### Run locally via the Nx dev server
 
@@ -70,54 +75,41 @@ Run e2e through Nx, e.g. `npx nx e2e vue-bootstrap-demo-e2e -- --project=webkit`
 
 ## Styling and encapsulation
 
-Components come in two tiers. Which tier a component is in decides whether your stylesheets reach
-inside it, and it is decided by one question: **does the component mount DOM that you authored?**
+### Styles ship per component
 
-### Shadow tier — the default
+A component brings its own CSS: its scoped stylesheet **and** the Bootstrap partial its markup uses
+(`card`, `forms`, `table`, `modal`, …). The CSS is installed once per page when the component first
+renders, and written into `<head>` during server rendering. An app that never renders a card bundles
+none of `.card`. A component and its styles can ship in the lazy-loaded chunk of the page that uses
+it, so the main bundle stays small.
 
-Around thirty components keep a shadow root and take your content through native `<slot>`s: card,
-accordion, carousel, tab-control, navbar, shell, splitter, dock and the rest. Slotted content never
-leaves your document, so your stylesheets, your framework's component CSS and Bootstrap's utility
-classes all reach it exactly as they would anywhere else. The component's own internals are isolated
-by the browser; where a component wants to expose one, it does so through `::part()`.
+Globally, an app loads only the **page-level** Bootstrap from the installation step above: root,
+reboot, type, images, buttons, helpers and utilities. Do not import Bootstrap's component partials
+into your global stylesheet.
 
-### Light tier — components that mount your DOM
+> Work in progress (#452): on `master` the baseline still contains every Bootstrap partial. Moving
+> them into the components that use them is the open work.
 
-`<mp-datatable>`, `<mp-treeview>`, `<mp-tree-select>` and the `<mp-query-builder>` family accept
-render callbacks — a row template, a node template, a cell renderer, an editor factory — and mount
-the DOM you return **inside themselves**. A shadow root would starve that content: document
-stylesheets do not cross the boundary, so your own component's CSS and every Bootstrap utility would
-be inert on markup you wrote (issue #408).
+### Encapsulation
 
-These components therefore render in the **light DOM**, and their own styles are scoped at build
-time onto a `data-mps` attribute instead — the same device Angular's `ViewEncapsulation.Emulated`
-uses for `_ngcontent`. Two consequences follow, and they are the whole trade:
+The Angular, React and Vue components render in the light DOM, with no shadow root. Their own styles are
+scoped at build time onto a `data-mps` attribute: the same device Angular's `ViewEncapsulation.Emulated`
+uses for `_ngcontent`.
 
-- **Your CSS reaches your content, normally.** Nothing to configure, nothing to transport. A
-  `<span class="badge bg-success">` in a datatable row is styled by the Bootstrap you already load.
-- **Page CSS also reaches the component's internals.** A global `td { padding: 0 }` in your
-  stylesheet will affect these components. This is the identical property emulated encapsulation has
-  everywhere else in your app; it is supported and deliberate, not a defect.
+- **Your CSS reaches your content normally**, including content you render into a component (a row
+  template, a cell renderer, a slot).
+- **Page CSS also reaches the component's internals.** A global `td { padding: 0 }` affects these
+  components too. This is deliberate: emulated encapsulation behaves the same way everywhere else.
+- **The component's styles cannot leak out** onto your markup. Every rule is anchored to an element the
+  build stamped, and conformance suites enforce this on every build.
+- **Theming needs no `!important`.** Bootstrap sits in `@layer mp.bootstrap` and the component sheets
+  in `@layer mp.components`, so your unlayered CSS beats both.
 
-The component's own styles still cannot leak **out** onto your markup: every rule is anchored to an
-element the build stamped, and two conformance suites enforce it on every build — one proving no
-rule matches unstamped markup, one proving no rule matches DOM you hand in through a callback.
+### Plain web components
 
-### Migrating to the light tier
-
-If you use any of the four components above, check for these. Everything else is unchanged.
-
-| What changes | What to do |
-|---|---|
-| `::part()` and `::slotted()` no longer address these components | Use ordinary CSS selectors — they now reach descendants `::part()` never could |
-| The `<mp-query-builder>` family's `part=` attributes are removed | As above; nothing in the demos consumed them |
-| `datatableStyles` / `treeviewStyles` / `treeSelectStyles` exports | Renamed to `datatableLightStyles` / `treeviewLightStyles` / `treeSelectLightStyles` |
-| `el.shadowRoot` in your own code or tests | Use `el.renderRoot`, or `el.shadowRoot ?? el` |
-| Focus assertions against a shadow root | `document.activeElement` is now the real element, not the retargeted host |
-| A page stylesheet that broadly styles `table`, `td`, `li` or `input` | It now applies inside these components too — scope it, or override with the component's own custom properties |
-
-If you host one of these components **inside your own shadow root**, adopt their sheets into it or
-they render unstyled — the same boundary problem, one level up:
+A few hand-written Lit elements (`@mintplayer/web-components`) keep a shadow root and take your
+content through native `<slot>`s. If you host a light-DOM `mp-*` element **inside your own shadow
+root**, adopt the document's component sheets into it, or it renders unstyled:
 
 ```ts
 import { adoptLightStyles } from '@mintplayer/web-components/light-dom';
@@ -132,10 +124,6 @@ disconnectedCallback() {
 }
 ```
 
-Server-rendered pages get the same sheets injected into `<head>` by `injectMpLightStyles` from
-`@mintplayer/web-components/light-dom/ssr`, so the light tier is styled with JavaScript disabled.
-The demo's `server.ts` shows it composed with the Declarative Shadow DOM injectors.
-
 ## Docker image
 Alternatively you can run the docker image which is published on GitHub Container Registry
 
@@ -148,7 +136,7 @@ See [deployment documentation](DEPLOYMENT.md) for instructions on setting up aut
 
 ### SSR behind a reverse proxy (Angular)
 
-All three demos are deployed with **request-time SSR** so the `<mp-shell>` Declarative Shadow DOM is in the HTML and the layout renders with JavaScript disabled. The Angular SSR server has two `@angular/ssr` security guards that must be configured for the public domain, or it silently falls back to **client-side rendering** (you get an HTTP `200` with an empty `<demo-bootstrap-root></demo-bootstrap-root>` shell — no server-rendered content, no DSD):
+All three demos are deployed with **request-time SSR**, so every component is real HTML in the response and the layout renders with JavaScript disabled. The Angular SSR server has two `@angular/ssr` security guards that must be configured for the public domain, or it silently falls back to **client-side rendering** (you get an HTTP `200` with an empty `<demo-bootstrap-root></demo-bootstrap-root>` shell — no server-rendered content):
 
 1. **`NG_ALLOWED_HOSTS`** — the Host-header SSRF allow-list. Must contain the public domain (e.g. `bootstrap.mintplayer.com`). A *mismatch* here returns a hard `400`; an *empty* list falls back to CSR.
 2. **`NG_TRUST_PROXY_HEADERS`** — the list of `x-forwarded-*` headers to trust. **This is the one that bit us in production.** `@angular/ssr` deopts to CSR for *any* incoming `x-forwarded-*` header it doesn't trust, and its default trusted set is only `x-forwarded-host` + `x-forwarded-proto`. Traefik also forwards `x-forwarded-for`, `x-forwarded-port`, and `x-forwarded-server`, so every proxied request silently deopted to CSR until these were trusted.
@@ -220,8 +208,8 @@ Then run following commands
 
 ## Features
 - Uses `@angular/cdk/overlay`
-- Uses per-component styles. Only non-generic bootstrap styles are bundled in the main bundle
-- Framework-agnostic web components (`@mintplayer/web-components`) with Angular, React and Vue wrappers
+- Uses per-component styles. Only the page-level Bootstrap (root, reboot, type, buttons, helpers, utilities) is global; every component ships its own CSS
+- One framework-neutral TypeScript core per component (`@mintplayer/ui-core`), with Angular, React, Vue and Lit web-component fronts that each render their own HTML (no front wraps a web component)
 - Carousel: touch-events, keyboard navigation, full APG carousel ARIA
 - Charts with **zero runtime dependencies**, under a nested `charts/*` subpath per framework (e.g. `@mintplayer/ng-bootstrap/charts/hierarchy`): a hierarchy chart with three interchangeable layouts (`sunburst` / `icicle` / `treemap`, drill-down and unbounded `max-depth="auto"`), a trend chart and a sparkline. Keyboard-operable and screen-reader navigable via the ARIA *tree* pattern
-- Interactive no-JS support for **Navbar**, **Shell**, **Dropdown menu** and **Carousel** on server-rendered pages (Declarative Shadow DOM + pure-CSS state machines) — works in all three framework demos
+- Interactive no-JS support for **Navbar**, **Shell**, **Dropdown menu** and **Carousel** on server-rendered pages (server-rendered HTML + pure-CSS state machines) — works in all three framework demos
