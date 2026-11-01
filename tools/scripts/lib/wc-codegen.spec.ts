@@ -8,6 +8,9 @@ import {
   buildStylesModule,
   escapeForTemplateLiteral,
   LAYER_ORDER,
+  BOOTSTRAP_LAYER_ORDER,
+  BOOTSTRAP_SUBLAYERS,
+  wrapInLayer,
   toCamelCase,
   wrapInComponentsLayer,
   writeIfChanged,
@@ -116,6 +119,18 @@ describe('wrapInComponentsLayer', () => {
     const out = wrapInComponentsLayer('@charset "UTF-8";\na{content:"é"}');
     expect(out.startsWith(`@charset "UTF-8";\n${LAYER_ORDER}\n@layer mp.components {`)).toBe(true);
     expect(out.match(/@charset/g)).toHaveLength(1);
+  });
+});
+
+describe('wrapInLayer', () => {
+  it('gives a Bootstrap part both order statements, then its own sublayer', () => {
+    expect(wrapInLayer('.navbar{position:relative}', 'mp.bootstrap.navbar')).toBe(
+      `${LAYER_ORDER}\n${BOOTSTRAP_LAYER_ORDER}\n@layer mp.bootstrap.navbar {\n.navbar{position:relative}\n}`,
+    );
+  });
+
+  it('orders navbar before helpers (.fixed-top must win)', () => {
+    expect(BOOTSTRAP_SUBLAYERS.indexOf('navbar')).toBeLessThan(BOOTSTRAP_SUBLAYERS.indexOf('helpers'));
   });
 });
 

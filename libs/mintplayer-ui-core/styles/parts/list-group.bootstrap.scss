@@ -1,0 +1,5 @@
+// Bootstrap's list-group partial, shipped only with the components that render it
+// (#452). The ui-core codegen compiles it into @layer mp.bootstrap.<partial>, as an
+// attribute-scoped variant for components and a verbatim one for raw page markup.
+@import "config";
+@import "bootstrap/scss/list-group";

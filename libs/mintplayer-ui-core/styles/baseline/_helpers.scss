@@ -1,0 +1,5 @@
+// Baseline sublayer mp.bootstrap.helpers: after every part, before the utility
+// API, so .fixed-top / .sticky-top beat .navbar's position: relative as in
+// stock bootstrap.scss.
+@import "../parts/config";
+@import "bootstrap/scss/helpers";

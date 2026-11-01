@@ -40,6 +40,44 @@ describe('installLightStyles', () => {
   });
 });
 
+// #452 §3.1: a Bootstrap part's verbatim variant replaces its scoped variant
+// under the same key, and never the other way round.
+describe('installLightStyles — replace', () => {
+  it('upgrades the installed text in place, keeping one copy', () => {
+    installLightStyles('t-r1', '.x:where([data-mps]){color:red}');
+    installLightStyles('t-r1', '.x{color:red}', { replace: true });
+    const entries = getLightStyleEntries().filter((e) => e.key === 't-r1');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].cssText).toBe('.x{color:red}');
+    expect(document.head.querySelectorAll('style[data-mp-light-styles="t-r1"]').length).toBeLessThanOrEqual(1);
+    if (!entries[0].sheet) expect(styleFor('t-r1')?.textContent).toBe('.x{color:red}');
+  });
+
+  it('keeps the verbatim copy when the scoped one installs later', () => {
+    installLightStyles('t-r2', '.x{color:red}', { replace: true });
+    installLightStyles('t-r2', '.x:where([data-mps]){color:red}');
+    expect(getLightStyleEntries().find((e) => e.key === 't-r2')?.cssText).toBe('.x{color:red}');
+  });
+
+  it('upgrades an SSR-emitted copy', () => {
+    const ssr = document.createElement('style');
+    ssr.setAttribute('data-mp-light-styles', 't-r3');
+    ssr.textContent = '.x:where([data-mps]){color:red}';
+    document.head.appendChild(ssr);
+    installLightStyles('t-r3', '.x{color:red}', { replace: true });
+    expect(document.head.querySelectorAll('style[data-mp-light-styles="t-r3"]')).toHaveLength(1);
+    expect(styleFor('t-r3')?.textContent).toBe('.x{color:red}');
+  });
+
+  it('writeScopedStyleTag replaces only when asked', () => {
+    writeScopedStyleTag(document, 't-r4', 'a');
+    expect(writeScopedStyleTag(document, 't-r4', 'b')).toBe(false);
+    expect(styleFor('t-r4')?.textContent).toBe('a');
+    expect(writeScopedStyleTag(document, 't-r4', 'b', { replace: true })).toBe(true);
+    expect(styleFor('t-r4')?.textContent).toBe('b');
+  });
+});
+
 describe('adoptLightStyles', () => {
   it('mirrors current and future sheets into a shadow root', () => {
     installLightStyles('t-c', 'mp-c{color:red}');

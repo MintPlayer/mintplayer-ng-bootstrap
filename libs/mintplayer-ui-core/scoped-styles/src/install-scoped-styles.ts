@@ -79,19 +79,23 @@ function supportsConstructableSheets(): boolean {
  * SSR-emitted copy) counts as installed — only the registry entry is added,
  * so shadow adopters still get a sheet.
  */
-export function installLightStyles(key: string, styles: ScopedStyleSource | string): void {
+export function installLightStyles(key: string, styles: ScopedStyleSource | string, options: InstallOptions = {}): void {
+  const cssText = typeof styles === 'string' ? styles : styles.cssText;
   // SSR guard: `typeof document` alone is not enough — a server DOM shim can
   // install a global `document` WITHOUT a usable `head` (measured with
   // @lit-labs/ssr's shim; Angular's SSR shim is the same kind of risk).
   // Require the parts we actually use.
   if (typeof document === 'undefined' || !document.head) {
-    recordServerSheet(key, styles);
+    recordServerSheet(key, cssText, options.replace === true);
     return;
   }
   const registry = getRegistry();
-  if (registry.entries.has(key)) return;
+  const existing = registry.entries.get(key);
+  if (existing) {
+    if (options.replace && existing.cssText !== cssText) replaceEntry(existing, cssText);
+    return;
+  }
 
-  const cssText = typeof styles === 'string' ? styles : styles.cssText;
   const entry: LightStyleEntry = { key, cssText };
 
   if (supportsConstructableSheets()) {
@@ -105,7 +109,12 @@ export function installLightStyles(key: string, styles: ScopedStyleSource | stri
   }
 
   const ssrCopy = document.head.querySelector(`style[${SCOPED_STYLE_MARKER}="${key}"]`);
-  if (!ssrCopy) {
+  if (ssrCopy) {
+    // The server wrote this key. A replacing install with other text upgrades
+    // the server's copy in place (the server may have rendered only the
+    // scoped variant of a Bootstrap part).
+    if (options.replace && ssrCopy.textContent !== cssText) ssrCopy.textContent = cssText;
+  } else {
     if (entry.sheet) {
       document.adoptedStyleSheets = [...document.adoptedStyleSheets, entry.sheet];
     } else {
@@ -117,6 +126,26 @@ export function installLightStyles(key: string, styles: ScopedStyleSource | stri
   registry.listeners.forEach((listener) => listener(entry));
 }
 
+export interface InstallOptions {
+  /**
+   * Replace a sheet already installed under the same key when its text
+   * differs, instead of keeping the first one. Only for a sheet that matches a
+   * SUPERSET of the installed one with the same specificity: the verbatim
+   * variant of a Bootstrap part over its scoped variant (#452 §3.1). Updated in
+   * place (the constructed sheet, every shadow root that adopted it, and the
+   * head `<style>`), so the page never holds two copies.
+   */
+  replace?: boolean;
+}
+
+function replaceEntry(entry: LightStyleEntry, cssText: string): void {
+  entry.cssText = cssText;
+  // One sheet object is shared by the document and every adopting shadow root.
+  entry.sheet?.replaceSync(cssText);
+  const tag = document.head.querySelector(`style[${SCOPED_STYLE_MARKER}="${entry.key}"]`);
+  if (tag) tag.textContent = cssText;
+}
+
 /** Alias with the mechanism's current name; `installLightStyles` stays for the light-tier elements. */
 export const installScopedStyles = installLightStyles;
 
@@ -125,9 +154,15 @@ export const installScopedStyles = installLightStyles;
  * server renderers (Angular SSR's `DOCUMENT`, a jsdom/domino document): the
  * registry itself never runs there. Returns true when a tag was written.
  */
-export function writeScopedStyleTag(doc: Document, key: string, cssText: string): boolean {
+export function writeScopedStyleTag(doc: Document, key: string, cssText: string, options: InstallOptions = {}): boolean {
   const head = doc.head;
-  if (!head || head.querySelector(`style[${SCOPED_STYLE_MARKER}="${key}"]`)) return false;
+  if (!head) return false;
+  const existing = head.querySelector(`style[${SCOPED_STYLE_MARKER}="${key}"]`);
+  if (existing) {
+    if (!options.replace || existing.textContent === cssText) return false;
+    existing.textContent = cssText;
+    return true;
+  }
   const styleEl = doc.createElement('style');
   styleEl.setAttribute(SCOPED_STYLE_MARKER, key);
   styleEl.textContent = cssText;
@@ -143,9 +178,9 @@ function serverSheets(): Map<string, string> {
   return ((g[SERVER_KEY] as Map<string, string> | undefined) ??= new Map());
 }
 
-function recordServerSheet(key: string, styles: ScopedStyleSource | string): void {
+function recordServerSheet(key: string, cssText: string, replace: boolean): void {
   const sheets = serverSheets();
-  if (!sheets.has(key)) sheets.set(key, typeof styles === 'string' ? styles : styles.cssText);
+  if (replace || !sheets.has(key)) sheets.set(key, cssText);
 }
 
 /**

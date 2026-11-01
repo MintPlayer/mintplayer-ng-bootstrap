@@ -33,13 +33,16 @@ import * as sass from 'sass';
 import chokidar from 'chokidar';
 import {
   buildElementTemplateModule,
+  buildBootstrapPartModule,
   buildPlainStylesModule,
   buildStylesModule,
   toCamelCase,
   wrapInComponentsLayer,
+  wrapInLayer,
   writeIfChanged,
 } from './lib/wc-codegen.mjs';
 import { rescopeCss } from './lib/rescope-css.mjs';
+import { scopeBootstrapPart } from './lib/scope-bootstrap.mjs';
 import { runCli } from './lib/cli.mjs';
 
 export const REPO_ROOT = resolve(fileURLToPath(import.meta.url), '..', '..', '..');
@@ -99,6 +102,15 @@ export const isLightScss = (file) => file.endsWith('.light.scss');
 // `typeahead.scoped.scss` → scope `typeahead`, output
 // `typeahead.scoped.styles.ts` exporting `typeaheadScopedStyles`.
 export const isScopedScss = (file) => file.endsWith('.scoped.scss');
+
+// Per-component Bootstrap parts of @mintplayer/ui-core (#452): one stock
+// partial each, in its own `mp.bootstrap.<partial>` sublayer, so a front
+// installs only the partials its markup uses. Two variants per module:
+// `cardBootstrapStyles`, attribute-scoped with `:where([data-mps])`
+// (lib/scope-bootstrap.mjs) for components, and `cardBootstrapPageStyles`,
+// verbatim, for raw Bootstrap markup a page renders.
+// `card.bootstrap.scss` → `card.bootstrap.styles.ts`.
+export const isBootstrapScss = (file) => file.endsWith('.bootstrap.scss');
 
 /** Path separators normalised to posix, so generated headers are identical on every OS. */
 export const toPosix = (p) => p.replace(/\\/g, '/');
@@ -207,6 +219,25 @@ export async function processScopedStyles(scssPath, repoRoot = REPO_ROOT) {
   return { outPath, changed: await writeIfChanged(outPath, next) };
 }
 
+export async function processBootstrapStyles(scssPath, repoRoot = REPO_ROOT) {
+  const dir = dirname(scssPath);
+  const base = basename(scssPath, '.bootstrap.scss');
+  const outPath = join(dir, `${base}.bootstrap.styles.ts`);
+  const camel = toCamelCase(base);
+
+  const compiled = compileScss(scssPath, repoRoot).trimEnd();
+  const layer = `mp.bootstrap.${base}`;
+  const next = buildBootstrapPartModule({
+    scoped: wrapInLayer(scopeBootstrapPart(compiled, base).css.trimEnd(), layer),
+    page: wrapInLayer(compiled, layer),
+    sourceScssRel: toPosix(relative(dir, scssPath)),
+    scopedName: `${camel}BootstrapStyles`,
+    pageName: `${camel}BootstrapPageStyles`,
+  });
+
+  return { outPath, changed: await writeIfChanged(outPath, next) };
+}
+
 /**
  * The prebuilt page baseline: `<libRoot>/styles/bootstrap.scss` compiles to a
  * sibling `bootstrap.css` (gitignored), for consumers that link CSS rather than
@@ -224,15 +255,17 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
   const stylesScss = [];
   const lightScss = [];
   const scopedScss = [];
+  const bootstrapScss = [];
 
   for (const libRoot of libRoots) {
     elementHtml.push(...(await findFiles(libRoot, isElementHtml, repoRoot)));
     stylesScss.push(...(await findFiles(libRoot, isStylesScss, repoRoot)));
     lightScss.push(...(await findFiles(libRoot, isLightScss, repoRoot)));
     scopedScss.push(...(await findFiles(libRoot, isScopedScss, repoRoot)));
+    bootstrapScss.push(...(await findFiles(libRoot, isBootstrapScss, repoRoot)));
   }
 
-  if (elementHtml.length === 0 && stylesScss.length === 0 && lightScss.length === 0 && scopedScss.length === 0) {
+  if (elementHtml.length === 0 && stylesScss.length === 0 && lightScss.length === 0 && scopedScss.length === 0 && bootstrapScss.length === 0) {
     console.log('build-web-components: no inputs found, nothing to do.');
     return { total: 0, changedCount: 0 };
   }
@@ -264,13 +297,20 @@ export async function runOnce(libRoots, repoRoot = REPO_ROOT) {
     if (changed) changedCount++;
   }
 
+  for (const scss of bootstrapScss) {
+    const { outPath, changed } = await processBootstrapStyles(scss, repoRoot);
+    const rel = toPosix(relative(repoRoot, outPath));
+    console.log(`${changed ? 'wrote   ' : 'skipped '} ${rel}`);
+    if (changed) changedCount++;
+  }
+
   const baselines = (await Promise.all(libRoots.map((libRoot) => processBaseline(libRoot, repoRoot)))).filter(Boolean);
   for (const { outPath, changed } of baselines) {
     console.log(`${changed ? 'wrote   ' : 'skipped '} ${toPosix(relative(repoRoot, outPath))}`);
     if (changed) changedCount++;
   }
 
-  const total = elementHtml.length + stylesScss.length + lightScss.length + scopedScss.length + baselines.length;
+  const total = elementHtml.length + stylesScss.length + lightScss.length + scopedScss.length + bootstrapScss.length + baselines.length;
   console.log(
     `build-web-components: ${total} input(s) processed, ${changedCount} written.`,
   );
