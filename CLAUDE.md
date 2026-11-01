@@ -37,7 +37,8 @@ Bootstrap global). Where they conflict with these invariants, the invariants win
 
 **Styling design: `docs/prd/per-component-styles-452.md`** (#452) — attribute-scoped Bootstrap parts,
 one shared `mp.bootstrap.components` layer kept in stock order by the registry, installed per component.
-Read it before changing any styling.
+Read it before changing any styling. `docs/styles-mechanism.md` walks the whole chain for one component
+(SCSS → codegen → part module → manifest → generated fronts → registry → SSR head and lazy chunk).
 (`docs/prd/per-component-styles-restart.md` is the history of the first attempt.)
 
 ## What this workspace is
