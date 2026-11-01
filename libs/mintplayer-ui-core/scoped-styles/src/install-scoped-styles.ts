@@ -81,8 +81,11 @@ export const SCOPED_STYLE_ORDER = 'data-mp-order';
  * not ordered against anything: their layer decides.
  */
 function orderedStyleAfter(parent: ParentNode, order: number): Element | null {
-  // Direct children only: the result is an insertBefore reference.
-  return [...parent.children]
+  // Direct children only: the result is an insertBefore reference. Array.from over
+  // childNodes, never a spread of `children`: Angular's SSR DOM (domino) has no
+  // iterable `children` on the head, and the server render threw on it.
+  return (Array.from(parent.childNodes) as Node[])
+    .filter((node): node is Element => node.nodeType === 1)
     .find((el) => el.localName === 'style' && el.hasAttribute(SCOPED_STYLE_ORDER) && Number(el.getAttribute(SCOPED_STYLE_ORDER)) > order) ?? null;
 }
 

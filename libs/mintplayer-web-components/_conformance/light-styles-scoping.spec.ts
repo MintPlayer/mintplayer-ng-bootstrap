@@ -111,7 +111,12 @@ const installedKeysInSource = (): string[] =>
 const documentSheets = () =>
   getLightStyleEntries()
     .map((entry) => ({ key: entry.key, css: entry.cssText }))
-    .filter((s) => s.css.trim().length > 0);
+    .filter((s) => s.css.trim().length > 0)
+    // Bootstrap parts (#452, keys `bootstrap-<partial>`) are not owned by one
+    // component: they are scoped by `:where([data-mps])` PRESENCE, since partials
+    // cross components. Their own no-leak checks (structure + decoy) are
+    // ui-core/_conformance/bootstrap-parts-scoping.spec.ts.
+    .filter((s) => !s.key.startsWith('bootstrap-'));
 
 /**
  * Whether a selector can only match inside the owning component.

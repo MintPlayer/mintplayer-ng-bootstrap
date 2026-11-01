@@ -100,6 +100,18 @@ describe('installLightStyles — order', () => {
     expect(orderedKeys(document.head, ['t-w2', 't-w9'])).toEqual(['t-w2', 't-w9']);
   });
 
+  it('writes ordered tags into a head without an iterable `children` (Angular SSR, domino)', () => {
+    // domino's head threw "children is not iterable" on the server render.
+    Object.defineProperty(document.head, 'children', { configurable: true, get: () => ({ length: 0 }) });
+    try {
+      writeScopedStyleTag(document, 't-dom9', 'a{}', { order: 159 });
+      writeScopedStyleTag(document, 't-dom2', 'b{}', { order: 152 });
+    } finally {
+      delete (document.head as unknown as Record<string, unknown>)['children'];
+    }
+    expect(orderedKeys(document.head, ['t-dom2', 't-dom9'])).toEqual(['t-dom2', 't-dom9']);
+  });
+
   it('a replacing install keeps the position of the first', () => {
     installLightStyles('t-p5', '.x:where([data-mps]){}', { order: 135 });
     installLightStyles('t-p6', 'y{}', { order: 136 });

@@ -222,7 +222,11 @@ The inventory is in §9.
 3. **A list group in a card** lost `border-radius: 0` and `margin: -1px`. Stock `.card > .list-group`
    (0,2,0) beats `.list-group` (0,1,0) again because both now sit in the one shared layer (§3.3). (The
    first version claimed the card partial follows list-group in stock order; it does not. Stock
-   list-group comes after card, and only specificity makes the card rule win.)
+   list-group comes after card, and only specificity makes the card rule win.) In Angular the rule could
+   not match at all: `bs-list-group` rendered `<ul class="list-group">` inside its host, so the list was
+   a grandchild of `.card` (on master too). Its host is now the `.list-group` (`role="list"`), as
+   `bs-list-group-item`'s host is the item, so the DOM nests as stock Bootstrap expects. No card rule
+   knows about list groups.
 4. **Table nowrap.** `.nowrap th, td` becomes `.table-responsive.nowrap :is(th, td)` (exact selector to
    check against the table's markup), so only the cells of a responsive table are affected.
 

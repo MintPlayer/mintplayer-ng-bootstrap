@@ -29,6 +29,9 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `mp.bootstrap.components`. CSS that adds rules to `@layer mp.bootstrap` directly now lands after them.
   - The Angular card parts (`bs-card-header`, `-body`, `-footer`, `-title`, `-subtitle`, `-text`, `-img`)
     are `display: block` hosts and no longer carry the `d-block` class.
+  - `bs-list-group`'s host is now the `.list-group` (`role="list"`); the inner `<ul>` is gone. Stock
+    `.card > .list-group` therefore applies to a list group in a `bs-card`, and `class="list-group-flush"`
+    on `<bs-list-group>` works.
 - **`BsControlValidityDirective` moved to `@mintplayer/ng-bootstrap/a11y/forms` (issue #452)**, so
   `@mintplayer/ng-bootstrap/a11y` no longer pulls `@angular/forms` into your bundle. **Migration**: change the
   import path.
