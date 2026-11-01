@@ -8,14 +8,15 @@
 //   @use '@mintplayer/ui-core/styles/bootstrap-parts';
 //   @include bootstrap-parts.include(tables, forms, card);
 //
-// The rules land in @layer mp.bootstrap, like the baseline and the parts the
-// components install, so nothing about the cascade changes. A part that is both
+// Each part lands in its own @layer mp.bootstrap.<part>, the same sublayer the
+// component-installed copy uses, so Bootstrap's import order holds (the order
+// statement is in bootstrap.scss, which must come first). A part that is both
 // included here and installed by a component is the same rules twice in one layer.
 @use 'sass:meta';
 
 @mixin include($names...) {
-  @layer mp.bootstrap {
-    @each $name in $names {
+  @each $name in $names {
+    @layer mp.bootstrap.#{$name} {
       @include meta.load-css('parts/#{$name}.bootstrap');
     }
   }

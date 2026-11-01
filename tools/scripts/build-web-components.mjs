@@ -221,7 +221,7 @@ export async function processBootstrapStyles(scssPath, repoRoot = REPO_ROOT) {
   const outPath = join(dir, `${base}.bootstrap.styles.ts`);
   const exportName = `${toCamelCase(base)}BootstrapStyles`;
 
-  const css = wrapInLayer(compileScss(scssPath, repoRoot).trimEnd(), 'mp.bootstrap');
+  const css = wrapInLayer(compileScss(scssPath, repoRoot).trimEnd(), `mp.bootstrap.${base}`);
   const next = buildPlainStylesModule({
     css,
     sourceScssRel: toPosix(relative(dir, scssPath)),

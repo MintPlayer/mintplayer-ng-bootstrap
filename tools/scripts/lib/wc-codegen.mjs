@@ -94,12 +94,35 @@ export function wrapInComponentsLayer(css) {
   return wrapInLayer(css, 'mp.components');
 }
 
+/**
+ * The sublayers of `mp.bootstrap`, in stock Bootstrap's import order (#452).
+ * The page baseline and the per-component part sheets are separate sheets that
+ * reach the page in any order, while Bootstrap relies on source order between
+ * equal-specificity rules (`.fixed-top` in helpers must beat `.navbar`'s
+ * `position: relative`). A sublayer per partial restores that order whatever
+ * the install order: base = root/reboot/type/images, then the parts, with
+ * buttons, helpers and the utility API where bootstrap.scss imports them.
+ * The baseline (ui-core/styles/bootstrap.scss) repeats this list verbatim;
+ * bootstrap-baseline-superset.spec.ts holds the two together.
+ */
+export const BOOTSTRAP_SUBLAYERS = [
+  'base', 'containers', 'grid', 'tables', 'forms', 'buttons', 'transitions', 'dropdown', 'button-group',
+  'nav', 'navbar', 'card', 'accordion', 'breadcrumb', 'pagination', 'badge', 'alert', 'progress',
+  'list-group', 'close', 'toasts', 'modal', 'tooltip', 'popover', 'carousel', 'spinners', 'offcanvas',
+  'placeholders', 'helpers', 'utilities',
+];
+
+/** The order statement every Bootstrap part sheet starts with. */
+export const BOOTSTRAP_LAYER_ORDER = `@layer ${BOOTSTRAP_SUBLAYERS.map((name) => `mp.bootstrap.${name}`).join(', ')};`;
+
 /** Put compiled CSS in the named `mp.*` layer, after the order statement (a
- *  leading `@charset` must stay first). */
+ *  leading `@charset` must stay first). A `mp.bootstrap.*` sublayer also gets
+ *  the sublayer order. */
 export function wrapInLayer(css, layer) {
   const charset = /^@charset "[^"]*";\s*/.exec(css);
   const body = (charset ? css.slice(charset[0].length) : css).trim();
-  return `${charset ? charset[0].trim() + '\n' : ''}${LAYER_ORDER}\n@layer ${layer} {\n${body}\n}`;
+  const order = layer.startsWith('mp.bootstrap.') ? `${LAYER_ORDER}\n${BOOTSTRAP_LAYER_ORDER}` : LAYER_ORDER;
+  return `${charset ? charset[0].trim() + '\n' : ''}${order}\n@layer ${layer} {\n${body}\n}`;
 }
 
 /** Returns true iff it actually wrote. Byte-identical output is left alone so

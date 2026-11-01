@@ -3,10 +3,24 @@
 // Angular lib forwards it from bootstrap.scss, React/Vue apps link it (or the
 // prebuilt bootstrap.css next to it).
 //
-// The order statement must be the first rule on the page. It is repeated at
-// the top of every component sheet, so whichever arrives first fixes the same
-// order (S1, measured: without it a component sheet installed before the
-// baseline lost to Bootstrap). Consumer CSS that is not in a layer beats both.
+// The order statements must be the first rules on the page. The first is
+// repeated at the top of every component sheet, and both at the top of every
+// Bootstrap part sheet, so whichever arrives first fixes the same order (S1,
+// measured: without it a component sheet installed before the baseline lost to
+// Bootstrap). Consumer CSS that is not in a layer beats both.
+//
+// Only the PAGE-LEVEL partials are here (base, buttons, helpers, utilities).
+// Every other partial ships with the component that renders it, as a part sheet
+// from @mintplayer/ui-core/bootstrap (#452), so a consumer who never renders a
+// card bundles none of .card. Do not add a component partial here; give the
+// component a part instead.
+//
+// mp.bootstrap has one sublayer per partial, in stock Bootstrap's import order,
+// because the baseline and the parts are separate sheets that reach the page in
+// any order while Bootstrap relies on source order between equal-specificity
+// rules (.fixed-top must beat .navbar). The list must match
+// BOOTSTRAP_SUBLAYERS in tools/scripts/lib/wc-codegen.mjs (checked by
+// bootstrap-baseline-superset.spec.ts).
 //
 // Trade-off (documented, C3): a consumer's unlayered !important now LOSES to
 // Bootstrap's layered !important utilities (.d-none and friends), because
@@ -14,7 +28,20 @@
 @use 'sass:meta';
 
 @layer mp.bootstrap, mp.components;
+@layer mp.bootstrap.base, mp.bootstrap.containers, mp.bootstrap.grid, mp.bootstrap.tables, mp.bootstrap.forms, mp.bootstrap.buttons, mp.bootstrap.transitions, mp.bootstrap.dropdown, mp.bootstrap.button-group, mp.bootstrap.nav, mp.bootstrap.navbar, mp.bootstrap.card, mp.bootstrap.accordion, mp.bootstrap.breadcrumb, mp.bootstrap.pagination, mp.bootstrap.badge, mp.bootstrap.alert, mp.bootstrap.progress, mp.bootstrap.list-group, mp.bootstrap.close, mp.bootstrap.toasts, mp.bootstrap.modal, mp.bootstrap.tooltip, mp.bootstrap.popover, mp.bootstrap.carousel, mp.bootstrap.spinners, mp.bootstrap.offcanvas, mp.bootstrap.placeholders, mp.bootstrap.helpers, mp.bootstrap.utilities;
 
-@layer mp.bootstrap {
-  @include meta.load-css('bootstrap-stack');
+@layer mp.bootstrap.base {
+  @include meta.load-css('baseline/base');
+}
+
+@layer mp.bootstrap.buttons {
+  @include meta.load-css('baseline/buttons');
+}
+
+@layer mp.bootstrap.helpers {
+  @include meta.load-css('baseline/helpers');
+}
+
+@layer mp.bootstrap.utilities {
+  @include meta.load-css('baseline/utilities');
 }

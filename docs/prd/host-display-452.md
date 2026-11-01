@@ -150,6 +150,15 @@ elsewhere): once per page, SSR-written into the head, tree-shaken when unused. I
    `@include bootstrap-parts.include(...)` (`@mintplayer/ui-core/styles/bootstrap-parts`), which is
    also what a consumer does for the same need.
 7. **Docs:** CLAUDE.md C1, C2 and C4 rewritten to the per-component rule.
+8. **Source order → sublayers.** Splitting one stylesheet into a baseline plus parts lost Bootstrap's
+   source order between equal-specificity rules: the navbar part, installed after the baseline,
+   made `.navbar { position: relative }` beat helpers' `.fixed-top { position: fixed }`, so the demo
+   navbar stopped being fixed (owner, found on review). `mp.bootstrap` now has one sublayer per
+   partial in stock `bootstrap.scss` import order (`base`, the parts, `buttons` between forms and
+   transitions, `helpers`, `utilities`). The baseline (split into `styles/baseline/_{base,buttons,
+   helpers,utilities}.scss`) and every part sheet declare that order before any rule, so install
+   order no longer matters, among the parts either. The superset spec derives the expected order from
+   `node_modules/bootstrap/scss/bootstrap.scss`.
 
 ## Note for consumers (changelog)
 
