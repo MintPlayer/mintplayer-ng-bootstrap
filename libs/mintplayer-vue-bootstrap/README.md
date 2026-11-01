@@ -6,17 +6,18 @@ This library was generated with [Nx](https://nx.dev).
 
 Run `nx test mintplayer-vue-bootstrap` to execute the unit tests via [Vitest](https://vitest.dev/).
 
-## Styling and encapsulation
+## Architecture and styling
 
-Most components keep a shadow root and take your content through native slots, so your stylesheets
-reach that content normally.
+Each component here is the Vue front of a framework-neutral TypeScript core in
+`@mintplayer/ui-core` (state, keyboard, ARIA, async lifecycles). It renders its own HTML from that
+core. It does **not** wrap or render a web component, so server rendering emits real markup.
 
-``BsDatatable`, `BsTreeview`, `BsTreeSelect` and `BsQueryBuilder`` mount DOM you author (row / node templates, cell renderers,
-editor factories) and therefore render in the **light DOM**, with their own CSS scoped at build time
-onto a `data-mps` attribute — the same device Angular uses for `_ngcontent`. Your styles and
-Bootstrap's utilities reach anything you render into them; in exchange, page CSS also reaches their
-internals, exactly as emulated encapsulation behaves elsewhere. `::part()` and `::slotted()` no
-longer address them.
+- **Styles ship per component.** A component installs its own scoped sheet and the Bootstrap partial
+  its markup uses, once per page, when it first renders (written into `<head>` during SSR). Your
+  global stylesheet loads only the page-level Bootstrap baseline, never component partials. A component
+  and its styles can ship in the lazy chunk of the page that uses it.
+- **Light DOM, emulated encapsulation.** No shadow root. The component's CSS is scoped at build time onto
+  a `data-mps` attribute, like Angular's `_ngcontent`. Your CSS and Bootstrap's utilities reach anything
+  you render into a component, page CSS also reaches its internals, and its own rules cannot leak out.
 
-See **Styling and encapsulation** in the [workspace README](../../README.md) for the full contract
-and the migration table.
+See **Styling and encapsulation** in the [workspace README](../../README.md).

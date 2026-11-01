@@ -243,6 +243,11 @@ It writes into `libs/<front-lib>/<group>/src/generated/` and keeps each entry po
 
 ## 6. Bootstrap CSS integration
 
+> **Superseded (owner decision, #452, 2026-11-01).** The design recorded in this section loads every
+> Bootstrap partial into the global baseline. The owner rejected that: styles ship **per component**,
+> and only the page-level Bootstrap is global. See `CLAUDE.md` → INVARIANTS and
+> `docs/prd/per-component-styles-restart.md`. The measured facts below are still useful.
+
 ### Facts measured on the branch
 
 - The Angular global stylesheet ships a subset of Bootstrap. `forms`, `dropdown`, `nav`, `navbar`, `card`, `tables`, `pagination`, `list-group`, `accordion`, `badge`, `close`, `alert`, `progress`, `modal` and others are commented out, because each shadow-root WC imported its own copy.
