@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal, viewChildren } from '@angular/core';
+import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, Component, computed, contentChildren, effect, ElementRef, inject, input, signal, viewChild, viewChildren } from '@angular/core';
 import { BsScrollOffsetService } from '../services/scroll-offset/scroll-offset.service';
 import { BsScrollspyDirective } from '../directives/scrollspy.directive';
 
@@ -47,6 +47,7 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
 
   readonly directives = contentChildren(BsScrollspyDirective, { descendants: true });
   readonly anchors = viewChildren<ElementRef<HTMLButtonElement>>('anchor');
+  private readonly spyNav = viewChild<ElementRef<HTMLElement>>('spyNav');
 
   activeDirective = signal<BsScrollspyDirective | null>(null);
 
@@ -101,11 +102,17 @@ export class BsScrollspyComponent implements AfterViewInit, AfterContentInit {
     if ((typeof window !== 'undefined') && (window.innerWidth >= 768)) {
       if (this.activeDirective()) {
         const index = this.directives().findIndex((v) => v === this.activeDirective());
-        const anchor = this.anchors()[index];
-        if (anchor && anchor.nativeElement.parentElement) {
-          // Optional-chain so jsdom (no scrollIntoView impl) does not crash
-          // when the effect calls this synchronously during component init.
-          anchor.nativeElement.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        const anchor = this.anchors()[index]?.nativeElement;
+        const nav = this.spyNav()?.nativeElement;
+        if (anchor && nav) {
+          // Scroll the toc list only. scrollIntoView would scroll every ancestor too —
+          // the page included — and, run from the page's own scroll handler, it pulled
+          // the window back whenever the active entry sat outside the sticky toc: the
+          // reader could never reach the top or the bottom of the page.
+          const a = anchor.getBoundingClientRect();
+          const n = nav.getBoundingClientRect();
+          if (a.top < n.top) nav.scrollTop += a.top - n.top;
+          else if (a.bottom > n.bottom) nav.scrollTop += a.bottom - n.bottom;
         }
       }
     }
