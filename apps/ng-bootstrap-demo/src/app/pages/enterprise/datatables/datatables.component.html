@@ -51,7 +51,7 @@
   <ng-template bsDatatableRow let-artist="row">
     <td class="text-nowrap">
       {{ $any(artist).name }}
-      <bs-badge [type]="$any(artist).yearQuit ? colors.secondary : colors.success">
+      <bs-badge [color]="$any(artist).yearQuit ? 'secondary' : 'success'">
         {{ $any(artist).yearQuit ? 'ended' : 'active' }}
       </bs-badge>
     </td>

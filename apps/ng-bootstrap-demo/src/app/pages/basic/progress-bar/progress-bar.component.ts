@@ -45,7 +45,7 @@ export class ProgressBarComponent {
     <bs-progress>
       <bs-progress-bar
         [minimum]="0" [maximum]="100" [value]="30"
-        [color]="colors.warning"
+        color="warning"
         [striped]="true">
       </bs-progress-bar>
     </bs-progress>
@@ -55,7 +55,7 @@ export class ProgressBarComponent {
     <bs-progress>
       <bs-progress-bar
         [minimum]="0" [maximum]="100" [value]="20"
-        [color]="colors.info"
+        color="info"
         [striped]="true"
         [animated]="true">
       </bs-progress-bar>
@@ -66,17 +66,17 @@ export class ProgressBarComponent {
     <!-- Multiple <bs-progress-bar> children render side-by-side. -->
     <bs-progress>
       <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" color="warning" [striped]="true"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" color="info"></bs-progress-bar>
     </bs-progress>
   `;
 
   protected readonly snippetInfiniteHtml = dedent`
     <!-- [isIndeterminate]="true" enables the marching-stripes loading look. -->
-    <bs-progress [isIndeterminate]="true">
+    <bs-progress [indeterminate]="true">
       <bs-progress-bar [minimum]="0" [maximum]="100" [value]="15"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" [color]="colors.warning" [striped]="true"></bs-progress-bar>
-      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" [color]="colors.info" [striped]="true" [animated]="true"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="30" color="warning" [striped]="true"></bs-progress-bar>
+      <bs-progress-bar [minimum]="0" [maximum]="100" [value]="20" color="info" [striped]="true" [animated]="true"></bs-progress-bar>
     </bs-progress>
   `;
 }

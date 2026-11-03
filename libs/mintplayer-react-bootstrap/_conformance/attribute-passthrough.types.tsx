@@ -13,6 +13,15 @@ import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
+import { BsAlert } from '@mintplayer/react-bootstrap/alert';
+import { BsBadge } from '@mintplayer/react-bootstrap/badge';
+import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
+import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
+import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
+import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
+import { BsButtonGroup } from '@mintplayer/react-bootstrap/button-group';
+import { BsClose } from '@mintplayer/react-bootstrap/close';
 import {
   BsCard, BsCardBody, BsCardFooter, BsCardGroup, BsCardHeader, BsCardImg, BsCardLink, BsCardSubtitle,
   BsCardText, BsCardTitle,
@@ -96,6 +105,18 @@ export const probes = [
  * plain-element card and dropdown helpers. The runtime half lists the same set.
  */
 export const everyWrapperProbes = [
+  <BsAlert role="none" id="x" tabIndex={-1} />,
+  <BsBadge role="none" id="x" tabIndex={-1} />,
+  <BsPlaceholder role="none" id="x" tabIndex={-1} />,
+  <BsTable role="none" id="x" tabIndex={-1} />,
+  <BsListGroup role="none" id="x" tabIndex={-1} />,
+  <BsListGroupItem role="none" id="x" tabIndex={-1} />,
+  <BsProgress role="none" id="x" tabIndex={-1} />,
+  <BsProgressBar role="none" id="x" tabIndex={-1} />,
+  <BsBreadcrumb role="none" id="x" tabIndex={-1} />,
+  <BsBreadcrumbItem role="none" id="x" tabIndex={-1} />,
+  <BsButtonGroup role="none" id="x" tabIndex={-1} />,
+  <BsClose role="none" id="x" tabIndex={-1} />,
   <BsCalendar role="none" id="x" tabIndex={-1} />,
   <BsCard role="none" id="x" tabIndex={-1} />,
   <BsCardBody role="none" id="x" tabIndex={-1} />,

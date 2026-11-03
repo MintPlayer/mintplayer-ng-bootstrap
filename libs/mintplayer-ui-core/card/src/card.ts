@@ -1,3 +1,4 @@
+import { COLORS, fillClasses, isColor, isThemeColor, type BsColor } from '@mintplayer/ui-core/color';
 import { defineCore, type CoreBag } from '@mintplayer/ui-core/component';
 
 /**
@@ -9,47 +10,13 @@ import { defineCore, type CoreBag } from '@mintplayer/ui-core/component';
  */
 
 /** The colour names a card, header or footer accepts. */
-export const CARD_COLORS = [
-  'primary',
-  'secondary',
-  'success',
-  'danger',
-  'warning',
-  'info',
-  'light',
-  'dark',
-  'body',
-  'white',
-  'transparent',
-] as const;
+export const CARD_COLORS = COLORS;
 
-export type CardColor = (typeof CARD_COLORS)[number];
+export type CardColor = BsColor;
 
 export type CardImagePosition = 'top' | 'bottom' | 'overlay';
 
-const THEME_COLORS: readonly string[] = CARD_COLORS.slice(0, 8);
-
-export function isCardColor(value: string | null | undefined): value is CardColor {
-  return value != null && (CARD_COLORS as readonly string[]).includes(value);
-}
-
-/**
- * Background classes for a filled surface. Bootstrap has `text-bg-*` for the
- * theme colours only; `body`, `white` and `transparent` pair a background
- * utility with a contrasting text colour.
- */
-function fillClasses(color: CardColor): string[] {
-  switch (color) {
-    case 'body':
-      return ['bg-body', 'text-body'];
-    case 'white':
-      return ['bg-white', 'text-black'];
-    case 'transparent':
-      return ['bg-transparent'];
-    default:
-      return [`text-bg-${color}`];
-  }
-}
+export const isCardColor = isColor;
 
 /**
  * Classes for the card root, beside `card` itself. A filled card takes the
@@ -58,7 +25,7 @@ function fillClasses(color: CardColor): string[] {
  */
 export function cardColorClasses(color: string | null | undefined, outline = false): string[] {
   if (!isCardColor(color)) return [];
-  const border = THEME_COLORS.includes(color) || color === 'white' ? [`border-${color}`] : [];
+  const border = isThemeColor(color) || color === 'white' ? [`border-${color}`] : [];
   return outline ? ['bg-transparent', ...border] : [...fillClasses(color), ...border];
 }
 

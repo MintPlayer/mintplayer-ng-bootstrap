@@ -1,0 +1,3 @@
+// The badge's own sheet (S15). Empty on purpose: every rule the badge needs is
+// Bootstrap's, shipped by the `badge` part the manifest installs (C4), and the
+// unit uses the baseline's `visually-hidden` helper.

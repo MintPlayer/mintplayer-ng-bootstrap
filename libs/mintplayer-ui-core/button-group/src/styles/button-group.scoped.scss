@@ -1,0 +1,80 @@
+// The button group's own sheet (S15). Bootstrap's part joins the `.btn`s that
+// are DIRECT children of the group. A component that renders a button inside
+// its own host (a toggle button or a radio of type toggle_button: a
+// `display: contents` box around `.btn-check + .btn`) puts that `.btn` one
+// level deeper, where Bootstrap's `>` rules cannot see it. The rules below
+// join such HOSTED buttons the same way, so no button needs to know about
+// button groups (#458 M3, known gap). A hosted child is any child that is not
+// itself a `.btn`, `.btn-check` or nested `.btn-group` (Bootstrap handles those).
+//
+// They match the toggle button's own `.btn`, which this scope never stamps, so
+// they are authored in final form, anchored on the group this component rendered.
+
+/*! @mps-global */
+:is(.btn-group, .btn-group-vertical)[data-mps=button-group] > :not(.btn, .btn-check, .btn-group) > .btn {
+  position: relative;
+  flex: 1 1 auto;
+}
+
+/*! @mps-global */
+:is(.btn-group, .btn-group-vertical)[data-mps=button-group] > :not(.btn, .btn-check, .btn-group) > :is(.btn-check:checked + .btn, .btn-check:focus + .btn, .btn:hover, .btn:focus, .btn:active, .btn.active) {
+  z-index: 1;
+}
+
+// Horizontal: overlap the borders and square the inner corners.
+/*! @mps-global */
+.btn-group[data-mps=button-group] > * + :not(.btn, .btn-check, .btn-group) > .btn {
+  margin-left: calc(-1 * var(--bs-border-width));
+}
+
+/*! @mps-global */
+.btn-group[data-mps=button-group] > :not(.btn, .btn-check, .btn-group):not(:last-child) > .btn {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/*! @mps-global */
+.btn-group[data-mps=button-group] > :not(.btn, .btn-check, .btn-group):not(:first-child) > .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+// Vertical: the same, along the block axis.
+/*! @mps-global */
+.btn-group-vertical[data-mps=button-group] > :not(.btn, .btn-check, .btn-group) > .btn {
+  width: 100%;
+}
+
+/*! @mps-global */
+.btn-group-vertical[data-mps=button-group] > * + :not(.btn, .btn-check, .btn-group) > .btn {
+  margin-top: calc(-1 * var(--bs-border-width));
+}
+
+/*! @mps-global */
+.btn-group-vertical[data-mps=button-group] > :not(.btn, .btn-check, .btn-group):not(:last-child) > .btn {
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/*! @mps-global */
+.btn-group-vertical[data-mps=button-group] > :not(.btn, .btn-check, .btn-group):not(:first-child) > .btn {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+// Sizing: Bootstrap's `.btn-group-sm > .btn` extends `.btn-sm`; the same values for a hosted button.
+/*! @mps-global */
+.btn-group-sm[data-mps=button-group] > :not(.btn, .btn-check, .btn-group) > .btn {
+  --bs-btn-padding-y: 0.25rem;
+  --bs-btn-padding-x: 0.5rem;
+  --bs-btn-font-size: 0.875rem;
+  --bs-btn-border-radius: var(--bs-border-radius-sm);
+}
+
+/*! @mps-global */
+.btn-group-lg[data-mps=button-group] > :not(.btn, .btn-check, .btn-group) > .btn {
+  --bs-btn-padding-y: 0.5rem;
+  --bs-btn-padding-x: 1rem;
+  --bs-btn-font-size: 1.25rem;
+  --bs-btn-border-radius: var(--bs-border-radius-lg);
+}

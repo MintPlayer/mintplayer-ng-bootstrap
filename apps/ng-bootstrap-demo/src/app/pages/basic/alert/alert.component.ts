@@ -1,7 +1,7 @@
 import { Component, ElementRef, model, signal, viewChild, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
@@ -12,7 +12,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-alert',
   templateUrl: './alert.component.html',
   styleUrls: ['./alert.component.scss'],
-  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsAlertComponent, BsAlertCloseComponent, BsInputGroupComponent, BsButtonTypeDirective],
+  imports: [FormsModule, BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsAlertComponent, BsInputGroupComponent, BsButtonTypeDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AlertComponent {
@@ -38,21 +38,20 @@ export class AlertComponent {
   }
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-alert [type]="colors.info" [(isVisible)]="isVisible">
+    <bs-alert color="info" [(visible)]="isVisible" dismissible>
       Heads up — something noteworthy happened.
-      <bs-alert-close></bs-alert-close>
     </bs-alert>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
-    import { BsAlertComponent, BsAlertCloseComponent } from '@mintplayer/ng-bootstrap/alert';
+    import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 
     @Component({
       selector: 'my-alert-demo',
       templateUrl: './my-alert-demo.component.html',
-      imports: [BsAlertComponent, BsAlertCloseComponent],
+      imports: [BsAlertComponent],
     })
     export class MyAlertDemoComponent {
       protected readonly colors = Color;
@@ -62,24 +61,21 @@ export class AlertComponent {
 
   protected readonly snippetStaticHtml = dedent`
     <!-- Stack of static, dismissible alerts -->
-    <bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
+    <bs-alert color="warning" [(visible)]="alert1Visible" dismissible>
       Heads up.
-      <bs-alert-close></bs-alert-close>
     </bs-alert>
-    <bs-alert [type]="colors.danger" [(isVisible)]="alert2Visible">
+    <bs-alert color="danger" [(visible)]="alert2Visible" dismissible>
       Something went wrong.
-      <bs-alert-close></bs-alert-close>
     </bs-alert>
   `;
 
   protected readonly snippetListHtml = dedent`
-    <!-- Dynamic list: remove an entry when its alert finishes closing.
-         (afterOpenedOrClosed) emits true on open, false on close. -->
+    <!-- Dynamic list: remove an entry when the user dismisses its alert.
+         (visibleChange) emits false on dismiss. -->
     @for (alertItem of alertsList(); track alertItem.id) {
-      <bs-alert [type]="colors.danger"
-                (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
+      <bs-alert color="danger"
+                (visibleChange)="alertVisibleChange(alertItem, $event)" dismissible>
         {{ alertItem.text }}
-        <bs-alert-close></bs-alert-close>
       </bs-alert>
     }
   `;

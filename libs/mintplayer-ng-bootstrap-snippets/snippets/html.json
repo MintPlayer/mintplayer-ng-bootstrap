@@ -81,9 +81,8 @@
         "prefix": "bs-alert",
         "description": "Bootstrap Alert",
         "body": [
-            "<bs-alert [type]=\"${1:colors.danger}\" [(isVisible)]=\"${2:alertVisible}\">",
+            "<bs-alert color=\"${1:danger}\" [(visible)]=\"${2:alertVisible}\" dismissible>",
             "\t${3:Content}",
-            "\t<bs-alert-close></bs-alert-close>",
             "</bs-alert>"
         ]
     },
@@ -91,7 +90,7 @@
         "prefix": "bs-badge",
         "description": "Bootstrap Badge",
         "body": [
-            "<bs-badge [type]=\"${1:colors.warning}\">${2:Content}</bs-badge>"
+            "<bs-badge color=\"${1:warning}\">${2:Content}</bs-badge>"
         ]
     },
     "Breadcrumb": {
@@ -282,7 +281,7 @@
         "body": [
             "<bs-progress>",
             "\t<bs-progress-bar [minimum]=\"${1:0}\" [maximum]=\"${2:100}\" [value]=\"${3:15}\"></bs-progress-bar>",
-            "\t<bs-progress-bar [minimum]=\"${4:0}\" [maximum]=\"${5:100}\" [value]=\"${6:30}\" [color]=\"${7:colors.warning}\" [striped]=\"${8:true}\"></bs-progress-bar>",
+            "\t<bs-progress-bar [minimum]=\"${4:0}\" [maximum]=\"${5:100}\" [value]=\"${6:30}\" color=\"${7:warning}\" [striped]=\"${8:true}\"></bs-progress-bar>",
             "</bs-progress>"
         ]
     },
@@ -304,7 +303,7 @@
         "prefix": "bs-table",
         "description": "Bootstrap Table",
         "body": [
-            "<bs-table [isResponsive]=\"${1:true}\">",
+            "<bs-table [responsive]=\"${1:true}\">",
             "\t<thead>",
             "\t\t<tr>",
             "\t\t\t${2}",

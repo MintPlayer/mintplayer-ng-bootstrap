@@ -24,6 +24,15 @@ function lazyNamed<P>(
 //
 // Pages are code-split via lazyNamed so each page becomes its own JS
 // chunk — the initial bundle only ships the shell + router + Home.
+const BadgePage        = lazyNamed(() => import('./pages/BadgePage'),        'BadgePage');
+const ButtonGroupPage  = lazyNamed(() => import('./pages/ButtonGroupPage'),  'ButtonGroupPage');
+const ClosePage        = lazyNamed(() => import('./pages/ClosePage'),        'ClosePage');
+const AlertPage        = lazyNamed(() => import('./pages/AlertPage'),        'AlertPage');
+const BreadcrumbPage   = lazyNamed(() => import('./pages/BreadcrumbPage'),   'BreadcrumbPage');
+const ListGroupPage    = lazyNamed(() => import('./pages/ListGroupPage'),    'ListGroupPage');
+const ProgressPage     = lazyNamed(() => import('./pages/ProgressPage'),     'ProgressPage');
+const PlaceholderPage  = lazyNamed(() => import('./pages/PlaceholderPage'),  'PlaceholderPage');
+const TablePage        = lazyNamed(() => import('./pages/TablePage'),        'TablePage');
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
 const CarouselPage     = lazyNamed(() => import('./pages/CarouselPage'),     'CarouselPage');
@@ -77,6 +86,15 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           {/* Basic */}
+          <Route path="/basic/badge" element={<BadgePage />} />
+          <Route path="/basic/button-group" element={<ButtonGroupPage />} />
+          <Route path="/basic/close" element={<ClosePage />} />
+          <Route path="/basic/alert" element={<AlertPage />} />
+          <Route path="/basic/breadcrumb" element={<BreadcrumbPage />} />
+          <Route path="/basic/list-group" element={<ListGroupPage />} />
+          <Route path="/basic/progress-bar" element={<ProgressPage />} />
+          <Route path="/basic/placeholder" element={<PlaceholderPage />} />
+          <Route path="/basic/table" element={<TablePage />} />
           <Route path="/basic/calendar" element={<CalendarPage />} />
           <Route path="/basic/card" element={<CardPage />} />
           <Route path="/basic/carousel" element={<CarouselPage />} />

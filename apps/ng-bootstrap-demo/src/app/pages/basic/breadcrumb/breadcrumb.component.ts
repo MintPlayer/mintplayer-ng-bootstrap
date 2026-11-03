@@ -20,7 +20,7 @@ export class BreadcrumbComponent {
       <bs-breadcrumb-item>
         <a [routerLink]="['/basic']">Basic</a>
       </bs-breadcrumb-item>
-      <bs-breadcrumb-item>
+      <bs-breadcrumb-item active>
         Breadcrumb
       </bs-breadcrumb-item>
     </bs-breadcrumb>

@@ -3,7 +3,7 @@ import { Component, ElementRef, TemplateRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { BsToastCloseDirective } from './toast-close.directive';
 import { MockComponent } from 'ng-mocks';
-import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close/src/close.component';
+import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 import { BsToastContainerComponent } from '../../components/toast-container/toast-container.component';
 import { BsToastBodyComponent } from '../../components/toast-body/toast-body.component';
 import { BsToastHeaderComponent } from '../../components/toast-header/toast-header.component';

@@ -5,13 +5,13 @@
 <h2>Basic usage</h2>
 
 <div class="status-panel">
-    <bs-alert [type]="box1InViewport ? colors.success : colors.secondary">
+    <bs-alert [color]="box1InViewport ? 'success' : 'secondary'">
         Box 1 is {{ box1InViewport ? 'in' : 'out of' }} viewport
     </bs-alert>
-    <bs-alert [type]="box2InViewport ? colors.success : colors.secondary">
+    <bs-alert [color]="box2InViewport ? 'success' : 'secondary'">
         Box 2 is {{ box2InViewport ? 'in' : 'out of' }} viewport
     </bs-alert>
-    <bs-alert [type]="box3InViewport ? colors.success : colors.secondary">
+    <bs-alert [color]="box3InViewport ? 'success' : 'secondary'">
         Box 3 is {{ box3InViewport ? 'in' : 'out of' }} viewport
     </bs-alert>
 </div>

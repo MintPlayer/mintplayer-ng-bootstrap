@@ -1,0 +1,6 @@
+// The list group's own rules (#458 M5); the list-group partial is installed by
+// the manifest. Bootstrap's list group is a flex column, so an item (a custom
+// element host in Angular and Lit) is a block flex item either way.
+.list-group-item {
+  display: block;
+}

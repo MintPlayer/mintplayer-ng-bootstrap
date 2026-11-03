@@ -1,6 +1,6 @@
 <h1 class="text-center">Host Bindings with Signals</h1>
 
-<bs-alert [type]="colors.info">
+<bs-alert color="info">
   This page used to demonstrate <code>provideAsyncHostBindings()</code>, a custom event manager plugin that let you bind
   host properties to RxJS observables (e.g. <code>($.style.padding.px)="padding$"</code>). That plugin relied on
   zone.js's <code>NgZone.onStable</code>, which no longer reflects app stability under
@@ -21,7 +21,7 @@
 <p>For a value that arrives from an Observable, use <code>toSignal()</code> from <code>&#64;angular/core/rxjs-interop</code>:</p>
 <bs-code-snippet [code]="toSignalExample" [language]="'ts'"></bs-code-snippet>
 
-<bs-alert [type]="colors.success">
+<bs-alert color="success">
   No special provider is needed. Signals integrate natively with Angular's change detector, in both zone-based and
   zoneless apps.
 </bs-alert>

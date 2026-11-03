@@ -1,2 +1,2 @@
-export * from './list-group/list-group.component';
-export * from './list-group-item/list-group-item.component';
+// Generated from @mintplayer/ui-core/list-group (#458 D10).
+export * from './generated';

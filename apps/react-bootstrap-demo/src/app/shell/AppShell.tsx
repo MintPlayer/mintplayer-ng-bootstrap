@@ -6,7 +6,16 @@ import { GithubLink } from './GithubLink';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 const SECTIONS = [
   { title: 'Basic', routes: [
+    { path: '/basic/badge', label: 'Badge' },
+    { path: '/basic/button-group', label: 'Button group' },
     { path: '/basic/card', label: 'Card' },
+    { path: '/basic/close', label: 'Close button' },
+    { path: '/basic/alert', label: 'Alert' },
+    { path: '/basic/breadcrumb', label: 'Breadcrumb' },
+    { path: '/basic/list-group', label: 'List group' },
+    { path: '/basic/progress-bar', label: 'Progress' },
+    { path: '/basic/placeholder', label: 'Placeholders' },
+    { path: '/basic/table', label: 'Table' },
     { path: '/basic/carousel', label: 'Carousel' },
     { path: '/basic/calendar', label: 'Calendar' },
     { path: '/basic/forms/datepicker', label: 'Datepicker' },

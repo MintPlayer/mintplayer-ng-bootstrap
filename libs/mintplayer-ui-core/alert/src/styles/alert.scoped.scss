@@ -1,0 +1,6 @@
+// The alert's own rules (#458 M5); the alert and close partials are installed
+// by the manifest. Bootstrap's .alert sets no display, and the Angular and Lit
+// hosts are custom elements (inline by default).
+.alert {
+  display: block;
+}

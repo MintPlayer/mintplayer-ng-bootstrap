@@ -3,7 +3,7 @@
 <p>
   <code>bs-breadcrumb</code> renders a Bootstrap breadcrumb trail; each
   <code>bs-breadcrumb-item</code> hosts a link or label and the last item is
-  marked as the current page.
+  marked <code>active</code>: the current page (<code>aria-current="page"</code>).
 </p>
 
 <h2>Basic usage</h2>
@@ -15,7 +15,7 @@
     <bs-breadcrumb-item>
         <a [routerLink]='["/basic"]'>Basic</a>
     </bs-breadcrumb-item>
-    <bs-breadcrumb-item>
+    <bs-breadcrumb-item active>
         Breadcrumb
     </bs-breadcrumb-item>
 </bs-breadcrumb>

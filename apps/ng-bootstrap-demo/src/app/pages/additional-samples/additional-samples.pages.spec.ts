@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
-import { BsAlertCloseComponent, BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
@@ -62,7 +62,7 @@ const pages: {
       NoopAnimationsModule,
       // Mock dependencies
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       MockDirective(BsButtonTypeDirective),
       MockComponent(BsCodeSnippetComponent),
       // Unit to test (standalone)

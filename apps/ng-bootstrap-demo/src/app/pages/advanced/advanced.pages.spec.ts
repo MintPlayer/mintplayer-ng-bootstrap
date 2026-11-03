@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule, provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withRouterConfig } from '@angular/router';
 import { MockComponent, MockDirective, MockModule, MockPipe, MockPipes } from 'ng-mocks';
-import { BsAlertCloseComponent, BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -122,7 +122,7 @@ const pages: {
     component: AsyncHostBindingComponent,
     imports: () => [
       NoopAnimationsModule,
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       MockComponent(BsCodeSnippetComponent),
       MockComponent(HelloComponent),
       MockComponent(RxjsHostComponent),
@@ -395,7 +395,7 @@ const pages: {
     name: 'UserAgentComponent',
     component: UserAgentComponent,
     imports: () => [
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       UserAgentComponent,
     ],
   },

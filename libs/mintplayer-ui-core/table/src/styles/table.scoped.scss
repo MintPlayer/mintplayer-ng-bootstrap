@@ -1,0 +1,13 @@
+// The table's own rules (#458 M5); the tables partial is installed by the manifest.
+.table-host {
+  display: block;
+}
+
+// A responsive table keeps every cell on one line, so it scrolls instead of
+// wrapping. The cells are the consumer's, which this scope never stamps, so
+// the rule is authored in final form, anchored on this component's table.
+
+/*! @mps-global */
+.table-responsive[data-mps=table] > .table[data-mps=table] :is(th, td) {
+  white-space: nowrap;
+}

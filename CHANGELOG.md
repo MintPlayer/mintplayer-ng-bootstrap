@@ -10,6 +10,22 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Presentational components are generated from `@mintplayer/ui-core` (issue #458), and React, Vue
+  and Lit get each of them too.** Badge, close, button group, alert, breadcrumb, list group,
+  progress, placeholder and table. Colours are theme colour names (`color="warning"`) instead of the
+  `Color` enum. Renames:
+  - **Badge:** `type` → `color`.
+  - **Close, button group:** `ariaLabel` → `label`.
+  - **Alert:** `type` → `color`; `[(isVisible)]` → `[(visible)]`; `bs-alert-close` is gone, set
+    `dismissible` (and `closeLabel`) instead; `afterOpenedOrClosed` is gone, `visibleChange` reports a
+    dismissal. The alert is `role="alert"` only with `announce`.
+  - **Breadcrumb:** mark the current item `active` (it gets `aria-current="page"`).
+  - **Progress:** `isIndeterminate` → `indeterminate`; `ariaLabel` → `label`; a bar's width is a
+    `data-progress` attribute, not an inline style.
+  - **Placeholder:** `isLoading` → `loading`; the `bsPlaceholderField` directive is a plain
+    `data-placeholder-field` attribute.
+  - **Table:** `isResponsive` → `responsive`; `border` → `bordered`; `ariaRowCount` is gone, set
+    `aria-rowcount` on the component and it lands on the `<table>`.
 - **`collectScopedStyles` collects per render (issue #452).** It now takes the render and returns
   `{ result, styles }`: `await collectScopedStyles(() => renderApp(url))`. It used to return every sheet the
   process had ever installed, so a page's head carried the CSS of components only other pages render. A

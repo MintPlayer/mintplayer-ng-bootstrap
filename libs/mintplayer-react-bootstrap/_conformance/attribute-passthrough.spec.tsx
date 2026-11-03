@@ -68,6 +68,15 @@ import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
 import { BsSpinner } from '@mintplayer/react-bootstrap/spinner';
+import { BsAlert } from '@mintplayer/react-bootstrap/alert';
+import { BsBadge } from '@mintplayer/react-bootstrap/badge';
+import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
+import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
+import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
+import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
+import { BsButtonGroup } from '@mintplayer/react-bootstrap/button-group';
+import { BsClose } from '@mintplayer/react-bootstrap/close';
 import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
 import { BsTabControl } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
@@ -163,6 +172,18 @@ const CASES: Case[] = [
       </BsAccordion>
     ),
   },
+  bare('BsAlert', 'div.alert', BsAlert),
+  bare('BsBadge', 'span.badge', BsBadge),
+  bare('BsPlaceholder', 'div.placeholder-region', BsPlaceholder),
+  bare('BsTable', 'table.table', BsTable),
+  { ...bare('BsListGroup', 'div.list-group', BsListGroup), fixedRole: 'list' },
+  { ...bare('BsListGroupItem', 'div.list-group-item', BsListGroupItem), fixedRole: 'listitem' },
+  bare('BsProgress', 'div.progress-host', BsProgress),
+  { ...bare('BsProgressBar', 'div.progress-bar', BsProgressBar), fixedRole: 'progressbar' },
+  bare('BsBreadcrumb', 'nav', BsBreadcrumb),
+  { ...bare('BsBreadcrumbItem', 'li.breadcrumb-item', BsBreadcrumbItem), fixedRole: 'listitem' },
+  { ...bare('BsButtonGroup', 'div.btn-group', BsButtonGroup), fixedRole: 'group' },
+  bare('BsClose', 'button.btn-close', BsClose),
   bare('BsCalendar', 'div.mp-calendar', BsCalendar),
   bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),

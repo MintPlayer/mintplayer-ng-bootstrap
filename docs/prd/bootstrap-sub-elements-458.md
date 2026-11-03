@@ -587,6 +587,28 @@ only.
      host). CLAUDE.md's "Hand-written Lit elements" section is now history (§4.8).
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
+   - **Colour (`ui-core/color`).** One `ThemeColor` / `BsColor` string type, `THEME_COLORS`,
+     `isThemeColor` and `fillClasses` for every coloured component; the Angular `Color` enum input
+     is gone from each component as it converts (`color="warning"`, not `[color]="colors.warning"`).
+   - **Badge, close, button group.** Presentational cores. The badge's `type` is `color`; close
+     and button group take their accessible name as `label` (`ariaLabel` is gone). The button-group sheet joins hosted children
+     (`.btn-group[data-mps] > * > .btn`), closing the M3 gap.
+   - **Alert.** `bs-alert-close` is replaced by a `dismissible` input: the core renders the
+     `.btn-close` (hidden until hydrated, tier 2), rescues focus and writes back the two-way
+     `visible` (was `isVisible`). `role="alert"` only with `announce`, so a static alert does not
+     interrupt. `afterOpenedOrClosed` is gone; `visibleChange` reports the dismissal.
+   - **Breadcrumb, list group.** Host-rooted items (`li.breadcrumb-item`, `.list-group-item`) so
+     Bootstrap's sibling selectors see them; each carries an explicit `listitem` role and the
+     state (`aria-current`, `aria-disabled`).
+   - **Progress.** A bar's width is `data-progress="<0–100>"` matched by a generated sheet rule,
+     never an inline `style` (CSP-safe, and `:style` is refused on an mp-attrs node). The
+     indeterminate track renders one valueless progressbar named by `label`.
+   - **Placeholder.** `loading` drives `aria-busy` and a polite status that announces `loadedText`
+     once and clears itself. The Angular-only `bsPlaceholderField` directive is a plain
+     `data-placeholder-field` attribute, styled by an `@mps-global` rule anchored on the region.
+   - **Table.** A `table-host` around a real `<table mp-attrs>`; the consumer's `aria-rowcount`
+     and friends land on the table, so the `ariaRowCount` input is gone. `isResponsive` →
+     `responsive`, `border` → `bordered`.
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the
    unified dropdown with the navbar (§4.5).
 7. **#455 tier D and the calendar fold:** color-picker, rating, resizable, priority-nav, scrollspy,

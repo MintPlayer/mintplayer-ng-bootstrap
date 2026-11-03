@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsPlaceholderComponent, BsPlaceholderFieldDirective } from '@mintplayer/ng-bootstrap/placeholder';
+import { BsPlaceholderComponent } from '@mintplayer/ng-bootstrap/placeholder';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
@@ -14,18 +14,18 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-placeholder',
   templateUrl: './placeholder.component.html',
   styleUrls: ['./placeholder.component.scss'],
-  imports: [BsCodeSnippetComponent, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCardComponent, BsCardHeaderComponent, BsCardBodyComponent, BsPlaceholderComponent, BsPlaceholderFieldDirective, BsCheckboxComponent],
+  imports: [BsCodeSnippetComponent, FormsModule, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCardComponent, BsCardHeaderComponent, BsCardBodyComponent, BsPlaceholderComponent, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlaceholderComponent {
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-placeholder [isLoading]="isLoading">
+    <bs-placeholder [loading]="isLoading">
       <h5 class="card-title">
-        <span bsPlaceholderField class="d-block">Featured</span>
+        <span data-placeholder-field class="d-block">Featured</span>
       </h5>
       <p class="card-text">
-        <span bsPlaceholderField [xxs]="7" class="d-inline-block">
+        <span data-placeholder-field [xxs]="7" class="d-inline-block">
           {{ isLoading ? '&nbsp;' : 'Hello world' }}
         </span>
       </p>
@@ -34,15 +34,12 @@ export class PlaceholderComponent {
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import {
-      BsPlaceholderComponent,
-      BsPlaceholderFieldDirective,
-    } from '@mintplayer/ng-bootstrap/placeholder';
+    import { BsPlaceholderComponent } from '@mintplayer/ng-bootstrap/placeholder';
 
     @Component({
       selector: 'my-placeholder-demo',
       templateUrl: './my-placeholder-demo.component.html',
-      imports: [BsPlaceholderComponent, BsPlaceholderFieldDirective],
+      imports: [BsPlaceholderComponent],
     })
     export class MyPlaceholderDemoComponent {
       protected isLoading = true;

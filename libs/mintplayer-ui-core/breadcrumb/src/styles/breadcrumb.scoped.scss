@@ -1,0 +1,10 @@
+// The breadcrumb's own rules (#458 M5); the breadcrumb partial is installed by
+// the manifest. The hosts are custom elements in Angular and Lit (inline by
+// default): the wrapper is a block, and an item a flex item like Bootstrap's li.
+.breadcrumb-host {
+  display: block;
+}
+
+.breadcrumb-item {
+  display: block;
+}
