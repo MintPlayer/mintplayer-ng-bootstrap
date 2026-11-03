@@ -1,6 +1,6 @@
 # PRD + plan — one mechanism for every component: sub-elements styled by the import alone, every front generated (issue #458, absorbs #455)
 
-Status: **decisions locked (grill, 2026-11-03), spikes open.** Base: `master` after #456 (the #452 squash,
+Status: **decisions locked (grill, 2026-11-03); spikes S1–S8 read (§5.1); next: M1.** Base: `master` after #456 (the #452 squash,
 `54792702`).
 
 This PRD amends three documents:
@@ -376,6 +376,52 @@ Two Vue limits follow, and they decide the Vue API shape:
 `<BsTooltip v-slot="{ props }"><button v-bind="props">…</button></BsTooltip>`, the standard Vue
 headless pattern. A directive that consumes no context and renders no template stays a custom directive
 (`v-bs-row`, `v-bs-col`).
+
+**S5 Body host (2026-11-03): design read; the M2 opening task proves the Angular half.** No front puts
+overlays in `<body>` today: the modal renders inline as a fixed `div`. The compiler's `<teleport :to>`
+(`MpTeleportDirective`, React `createPortal`, Vue `<Teleport>`, Lit `teleport()`) already renders a view
+into a core-owned element. The overlay host builds on it with a new static target, `<teleport to="body">`.
+
+| Front | Client | Server |
+|---|---|---|
+| Vue | `<Teleport to="body">` | native Teleport SSR, which hydrates through its body markers |
+| Angular | today's teleport into a body host `div[data-mp-overlay=<id>]` | see below |
+| React | `createPortal` into the host after mount | nothing (decided, Q9–Q11) |
+| Lit | `render()` into the host | nothing (no Lit SSR) |
+
+**Angular server and client.** The server creates the view **detached** (`createEmbeddedView` plus
+`ApplicationRef.attachView`, not in the component's `ViewContainerRef`), so the component's hydration
+info has no view whose nodes went missing, and appends it to a body host. The client's bridge removes
+any server host with the same id before it creates its own. That turns Q10's `ngSkipHydration` into a
+fallback, needed only if the detached view shows up in the hydration info anyway, which is what M2's
+first task measures.
+
+**Shared rules.**
+- The host copies `data-bs-theme`, `dir` and `lang` from the closest declaring ancestor when it opens.
+- The pickers' popups stay in the top layer.
+- Opening an overlay calls `dismiss-stack` first.
+
+**S6 Slot groups (2026-11-03).** No compiler gap blocks the eight shadow-root groups.
+- Named regions are already supported in the generated Lit front: `slot="x"` light children are captured
+  per slot (`LightChildren`), and Angular, React and Vue use their native slots. Shell, card,
+  tab-control, accordion and checkbox map onto them.
+- SVG renders in templates already (datatable, theme-toggle), so the three charts (hierarchy, sparkline,
+  trend, whose cores exist in `ui-core/charts`) are expressible.
+- Two cases need a closer look in M4:
+  - tile-manager's imperative `dom.ts`, which probably becomes core-owned teleport hosts like the dock;
+  - typeahead, the last light-tier reference.
+
+**S7 No-JS dropdown (2026-11-03).** The navbar sheet already gates rules on `:not([data-mp-hydrated])`
+(`navbar.scoped.scss:184`) and uses `<details>` for every dropdown. Nothing reveals on `:focus-within`
+today: the `data-js` gates went away with #437. Q14 adds one rule family, gated the same way:
+`:not([data-mp-hydrated]) .nav-item.dropdown:focus-within > .dropdown-menu`, with nested submenus shown
+inline. The unified `bs-dropdown-menu` carries it, so a standalone dropdown gets it too. The
+`navbar-noscript.md` matrix becomes M6's e2e.
+
+**S8 Calendar (2026-11-03).** `@mintplayer/ng-bootstrap/calendar-month` is an orphan. It holds only a
+service and two pipes, nothing in `libs/` or `apps/` imports it, and the `calendar` core is already
+self-sufficient (the datepicker and the scheduler use it). **M7 deletes the entry.** The month-name and
+weekday-name pipes go too, because the core localises through `Intl`.
 
 Related finding: the `markLinks` helpers in every front add `.nav-link` and the scope to a consumer's
 link, which means they stamp consumer DOM. With the anchored guard (`nav-link` is a sub class of `.nav` /
