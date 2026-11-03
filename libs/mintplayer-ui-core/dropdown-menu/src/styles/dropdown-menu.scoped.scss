@@ -1,7 +1,7 @@
 // The dropdown menu's stylesheet, shared by the fronts (PRD #437 wave B). The
-// page's Bootstrap supplies `.dropdown-menu` (every --bs-dropdown-* property,
-// its dark-theme override), `.dropdown-item`, `.dropdown-divider` and
-// `.dropdown-header`; these rules only adapt them. Ported from the former
+// dropdown part the fronts install (#452) supplies `.dropdown-menu` (every
+// --bs-dropdown-* property, its dark-theme override), `.dropdown-item`,
+// `.dropdown-divider` and `.dropdown-header`; these rules only adapt them. Ported from the former
 // mp-dropdown-menu shadow sheet, minus everything the boundary used to block.
 
 // No trigger or positioning of its own: the menu flows in place, always shown,
@@ -16,6 +16,13 @@ $scope: dropdown-menu !default;
   display: block;
   max-height: var(--mp-dropdown-max-height, none);
   overflow-y: auto;
+}
+
+// A bare <li> item is the menuitem itself (the core activates it on click and
+// Enter), but only <a> and <button> get a pointer from the UA. A disabled item
+// has Bootstrap's pointer-events: none.
+.dropdown-item {
+  cursor: pointer;
 }
 
 // An item that wraps its own link or button (a router link, a consumer button)
