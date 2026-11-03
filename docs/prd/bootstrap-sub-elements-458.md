@@ -1,0 +1,331 @@
+# PRD + plan — one mechanism for every component: sub-elements styled by the import alone, every front generated (issue #458, absorbs #455)
+
+Status: **decisions locked (grill, 2026-11-03), spikes open.** Base: `master` after #456 (the #452 squash,
+`54792702`).
+
+This PRD amends three documents:
+- `docs/prd/per-component-styles-452.md` §3.2.4, the "accepted limitation";
+- `docs/prd/angular-only-to-d10.md` (#455), which this PRD **supersedes**, keeping its inventory (§2) and
+  definition of done (§4);
+- `CLAUDE.md`, as listed in §4.8.
+
+`docs/prd/navbar-noscript.md` stays the no-JS contract for the navbar and dropdowns.
+
+Read `CLAUDE.md` INVARIANTS 1–5 and `docs/styles-mechanism.md` first.
+
+## 1. Goal
+
+1. **The import is enough.** A consumer imports the component, as always. Every class the component's
+   Bootstrap partial styles is styled when it sits inside that component. No `useBootstrap(...Page)` and
+   no extra directive to remember.
+2. **One mechanism.** Every UI component is a D10 source (core + `.view.vue` + manifest). The compiler
+   generates all four fronts from it. That covers:
+   - the hand-written fronts;
+   - the shadow-root Lit elements;
+   - the Angular-only components.
+
+   No hand-written front, no shadow root, no `_styles` copy and no page-variant install remains inside
+   a component. Breaking changes are accepted and documented.
+
+```html
+<bs-form>                                   <!-- import BsFormComponent: nothing else -->
+  <label class="form-label">Name</label>    <!-- styled -->
+  <input bsFormControl>
+  <div class="form-text">Shown to others</div>
+</bs-form>
+<bs-table><tr class="table-active">…</tr></bs-table>   <!-- styled -->
+<div bsModalHeader><h5 class="modal-title">…</h5></div> <!-- styled -->
+```
+
+Non-goals:
+- Raw Bootstrap markup **outside** any component, such as a plain `<a class="nav-link">` in an app's side
+  menu. That stays the `…Page` case of #452 §3.6.
+- The non-UI Angular entries (pipes and utilities, #455 §6). They stay Angular-only.
+
+## 2. Problem (measured on master)
+
+### 2.1 Sub-elements
+
+`tools/scripts/lib/scope-bootstrap.mjs` guards the leftmost owned compound, turning `.form-label` into
+`.form-label:where([data-mps])`. Every element a library template renders is stamped, across a whole
+family: a D10 group shares one scope (S15), and the modal's sections all stamp `"modal"`. But a
+sub-element **written in the consumer's template and projected in** is not stamped. It behaves like
+Angular's emulated encapsulation without `::ng-deep`. Before #452 these elements were styled only because
+Bootstrap was global.
+
+| Class | Part | Owning component | Today |
+|---|---|---|---|
+| `.form-label`, `.form-text`, `.(in)valid-feedback`, `.form-check-input` on a plain input | forms | `bs-form` | unstyled. `bs-form` stamps nothing on its `<form>` **and installs no part** (`form/src/form/form.component.html:4`) |
+| `.input-group-text` | forms | input group (4 fronts) | unstyled |
+| `.modal-title` | modal | modal + `bsModalHeader` | unstyled |
+| `.offcanvas-title` | offcanvas | offcanvas header | unstyled |
+| `.table-active`, `.table-primary`, … on `<tr>`/`<td>` | tables | `bs-table` | unstyled |
+| `.dropdown-item-text` | dropdown | dropdown menu (4 fronts) | unstyled |
+| `.alert-link`, `.alert-heading` | alert | `bs-alert` | unstyled |
+
+### 2.2 Two mechanisms
+
+- **Eight hand-written Lit groups still have a shadow root**, each with its own Bootstrap copies in
+  `web-components/_styles`: accordion, card, charts, checkbox, pagination, shell, tab-control and
+  tile-manager. `mp-card` even installs the unscoped `bootstrapCardPage` from inside the component
+  (`mp-card.element.ts:51`).
+- Their Angular, React and Vue fronts are hand-written per framework. They don't wrap the web component
+  (INVARIANT 3 holds), but they drift apart independently.
+- So do the light-DOM hand-written groups: input-group, typeahead, sparkline, dropdown-menu, radio and
+  radio-group, and toggle-button.
+- About 40 components exist only in Angular (#455 §2).
+
+## 3. Decisions (owner, grill of 2026-11-03)
+
+| # | Decision |
+|---|---|
+| Q1 | **Anchored descendant guard.** A sub class is styled when it is itself stamped, or sits inside a stamped root *of its own partial*. It is not styled inside just any stamped element: `bs-shell`'s stamped `.content` wraps the whole app, so the bare `:where([data-mps]) .x` from the issue comment would make the part global. Stamping consumer content at runtime is rejected: it brands consumer DOM and is missing from the SSR HTML |
+| Q2 | **Every class Bootstrap documents as content of the component is a sub class.** That includes the `form-check` family, `card-title/-subtitle/-text/-link`, `nav-link` and `navbar-text`. One rule, no per-class judgement |
+| Q3–Q5 | **Uniform, all in scope.** Every hand-written group, shadow-root or light, and every Angular-only UI component becomes a D10 source with generated fronts. #455 is absorbed |
+| Q6 | **One PR** for the whole programme |
+| Q7 | **The compiler gains `kind: 'directive'`, designed as the most capable general mechanism.** It covers attribute directives, structural/template directives (`*[bsTooltip]`), host composition, and prop/ref/handler merging for React hooks. The fronts are an Angular directive, a Vue custom directive, a React hook and a Lit element-part directive. No hand-written directive path remains |
+| Q8 | **Overlays are `div`s in `<body>`**, stacked by one ui-core `overlay-stack` that composes `focus-trap`, `inert-regions` and `dismiss-stack`, with z-index ordering. This applies to modal, offcanvas, popover, tooltip, toast, dropdown and context-menu. The Angular `a11y/overlay-*` services move into it. The pickers' top-layer popups stay where they are: they paint above a modal, which is correct, and opening a modal dismisses open popups through `dismiss-stack` |
+| Q9–Q11 | **The overlay host is created at the end of `<body>`.** The front calls `document.createElement`, appends the host and renders the overlay's template into it. Nothing is moved, so no `position: relative; overflow: hidden` ancestor can clip it. The host copies `data-bs-theme` and `dir` from where the overlay is declared. **Server-rendered where the framework allows it**: Vue through `<Teleport>`, Angular through the server `document` with `ngSkipHydration` on the host. **React renders it client-only** (`createPortal` cannot server-render). That is the one documented exception |
+| Q12 | **Behaviour and presentation are separate.** `[bsDropdown]` / `[bsDropdownToggle]` / `[bsDropdownMenu]` are pure-behaviour directives: open state, `aria-expanded`/`-controls`, dismissal, placement, the body overlay; no part, no styles. `bs-dropdown-menu` / `bs-dropdown-item` are the presentational components: the `dropdown` part plus the `dropdown-menu` core's in-menu contract (`role=menu`, roving, arrows, submenus). `calendar-month` folds into the `calendar` core as the month-grid building block shared by `bs-calendar` and `bs-scheduler`. That part is at the implementer's discretion |
+| Q13 | **The navbar dropdown and `bs-dropdown-menu` become one component.** Hard requirement: the navbar stays fully usable with JS off under SSR. Everything is rendered, and hidden until it opens |
+| Q14 | **No-JS reveal: `<details>` plus a gated `:focus-within`.** `<details>`/`<summary>` holds the open state for click, tap and Enter in every state. A `:focus-within` reveal applies **only until hydration**: `:not([data-mp-hydrated])`, ui-core `hydratedAttr()`. Without JS, nested submenus open inline inside their parent (`docs/prd/navbar-noscript.md` §3, §6). `BsNoNoscript` is deleted. `hydratedAttr()` is its framework-neutral replacement, and `priority-nav` and `tab-control` switch to it |
+
+## 4. Design
+
+### 4.1 Scoper: root classes stay strict, sub classes get the anchored guard
+
+```css
+/* root class: unchanged, byte-identical to master */
+.table:where([data-mps]) > :not(caption) > * > * { … }
+/* sub class: itself stamped, OR inside a stamped root of its own partial */
+.table-active:where([data-mps], .table[data-mps] *) { … }
+.modal-title:where([data-mps], .modal-content[data-mps] *) { … }
+.form-label:where([data-mps], form[data-mps] *, .input-group[data-mps] *, .form-floating[data-mps] *) { … }
+```
+
+- **Two tables, both fail-closed.**
+  - `SUB_CLASSES[partial]`. Any class not listed stays a root, so a Bootstrap upgrade cannot loosen a
+    guard silently.
+  - `SUB_ANCHORS[partial]`. A partial that has sub classes but no anchors is a codegen error.
+- The guard stays in place on the element. `:where()` counts 0, so specificity, layers and stock order
+  are unchanged.
+- The self arm (`[data-mps]`) keeps a stamped sub-element matching even when nothing stamped sits above
+  it.
+- **Measured cost (prototype):** about 40 selectors change, at about 25 bytes each. Per partial: forms
+  12/144, tables 9/29, nav 5/23, card 4/32, alert 2/13, navbar 2/78, modal, offcanvas and dropdown 1
+  each.
+- **Selectors that do not change**, because their leftmost owned class is a root:
+  - `.table > :not(caption) > * > *`
+  - `.input-group > .form-control`
+  - `.was-validated .form-control:invalid`
+  - `.modal-header .btn-close`
+  - `.form-floating > label`
+  - `.navbar-nav .nav-link`
+
+| Partial | `SUB_CLASSES` | `SUB_ANCHORS` |
+|---|---|---|
+| forms | `form-label`, `col-form-label(-sm/-lg)`, `form-text`, `input-group-text`, `(in)valid-feedback`, `(in)valid-tooltip`, `form-check(-input/-label/-inline/-reverse)`, `form-switch` | `form[data-mps]`, `.input-group[data-mps]`, `.form-floating[data-mps]` |
+| modal | `modal-title` | `.modal-content[data-mps]` |
+| offcanvas | `offcanvas-title` | `.offcanvas[data-mps]` |
+| tables | `table-active`, `table-{primary…dark}` | `.table[data-mps]` |
+| dropdown | `dropdown-item-text` | `.dropdown-menu[data-mps]` |
+| alert | `alert-link`, `alert-heading` | `.alert[data-mps]` |
+| card | `card-title`, `card-subtitle`, `card-text`, `card-link` | `.card[data-mps]` |
+| nav | `nav-link` | `.nav[data-mps]` |
+| navbar | `navbar-text` | `.navbar[data-mps]` |
+
+The anchors are Bootstrap's root classes, not scope values. Partials cross families (the navbar renders
+`.dropdown-menu` under `"navbar"`), and a scope value is a compiler-internal name.
+
+### 4.2 Scope of the conversion
+
+Every group below becomes a D10 source, and its hand-written fronts are deleted.
+
+| Tier | Groups |
+|---|---|
+| Shadow-root Lit, hand-written ng/react/vue | accordion, card, charts, checkbox, pagination, shell, tab-control, tile-manager |
+| Light-DOM hand-written, 4 fronts | input-group, typeahead, sparkline, dropdown-menu (merged with the navbar dropdown, §4.5), radio, radio-group, toggle-button |
+| Angular-only (#455 §2, tiers A–D) | alert, badge, breadcrumb, button-group, close, container, list-group, placeholder, progress-bar, spinner, table, navbar-toggler, sticky-footer, marquee, parallax; grid, form, floating-labels, range; modal, offcanvas, popover, tooltip, toast, dropdown, context-menu; color-picker, rating, resizable, priority-nav, scrollspy, file-upload, calendar-month (folded, §4.6) |
+
+Each group meets #455 §4's definition of done:
+- the generated fronts;
+- the `#452` hand-stamping removed;
+- demo pages in all three demos;
+- a `*.aria.spec.ts` with states;
+- the passthrough conformance;
+- the no-JS tier declared and checked;
+- the conformance import lists updated.
+
+### 4.3 `kind: 'directive'` in the compiler
+
+A directive manifest describes:
+- a core whose bags apply to **the consumer's element** (the element opts in, so stamping `data-mps` and
+  installing parts there is legitimate);
+- inputs and outputs, as for components;
+- optionally, a template slot, for structural use (`*[bsTooltip]` renders its content as an overlay).
+
+The emitters:
+
+| Front | Emits |
+|---|---|
+| Angular | an attribute or structural directive, usable through `hostDirectives` |
+| Vue | a custom directive, including `getSSRProps` so server HTML carries the bags |
+| React | a hook returning mergeable props (`className` concatenated, refs composed, handlers chained, `aria-*`/`id` precedence per the passthrough rules) |
+| Lit | an element-part directive |
+
+It is designed as the most capable general mechanism. Every directive in scope must be expressible
+without an extension file:
+- `bsRow` / `[col]` / `[md]` …;
+- `[bsColFormLabel]`, `[bsFormControl]`;
+- `bsModalHeader`/`Body`/`Footer`;
+- `[bsDropdown]` and its parts;
+- `*[bsTooltip]`, popover;
+- `bsNoNoscript`, which is deleted (Q14).
+
+### 4.4 Overlays
+
+`ui-core/overlay-stack` is a core composed by every overlay core:
+- z-index ordering;
+- focus trap and return;
+- `inert` behind modal overlays;
+- Escape and backdrop dismissal through `dismiss-stack`.
+
+Each bridge provides a **body host**: on open, a `div` is appended to the end of `<body>`, and the
+overlay's template is rendered into it. The host copies `data-bs-theme`, `dir` and `lang` from the
+declaring position. It is removed on close or destroy.
+
+| Front | Render into the host | Server HTML |
+|---|---|---|
+| Angular | embedded view of the overlay template | at the end of the body, host `ngSkipHydration` |
+| Vue | `<Teleport to>` | at the end of the body |
+| React | `createPortal` | none (client-only, documented exception) |
+| Lit | `render()` | at the end of the body (Lit SSR is out of scope, so client in practice) |
+
+Without JS a closed overlay cannot be opened, so nothing depends on its server copy. That copy matters
+only for an overlay that is open at load. The imperative toast API (`toastService.show(template)`) is a
+per-front service over a framework-neutral toast queue core.
+
+### 4.5 Unified dropdown
+
+`bs-dropdown-menu` / `bs-dropdown-item` are the presentational component, used both standalone (under
+`[bsDropdown]`) and inside the navbar. The separate navbar dropdown component disappears.
+
+| State | Open state | Reveal | Placement |
+|---|---|---|---|
+| No JS (server HTML, not hydrated) | `<details>`/`<summary>` | `<details open>` **and** `:focus-within`, gated on `:not([data-mp-hydrated])` | inline; nested submenus open inline inside their parent |
+| Hydrated, in the navbar | the core (`<details>` kept as the carrier) | the core only | inline when the navbar is collapsed; as today when wide |
+| Hydrated, standalone (`[bsDropdown]`) | the `[bsDropdown]` core | the core only | body overlay (§4.4) |
+
+### 4.6 `calendar-month`
+
+`calendar-month` becomes the month-grid part of the `calendar` core, composed by `bs-calendar`,
+`bs-datepicker` and `bs-scheduler`. The standalone `calendar-month` component is deleted.
+
+### 4.7 Lit fronts of slot-based groups
+
+The groups that used real `<slot>`s (the shell's regions, the card's header and footer, the tab-control
+pages, the accordion rows) render in the light DOM like every other generated front. Consumer content
+arrives through front-native slots: `slot=` in Lit, where the compiler places the host's light children.
+Content that must survive a move uses a core-owned host (`<teleport :to>`, the dock). Declarative
+children use a manifest `content:` query (the ribbon). After conversion, `::part()` and `::slotted()`
+hooks on these elements no longer exist.
+
+### 4.8 Doc changes in the same PR
+
+`CLAUDE.md`:
+- Drop "Do not convert a slot-based component" and the hand-written shadow-root exception (C5).
+- Rewrite "Hand-written Lit elements" as history, keeping `mp-typeahead` only if S6 finds it cannot be
+  generated.
+- Retire the `light-styles-nesting` rule.
+- Amend "Angular renders the whole tree, including hidden popups" with the body-overlay rule (§4.4).
+- Document `kind: 'directive'`.
+- Document the anchored guard under C1a.
+
+Other docs:
+- #452 PRD §3.2.4.
+- `docs/styles-mechanism.md`.
+- `docs/prd/navbar-noscript.md`: the gate becomes `data-mp-hydrated`, and it applies to the unified
+  dropdown.
+- #455's PRD gets a "superseded by #458" header.
+- The CHANGELOG lists every API break per package, including the MintPlayer.Spark#557 note that the
+  `…Page` stopgaps can go.
+
+## 5. Spikes (before M1; results go back into this PRD)
+
+| Spike | Question | Done when |
+|---|---|---|
+| S1 Anchors | Does every anchor element carry its root class and `data-mps`, in every front, after conversion? Known missing today: `bs-form`'s `<form>`. | list of anchors per generated template |
+| S2 Scoper | Prototype the two tables and the guard builder. Diff every compiled part before and after. Finalise §4.1's table. | no root selector changed |
+| S3 Selector support | Does jsdom's nwsapi match `:where(A, B *)`? Check in the browser too (`playwright_node`): `.form-label` is styled in `bs-form` and not in a card under the shell. | both pass |
+| S4 Directive kind | Prototype `kind: 'directive'` with three cases: one stateless (`bsRow`/`[col]`), one stateful with a template (`*[bsTooltip]`), one host-composed (`bsModalHeader`). Cover React prop merging and Vue `getSSRProps`. | the three generate, type-check, and server-render in Angular and Vue |
+| S5 Body host | Build the body host per front: Angular embedded view into a `<body>` child under SSR with `ngSkipHydration`; Vue Teleport SSR; React portal; Lit. Copy theme/dir. Check overlay-stack z-order against a top-layer picker popup. | a modal containing a datepicker works in all four demos |
+| S6 Slot groups | How the generated Lit front places light children for named regions (shell, card, tab-control). Can charts, tile-manager and typeahead be expressed in the template subset? What compiler features are missing? | a gap list, each gap with a compiler change or an extension-file justification |
+| S7 No-JS dropdown | The unified dropdown with JS off under SSR in all three demos: `<details>` plus the gated `:focus-within`, nested submenus inline, hydration handoff. `priority-nav` and `tab-control` on `data-mp-hydrated`. | the `navbar-noscript.md` behaviour matrix passes |
+| S8 Calendar | Map what `calendar-month` and the scheduler use from it onto the `calendar` core. | fold plan |
+
+## 6. Milestones (one PR, one branch off `master`; commit per milestone, no per-milestone test runs)
+
+0. **Spikes S1–S8.** Update this PRD with the results.
+1. **The #458 fix.**
+   - Scoper `SUB_CLASSES` / `SUB_ANCHORS` and the guard builder.
+   - `scope-bootstrap.spec.ts`.
+   - `bootstrap-parts-scoping.spec.ts`: `isGuard`, the guard stripping and `matchable()` accept the sub
+     guard.
+   - The new sub-element spec: matches inside the anchor, matches on the self arm, does not match
+     inside a stamped non-anchor (the shell) or in an unstamped tree.
+   - `bs-form` stamps its `<form>` and installs forms (interim, until M5 generates it).
+2. **Compiler and infrastructure.**
+   - `kind: 'directive'` (§4.3).
+   - Body host per bridge and the `overlay-stack` core (§4.4).
+   - `hydratedAttr()`-gated no-JS styling helpers.
+3. **Light-DOM hand-written groups → D10:** input-group, typeahead, sparkline, radio, radio-group,
+   toggle-button.
+4. **Shadow-root groups → D10:** accordion, card, charts, checkbox, pagination, shell, tab-control,
+   tile-manager. Delete `web-components/_styles` and the page-variant install. Retire
+   `light-styles-nesting`.
+5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range.
+6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the
+   unified dropdown with the navbar (§4.5).
+7. **#455 tier D and the calendar fold:** color-picker, rating, resizable, priority-nav, scrollspy,
+   file-upload, calendar-month → calendar.
+8. **Cleanup.**
+   - Delete `BsNoNoscript`, the Angular `a11y/overlay-*` services and every hand-written front.
+   - Conformance import lists.
+   - The docs from §4.8 and the CHANGELOG.
+9. **Verify once, at the end.**
+   - `compile-components-check`.
+   - Build `mintplayer-web-components`, ng-bootstrap, react-bootstrap and vue-bootstrap.
+   - The ui-core, web-components, ng, react and vue unit suites.
+   - The three demo e2e projects, with computed-style checks for §8.
+   - **The full sweep takes far longer than a few minutes: get the owner's go-ahead before starting it.**
+
+## 7. Risks
+
+- **Size.** This is the largest PR in the repo. The scoper fix (M1) ships only with the last
+  conversion, so Spark keeps its `…Page` stopgaps until then. The owner accepted this (Q6).
+- **Anchor drift.** If a conversion changes which element carries a root class, the anchor silently
+  misses it. The M1 sub-element spec renders the real component, not selector fixtures, so the drift
+  breaks loudly.
+- **Lost inherited context.** A body overlay loses inherited CSS. The theme, `dir` and `lang` copy covers
+  the known cases. Consumer custom properties set on an ancestor do not follow, so the CHANGELOG
+  documents this.
+- **React SSR.** React overlays are absent from server HTML, which matters only for an overlay that is
+  open at load.
+- **No-JS clipping.** A standalone `[bsDropdown]` without JS opens inline and can be clipped by an
+  `overflow: hidden` ancestor. That is inherent: nothing can render into the body without JS.
+
+## 8. Acceptance
+
+- In all three demos, with no `useBootstrap(...Page)` on the page, the sub-elements in §2.1 are styled
+  inside their component. The same classes outside their owning component (in the shell, a card or a
+  grid row) stay unstyled.
+- The root selectors of every part are byte-identical to master's. Specificity is unchanged everywhere.
+- No hand-written front, no shadow root and no `_styles` copy remains for any UI component.
+  `compile-components-check` is clean.
+- All four fronts expose every in-scope component.
+- With JS disabled, every navbar item and nested dropdown in the three demos can be reached and opened
+  by mouse and keyboard.
+- Overlays render at the end of `<body>`, are not clipped by `overflow: hidden` ancestors, keep the
+  declaring theme, and trap and return focus.
+- The conformance specs fail if a Bootstrap upgrade adds an unclassified class or a sub class without an
+  anchor.
