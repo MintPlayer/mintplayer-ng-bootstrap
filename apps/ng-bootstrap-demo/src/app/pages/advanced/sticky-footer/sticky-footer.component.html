@@ -18,6 +18,11 @@
             </bs-accordion-tab>
         }
     </bs-accordion>
+
+    <!-- Inside the parent: the footer sits on the document's last N pixels, and only the parent reserves them. -->
+    <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
+    <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
     <bs-sticky-footer>
         <bs-grid class="d-block py-3 bg-body-tertiary border-top">
             <div bsRow>
@@ -39,6 +44,3 @@
         </bs-grid>
     </bs-sticky-footer>
 </div>
-
-<bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

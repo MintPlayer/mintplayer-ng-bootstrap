@@ -1,4 +1,4 @@
-import { Directive, effect, inject } from '@angular/core';
+import { computed, Directive, inject } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
 import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap/placeholders';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
@@ -7,10 +7,10 @@ import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
   selector: '[bsPlaceholderField]',
   host: {
     '[attr.data-mps]': '"placeholder"',
-    '[attr.innerHtml]': 'html',
+    '[attr.innerHtml]': 'html()',
     '[style.min-width.px]': '80',
-    '[style.margin-bottom.px]': 'marginBottom',
-    '[class.placeholder]': 'placeholderClass',
+    '[style.margin-bottom.px]': 'marginBottom()',
+    '[class.placeholder]': 'isLoading()',
   },
 })
 export class BsPlaceholderFieldDirective {
@@ -19,15 +19,11 @@ export class BsPlaceholderFieldDirective {
   constructor() {
     // #452: the placeholders partial ships with this component, scoped to the elements it stamps (data-mps="placeholder").
     useBootstrap(bootstrapPlaceholders);
-    effect(() => {
-      const isLoading = this.placeholder.isLoading();
-      this.placeholderClass = isLoading;
-      this.marginBottom = isLoading ? -1 : 0;
-      this.html = isLoading ? '&nbsp;' : undefined;
-    });
   }
 
-  html?: string = undefined;
-  marginBottom = 0;
-  placeholderClass = true;
+  // Derived, not copied from an effect into plain fields: a host binding re-renders
+  // only when a signal it reads changes (zoneless).
+  protected readonly isLoading = computed(() => this.placeholder.isLoading());
+  protected readonly marginBottom = computed(() => (this.isLoading() ? -1 : 0));
+  protected readonly html = computed(() => (this.isLoading() ? '&nbsp;' : undefined));
 }

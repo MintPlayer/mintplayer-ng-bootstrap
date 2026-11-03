@@ -1,10 +1,12 @@
-import { Directive, effect, input } from '@angular/core';
+import { Directive, effect, input, signal } from '@angular/core';
 
 @Directive({
   selector: 'label[bsFor]',
   host: {
     '[class.cursor-default]': 'true',
-    '[attr.for]': 'forValue',
+    // A signal: the effect below writes it, and a zoneless host binding re-renders
+    // only when a signal it reads changes.
+    '[attr.for]': 'forValue()',
   },
 })
 export class BsForDirective {
@@ -23,13 +25,13 @@ export class BsForDirective {
             const count = BsForDirective.counter++;
             this.target.id = `for-target-${count}`;
           }
-          this.forValue = this.target.id;
+          this.forValue.set(this.target.id);
         }
       }
     });
   }
 
-  forValue?: string;
+  readonly forValue = signal<string | undefined>(undefined);
 
   // @HostListener('click') onMouseClick() {
   //   if (!('tagName' in this.target)) {
