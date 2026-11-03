@@ -37,6 +37,11 @@
 
 @layer mp.bootstrap.base {
   @include meta.load-css('baseline/base');
+  // --mp-color-mode, the dark-mode token (PRD dark-mode D6). Page-level, so it
+  // belongs to the baseline. One copy: the file also ships on its own for pages
+  // that link stock bootstrap.min.css. Layered, so a custom theme's unlayered
+  // --mp-color-mode wins.
+  @include meta.load-css('../theming/color-mode');
 }
 
 @layer mp.bootstrap.components {

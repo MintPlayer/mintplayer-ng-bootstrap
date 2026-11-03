@@ -89,7 +89,7 @@ async function createServer() {
       }
 
       // The theme helpers come through the SSR entry (it re-exports them from
-      // @mintplayer/web-components/theming): the entry is bundled by Vite, so
+      // @mintplayer/ui-core/theming): the entry is bundled by Vite, so
       // this plain-ESM file needs no path alias in dev or prod.
       const { render, resolveServerTheme, injectThemeAttribute, collectScopedStyles } = entry;
       // head: the transfer state (#448), what a stateKey table prefetched for the browser.

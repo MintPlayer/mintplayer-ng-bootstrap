@@ -3,9 +3,6 @@
  * the no-JS SSR requirement. Bootstrap itself is the layered baseline linked
  * just before this file (src/bootstrap.scss); these rules are unlayered, so they
  * win over it and over every component sheet. */
-/* --mp-color-mode, the token the components' dark icons query (PRD dark-mode D6).
- * Bootstrap does not declare it. */
-@import '@mintplayer/web-components/theming/color-mode.css';
 @import 'bootstrap-icons/font/bootstrap-icons.css';
 
 body {

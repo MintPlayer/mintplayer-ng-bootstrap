@@ -6,7 +6,7 @@ import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { copyPackageJson } from '../../tools/vite/copy-package-json.mts';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-import { discoverEntries, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
+import { discoverEntries, emitStaticFiles, generateSubpathExports } from '../../tools/vite/multi-entry.mts';
 
 export default defineConfig(() => {
   // Barrel-based entries, like the web-components lib: `<entry>/index.ts`
@@ -34,6 +34,11 @@ export default defineConfig(() => {
       // The page baseline ships as Sass (to @use) and as the prebuilt bootstrap.css
       // (to link); both resolve as @mintplayer/ui-core/styles/* (PRD #437 §6).
       nxCopyAssetsPlugin(['*.md', '*/README.md', 'styles/**/*.scss', 'styles/bootstrap.css']),
+      // Page-level dark-mode files (PRD dark-mode D5, D6): the pre-boot script is
+      // gitignored codegen output, which nxCopyAssetsPlugin silently skips, so both
+      // go through emitStaticFiles, which fails the build when one is missing.
+      // styles/bootstrap.scss loads ../theming/color-mode, so it must ship too.
+      emitStaticFiles(import.meta.dirname, ['theming/bs-theme-preboot.js', 'theming/color-mode.css']),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),

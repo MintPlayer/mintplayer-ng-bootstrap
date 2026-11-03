@@ -1,35 +1,35 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import type { Alias, Plugin } from 'vite';
+import type { Plugin } from 'vite';
 
 /**
  * Dark-mode wiring for the Vite (React/Vue) demos (PRD dark-mode D5, D6).
  *
  * The Angular demo copies the pre-boot script with an assets glob; a Vite app
  * needs a plugin instead, because the file is codegen output of the
- * web-components lib (gitignored, so `nxCopyAssetsPlugin` would silently skip
+ * ui-core lib (gitignored, so `nxCopyAssetsPlugin` would silently skip
  * it) and lives outside the app's `public/` dir.
  */
 
-/** The web-components `theming/` source dir: codegen writes `bs-theme-preboot.js` here. */
-const WC_THEMING_DIR = resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming');
+/** The ui-core `theming/` dir: codegen writes `bs-theme-preboot.js` here. */
+const THEMING_DIR = resolve(import.meta.dirname, '../../libs/mintplayer-ui-core/theming');
 
 /** Where the demos serve the pre-boot script, matching `<script src>` in their index.html. */
 export const THEME_PREBOOT_URL = '/theming/bs-theme-preboot.js';
 
 /**
  * Serves (dev) and emits (client build) the generated
- * `@mintplayer/web-components/theming/bs-theme-preboot.js` at
+ * `@mintplayer/ui-core/theming/bs-theme-preboot.js` at
  * `THEME_PREBOOT_URL`. The SSR build emits nothing: the Node server serves the
- * client build's copy. A missing file fails the build (codegen-wc did not run)
+ * client build's copy. A missing file fails the build (ui-core codegen did not run)
  * instead of shipping a page whose blocking script 404s.
  *
  * `file` defaults to the codegen output; a spec passes a temp file instead,
  * because the real one is a gitignored artifact that may not exist yet.
  */
-export function themePreboot(file: string = resolve(WC_THEMING_DIR, 'bs-theme-preboot.js')): Plugin {
+export function themePreboot(file: string = resolve(THEMING_DIR, 'bs-theme-preboot.js')): Plugin {
   const read = (fail: (message: string) => never): Buffer => {
-    if (!existsSync(file)) fail(`themePreboot: ${file} is missing (run nx run mintplayer-web-components:codegen-wc)`);
+    if (!existsSync(file)) fail(`themePreboot: ${file} is missing (run nx run mintplayer-ui-core:codegen)`);
     return readFileSync(file);
   };
   return {
@@ -55,15 +55,3 @@ export function themePreboot(file: string = resolve(WC_THEMING_DIR, 'bs-theme-pr
     },
   };
 }
-
-/**
- * `resolve.alias` entry for `@import '@mintplayer/web-components/theming/color-mode.css'`.
- * CSS `@import` is resolved by Vite's CSS pipeline, and tsconfig `paths` only
- * apply to TS/JS importers (`resolve.tsconfigPaths`), so the mapping has to be
- * restated for it.
- * A consumer installing the package from npm needs no alias.
- */
-export const colorModeCssAlias: Alias = {
-  find: '@mintplayer/web-components/theming/color-mode.css',
-  replacement: resolve(WC_THEMING_DIR, 'color-mode.css'),
-};

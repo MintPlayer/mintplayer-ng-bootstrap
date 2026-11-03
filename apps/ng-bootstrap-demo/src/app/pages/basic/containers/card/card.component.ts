@@ -154,7 +154,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetNestedHtml = dedent`
-    <bs-cardstyle="max-width: 24rem;">
+    <bs-card style="max-width: 24rem;">
       <bs-card-body>
         <bs-card-title>Outer card</bs-card-title>
         <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
@@ -181,7 +181,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageTopHtml = dedent`
-    <bs-cardstyle="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-img position="top" [src]="imageUrl" alt="placeholder"></bs-card-img>
       <bs-card-body>
         <bs-card-title>Top image</bs-card-title>
@@ -191,7 +191,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageBottomHtml = dedent`
-    <bs-cardstyle="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-body>
         <bs-card-title>Bottom image</bs-card-title>
         <bs-card-text>Text above the image, inside the body.</bs-card-text>
@@ -201,7 +201,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageOverlayHtml = dedent`
-    <bs-cardstyle="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-img position="overlay" [src]="imageUrl" alt="background">
         <bs-card-title>Overlaid title</bs-card-title>
         <bs-card-text>Overlaid description.</bs-card-text>
@@ -257,7 +257,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetHorizontalHtml = dedent`
-    <bs-cardstyle="max-width: 540px;">
+    <bs-card style="max-width: 540px;">
       <bs-grid>
         <div bsRow class="g-0">
           <div [md]="4">

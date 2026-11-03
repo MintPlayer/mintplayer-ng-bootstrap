@@ -35,6 +35,8 @@ const LIB_ROOT = existsSync(join(process.cwd(), 'light-dom'))
   ? process.cwd()
   : join(process.cwd(), 'libs', 'mintplayer-web-components');
 const DIST_ROOT = join(LIB_ROOT, '..', '..', 'dist', 'libs', 'mintplayer-web-components');
+// The page-level dark-mode stylesheet ships from ui-core (theming/color-mode.css).
+const UI_CORE_THEMING_DIST = join(LIB_ROOT, '..', '..', 'dist', 'libs', 'mintplayer-ui-core', 'theming');
 
 const HEX_IN_COLOR_FUNCTION = /\b(?:rgba?|hsla?)\(\s*#[0-9a-f]{3,8}\b[^)]*\)?/gi;
 const SASS_INTERPOLATION = /#\{[^}]*\}?/g;
@@ -63,18 +65,21 @@ const sheets = walk(LIB_ROOT, isGeneratedSheet).map((abs) => ({
   css: stripComments(readFileSync(abs, 'utf8')),
 }));
 
-const built = (extension: string) =>
-  existsSync(DIST_ROOT)
-    ? walk(DIST_ROOT, (_dir, name) => name.endsWith(extension)).map((abs) => ({
-        file: relative(DIST_ROOT, abs),
+const built = (root: string, extension: string, prefix = '') =>
+  existsSync(root)
+    ? walk(root, (_dir, name) => name.endsWith(extension)).map((abs) => ({
+        file: prefix + relative(root, abs),
         code: readFileSync(abs, 'utf8'),
       }))
     : [];
 
-const modules = built('.mjs');
-// Shipped stylesheets (theming/color-mode.css, …) are plain CSS, so they get
-// the full sheet checks.
-const builtSheets = built('.css').map((m) => ({ file: m.file, css: stripComments(m.code) }));
+const modules = built(DIST_ROOT, '.mjs');
+// Shipped stylesheets are plain CSS, so they get the full sheet checks: any this
+// package ships, plus ui-core's theming/color-mode.css, which every page loads.
+const builtSheets = [
+  ...built(DIST_ROOT, '.css'),
+  ...built(UI_CORE_THEMING_DIST, '.css', 'ui-core/theming/'),
+].map((m) => ({ file: m.file, css: stripComments(m.code) }));
 
 const matches = (text: string, pattern: RegExp): string[] => [...text.matchAll(pattern)].map((m) => m[0]);
 
@@ -101,9 +106,9 @@ describe('no unresolved or invalid CSS values', () => {
   });
 
   it('finds the shipped stylesheets to check (the CSS scan cannot pass vacuously)', () => {
-    // theming/color-mode.css is the package's known stylesheet; if a packaging
-    // change stops shipping it (or moves it), this scan must not go quiet.
-    expect(builtSheets.map((s) => s.file)).toContain('theming/color-mode.css');
+    // ui-core's theming/color-mode.css is the known shipped stylesheet; if a
+    // packaging change stops shipping it (or moves it), this scan must not go quiet.
+    expect(builtSheets.map((s) => s.file)).toContain('ui-core/theming/color-mode.css');
   });
 
   // Guarded only so an empty table cannot throw at collection time; the

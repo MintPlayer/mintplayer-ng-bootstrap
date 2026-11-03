@@ -23,7 +23,9 @@
       "import": "./index.mjs"
     },
     "./package.json": "./package.json",
-    "./styles/*": "./styles/*"
+    "./styles/*": "./styles/*",
+    "./theming/bs-theme-preboot.js": "./theming/bs-theme-preboot.js",
+    "./theming/color-mode.css": "./theming/color-mode.css"
   },
   "dependencies": {
     "tslib": "^2.3.0",

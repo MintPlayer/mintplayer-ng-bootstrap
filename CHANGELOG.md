@@ -31,6 +31,15 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     are `display: block` hosts and no longer carry the `d-block` class.
   - `bs-list-group`'s host is now the `.list-group` (`role="list"`); the inner `<ul>` is gone. Stock
     `.card > .list-group` therefore applies to a list group in a `bs-card`.
+- **The dark-mode page files moved to `@mintplayer/ui-core/theming` (issue #452).** No Angular, React or
+  Vue package depends on `@mintplayer/web-components` any more.
+  - `bs-theme-preboot.js` is now `@mintplayer/ui-core/theming/bs-theme-preboot.js`. Point the assets glob
+    (Angular) or your copy step at `node_modules/@mintplayer/ui-core/theming`.
+  - `color-mode.css` is now `@mintplayer/ui-core/theming/color-mode.css`, and the page baseline
+    (`@mintplayer/ui-core/styles/bootstrap`, `@mintplayer/ng-bootstrap/bootstrap.scss`) loads it itself:
+    drop your `@import` of it. Only a page that links stock `bootstrap.min.css` imports it.
+  - Its global `.theme-toggle` box rule is gone; the toggle's own sheet carries it.
+  - `@mintplayer/ng-bootstrap` no longer lists `@mintplayer/web-components` as a peer dependency.
 - **`BsControlValidityDirective` moved to `@mintplayer/ng-bootstrap/a11y/forms` (issue #452)**, so
   `@mintplayer/ng-bootstrap/a11y` no longer pulls `@angular/forms` into your bundle. **Migration**: change the
   import path.

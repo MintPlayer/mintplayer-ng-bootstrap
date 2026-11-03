@@ -10,10 +10,10 @@
  */
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 
-import { colorModeCssAlias, THEME_PREBOOT_URL, themePreboot } from './theme-preboot.mts';
+import { THEME_PREBOOT_URL, themePreboot } from './theme-preboot.mts';
 
 const dir = mkdtempSync(join(tmpdir(), 'mp-theme-preboot-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
@@ -77,7 +77,7 @@ describe('themePreboot', () => {
 
     it('throws a pointer to codegen-wc when the file is missing', () => {
       const { serve } = mount(absent);
-      expect(serve).toThrow(/themePreboot: .*missing\.js is missing \(run nx run mintplayer-web-components:codegen-wc\)/);
+      expect(serve).toThrow(/themePreboot: .*missing\.js is missing \(run nx run mintplayer-ui-core:codegen\)/);
     });
   });
 
@@ -104,7 +104,7 @@ describe('themePreboot', () => {
     });
   });
 
-  it('defaults to the codegen output in the web-components theming dir', () => {
+  it('defaults to the codegen output in the ui-core theming dir', () => {
     const use = vi.fn();
     hook(themePreboot(), 'configureServer')({ middlewares: { use } });
     const res = { setHeader: vi.fn(), end: vi.fn() };
@@ -112,18 +112,9 @@ describe('themePreboot', () => {
     try {
       (use.mock.calls[0][1] as Hook)({}, res);
     } catch (err) {
-      expect(String(err)).toMatch(/libs[\\/]mintplayer-web-components[\\/]theming[\\/]bs-theme-preboot\.js/);
+      expect(String(err)).toMatch(/libs[\\/]mintplayer-ui-core[\\/]theming[\\/]bs-theme-preboot\.js/);
       return;
     }
     expect(res.end).toHaveBeenCalled();
-  });
-});
-
-describe('colorModeCssAlias', () => {
-  it('maps the package CSS import to the source file, which Vite CSS resolution cannot find via tsconfig paths', () => {
-    expect(colorModeCssAlias.find).toBe('@mintplayer/web-components/theming/color-mode.css');
-    expect(colorModeCssAlias.replacement).toBe(
-      resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming/color-mode.css'),
-    );
   });
 });

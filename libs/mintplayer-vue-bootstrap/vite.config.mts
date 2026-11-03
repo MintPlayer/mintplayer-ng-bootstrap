@@ -66,7 +66,6 @@ export default defineConfig(() => ({
     rolldownOptions: {
       external: [
         'vue',
-        /^@mintplayer\/web-components(\/.*)?$/,
         /^@mintplayer\/ui-core(\/.*)?$/,
         'lit',
         /^lit\//,

@@ -1,7 +1,5 @@
-// --mp-color-mode (PRD dark-mode D6): the token component sheets query with
-// `@container style(--mp-color-mode: dark)`. Must stay the first statement.
-@use '@mintplayer/web-components/theming/color-mode.css';
-// The Bootstrap baseline, in @layer mp.bootstrap (PRD #437 §6). Shared with the
+// The Bootstrap baseline, in @layer mp.bootstrap (PRD #437 §6), including the
+// --mp-color-mode dark-mode token (PRD dark-mode D6). Shared with the
 // React and Vue libraries; see libs/mintplayer-ui-core/styles/bootstrap.scss.
 @use '@mintplayer/ui-core/styles/bootstrap';
 // CDK a11y utility styles: BsLiveAnnouncerService wraps CDK's LiveAnnouncer,

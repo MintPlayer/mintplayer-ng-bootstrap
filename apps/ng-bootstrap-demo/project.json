@@ -36,7 +36,7 @@
           "apps/ng-bootstrap-demo/src/nginx.conf",
           {
             "glob": "bs-theme-preboot.js",
-            "input": "libs/mintplayer-web-components/theming",
+            "input": "libs/mintplayer-ui-core/theming",
             "output": "theming"
           }
         ],

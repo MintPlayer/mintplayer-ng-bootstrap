@@ -2,8 +2,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
-// Pre-boot script + color-mode.css alias for the dark-mode wiring (PRD dark-mode D5, D6).
-import { colorModeCssAlias, themePreboot } from '../../tools/vite/theme-preboot.mts';
+// Pre-boot script for the dark-mode wiring (PRD dark-mode D5).
+import { themePreboot } from '../../tools/vite/theme-preboot.mts';
 export default defineConfig(({ isSsrBuild }) => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/react-bootstrap-demo',
@@ -29,7 +29,6 @@ export default defineConfig(({ isSsrBuild }) => ({
   resolve: {
     // Vite 8 resolves the tsconfig `paths` (@mintplayer/*) natively.
     tsconfigPaths: true,
-    alias: [colorModeCssAlias],
   },
   // src/bootstrap.scss compiles Bootstrap 5.3's Sass, which trips these Sass 3.0
   // deprecations (same list as the ng demo's stylePreprocessorOptions; drop on

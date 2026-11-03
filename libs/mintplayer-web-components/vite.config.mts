@@ -27,11 +27,9 @@ export default defineConfig(() => {
       // Not nxCopyAssetsPlugin: it silently skips .gitignore'd files, which is how
       // custom-elements.json went missing from the published 2.16.0 tarball. This
       // emits them into the bundle and fails the build when one is missing.
-      emitStaticFiles(import.meta.dirname, [
-        'custom-elements.json',
-        'theming/bs-theme-preboot.js',
-        'theming/color-mode.css',
-      ]),
+      // The dark-mode pre-boot script and color-mode.css ship from
+      // @mintplayer/ui-core/theming, which this package depends on.
+      emitStaticFiles(import.meta.dirname, ['custom-elements.json']),
       dts({
         entryRoot: '.',
         tsconfigPath: resolve(import.meta.dirname, 'tsconfig.lib.json'),
