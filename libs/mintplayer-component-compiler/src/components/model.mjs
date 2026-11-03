@@ -146,6 +146,8 @@ export function componentModels({ group, entry, corePackage, template, extension
       rootTag: root.tag,
       // The element the consumer's attributes land on (mp-attrs), which types the React props.
       attrsTag: attrsTarget(src, root).tag,
+      // The host is the root but the role lives on an inner mp-attrs node: Angular forwards the host's aria-*/id/tabindex there.
+      forwardsHost: !!host && attrsTarget(src, root) !== root,
       host,
       hostExpression,
       hostRole: host ? (IMPLICIT_ROLES[root.tag] ?? null) : null,

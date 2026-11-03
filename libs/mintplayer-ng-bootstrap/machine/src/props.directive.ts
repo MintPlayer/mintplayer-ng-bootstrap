@@ -26,16 +26,30 @@ function isRefused(name: string): boolean {
  * docs/prd/typeahead-wc-436.md). Consumers never see a bag: the front's own
  * template binds `[mpProps]="api().input"` on its own nodes.
  */
-@Directive({ selector: '[mpProps]' })
+@Directive({ selector: '[mpProps],[mpHostAttrs]' })
 export class MpPropsDirective {
   readonly mpProps = input<PropBag | null | undefined>(null);
+  /**
+   * The host's forwarded `aria-*` / `id` / `tabindex` (`useHostAttrs`), written over
+   * the bag: the consumer's word wins. Except an `id` the bag sets itself, which
+   * the core's own references (a `label for`, an `aria-controls`) point at: then
+   * the consumer's id goes back to the host instead.
+   */
+  readonly mpHostAttrs = input<{ readonly host: Element; readonly attrs: PropBag } | null | undefined>(null);
 
   private readonly element = inject(ElementRef).nativeElement as Element;
   private readonly renderer = inject(Renderer2);
   private applied: PropBag = {};
 
   constructor() {
-    effect(() => (this.applied = applyPropBag(this.renderer, this.element, this.applied, this.mpProps() ?? {})));
+    effect(() => {
+      const bag = this.mpProps() ?? {};
+      const forwarded = this.mpHostAttrs();
+      const { id, ...rest } = forwarded?.attrs ?? {};
+      const ownId = bag['id'] !== null && bag['id'] !== undefined;
+      if (forwarded && ownId && id) this.renderer.setAttribute(forwarded.host, 'id', String(id));
+      this.applied = applyPropBag(this.renderer, this.element, this.applied, { ...bag, ...rest, ...(id && !ownId ? { id } : {}) });
+    });
   }
 }
 

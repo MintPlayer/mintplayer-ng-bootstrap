@@ -139,7 +139,7 @@ interface Case {
   fixedRole?: string;
   /**
    * Set when the target is a box around the role-bearing node, which is what
-   * `aria-label` names: the sparkline's sized span holds a role=img svg.
+   * `aria-label` names.
    */
   labelTarget?: string;
 }
@@ -178,7 +178,7 @@ const CASES: Case[] = [
   { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
   bare('BsHierarchyChart', 'div.hierarchy-chart', BsHierarchyChart),
   // No points, no svg: the probe needs data for its labelled node to exist.
-  { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
+  { name: 'BsSparkline', target: 'svg', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, fixedRole: 'img' },
   bare('BsTrendChart', 'div.trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
   bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),

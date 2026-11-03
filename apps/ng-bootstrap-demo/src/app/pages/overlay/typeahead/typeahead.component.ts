@@ -48,7 +48,6 @@ export class TypeaheadComponent {
     <bs-typeahead [formControl]="control" [provider]="instant" [debounceMs]="0" inputLabel="Artist"></bs-typeahead>
   `;
 
-  readonly artists = ARTISTS;
   /** An in-memory list: instant answers, so no debounce. */
   readonly instant = inMemoryTypeaheadProvider(ARTISTS);
 
@@ -84,8 +83,8 @@ export class TypeaheadComponent {
       [debounceMs]="200"
       [minLength]="2"
       inputLabel="Artist"
-      (select)="onSelect($event)"
-      (submitted)="onSubmit($event)"
+      (itemselect)="onSelect($event.item)"
+      (termsubmit)="onSubmit($event)"
     ></bs-typeahead>
   `;
 
@@ -116,14 +115,14 @@ export class TypeaheadComponent {
 
   protected readonly snippetTemplateHtml = dedent`
     <bs-typeahead [provider]="search">
-      <ng-container *bsTypeaheadItem="let artist; let term = term; of: artists">
+      <ng-container *bsTypeaheadItem="let artist = item; let term = term">
         <strong>{{ artist.text }}</strong> <small class="text-secondary">{{ artist.genre }}</small>
       </ng-container>
     </bs-typeahead>
   `;
 
   protected readonly snippetFormsHtml = dedent`
-    <!-- The value is the text; a pick writes the item's text. selectedItem() holds the item. -->
+    <!-- The value is the text; a pick writes the item's text, and (itemselect) delivers the item. -->
     <bs-typeahead #street="ngModel" name="street" [(ngModel)]="model.street" [provider]="streets" required></bs-typeahead>
     <!-- Reactive forms work the same way: formControlName="street" -->
   `;

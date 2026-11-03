@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsTypeaheadComponent } from './typeahead.component';
+import { BsTypeaheadComponent } from './generated';
 import { inMemoryTypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 
 /**
@@ -12,7 +12,7 @@ import { inMemoryTypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 @Component({
   selector: 'bs-typeahead-aria-harness',
   imports: [BsTypeaheadComponent],
-  template: `<bs-typeahead [provider]="provider" [debounceMs]="0" inputLabel="Fruit" [errorText]="error()" (select)="lastSelected.set($event)"></bs-typeahead>`,
+  template: `<bs-typeahead [provider]="provider" [debounceMs]="0" inputLabel="Fruit" [errorText]="error()" (itemselect)="lastSelected.set($event.item)"></bs-typeahead>`,
 })
 class HarnessComponent {
   readonly provider = inMemoryTypeaheadProvider([{ text: 'Apple' }, { text: 'Banana' }, { text: 'Cherry' }]);
@@ -102,7 +102,7 @@ describe('BsTypeaheadComponent ARIA', () => {
     input().value = 'an';
     input().dispatchEvent(new Event('input', { bubbles: true }));
     await settle();
-    expect(live.textContent).toBe('1 result found');
+    expect(live.textContent?.trim()).toBe('1 result found');
   });
 
   it('forwards host aria-*, id and tabindex to the input (id/tabindex moved); host role is not forwarded', async () => {
@@ -131,7 +131,7 @@ describe('BsTypeaheadComponent ARIA', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     const error = fixture.nativeElement.querySelector('.ta-error') as HTMLElement;
-    expect(error.textContent).toBe('Pick a fruit');
+    expect(error.textContent?.trim()).toBe('Pick a fruit');
     expect(input().getAttribute('aria-describedby')).toBe(error.id);
     expect(input().getAttribute('aria-errormessage')).toBe(error.id);
     expect(input().getAttribute('aria-invalid')).toBe('true');

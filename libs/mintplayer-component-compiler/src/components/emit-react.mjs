@@ -7,6 +7,9 @@ import { banner, coreImports, jsdoc, styleImports, styleInstall } from './model.
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
+/** The attrs element's tag map: an svg root is not in HTMLElementTagNameMap. */
+const SVG_TAGS = new Set(['svg', 'g', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'text']);
+
 export function emitReactComponent(model, { generator, runtime, extension, scopedStyles }) {
   const { names } = model;
   const element = `HTMLElementTagNameMap['${model.rootTag}']`;
@@ -40,7 +43,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   lines.push('');
 
   // Props interface.
-  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<HTMLElementTagNameMap['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
+  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<${SVG_TAGS.has(model.attrsTag) ? 'SVGElementTagNameMap' : 'HTMLElementTagNameMap'}['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
   inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  ${input.name}?: ${model.inputsType}['${input.name}'];`));
   model.outputs.forEach((output) => lines.push(`${jsdoc(output.doc, '  ')}  ${output.react}?: (detail: ${output.type}) => void;`));
   // A slot prop takes what the template's slot takes: a node, or a function of the slot's args.

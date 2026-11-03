@@ -60,7 +60,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     .filter(({ child }) => child.names.angular !== names.angular)
     .map(({ child, slots }) => ({ module: child.module.angular, names: [child.names.angular, ...[...slots].map((slot) => child.names.slotDirective(slot))] }));
   if (guards.length) angularImports.add('Directive');
-  const machine = [...directives, 'useCore', 'useScopedStyles'];
+  const machine = [...directives, 'useCore', 'useScopedStyles', ...(model.forwardsHost ? ['useHostAttrs'] : [])];
   const provides = model.provides;
   if (provides) machine.push('provideCoreContext');
 
@@ -125,6 +125,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   lines.push(jsdoc(model.doc).trimEnd(), `@Component({`, ...meta, `})`, `export class ${names.angular} {`);
   lines.push(`  /** The host element. */`, `  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);`, '');
+  if (model.forwardsHost) lines.push(`  /** The consumer's aria-*, id and tabindex on the host, for the role-bearing node. */`, `  protected readonly hostAttrs = useHostAttrs();`, '');
   model.inputs.forEach((input) => lines.push(inputLine(model, input)));
   model.outputs.forEach((output) =>
     lines.push(`${jsdoc(output.doc, '  ')}  readonly ${angularOutput(output)} = output<${output.type}>();`),

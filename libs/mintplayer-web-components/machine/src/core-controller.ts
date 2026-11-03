@@ -148,7 +148,9 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   #labelChanged(): void {
     const value = this.#host.getAttribute('aria-label');
     const ours = this.#applied.attrs['aria-label'];
-    if (value === (ours === null || ours === undefined || ours === false ? null : String(ours)) || value === this.#label) return;
+    // The host bag's own write is not the consumer's; a removal (null) never is.
+    const own = value !== null && ours !== null && ours !== undefined && ours !== false && value === String(ours);
+    if (own || value === this.#label) return;
     this.#label = value;
     this.#host.requestUpdate();
   }

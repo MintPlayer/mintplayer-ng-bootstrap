@@ -1,4 +1,5 @@
 import { effect, ElementRef, inject, Renderer2 } from '@angular/core';
+import { takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
 import { applyPropBag, type PropBag } from './props.directive';
 
 /**
@@ -25,4 +26,24 @@ export function useHostProps(bag: () => PropBag | null | undefined): void {
     classes = next;
     applied = applyPropBag(renderer, element, applied, rest);
   });
+}
+
+/** A host's forwarded attributes (`useHostAttrs`), and the host they came from. */
+export interface HostAttrs {
+  readonly host: HTMLElement;
+  readonly attrs: PropBag;
+}
+
+/**
+ * Host transparency for a compiled template whose role lives on an inner
+ * `mp-attrs` node (#458): a consumer's `aria-*`, `id` and `tabindex` on the
+ * host belong on that node, which binds the result as `[mpHostAttrs]`. `id`
+ * and `tabindex` are moved (no duplicate id, no dead tab stop on the host);
+ * `aria-*` are copied. Read once, in a field initializer, so the server render
+ * already carries them where AT reads them. A consumer `role` is never taken:
+ * the inner node's role is the core's contract.
+ */
+export function useHostAttrs(): HostAttrs {
+  const host = inject(ElementRef).nativeElement as HTMLElement;
+  return { host, attrs: takeHostAria(host) };
 }

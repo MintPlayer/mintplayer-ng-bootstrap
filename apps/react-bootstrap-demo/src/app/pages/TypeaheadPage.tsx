@@ -40,8 +40,8 @@ const snippet = `<BsTypeahead
   inputLabel="Artist"
   value={value}
   onValueChange={setValue}
-  onSelect={(artist) => console.log(artist)}
-  renderItem={(artist, term) => <><strong>{artist.text}</strong> <small>{artist.genre}</small></>}
+  onItemSelect={({ item }) => console.log(item)}
+  item={({ item, term }) => <><strong>{item.text}</strong> <small>{item.genre}</small></>}
 />`;
 
 export function TypeaheadPage() {
@@ -75,14 +75,14 @@ export function TypeaheadPage() {
       </p>
 
       <h2>Slow provider with cancellation</h2>
-      <BsTypeahead<Artist>
+      <BsTypeahead
         provider={slow}
         debounceMs={200}
         minLength={2}
         inputLabel="Artist"
         value={value}
         onValueChange={setValue}
-        onSelect={setSelected}
+        onItemSelect={({ item }) => setSelected(item as Artist)}
       />
       <p className="mt-2 small text-secondary">
         Aborted requests: <span data-testid="aborted">{aborted}</span> · Selected:{' '}
@@ -90,13 +90,13 @@ export function TypeaheadPage() {
       </p>
 
       <h2>Custom row</h2>
-      <BsTypeahead<Artist>
+      <BsTypeahead
         provider={instant}
         debounceMs={0}
         inputLabel="Artist, highlighted"
-        renderItem={(artist, term) => (
+        item={({ item, term }) => (
           <>
-            {highlight(artist.text, term)} <small className="text-secondary">{artist.genre}</small>
+            {highlight((item as Artist).text, term)} <small className="text-secondary">{(item as Artist).genre}</small>
           </>
         )}
       />

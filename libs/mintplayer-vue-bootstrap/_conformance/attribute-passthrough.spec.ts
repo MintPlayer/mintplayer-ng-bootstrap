@@ -75,8 +75,6 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
       '../tab-control/src/BsTabControl.vue',
       '../tab-control/src/BsTabPage.vue',
       '../tile-manager/src/BsTileManager.vue',
-      '../typeahead/src/BsTypeahead.vue',
-      '../charts/sparkline/src/BsSparkline.vue',
     ];
     const offenders = Object.entries(SFC_SOURCES)
       .filter(([path]) => !FILTERED_FORWARDING.includes(path))
@@ -107,7 +105,7 @@ const TARGETS: Record<string, string> = {
   BsCarousel: 'div.carousel',
   BsCarouselItem: 'div.carousel-item',
   BsHierarchyChart: 'div.hierarchy-chart',
-  BsSparkline: 'span.sparkline',
+  BsSparkline: 'svg',
   BsTrendChart: 'div.trend-chart',
   BsCheckbox: 'input[type=checkbox]',
   BsCodeSnippet: 'div.code-snippet',
@@ -193,11 +191,10 @@ const COMPOSED: Record<string, () => Component> = {
 
 /**
  * Where the label lands when the target is a box around the role-bearing node:
- * the sparkline's span is sized, its role=img svg is what aria-label names.
+ * the datatable's wrapper holds the table that aria-label names.
  */
 const LABEL_TARGETS: Record<string, string> = {
   BsDatatable: 'table',
-  BsSparkline: 'svg[role=img]',
 };
 
 /** Props a case needs before its labelled node exists: a sparkline with no points draws no svg. */

@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -23,6 +23,9 @@ export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${na
   const read = new Set();
   const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set(), partials, called: new Set(), components, composed: new Map() };
   const { root, host } = rootElement(src);
+  // The inner mp-attrs node of a host-rooted template takes the host's forwarded attributes (useHostAttrs).
+  const target = attrsTarget(src, root);
+  ctx.forwardTarget = host && target !== root ? target : null;
   const body = host ? children(ctx, root.children, 0) : children(ctx, src.root.children, 0);
   const defined = new Map();
   const definitions = [...ctx.called].map((name) => definePartial(ctx, name, defined)).join('');
@@ -167,6 +170,10 @@ function bare(ctx, el, depth) {
   if (html) {
     ctx.uses.add('MpTrustedHtmlPipe');
     attrs.push(`[innerHTML]="${escapeAttr(x(ctx, html.exp.content))} | mpTrustedHtml"`);
+  }
+  if (el === ctx.forwardTarget) {
+    ctx.uses.add('MpPropsDirective');
+    attrs.push('[mpHostAttrs]="hostAttrs"');
   }
   const ref = refName(el);
   if (ref) attrs.push(`#${ref}`);

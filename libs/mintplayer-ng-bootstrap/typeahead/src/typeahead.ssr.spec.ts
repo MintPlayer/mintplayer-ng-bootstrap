@@ -1,7 +1,7 @@
 import { Component, destroyPlatform } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideServerRendering, renderApplication } from '@angular/platform-server';
-import { BsTypeaheadComponent } from './typeahead.component';
+import { BsTypeaheadComponent } from './generated';
 
 /**
  * D15: Angular SSR emits a real, named, labelled combobox input that submits

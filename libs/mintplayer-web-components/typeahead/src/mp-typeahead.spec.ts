@@ -1,11 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import './mp-typeahead';
-import type { MpTypeahead } from './mp-typeahead';
+import { MpTypeahead } from './generated';
 import type { TypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 
+// Registered by the import; referenced so the import is not elided.
+void MpTypeahead;
+
 /**
- * The web-component front of the headless typeahead core (#436): light tier,
- * form-associated, the same ARIA bags as the Angular/React/Vue fronts.
+ * The generated Lit front of the typeahead core (#458 M3): light DOM, a real
+ * named input that submits natively, the same ARIA bags as the other fronts.
  */
 interface Item {
   text: string;
@@ -19,14 +21,14 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-const settle = async (el: MpTypeahead<Item>) => {
+const settle = async (el: MpTypeahead) => {
   await new Promise((r) => setTimeout(r, 0));
   await el.updateComplete;
 };
 
 async function mount(attrs = '') {
   document.body.innerHTML = `<mp-typeahead ${attrs}></mp-typeahead>`;
-  const el = document.querySelector('mp-typeahead') as unknown as MpTypeahead<Item>;
+  const el = document.querySelector('mp-typeahead') as unknown as MpTypeahead;
   await el.updateComplete;
   return el;
 }
@@ -43,13 +45,13 @@ function recordingProvider() {
   return { provider, calls, answers };
 }
 
-function type(el: MpTypeahead<Item>, text: string) {
+function type(el: MpTypeahead, text: string) {
   const input = el.querySelector('input') as HTMLInputElement;
   input.value = text;
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }
 
-const key = (el: MpTypeahead<Item>, k: string) => {
+const key = (el: MpTypeahead, k: string) => {
   const event = new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
   el.querySelector('input')!.dispatchEvent(event);
   return event;
@@ -86,6 +88,7 @@ describe('mp-typeahead', () => {
     const el = await mount('debounce-ms="100"');
     const { provider, calls, answers } = recordingProvider();
     el.provider = provider;
+    await el.updateComplete; // inputs reach the core in the update cycle
     type(el, 'k');
     vi.advanceTimersByTime(50);
     type(el, 'kru');
@@ -101,19 +104,20 @@ describe('mp-typeahead', () => {
     expect([...el.querySelectorAll('li[role=option]')].map((o) => o.textContent?.trim())).toEqual(['Kruishoutem']);
   });
 
-  it('itemRenderer receives the term; keyboard moves aria-activedescendant and Enter picks', async () => {
+  it('the item renderer receives the item and the term; keyboard moves aria-activedescendant and Enter picks', async () => {
     const el = await mount('debounce-ms="0"');
     const { provider, answers } = recordingProvider();
     el.provider = provider;
-    el.itemRenderer = (item, term) => {
+    await el.updateComplete; // inputs reach the core in the update cycle
+    el.itemRenderer = ({ item, term }) => {
       const b = document.createElement('b');
-      b.textContent = `${item.text}|${term}`;
+      b.textContent = `${(item as Item).text}|${term}`;
       return b;
     };
     const selected: unknown[] = [];
-    el.addEventListener('select', (e) => selected.push((e as CustomEvent).detail));
+    el.addEventListener('itemselect', (e) => selected.push((e as CustomEvent).detail));
     const changes: string[] = [];
-    el.addEventListener('value-change', (e) => changes.push((e as CustomEvent).detail.value));
+    el.addEventListener('valuechange', (e) => changes.push((e as CustomEvent<string>).detail));
 
     type(el, 'ker');
     answers[0].resolve([{ text: 'Kerkstraat' }, { text: 'Kerkhof' }]);
@@ -132,32 +136,32 @@ describe('mp-typeahead', () => {
     expect(selected).toEqual([{ item: { text: 'Kerkhof' }, value: 'Kerkhof' }]);
     expect(changes).toEqual(['ker', 'Kerkhof']);
     expect(el.value).toBe('Kerkhof');
-    expect(el.selectedItem).toEqual({ text: 'Kerkhof' });
     expect(input.value).toBe('Kerkhof');
     expect(input.hasAttribute('aria-activedescendant')).toBe(false);
   });
 
-  it('value is a property that never queries, and the form value is the term under name', async () => {
+  it('value is a property that never queries, and the named input submits the term', async () => {
     const el = await mount('name="street" debounce-ms="0"');
     const { provider, calls } = recordingProvider();
     el.provider = provider;
+    await el.updateComplete; // inputs reach the core in the update cycle
     el.value = 'Molenstraat';
+    await settle(el);
     await el.updateComplete;
     expect(el.querySelector('input')!.value).toBe('Molenstraat');
     expect(calls).toEqual([]);
-    expect(el.formValue()).toBe('Molenstraat');
-    el.removeAttribute('name');
-    expect(el.formValue()).toBeNull();
-    // The inner input never submits on its own.
-    expect(el.querySelector('input')!.hasAttribute('name')).toBe(false);
+    // A light-DOM input: a surrounding form submits it natively, under name.
+    expect(el.querySelector('input')!.getAttribute('name')).toBe('street');
   });
 
   it('disabled disables the input and closes the list', async () => {
     const el = await mount('debounce-ms="0"');
     el.provider = recordingProvider().provider;
+    await el.updateComplete;
     type(el, 'k');
     await el.updateComplete;
     el.disabled = true;
+    await settle(el); // the core closes the list in the update cycle, then renders again
     await el.updateComplete;
     const input = el.querySelector('input')!;
     expect(input.disabled).toBe(true);

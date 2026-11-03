@@ -479,6 +479,22 @@ only.
    - The compiler now refuses a `<slot>` that `defineSlots<…>()` does not declare. The Lit and React
      fronts type their `slots` from that declaration, so the old failure appeared in tsc, far from
      its cause.
+   - **Typeahead.** `typeaheadCore` mirrors `TypeaheadMachine`'s snapshot into core state and
+     owns the listeners on the host, so every front shares one event path. Outputs are renamed
+     where the old name collided with a native event: `select` → `itemSelect` (detail
+     `{ item, value }`), `submitted` → `termSubmit`, `opened`/`closed` → `openChange`. The
+     `provider` accepts a Promise or any observable-like answer (`TypeaheadSource`), so Angular's
+     `HttpClient` needs no Angular-only adapter. `selectedItem()` is gone: the pick arrives with
+     `itemSelect`. The Lit element is no longer form-associated; its light-DOM input carries
+     `name` and submits natively. The Angular CVA and the pre-hydration text replay live in
+     `typeahead.angular.ts` / `typeahead.accessor.ts`.
+   - **Host transparency in generated Angular fronts.** Where the template's root is the host
+     but the role lives on an inner `mp-attrs` node, the generated component forwards the host's
+     `aria-*`, `id` and `tabindex` to that node (`useHostAttrs` + `[mpHostAttrs]`), as the
+     hand-written fronts did with `takeHostAria`. A forwarded `id` yields to an `id` the core's bag
+     sets itself (the radio's input, which its `label for` names) and stays on the host.
+   - **Sparkline.** One `<svg>` as the `mp-attrs` node inside a host `<span>`; with no points it
+     renders an empty, `aria-hidden` svg rather than nothing, so the box keeps its size.
 4. **Shadow-root groups → D10:** accordion, card, charts, checkbox, toggle-button, pagination,
    shell, tab-control, tile-manager. Delete `web-components/_styles` and the page-variant install.
    Retire `light-styles-nesting`.

@@ -5,12 +5,11 @@ import { linearScale } from '@mintplayer/ui-core/charts/core';
  * viewBox SVG. Deliberately NOT keyboard-interactive: a non-interactive
  * graphic (`role="img"`) whose accessible name summarizes the series ("first,
  * last, lowest, highest", locale-formatted). The real numbers belong in the
- * table cell next to it. Every front renders the same `<svg>` from these bags,
- * so the server HTML is the finished chart.
+ * table cell next to it. Every front renders the same <svg> from these bags,
+ * so the server HTML is the finished chart. The D10 compiler stamps the scope
+ * (#458), so the bags carry none.
  */
 export type SparklineBag = Record<string, string | null>;
-
-export const SPARKLINE_SCOPE = 'sparkline';
 
 const W = 100;
 const H = 28;
@@ -35,16 +34,15 @@ export interface SparklineOptions {
 export interface SparklineView {
   /** The sized box (`.sparkline`), rendered even when there is nothing to draw. */
   readonly root: SparklineBag;
-  /** `null` when there is no point to draw. */
-  readonly svg: SparklineBag | null;
+  /** Always rendered; a bare, `aria-hidden` box when there is no point to draw. */
+  readonly svg: SparklineBag;
   /** `null` when there is no area to fill. */
   readonly fill: SparklineBag | null;
-  readonly line: SparklineBag;
+  /** `null` when there is no point to draw. */
+  readonly line: SparklineBag | null;
   /** `null` when the dot is off. */
   readonly dot: SparklineBag | null;
 }
-
-const scope = { 'data-mps': SPARKLINE_SCOPE };
 
 /** Accessible name: label > formatter > "first, last, lowest, highest". */
 export function sparklineName(points: SparklinePoints, options: SparklineOptions = {}): string {
@@ -59,12 +57,15 @@ export function sparklineName(points: SparklinePoints, options: SparklineOptions
     .join(', ');
 }
 
-const root: SparklineBag = { ...scope, class: 'sparkline' };
+const root: SparklineBag = { class: 'sparkline' };
+
+/** The svg with nothing to draw: kept for a stable tree, hidden from assistive technology. */
+const emptySvg: SparklineBag = { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'none', 'aria-hidden': 'true' };
 
 /** The box, plus the chart unless there is no point to draw. */
 export function connectSparkline(points: SparklinePoints, options: SparklineOptions = {}): SparklineView {
   const values = points.filter((p): p is number => p !== null);
-  if (!values.length) return { root, svg: null, fill: null, line: { ...scope, class: 'line' }, dot: null };
+  if (!values.length) return { root, svg: emptySvg, fill: null, line: null, dot: null };
   const lo = options.yMin ?? Math.min(...values);
   const hi = options.yMax ?? Math.max(...values);
   const x = linearScale([0, Math.max(1, points.length - 1)], [PAD, W - PAD]);
@@ -93,16 +94,15 @@ export function connectSparkline(points: SparklinePoints, options: SparklineOpti
   return {
     root,
     svg: {
-      ...scope,
       viewBox: `0 0 ${W} ${H}`,
       preserveAspectRatio: 'none',
       role: 'img',
       'aria-label': sparklineName(points, options) || null,
     },
-    fill: options.area && fill ? { ...scope, class: 'fill', d: fill } : null,
-    line: { ...scope, class: 'line', d: line },
+    fill: options.area && fill ? { class: 'fill', d: fill } : null,
+    line: { class: 'line', d: line },
     dot: (options.showLastDot ?? true) && last
-      ? { ...scope, class: 'dot', cx: String(last.px), cy: String(last.py), r: '3' }
+      ? { class: 'dot', cx: String(last.px), cy: String(last.py), r: '3' }
       : null,
   };
 }

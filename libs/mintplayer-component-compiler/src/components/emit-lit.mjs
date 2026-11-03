@@ -28,6 +28,9 @@ function propertyOptions(input) {
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
+/** HTMLElement methods a core method may share a name with: the Lit element must mark them `override`. */
+const ELEMENT_METHODS = new Set(['focus', 'blur', 'click', 'scrollIntoView', 'remove', 'showPopover', 'hidePopover', 'togglePopover']);
+
 export function emitLitComponent(model, { generator, runtime, scopedStyles, extension }) {
   const { names } = model;
   const ext = model.extensions.lit;
@@ -111,10 +114,12 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
 
   model.methods.forEach((method) => {
     const sig = `${model.methodsType}['${method.name}']`;
+    // A method named like an HTMLElement one (focus, blur, click) replaces it on the element.
+    const override = ELEMENT_METHODS.has(method.name) ? 'override ' : '';
     lines.push(
       '',
       jsdoc(method.doc, '  ').trimEnd(),
-      `  ${method.name}(...args: Parameters<${sig}>): ReturnType<${sig}> {`,
+      `  ${override}${method.name}(...args: Parameters<${sig}>): ReturnType<${sig}> {`,
       `    return this.#core.call('${method.name}', args) as ReturnType<${sig}>;`,
       `  }`,
     );

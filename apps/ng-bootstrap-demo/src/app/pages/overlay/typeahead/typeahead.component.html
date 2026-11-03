@@ -6,12 +6,12 @@
   <code>AbortSignal</code>: when a newer term supersedes a request, the older one is aborted and its
   answer is never shown. Typing is debounced (<code>[debounceMs]</code>, 200 ms) and gated on a
   minimum length (<code>[minLength]</code>, 1). The value is the text, usable with
-  <code>[(ngModel)]</code> or <code>formControlName</code>; <code>(select)</code> delivers the picked item
-  and <code>(submitted)</code> the term on Enter.
+  <code>[(ngModel)]</code> or <code>formControlName</code>; <code>(itemselect)</code> delivers the picked item
+  and <code>(termsubmit)</code> the term on Enter. The provider may answer with a Promise or an Observable.
 </p>
 <p>
-  This is the first component built on the headless core architecture: an Angular template rendered
-  from a framework-neutral <code>TypeaheadMachine</code>. With JavaScript disabled, the server still
+  The component is generated from one framework-neutral source (a core driving <code>TypeaheadMachine</code>
+  and one template) into the Angular, React, Vue and Lit fronts. With JavaScript disabled, the server still
   renders a real, named input that submits as free text.
 </p>
 
@@ -26,8 +26,8 @@
   [debounceMs]="200"
   [minLength]="2"
   inputLabel="Artist"
-  (select)="selected.set($event)"
-  (submitted)="submitted.set($event)"
+  (itemselect)="selected.set($event.item)"
+  (termsubmit)="submitted.set($event)"
 ></bs-typeahead>
 <p class="mt-2 small text-secondary">
   Aborted requests: <span data-testid="aborted">{{ aborted() }}</span> ·
@@ -45,7 +45,7 @@
 </p>
 
 <bs-typeahead [provider]="instant" [debounceMs]="0" inputLabel="Artist, highlighted">
-  <ng-container *bsTypeaheadItem="let artist; let term = term; of: artists">
+  <ng-container *bsTypeaheadItem="let artist = item; let term = term">
     @let p = parts(artist.text, term);
     {{ p.before }}<mark>{{ p.match }}</mark>{{ p.after }}
     <small class="text-secondary">{{ artist.genre }}</small>
@@ -56,8 +56,8 @@
 
 <h2>Forms</h2>
 <p>
-  The control's value is the text, so free text is a valid value. A pick writes the item's text and
-  keeps the item in <code>selectedItem()</code> until the text changes again.
+  The control's value is the text, so free text is a valid value. A pick writes the item's text; the item itself
+  arrives with <code>(itemselect)</code>.
 </p>
 
 <form class="row g-2 align-items-end" (ngSubmit)="submitted.set(street())">

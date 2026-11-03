@@ -1,6 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { BsSparklineComponent } from './sparkline.component';
+import { BsSparklineComponent } from './generated';
 
 @Component({
   imports: [BsSparklineComponent],
@@ -9,10 +9,10 @@ import { BsSparklineComponent } from './sparkline.component';
 class HostComponent {
   readonly points = signal<(number | null)[]>([1, 2, null, 3]);
   readonly area = signal(false);
-  readonly label = signal<string | undefined>(undefined);
+  readonly label = signal<string | null>(null);
 }
 
-describe('BsSparklineComponent', () => {
+describe('BsSparklineComponent (generated)', () => {
   let fixture: ComponentFixture<HostComponent>;
   const host = () => fixture.nativeElement.querySelector('bs-sparkline') as HTMLElement;
   const svg = () => host().querySelector('svg');
@@ -42,12 +42,14 @@ describe('BsSparklineComponent', () => {
     expect(svg()?.getAttribute('aria-label')).toBe('Coverage trend');
   });
 
-  it('fills the area on request and draws nothing without points', () => {
+  it('fills the area on request, and hides an empty box without points', () => {
     fixture.componentInstance.area.set(true);
     fixture.detectChanges();
     expect(svg()?.querySelector('path.fill')).not.toBeNull();
     fixture.componentInstance.points.set([null]);
     fixture.detectChanges();
-    expect(svg()).toBeNull();
+    expect(svg()?.hasAttribute('role')).toBe(false);
+    expect(svg()?.getAttribute('aria-hidden')).toBe('true');
+    expect(svg()?.querySelector('path')).toBeNull();
   });
 });

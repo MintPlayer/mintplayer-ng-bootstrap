@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import './mp-sparkline';
-import type { MpSparkline } from './mp-sparkline';
+import { MpSparkline } from './index';
+
+void MpSparkline; // force the side-effect registration
 
 /** What each configuration attribute/property does to the rendered sparkline. */
 async function mount(points: (number | null)[], attrs = '', wrapper = ''): Promise<MpSparkline> {
@@ -12,9 +13,10 @@ async function mount(points: (number | null)[], attrs = '', wrapper = ''): Promi
   return el;
 }
 
-const svgEl = (el: MpSparkline) => el.shadowRoot!.querySelector('svg');
-const dotY = (el: MpSparkline) => Number(el.shadowRoot!.querySelector('.dot')!.getAttribute('cy'));
-const dotX = (el: MpSparkline) => Number(el.shadowRoot!.querySelector('.dot')!.getAttribute('cx'));
+const svgEl = (el: MpSparkline) => el.querySelector('svg');
+const hiddenEmpty = (el: MpSparkline) => svgEl(el)?.getAttribute('aria-hidden') === 'true' && !svgEl(el)?.hasAttribute('role') && !el.querySelector('.line');
+const dotY = (el: MpSparkline) => Number(el.querySelector('.dot')!.getAttribute('cy'));
+const dotX = (el: MpSparkline) => Number(el.querySelector('.dot')!.getAttribute('cx'));
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -24,10 +26,10 @@ describe('mp-sparkline configuration', () => {
   it('show-last-dot="false" hides the end marker; the property turns it back on', async () => {
     const el = await mount([1, 2, 3], 'show-last-dot="false"');
     expect(el.showLastDot).toBe(false);
-    expect(el.shadowRoot!.querySelector('.dot')).toBeNull();
+    expect(el.querySelector('.dot')).toBeNull();
     el.showLastDot = true;
     await el.updateComplete;
-    expect(el.shadowRoot!.querySelector('.dot')).not.toBeNull();
+    expect(el.querySelector('.dot')).not.toBeNull();
   });
 
   it('the last dot sits on the last non-null value when the series ends in a gap', async () => {
@@ -50,37 +52,36 @@ describe('mp-sparkline configuration', () => {
     pinned.removeAttribute('y-min');
     pinned.removeAttribute('y-max');
     await pinned.updateComplete;
-    expect(pinned.yMin).toBeUndefined();
+    expect(pinned.yMin).toBeNull();
     expect(dotY(pinned)).toBe(fitted);
   });
 
   it('area follows the attribute, including area="false"', async () => {
     const el = await mount([1, 2, 3], 'area="false"');
     expect(el.area).toBe(false);
-    expect(el.shadowRoot!.querySelector('.fill')).toBeNull();
+    expect(el.querySelector('.fill')).toBeNull();
     el.setAttribute('area', '');
     await el.updateComplete;
     expect(el.area).toBe(true);
-    expect(el.shadowRoot!.querySelector('.fill')).not.toBeNull();
+    expect(el.querySelector('.fill')).not.toBeNull();
   });
 
   it('a lone point between gaps draws a line stub but no area', async () => {
     const el = await mount([null, 4, null], 'area');
-    expect(el.shadowRoot!.querySelector('.fill')).toBeNull(); // the core emits no fill bag for an empty area
-    expect(el.shadowRoot!.querySelector('.line')!.getAttribute('d')).toMatch(/^M /);
+    expect(el.querySelector('.fill')).toBeNull(); // the core emits no fill bag for an empty area
+    expect(el.querySelector('.line')!.getAttribute('d')).toMatch(/^M /);
   });
 
-  it('an all-null series renders nothing', async () => {
+  it('an all-null series draws nothing and hides the empty box', async () => {
     const el = await mount([null, null]);
-    expect(svgEl(el)).toBeNull();
+    expect(hiddenEmpty(el)).toBe(true);
   });
 
-  it('a non-array points value is treated as empty', async () => {
+  it('null points draw nothing', async () => {
     const el = await mount([1, 2]);
-    el.points = undefined as unknown as number[];
+    el.points = null;
     await el.updateComplete;
-    expect(el.points).toEqual([]);
-    expect(svgEl(el)).toBeNull();
+    expect(hiddenEmpty(el)).toBe(true);
   });
 });
 

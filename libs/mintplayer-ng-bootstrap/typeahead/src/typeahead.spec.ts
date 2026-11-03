@@ -2,8 +2,9 @@ import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { Observable, Subject } from 'rxjs';
-import { BsTypeaheadComponent, BsTypeaheadProvider } from './typeahead.component';
-import { BsTypeaheadItemDirective } from './directives/typeahead-item.directive';
+import type { TypeaheadSource } from '@mintplayer/ui-core/typeahead';
+import { BsTypeaheadComponent, BsTypeaheadItemDirective } from './generated';
+import { BsTypeaheadValueAccessor } from './typeahead.accessor';
 
 interface Item {
   text: string;
@@ -32,11 +33,11 @@ const flush = async (fixture: ComponentFixture<unknown>) => {
       [minLength]="minLength()"
       [disabled]="disabled()"
       [(ngModel)]="value"
-      (select)="selected.push($event)"
-      (submitted)="submitted.push($event)"
+      (itemselect)="selected.push($event.item)"
+      (termsubmit)="submitted.push($event)"
     >
       @if (withTemplate()) {
-        <ng-container *bsTypeaheadItem="let item; let term = term; of: items">
+        <ng-container *bsTypeaheadItem="let item = item; let term = term">
           <b>{{ item.text }}</b> for <i>{{ term }}</i>
         </ng-container>
       }
@@ -44,24 +45,23 @@ const flush = async (fixture: ComponentFixture<unknown>) => {
   `,
 })
 class HarnessComponent {
-  readonly provider = signal<BsTypeaheadProvider<Item> | null>(null);
+  readonly provider = signal<TypeaheadSource<Item> | null>(null);
   readonly debounceMs = signal(0);
   readonly minLength = signal(1);
   readonly disabled = signal(false);
   readonly withTemplate = signal(false);
-  readonly items: Item[] = [];
   readonly value = signal('');
   selected: Item[] = [];
   submitted: string[] = [];
 }
 
-describe('BsTypeaheadComponent (headless core front)', () => {
+describe('BsTypeaheadComponent (generated front)', () => {
   let fixture: ComponentFixture<HarnessComponent>;
   let host: HarnessComponent;
   let calls: { term: string; signal: AbortSignal }[];
   let answers: ReturnType<typeof deferred<Item[]>>[];
 
-  const typeahead = () => fixture.debugElement.children[0].componentInstance as BsTypeaheadComponent<Item>;
+  const accessor = () => fixture.debugElement.children[0].injector.get(BsTypeaheadValueAccessor);
   const input = () => fixture.nativeElement.querySelector('input') as HTMLInputElement;
   const options = () => Array.from(fixture.nativeElement.querySelectorAll('li[role=option]')) as HTMLElement[];
 
@@ -156,24 +156,22 @@ describe('BsTypeaheadComponent (headless core front)', () => {
     await fixture.whenStable();
     expect(host.value()).toBe('Kerkstraat');
     expect(host.selected).toEqual([{ text: 'Kerkstraat' }]);
-    expect(typeahead().selectedItem()).toEqual({ text: 'Kerkstraat' });
 
-    typeahead().writeValue('Molenstraat');
+    accessor().writeValue('Molenstraat');
     await fixture.whenStable();
     expect(input().value).toBe('Molenstraat');
-    expect(typeahead().selectedItem()).toBeNull();
     expect(calls).toHaveLength(1); // writeValue never queries
 
-    typeahead().setDisabledState(true);
+    accessor().setDisabledState(true);
     await fixture.whenStable();
     expect(input().disabled).toBe(true);
   });
 
-  it('marks the control touched on blur and submits on Enter when the list is closed', async () => {
+  it('marks the control touched on focusout and submits on Enter when the list is closed', async () => {
     const touched = vi.fn();
-    typeahead().registerOnTouched(touched);
+    accessor().registerOnTouched(touched);
     type('kru');
-    input().dispatchEvent(new FocusEvent('blur'));
+    input().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
     expect(touched).toHaveBeenCalled();
     input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(host.submitted).toEqual(['kru']);

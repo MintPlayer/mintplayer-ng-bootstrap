@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SPARKLINE_SCOPE, connectSparkline, sparklineName } from './sparkline';
+import { connectSparkline, sparklineName } from './sparkline';
 
 describe('sparklineName', () => {
   it('prefers the label, then the formatter, then the generated summary', () => {
@@ -19,11 +19,10 @@ describe('sparklineName', () => {
 });
 
 describe('connectSparkline', () => {
-  it('scopes the root and names the role=img svg', () => {
+  it('carries no scope (the compiler stamps it) and names the role=img svg', () => {
     const view = connectSparkline([1, 2, 3], {});
-    expect(view.root).toEqual({ 'data-mps': SPARKLINE_SCOPE, class: 'sparkline' });
+    expect(view.root).toEqual({ class: 'sparkline' });
     expect(view.svg).toMatchObject({
-      'data-mps': SPARKLINE_SCOPE,
       viewBox: '0 0 100 28',
       preserveAspectRatio: 'none',
       role: 'img',
@@ -33,7 +32,7 @@ describe('connectSparkline', () => {
 
   it('draws a null as a gap between separate runs', () => {
     const view = connectSparkline([1, 2, null, 3, 4], {});
-    expect(view.line['d']?.match(/M/g)).toHaveLength(2);
+    expect(view.line?.['d']?.match(/M/g)).toHaveLength(2);
   });
 
   it('fills only on request, and only runs of two or more points', () => {
@@ -51,13 +50,15 @@ describe('connectSparkline', () => {
 
   it('centres a flat series instead of dividing by zero', () => {
     const view = connectSparkline([5, 5], {});
-    expect(view.line['d'] ?? '').not.toContain('NaN');
+    expect(view.line?.['d'] ?? '').not.toContain('NaN');
     expect(view.dot?.['cy']).toBe('14');
   });
 
-  it('renders no svg without values', () => {
+  it('renders a bare, hidden svg without values', () => {
     const view = connectSparkline([null], { area: true });
-    expect(view.svg).toBeNull();
+    expect(view.svg['role']).toBeUndefined();
+    expect(view.svg['aria-hidden']).toBe('true');
+    expect(view.line).toBeNull();
     expect(view.fill).toBeNull();
     expect(view.dot).toBeNull();
   });
