@@ -7,7 +7,7 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { AppComponent } from './app.component';
 import { BOOTSTRAP_VERSION } from './providers/bootstrap-version.provider';
 import { BsNavbarComponent, BsNavbarNavComponent, BsNavbarBrandDirective, BsNavbarDropdownComponent, BsNavbarItemComponent } from '@mintplayer/ng-bootstrap/navbar';
-import { BsDropdownDividerDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownDividerComponent } from '@mintplayer/ng-bootstrap/dropdown';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
@@ -19,7 +19,7 @@ describe('AppComponent', () => {
         ]),
 
         // Mock dependencies
-        MockComponent(BsNavbarComponent), MockComponent(BsNavbarNavComponent), MockDirective(BsNavbarBrandDirective), MockComponent(BsNavbarDropdownComponent), MockComponent(BsNavbarItemComponent), MockDirective(BsDropdownDividerDirective),
+        MockComponent(BsNavbarComponent), MockComponent(BsNavbarNavComponent), MockDirective(BsNavbarBrandDirective), MockComponent(BsNavbarDropdownComponent), MockComponent(BsNavbarItemComponent), MockComponent(BsDropdownDividerComponent),
 
         // Component to test (standalone)
         AppComponent,

@@ -34,7 +34,6 @@ const SECTIONS = [
     { path: '/basic/treeview', label: 'Treeview' },
     { path: '/basic/tree-select', label: 'Tree select' },
     { path: '/basic/typeahead', label: 'Typeahead' },
-    { path: '/basic/dropdown-menu', label: 'Dropdown menu' },
     { path: '/basic/navbar', label: 'Navbar' },
     { path: '/basic/tab-control', label: 'Tab control' },
     { path: '/basic/code-snippet', label: 'Code snippet' },
@@ -45,6 +44,8 @@ const SECTIONS = [
     { path: '/overlay/popover', label: 'Popover' },
     { path: '/overlay/tooltip', label: 'Tooltip' },
     { path: '/overlay/toast', label: 'Toast' },
+    { path: '/overlay/dropdown', label: 'Dropdown' },
+    { path: '/overlay/context-menu', label: 'Context menu' },
   ]},
   { title: 'Advanced', routes: [
     { path: '/advanced/splitter', label: 'Splitter' },

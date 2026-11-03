@@ -140,6 +140,18 @@ export function syncDropdownMenu(menu: HTMLElement, focused = 0, mode: DropdownM
   return stop;
 }
 
+/**
+ * The enabled item inside `panel` that a click activated, if any; for whoever
+ * closes a popup menu on a choice (the dropdown, the context menu). The menu
+ * turns Enter and Space on an item into a click, so this covers the keyboard
+ * too. A submenu's `<summary>` opens the submenu: it is not a choice.
+ */
+export function activatedItem(panel: HTMLElement, event: Event): HTMLElement | null {
+  const item = event.target instanceof Element ? event.target.closest<HTMLElement>('.dropdown-item') : null;
+  if (!item || !panel.contains(item) || dropdownItemDisabled(item)) return null;
+  return dropdownItemControl(item).localName === 'summary' ? null : item;
+}
+
 /** The item of THIS menu an event target sits in, if any. */
 function itemOf(menu: HTMLElement, target: EventTarget | null): HTMLElement | null {
   if (!(target instanceof Element)) return null;

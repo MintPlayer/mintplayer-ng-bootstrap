@@ -1,0 +1,42 @@
+// The dropdown group's own rules (#458 M6); the dropdown partial is installed by
+// the manifest. The menu rules are the shared dropdown-menu sheet, stamped with
+// this group's scope.
+@use '../../../dropdown-menu/src/styles/dropdown-menu.scoped' with ($scope: dropdown);
+
+// Bootstrap gives a header an <h6>, a divider an <hr> and a menu a <ul>; here
+// they are divs (an Angular or Lit item host may not sit in a list), so they
+// need the block display the elements had.
+.dropdown-header,
+.dropdown-divider {
+  display: block;
+}
+
+// The panel Bootstrap positions with Popper's inline styles: here the core
+// writes the position as custom properties (placeBeside), and the width of the
+// trigger for sameWidth (the menu is then at least that wide).
+.dropdown-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-anchored-left, 0);
+  top: var(--mp-anchored-top, 0);
+}
+
+.dropdown-panel > .dropdown-menu {
+  min-width: var(--mp-dropdown-width, var(--bs-dropdown-min-width));
+}
+
+// A closing panel takes no clicks.
+.dropdown-panel:not(.show) {
+  pointer-events: none;
+}
+
+// A dialog panel takes focus when it opens; the ring shows only for keyboard focus.
+.dropdown-panel:focus {
+  outline: none;
+}
+
+.dropdown-panel:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, rgba(13, 110, 253, 0.25));
+  outline-offset: 2px;
+}

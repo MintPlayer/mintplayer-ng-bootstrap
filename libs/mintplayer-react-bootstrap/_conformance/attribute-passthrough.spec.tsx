@@ -32,7 +32,9 @@ import {
   BsDropdownHeader,
   BsDropdownItem,
   BsDropdownMenu,
-} from '@mintplayer/react-bootstrap/dropdown-menu';
+  BsDropdownPanel,
+} from '@mintplayer/react-bootstrap/dropdown';
+import { BsContextMenuPanel } from '@mintplayer/react-bootstrap/context-menu';
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
@@ -138,7 +140,7 @@ import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
  * by construction, but "by construction" is exactly the claim the audit got wrong
  * for `BsTimeline` and `BsAccordionItem`, so each one is now rendered and read
  * back. The plain-element helpers (`BsCard*`, `BsDropdownItem/Header/Divider`) are
- * included too: they render a light-DOM `div`/`li`/`img`/`a` rather than an `mp-*`
+ * included too: they render a light-DOM `div`/`img`/`a` rather than an `mp-*`
  * element, and the same rule applies to that element. The completeness check at
  * the bottom enumerates the published entry points, so a new wrapper without a
  * case here fails rather than going unguarded.
@@ -237,13 +239,15 @@ const CASES: Case[] = [
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),
   { ...bare('BsDockManager', 'div.dock', BsDockManager), fixedRole: 'region' },
-  bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
+  { ...bare('BsDropdownMenu', 'div.dropdown-menu', BsDropdownMenu), fixedRole: 'menu' },
+  bare('BsDropdownPanel', 'div.dropdown-panel', BsDropdownPanel),
+  bare('BsContextMenuPanel', 'div.context-menu-panel', BsContextMenuPanel),
   /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the
      probe's `role` and test the menu instead of the wrapper's rest-spread. */
-  bare('BsDropdownItem', 'li.dropdown-item', BsDropdownItem),
-  bare('BsDropdownHeader', 'li.dropdown-header', BsDropdownHeader),
-  bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
+  bare('BsDropdownItem', 'div.dropdown-item', BsDropdownItem),
+  bare('BsDropdownHeader', 'div.dropdown-header', BsDropdownHeader),
+  bare('BsDropdownDivider', 'div.dropdown-divider', BsDropdownDivider),
   { ...bare('BsFileManager', 'div.file-manager', BsFileManager), fixedRole: 'region' },
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
   { ...bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange), fixedRole: 'group' },

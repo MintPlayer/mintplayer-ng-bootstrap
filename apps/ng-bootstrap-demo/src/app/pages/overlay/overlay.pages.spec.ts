@@ -11,18 +11,13 @@ import {
 } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
-import {
-  BsDropdownDirective,
-  BsDropdownMenuDirective,
-  BsDropdownToggleDirective,
-} from '@mintplayer/ng-bootstrap/dropdown';
+import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import {
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
 import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import {
   BsModalComponent,
   BsModalFooterDirective,
@@ -67,16 +62,13 @@ const pages: {
   {
     name: 'ContextMenuComponent',
     component: ContextMenuComponent,
-    imports: () => [
-      MockComponent(BsHasOverlayComponent),
-      ContextMenuComponent,
-    ],
+    imports: () => [ContextMenuComponent],
   },
   {
     name: 'DropdownComponent',
     component: DropdownComponent,
     imports: () => [
-      MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
+      MockDirective(BsDropdownDirective),
       MockDirective(BsButtonTypeDirective),
       DropdownComponent,
     ],

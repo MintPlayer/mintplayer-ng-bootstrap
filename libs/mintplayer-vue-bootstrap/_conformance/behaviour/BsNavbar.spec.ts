@@ -1,29 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { h, nextTick } from 'vue';
 
-import BsDropdownMenu from '../../dropdown-menu/src/BsDropdownMenu.vue';
 import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '../../navbar/src/generated';
 
 import { mountEl, mountWrapper } from './harness';
 
-/** The navbar and dropdown-menu fronts render the markup of their headless cores. */
-
-describe('BsDropdownMenu — markup from the headless core', () => {
-  it('renders the scoped .dropdown-menu list with no height cap by default', () => {
-    const { el } = mountEl(BsDropdownMenu, 'ul');
-    expect(el.classList).toContain('dropdown-menu');
-    expect(el.getAttribute('data-mps')).toBe('dropdown-menu');
-    expect(el.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
-  });
-
-  // Zero is a legitimate cap and must not be dropped the way an unset value is.
-  it('writes maxHeight as the height-cap custom property, zero included', () => {
-    const capped = mountEl(BsDropdownMenu, 'ul', { props: { maxHeight: 240 } }).el;
-    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
-    const zero = mountEl(BsDropdownMenu, 'ul', { props: { maxHeight: 0 } }).el;
-    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
-  });
-});
+/** The navbar fronts render the markup of their headless cores (the menu: BsDropdownItem.spec.ts). */
 
 describe('BsNavbar — markup from the headless core', () => {
   const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;

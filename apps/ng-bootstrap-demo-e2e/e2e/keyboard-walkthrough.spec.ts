@@ -135,10 +135,8 @@ test.describe('context menu — Shift+F10 opens at the focused element', () => {
     await host.focus();
     await page.keyboard.press('Shift+F10');
     await page.waitForTimeout(300);
-    // Scoped to the overlay container: other (closed) menus on the page also
-    // match a bare li locator, and their hidden nodes win the race.
-    const menuItem = page.locator('.cdk-overlay-container li', { hasText: 'Item 1' }).first();
-    await expect(menuItem).toBeVisible();
+    const menuItem = page.getByRole('menu', { name: 'Context menu' }).getByRole('menuitem', { name: 'Cut' });
+    await expect(menuItem).toBeFocused();
     await expectNotStranded(page);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);

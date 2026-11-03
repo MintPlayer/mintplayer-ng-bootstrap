@@ -3,7 +3,6 @@ import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
-import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
 import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
@@ -106,41 +105,7 @@ describe('BsShell — lowering onto the shell markup', () => {
   });
 });
 
-describe('BsDropdownMenu — markup from the headless core', () => {
-  it('renders the scoped .dropdown-menu list with no height cap by default', async () => {
-    const ul = await renderEl(<BsDropdownMenu />, 'ul');
-    expect(ul.classList).toContain('dropdown-menu');
-    expect(ul.getAttribute('data-mps')).toBe('dropdown-menu');
-    expect(ul.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
-  });
-
-  // Zero is a legitimate cap and must not be dropped the way an unset value is.
-  it('writes maxHeight as the height-cap custom property, zero included', async () => {
-    const capped = await renderEl(<BsDropdownMenu maxHeight={240} />, 'ul');
-    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
-    const zero = await renderEl(<BsDropdownMenu maxHeight={0} />, 'ul');
-    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
-  });
-
-  // Renamed on purpose: React's own `onSelect` is a text-selection event, so
-  // the menu's item selection takes the name and the native one is dropped
-  // from the props type.
-  it('reports an item activation to onSelect', async () => {
-    const seen: unknown[] = [];
-    const ul = await renderEl(
-      <BsDropdownMenu onSelect={({ value }) => seen.push(value)}>
-        <li className="dropdown-item" data-value="a">A</li>
-      </BsDropdownMenu>,
-      'ul',
-    );
-
-    await act(async () => {
-      ul.querySelector<HTMLElement>('li')!.click();
-    });
-
-    expect(seen).toEqual(['a']);
-  });
-});
+// BsDropdownMenu: see BsDropdownItem.spec.tsx (the dropdown group, #458 M6).
 
 describe('BsNavbar — markup from the headless core', () => {
   const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;

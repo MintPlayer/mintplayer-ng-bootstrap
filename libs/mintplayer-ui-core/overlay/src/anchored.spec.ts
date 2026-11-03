@@ -31,6 +31,12 @@ describe('besidePlacement', () => {
     expect(placed.top).toBeGreaterThanOrEqual(8);
   });
 
+  it('aligns flush with the start or end edge (a dropdown), mirrored in RTL', () => {
+    expect(besidePlacement(anchor, panel, viewport, 'bottom', 2, false, 'start')).toEqual({ side: 'bottom', left: 100, top: 122 });
+    expect(besidePlacement(anchor, panel, viewport, 'bottom', 2, false, 'end')).toEqual({ side: 'bottom', left: 110, top: 122 });
+    expect(besidePlacement(anchor, panel, viewport, 'bottom', 2, true, 'start')).toEqual({ side: 'bottom', left: 110, top: 122 });
+  });
+
   it('falls back on an unknown side', () => {
     expect(anchorSide('left', 'top')).toBe('top');
     expect(anchorSide('end', 'top')).toBe('end');

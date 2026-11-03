@@ -92,6 +92,10 @@ const TARGETS: Record<string, string> = {
   // Renderless overlay directives (#458 M6): the attributes reach the trigger the slot renders.
   BsPopover: 'button.trigger',
   BsTooltip: 'button.trigger',
+  BsDropdown: 'button.trigger',
+  BsContextMenu: 'button.trigger',
+  BsDropdownPanel: 'div.dropdown-panel',
+  BsContextMenuPanel: 'div.context-menu-panel',
   BsPopoverPanel: 'div.popover',
   BsTooltipPanel: 'div.tooltip',
   BsToast: 'div.toast',
@@ -133,10 +137,10 @@ const TARGETS: Record<string, string> = {
   BsDatepicker: 'div.mp-datepicker',
   BsDatetimePicker: 'div.mp-datetime-picker',
   BsDockManager: 'div.dock',
-  BsDropdownDivider: 'li.dropdown-divider',
-  BsDropdownHeader: 'li.dropdown-header',
-  BsDropdownItem: 'li.dropdown-item',
-  BsDropdownMenu: 'ul.dropdown-menu',
+  BsDropdownDivider: 'div.dropdown-divider',
+  BsDropdownHeader: 'div.dropdown-header',
+  BsDropdownItem: 'div.dropdown-item',
+  BsDropdownMenu: 'div.dropdown-menu',
   BsFileManager: 'div.file-manager',
   BsInputGroup: 'div.input-group',
   BsMultiRange: 'div.mp-multi-range',
@@ -200,7 +204,7 @@ const slots = { default: () => h('span', { class: 'slot-content' }, 'content') }
 
 /** A renderless directive renders only its trigger slot, given the props to bind. */
 const triggerSlots = { default: ({ props }: { props: Record<string, unknown> }) => h('button', { ...props, class: 'trigger' }, 'trigger') };
-const CASE_SLOTS: Record<string, Record<string, unknown>> = { BsPopover: triggerSlots, BsTooltip: triggerSlots };
+const CASE_SLOTS: Record<string, Record<string, unknown>> = { BsPopover: triggerSlots, BsTooltip: triggerSlots, BsDropdown: triggerSlots, BsContextMenu: triggerSlots };
 
 const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
 

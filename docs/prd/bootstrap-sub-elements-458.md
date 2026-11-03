@@ -236,6 +236,22 @@ side, the opposite one when it does not fit, then clamped; always tracked (scrol
 the former `updatePosition()` is gone. The popover's title is `bsPopoverTitle` (Angular) / `title`; its
 header and body directives are gone.
 
+**Dropdown and context menu (M6).** `[bsDropdown]` is one overlay directive on the trigger, the same
+mechanism as the popover: `bsDropdown` / `bsDropdownToggle` / `bsDropdownMenu` collapse into it, because
+the directive's element IS the toggle and its template IS the menu (Q12's split still holds: the
+directive is behaviour only, the `dropdown` group's `dropdown-menu` / `-item` / `-header` / `-divider`
+are the presentation and work in place without a trigger). It is an APG menu button: click toggles,
+ArrowDown / ArrowUp open on the first / last item, Escape and a choice close and refocus the trigger, a
+press outside or focus leaving closes. `placement` is `bottom-start` (default) / `bottom-end` /
+`top-start` / `top-end` (`placeBeside` gained an `align`), `sameWidth` makes the menu at least the
+trigger's width, `hasPopup="dialog"` holds non-menu content (a calendar) and focuses the panel. The menu,
+items, headers and dividers are `div`s (an Angular or Lit item host may not sit in a `ul`); the menu's
+`select` output is `itemSelect` (a DOM `select` event would collide). `[bsContextMenu]` is the same
+pattern at the pointer (`placeAtPoint`): right-click, Shift+F10 and the ContextMenu key open it, Escape /
+a press elsewhere / scrolling / window blur / a choice close it, `disabled` leaves the browser's menu.
+Both are tier 2: a standalone dropdown does not open without JavaScript (the navbar's dropdowns do). The
+Angular `has-overlay` entry, the CDK overlay use and `dropdown-divider` entry are gone.
+
 ### 4.5 Unified dropdown
 
 `bs-dropdown-menu` / `bs-dropdown-item` are the presentational component, used both standalone (under

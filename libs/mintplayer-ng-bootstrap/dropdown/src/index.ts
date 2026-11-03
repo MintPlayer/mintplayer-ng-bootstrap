@@ -1,3 +1,2 @@
-export * from './dropdown/dropdown.directive';
-export * from './dropdown-menu/dropdown-menu.directive';
-export * from './dropdown-toggle/dropdown-toggle.directive';
+// Generated from @mintplayer/ui-core/dropdown (#458 D10).
+export * from './generated';

@@ -6,8 +6,7 @@ import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective } from '@mintplayer/ng-bootstrap/dropdown';
-import { BsDropdownMenuComponent, BsDropdownItemDirective } from '@mintplayer/ng-bootstrap/dropdown-menu';
+import { BsDropdownDirective, BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsOffcanvasComponent, BsOffcanvasHeaderDirective, OffcanvasPosition } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
@@ -18,7 +17,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-offcanvas',
   templateUrl: './offcanvas.component.html',
   styleUrls: ['./offcanvas.component.scss'],
-  imports: [BsCodeSnippetComponent, RouterLink, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCloseComponent, BsDropdownDirective, BsDropdownToggleDirective, BsDropdownMenuDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuComponent, BsDropdownItemDirective, BsOffcanvasComponent, BsOffcanvasHeaderDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective, BsCheckboxComponent],
+  imports: [BsCodeSnippetComponent, RouterLink, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsCloseComponent, BsDropdownDirective, BsButtonTypeDirective, BsButtonGroupComponent, BsDropdownMenuComponent, BsDropdownItemComponent, BsOffcanvasComponent, BsOffcanvasHeaderDirective, BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective, BsCheckboxComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OffcanvasComponent {

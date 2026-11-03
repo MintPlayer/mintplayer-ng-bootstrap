@@ -39,6 +39,8 @@ export function createAppRouter(ssr: boolean) {
     { path: '/overlay/popover',     name: 'popover',       component: () => import('../views/overlay/PopoverView.vue') },
     { path: '/overlay/tooltip',     name: 'tooltip',       component: () => import('../views/overlay/TooltipView.vue') },
     { path: '/overlay/toast',       name: 'toast',         component: () => import('../views/overlay/ToastView.vue') },
+    { path: '/overlay/dropdown',    name: 'dropdown',      component: () => import('../views/overlay/DropdownView.vue') },
+    { path: '/overlay/context-menu', name: 'context-menu', component: () => import('../views/overlay/ContextMenuView.vue') },
     { path: '/basic/carousel',      name: 'carousel',      component: () => import('../views/CarouselView.vue') },
     { path: '/basic/checkbox',      name: 'checkbox',      component: () => import('../views/CheckboxView.vue') },
     { path: '/basic/code-snippet',  name: 'code-snippet',  component: () => import('../views/CodeSnippetView.vue') },
@@ -64,7 +66,6 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/treeview',      name: 'treeview',      component: () => import('../views/TreeviewView.vue') },
     { path: '/basic/tree-select',   name: 'tree-select',   component: () => import('../views/TreeSelectView.vue') },
     { path: '/basic/typeahead',     name: 'typeahead',     component: () => import('../views/TypeaheadView.vue') },
-    { path: '/basic/dropdown-menu', name: 'dropdown-menu',  component: () => import('../views/DropdownMenuView.vue') },
     { path: '/basic/navbar',        name: 'navbar',         component: () => import('../views/NavbarView.vue') },
     // Enterprise
     { path: '/enterprise/datatables', name: 'datatable', component: () => import('../views/DatatableView.vue') },

@@ -16,19 +16,23 @@ export type AnchorSide = 'top' | 'bottom' | 'start' | 'end';
 
 export const ANCHOR_SIDES: readonly AnchorSide[] = ['top', 'bottom', 'start', 'end'];
 
+/** Where the panel lines up along the side: centred on the anchor (a tooltip), or flush with its start or end edge (a dropdown). */
+export type AnchorAlign = 'center' | 'start' | 'end';
+
 const OPPOSITE: Record<AnchorSide, AnchorSide> = { top: 'bottom', bottom: 'top', start: 'end', end: 'start' };
 
 /** A side as a corner pairing, `gap` pixels away from the anchor. */
-function sidePosition(side: AnchorSide, gap: number): OverlayPosition {
+function sidePosition(side: AnchorSide, gap: number, align: AnchorAlign): OverlayPosition {
+  const y = align === 'start' ? 'top' : align === 'end' ? 'bottom' : 'center';
   switch (side) {
     case 'top':
-      return { originX: 'center', originY: 'top', overlayX: 'center', overlayY: 'bottom', offsetY: -gap };
+      return { originX: align, originY: 'top', overlayX: align, overlayY: 'bottom', offsetY: -gap };
     case 'start':
-      return { originX: 'start', originY: 'center', overlayX: 'end', overlayY: 'center', offsetX: 0 };
+      return { originX: 'start', originY: y, overlayX: 'end', overlayY: y, offsetX: 0 };
     case 'end':
-      return { originX: 'end', originY: 'center', overlayX: 'start', overlayY: 'center', offsetX: 0 };
+      return { originX: 'end', originY: y, overlayX: 'start', overlayY: y, offsetX: 0 };
     default:
-      return { originX: 'center', originY: 'bottom', overlayX: 'center', overlayY: 'top', offsetY: gap };
+      return { originX: align, originY: 'bottom', overlayX: align, overlayY: 'top', offsetY: gap };
   }
 }
 
@@ -47,9 +51,10 @@ export function besidePlacement(
   side: AnchorSide,
   gap: number,
   rtl: boolean,
+  align: AnchorAlign = 'center',
 ): { side: AnchorSide; left: number; top: number } {
   const at = (s: AnchorSide) => {
-    const position = sidePosition(s, gap);
+    const position = sidePosition(s, gap, align);
     // A horizontal gap is physical: away from the anchor on the side the panel lands.
     const physicalLeft = (s === 'start') !== rtl;
     const offsetX = s === 'start' || s === 'end' ? (physicalLeft ? -gap : gap) : 0;
@@ -62,16 +67,35 @@ export function besidePlacement(
 }
 
 /** Place `panel` beside `anchor` from their current boxes; returns the side it landed on. */
-export function placeBeside(anchor: Element, panel: HTMLElement, side: AnchorSide, gap: number, margin = 8): AnchorSide {
+export function placeBeside(anchor: Element, panel: HTMLElement, side: AnchorSide, gap: number, margin = 8, align: AnchorAlign = 'center'): AnchorSide {
   const view = panel.ownerDocument.defaultView;
   if (!view) return side;
   const rect = anchor.getBoundingClientRect();
   const size = panel.getBoundingClientRect();
   const rtl = view.getComputedStyle(anchor).direction === 'rtl';
-  const placed = besidePlacement(rect, { width: size.width, height: size.height }, { width: view.innerWidth, height: view.innerHeight, margin }, side, gap, rtl);
+  const placed = besidePlacement(rect, { width: size.width, height: size.height }, { width: view.innerWidth, height: view.innerHeight, margin }, side, gap, rtl, align);
   panel.style.setProperty('--mp-anchored-left', `${placed.left}px`);
   panel.style.setProperty('--mp-anchored-top', `${placed.top}px`);
   return placed.side;
+}
+
+/**
+ * Place `panel` at a viewport point (a context menu at the pointer): its
+ * start corner on the point, flipped to the other side when it does not fit,
+ * pushed back into the viewport otherwise. `context` gives the direction.
+ */
+export function placeAtPoint(context: Element, panel: HTMLElement, x: number, y: number, margin = 8): void {
+  const view = panel.ownerDocument.defaultView;
+  if (!view) return;
+  const size = panel.getBoundingClientRect();
+  const rtl = view.getComputedStyle(context).direction === 'rtl';
+  const point = { left: x, top: y, right: x, bottom: y, width: 0, height: 0 };
+  const viewport = { width: view.innerWidth, height: view.innerHeight, margin };
+  const placed = besidePlacement(point, { width: size.width, height: size.height }, viewport, 'end', 0, rtl, 'start');
+  // Below the point when it fits, else above it (besidePlacement only flips along the side's axis).
+  const top = y + size.height > viewport.height - margin && y - size.height >= margin ? y - size.height : placed.top;
+  panel.style.setProperty('--mp-anchored-left', `${placed.left}px`);
+  panel.style.setProperty('--mp-anchored-top', `${Math.round(top)}px`);
 }
 
 /**

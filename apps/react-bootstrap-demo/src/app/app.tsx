@@ -59,7 +59,6 @@ const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'Ta
 const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const TreeSelectPage   = lazyNamed(() => import('./pages/TreeSelectPage'),   'TreeSelectPage');
 const TypeaheadPage    = lazyNamed(() => import('./pages/TypeaheadPage'),    'TypeaheadPage');
-const DropdownMenuPage = lazyNamed(() => import('./pages/DropdownMenuPage'), 'DropdownMenuPage');
 const NavbarPage       = lazyNamed(() => import('./pages/NavbarPage'),       'NavbarPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
 const FloatingLabelsPage = lazyNamed(() => import('./pages/forms/FloatingLabelsPage'), 'FloatingLabelsPage');
@@ -70,6 +69,8 @@ const OffcanvasPage    = lazyNamed(() => import('./pages/overlay/OffcanvasPage')
 const PopoverPage      = lazyNamed(() => import('./pages/overlay/PopoverPage'),      'PopoverPage');
 const TooltipPage      = lazyNamed(() => import('./pages/overlay/TooltipPage'),      'TooltipPage');
 const ToastPage        = lazyNamed(() => import('./pages/overlay/ToastPage'),        'ToastPage');
+const DropdownPage     = lazyNamed(() => import('./pages/overlay/DropdownPage'),     'DropdownPage');
+const ContextMenuPage  = lazyNamed(() => import('./pages/overlay/ContextMenuPage'),  'ContextMenuPage');
 const ToggleButtonsPage = lazyNamed(() => import('./pages/advanced/ToggleButtonsPage'), 'ToggleButtonsPage');
 const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage'),    'ParallaxPage');
 const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
@@ -125,6 +126,8 @@ export function App() {
           <Route path="/overlay/popover" element={<PopoverPage />} />
           <Route path="/overlay/tooltip" element={<TooltipPage />} />
           <Route path="/overlay/toast" element={<ToastPage />} />
+          <Route path="/overlay/dropdown" element={<DropdownPage />} />
+          <Route path="/overlay/context-menu" element={<ContextMenuPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
@@ -132,7 +135,6 @@ export function App() {
           <Route path="/basic/treeview" element={<TreeviewPage />} />
           <Route path="/basic/tree-select" element={<TreeSelectPage />} />
           <Route path="/basic/typeahead" element={<TypeaheadPage />} />
-          <Route path="/basic/dropdown-menu" element={<DropdownMenuPage />} />
           <Route path="/basic/navbar" element={<NavbarPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
