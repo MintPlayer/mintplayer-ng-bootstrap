@@ -1,6 +1,6 @@
-// The input group's stylesheet, shared by the fronts (PRD #437 wave A).
-//
-// Bootstrap's `.input-group` (page baseline, @layer mp.bootstrap) already joins
+// The input group's stylesheet, one sheet for the D10 group (#458 M3). The root
+// (the Angular / Lit host, a div in React and Vue) IS the `.input-group`, so
+// Bootstrap's `.input-group` (the `forms` part the manifest installs) already joins
 // native children: `.input-group > .form-control`, `> :not(:first-child)` and so
 // on match because every front renders light DOM. This sheet covers what those
 // direct-child selectors miss:
@@ -25,12 +25,6 @@
 @import "node_modules/bootstrap/scss/variables-dark";
 @import "node_modules/bootstrap/scss/maps";
 @import "node_modules/bootstrap/scss/mixins";
-
-// The web-component host; anchored on the tag, so it matches nothing else.
-/*! @mps-global */
-mp-input-group {
-  display: block;
-}
 
 /*! @mps-global */
 .input-group[data-mps=input-group]:dir(rtl) > :not(:first-child):not(.dropdown-menu):not(.valid-tooltip):not(.valid-feedback):not(.invalid-tooltip):not(.invalid-feedback) {
