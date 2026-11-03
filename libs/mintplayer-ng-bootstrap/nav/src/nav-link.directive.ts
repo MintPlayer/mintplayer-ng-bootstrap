@@ -8,14 +8,14 @@ import { BsNavItemComponent } from './generated';
  * `<a routerLink>`. It runs in the constructor, so the server HTML carries both.
  *
  * Angular selectors cannot say `bs-nav-item > a` (a combinator parses as `a`),
- * so it matches every anchor of a template that imports it and acts only
- * inside a nav item.
+ * so it matches every anchor and button of a template that imports it and
+ * acts only inside a nav item.
  */
-@Directive({ selector: 'a' })
+@Directive({ selector: 'a, button' })
 export class BsNavLinkDirective {
   constructor() {
     if (!inject(BsNavItemComponent, { optional: true })) return;
-    const link = inject<ElementRef<HTMLAnchorElement>>(ElementRef).nativeElement;
+    const link = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const renderer = inject(Renderer2);
     renderer.addClass(link, NAV_LINK_CLASS);
     renderer.setAttribute(link, 'data-mps', 'nav');

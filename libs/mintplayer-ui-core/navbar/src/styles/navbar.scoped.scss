@@ -90,10 +90,23 @@ summary.dropdown-toggle {
 summary.dropdown-toggle::-webkit-details-marker {
   display: none;
 }
-// Narrow, `.navbar-nav` zeroes the link padding; keep the trigger aligned with
-// the links next to it, which use the navbar's own padding token.
+// Narrow, `.navbar-nav` zeroes the link padding; keep the links and the
+// dropdown triggers on the navbar's own padding token at every width. Each
+// front marks an item's consumer link a `.nav-link` of this scope (Angular
+// `BsNavbarLinkDirective`, the `navbar-item` extensions elsewhere), so
+// Bootstrap's nav and navbar parts style it.
 .nav-link {
   padding-inline: var(--bs-navbar-nav-link-padding-x);
+  white-space: nowrap;
+}
+// The item's `active` / `disabled` inputs, on the link they wrap (Bootstrap's
+// own `.nav-link.active` covers the class a router integration writes).
+.nav-item.active > .nav-link {
+  color: var(--bs-navbar-active-color);
+}
+.nav-item.disabled > .nav-link {
+  color: var(--bs-navbar-disabled-color);
+  pointer-events: none;
 }
 // A submenu trigger is a dropdown item with a caret pointing at its panel.
 .dropdown-submenu > summary.dropdown-toggle {
@@ -121,42 +134,6 @@ summary.dropdown-toggle::-webkit-details-marker {
   margin: 0 0.5rem;
 }
 
-/*! @mps-global */
-.nav-item[data-mps=navbar] > a,
-.nav-item[data-mps=navbar] > button {
-  display: block;
-  padding: var(--bs-nav-link-padding-y) var(--bs-navbar-nav-link-padding-x);
-  font-size: var(--bs-nav-link-font-size);
-  font-weight: var(--bs-nav-link-font-weight);
-  color: var(--bs-nav-link-color);
-  text-decoration: none;
-  white-space: nowrap;
-  background: none;
-  border: 0;
-  transition: color 0.15s ease-in-out;
-}
-/*! @mps-global */
-.nav-item[data-mps=navbar] > a:hover,
-.nav-item[data-mps=navbar] > a:focus-visible,
-.nav-item[data-mps=navbar] > button:hover,
-.nav-item[data-mps=navbar] > button:focus-visible {
-  color: var(--bs-nav-link-hover-color);
-}
-// Two channels for the active state: the item's `active` input, and the
-// `active` class a router integration (routerLinkActive) writes on the link.
-/*! @mps-global */
-.nav-item.active[data-mps=navbar] > a,
-.nav-item.active[data-mps=navbar] > button,
-.nav-item[data-mps=navbar] > a.active,
-.nav-item[data-mps=navbar] > button.active {
-  color: var(--bs-navbar-active-color);
-}
-/*! @mps-global */
-.nav-item.disabled[data-mps=navbar] > a,
-.nav-item.disabled[data-mps=navbar] > button {
-  color: var(--bs-nav-link-disabled-color);
-  pointer-events: none;
-}
 /*! @mps-global */
 .navbar-brand[data-mps=navbar] > a {
   color: inherit;

@@ -87,8 +87,8 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
     lines.push(`  constructor() {`, `    super();`, ...defaults.map((input) => `    this.${input.name} = ${input.default};`), `  }`, '');
   }
   lines.push(`  protected override createRenderRoot(): HTMLElement {`, `    return this;`, `  }`, '');
-  // An extension's `children(nodes)` sees the default slot's captured content (the nav item marks its link).
-  const withChildren = has('children') ? [`    ext_children(this.#children.slots['default'] ?? []);`] : [];
+  // An extension's `children(nodes, host)` sees the default slot's captured content (the nav item marks its link).
+  const withChildren = has('children') ? [`    ext_children(this.#children.slots['default'] ?? [], this);`] : [];
   if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, ...withChildren, `  }`, '');
   if (model.queried || model.wrapsContent) {
     lines.push(
