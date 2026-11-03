@@ -1,0 +1,25 @@
+/*
+ * @mintplayer/ui-core/theming/color-mode.css (PRD dark-mode D6, D7)
+ *
+ * --mp-color-mode is the token component sheets query with
+ * "@container style(--mp-color-mode: dark)". Custom-property style queries see
+ * through shadow roots and survive the light-tier rescoper, which Bootstrap's
+ * [data-bs-theme=dark] descendant rules cannot. The nearest themed ancestor wins,
+ * so a nested data-bs-theme=light section is light again.
+ *
+ * The page baseline (@mintplayer/ui-core/styles/bootstrap) already loads this
+ * file, so an app that uses the baseline needs nothing else. Only a page that
+ * links stock bootstrap.min.css instead imports it itself. A custom theme
+ * declares its own --mp-color-mode (light or dark) in its [data-bs-theme=...]
+ * block.
+ *
+ * Page-level tokens only: no component rules belong here (CLAUDE.md invariant 2).
+ */
+:root,
+[data-bs-theme=light] {
+  --mp-color-mode: light;
+}
+
+[data-bs-theme=dark] {
+  --mp-color-mode: dark;
+}

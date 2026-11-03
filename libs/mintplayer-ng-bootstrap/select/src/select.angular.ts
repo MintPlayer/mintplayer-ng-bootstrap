@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { SelectInputs } from '@mintplayer/ui-core/select';
 import { BsSelectValueAccessor } from './value-accessors/select-value-accessor';
 

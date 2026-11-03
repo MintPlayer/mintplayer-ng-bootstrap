@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'datatable',
-  style: { scope: 'datatable' },
+  style: { scope: 'datatable', bootstrap: ['forms', 'pagination'] },
   components: {
     datatable: {
       core: 'datatableCore',

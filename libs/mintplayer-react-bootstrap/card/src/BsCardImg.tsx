@@ -1,6 +1,8 @@
 import * as React from 'react';
 import { forwardRef, ImgHTMLAttributes, PropsWithChildren } from 'react';
 import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -19,17 +21,18 @@ interface BsCardImgProps extends ImgHTMLAttributes<HTMLImageElement> {
  */
 export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardImgProps>>(
   ({ className, position = 'top', src, alt, children, ...rest }, ref) => {
+    installBootstrap(bootstrapCard);
     if (position === 'overlay') {
       return (
         <>
-          <img ref={ref} className={cx('card-img', className)} src={src} alt={alt ?? ''} {...rest} />
-          <div className="card-img-overlay">{children}</div>
+          <img ref={ref} data-mps="card" className={cx('card-img', className)} src={src} alt={alt ?? ''} {...rest} />
+          <div data-mps="card" className="card-img-overlay">{children}</div>
         </>
       );
     }
 
     const positionClass = cardImgClass(position);
-    return <img ref={ref} className={cx(positionClass, className)} src={src} alt={alt ?? ''} {...rest} />;
+    return <img ref={ref} data-mps="card" className={cx(positionClass, className)} src={src} alt={alt ?? ''} {...rest} />;
   },
 );
 BsCardImg.displayName = 'BsCardImg';

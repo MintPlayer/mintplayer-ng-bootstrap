@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { PhoneInputInputs } from '@mintplayer/ui-core/phone-input';
 import { BsPhoneInputFocusDirective, BsPhoneInputValueAccessor } from './value-accessor/phone-input-value-accessor';
 

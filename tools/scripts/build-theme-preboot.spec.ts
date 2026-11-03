@@ -69,7 +69,7 @@ describe('main', () => {
   const quiet = () => ({ log: vi.fn(), error: vi.fn() });
 
   it('writes the default output next to the theming sources', () => {
-    expect(OUTFILE.replace(/\\/g, '/')).toMatch(/libs\/mintplayer-web-components\/theming\/bs-theme-preboot\.js$/);
+    expect(OUTFILE.replace(/\\/g, '/')).toMatch(/libs\/mintplayer-ui-core\/theming\/bs-theme-preboot\.js$/);
   });
 
   it('writes a passing script with a trailing newline and exits 0', async () => {

@@ -36,6 +36,17 @@ describe('mp-dropdown-menu', () => {
     expect(menu.getAttribute('data-mps')).toBe('dropdown-menu');
   });
 
+  it('stamps its item rows with its scope, so the dropdown part styles them, but not their content (#452)', async () => {
+    const menu = await mount(`<mp-dropdown-menu>${ITEMS}</mp-dropdown-menu>`);
+    const rows = [...menu.children];
+    expect(rows.map((row) => row.getAttribute('data-mps'))).toEqual(rows.map(() => 'dropdown-menu'));
+    expect(menu.querySelector('a, button')?.hasAttribute('data-mps')).toBe(false);
+
+    menu.insertAdjacentHTML('beforeend', '<li class="dropdown-header">Later</li>');
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(menu.lastElementChild?.getAttribute('data-mps')).toBe('dropdown-menu');
+  });
+
   it('gives every enabled item a menuitem and one roving tab stop', async () => {
     const menu = await mount(`<mp-dropdown-menu>${ITEMS}</mp-dropdown-menu>`);
     const controls = [...menu.querySelectorAll('[role="menuitem"]')];

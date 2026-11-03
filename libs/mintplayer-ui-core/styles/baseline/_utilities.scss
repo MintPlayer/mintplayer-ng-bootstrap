@@ -1,0 +1,14 @@
+// Baseline sublayer mp.bootstrap.utilities: the utility API with this design
+// system's patches, last in Bootstrap's order.
+
+@import "../parts/config";
+@import "bootstrap/scss/utilities";
+
+// Utility patches: each map.merge()s into $utilities, so they sit between
+// utilities and utilities/api.
+@import "../utilities/cursor";
+@import "../utilities/white-space";
+@import "../utilities/overflow";
+@import "../utilities/width";
+
+@import "bootstrap/scss/utilities/api";

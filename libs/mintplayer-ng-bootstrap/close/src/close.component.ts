@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapClose } from '@mintplayer/ui-core/bootstrap/close';
 
 @Component({
   selector: 'bs-close',
@@ -7,6 +9,11 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsCloseComponent {
+  constructor() {
+    // #452: the close partial ships with this component, scoped to the elements it stamps (data-mps="close").
+    useBootstrap(bootstrapClose);
+  }
+
   /** Accessible name for the close button. Override for localisation. */
   ariaLabel = input<string>('Close');
 

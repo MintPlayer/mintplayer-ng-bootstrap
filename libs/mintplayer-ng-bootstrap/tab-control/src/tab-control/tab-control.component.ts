@@ -1,3 +1,4 @@
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap/nav';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
@@ -12,7 +13,7 @@ import {
   signal,
 } from '@angular/core';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
-import { MpPropsDirective, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
+import { MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {
   connectTabControl,
   resolveActiveTab,
@@ -89,6 +90,7 @@ export class BsTabControlComponent {
   );
 
   constructor() {
+    useBootstrap(bootstrapNav);
     useScopedStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
     afterNextRender(() => this.enhanced.set(true));
   }

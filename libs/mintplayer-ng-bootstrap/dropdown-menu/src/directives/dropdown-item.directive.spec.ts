@@ -62,6 +62,11 @@ describe('BsDropdownItemDirective value', () => {
     expect(host.picked).toEqual(['first', { id: 2 }]);
   });
 
+  it('stamps the menu scope, so the dropdown part styles the item (#452)', () => {
+    fixture.detectChanges();
+    expect(li().getAttribute('data-mps')).toBe('dropdown-menu');
+  });
+
   it('leaves the li native value untouched, so no value="0" attribute appears', async () => {
     await select('two');
     expect(li().hasAttribute('value')).toBe(false);

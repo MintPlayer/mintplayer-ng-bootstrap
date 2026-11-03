@@ -35,6 +35,7 @@ watch(() => props.value, syncValue);
     ref="el"
     v-bind="$attrs"
     class="dropdown-item"
+    data-mps="dropdown-menu"
     :class="{ active, disabled }"
     :aria-disabled="disabled ? 'true' : undefined"
   >

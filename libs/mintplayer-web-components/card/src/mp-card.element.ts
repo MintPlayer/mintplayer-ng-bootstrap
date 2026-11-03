@@ -1,12 +1,19 @@
 import { ReactiveElement } from 'lit';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCardPage } from '@mintplayer/ui-core/bootstrap/card';
 import { cardColorClasses } from '@mintplayer/ui-core/card';
 
 /**
  * `<mp-card>`, the Lit front of the card (PRD #437 §8, wave A). The card has
  * no core: the element IS the Bootstrap `.card`, rendered in the light DOM
  * with no template of its own, so its children (`.card-header`, `.card-body`,
- * …) are ordinary children and the page baseline styles them. Nothing is
- * moved and nothing re-renders, so consumer nodes keep their identity.
+ * …) are ordinary children. Nothing is moved and nothing re-renders, so
+ * consumer nodes keep their identity.
+ *
+ * Styles (#452): those children are the consumer's own raw Bootstrap markup,
+ * which a component never stamps, so the element installs the VERBATIM card
+ * part (`bootstrapCardPage`) — the route the PRD gives raw page markup. It
+ * replaces a scoped copy under the same registry key, never adds a second.
  *
  * No-JS: visible and complete without JS once the consumer writes the
  * classes by hand (`<mp-card class="card text-bg-primary">`); the element only
@@ -40,6 +47,8 @@ export class MpCardElement extends ReactiveElement {
     this.#applied = next;
   }
 }
+
+if (typeof document !== 'undefined' && document.head) installBootstrap(bootstrapCardPage);
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-card')) {
   customElements.define('mp-card', MpCardElement);

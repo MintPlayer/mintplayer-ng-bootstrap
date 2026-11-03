@@ -6,6 +6,8 @@ import {
   type BsThemeToggleMode,
 } from '@mintplayer/react-bootstrap/theming';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap/button-group';
 
 /**
  * A custom cycle: light and dark only (no auto), localized to Dutch. Built by
@@ -57,14 +59,14 @@ const INDEX_HTML_SNIPPET = `<head>
   <meta name="bs-theme-default-mode" content="auto" />
   <!-- Blocking, BEFORE the stylesheets: applies the cookie (or the default,
        or the OS scheme) to <html data-bs-theme> before the first paint.
-       Copy @mintplayer/web-components/theming/bs-theme-preboot.js to /theming/. -->
+       Copy @mintplayer/ui-core/theming/bs-theme-preboot.js to /theming/. -->
   <script src="/theming/bs-theme-preboot.js"></script>
   <link rel="stylesheet" href="/src/styles.css" />
 </head>`;
 
 const STYLES_SNIPPET = `@import 'bootstrap/dist/css/bootstrap.min.css';
 /* --mp-color-mode: the token the components' dark icons query. */
-@import '@mintplayer/web-components/theming/color-mode.css';
+@import '@mintplayer/ui-core/theming/color-mode.css';
 
 /* A custom theme declares its own token next to its colours. */
 [data-bs-theme=sepia] {
@@ -88,6 +90,8 @@ const CONFIG_SNIPPET = `import { configureBsTheme } from '@mintplayer/react-boot
 configureBsTheme({ cookieDomain: '.example.com' });`;
 
 export function ThemingPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapButtonGroupPage);
   const { mode, effectiveMode, setMode } = useBsTheme();
 
   return (
@@ -95,7 +99,7 @@ export function ThemingPage() {
       <h1>Theming &amp; dark mode</h1>
       <p className="text-body-secondary">
         Bootstrap 5.3 switches colours with <code>&lt;html data-bs-theme&gt;</code>. The theme store
-        in <code>@mintplayer/web-components/theming</code> owns the user&apos;s choice, persists it in
+        in <code>@mintplayer/ui-core/theming</code> owns the user&apos;s choice, persists it in
         the <code>bs-theme-mode</code> cookie and resolves <code>auto</code> from{' '}
         <code>prefers-color-scheme</code>, live. <code>BsThemeToggle</code> and{' '}
         <code>useBsTheme()</code> are two views of that one store, shared with every other

@@ -10,6 +10,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   checkboxClasses,
@@ -19,7 +21,8 @@ import {
   type CheckboxState,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
-import { BsControlValidityDirective, BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
 import { BsCheckboxValueAccessor } from '../value-accessor/checkbox-value-accessor';
 import { BsCheckboxGroupDirective } from '../directives/checkbox-group/checkbox-group.directive';
@@ -110,6 +113,8 @@ export class BsCheckboxComponent {
   });
 
   constructor() {
+    // #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="checkbox").
+    useBootstrap(bootstrapForms);
     // `indeterminate` has no attribute, so it is a browser-only property write;
     // aria-checked="mixed" in the bag already carries it in the SSR output.
     afterRenderEffect(() => {

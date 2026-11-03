@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { SignaturePadInputs } from '@mintplayer/ui-core/signature-pad';
 import { BsSignaturePadValueAccessor } from './value-accessor/signature-pad-value-accessor';
 

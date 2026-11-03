@@ -2,6 +2,11 @@
 import { computed, ref } from 'vue';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage);
 
 interface Dish {
   id: number;

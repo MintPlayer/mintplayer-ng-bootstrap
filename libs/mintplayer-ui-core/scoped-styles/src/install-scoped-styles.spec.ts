@@ -40,6 +40,98 @@ describe('installLightStyles', () => {
   });
 });
 
+// #452 §3.1: a Bootstrap part's verbatim variant replaces its scoped variant
+// under the same key, and never the other way round.
+describe('installLightStyles — replace', () => {
+  it('upgrades the installed text in place, keeping one copy', () => {
+    installLightStyles('t-r1', '.x:where([data-mps]){color:red}');
+    installLightStyles('t-r1', '.x{color:red}', { replace: true });
+    const entries = getLightStyleEntries().filter((e) => e.key === 't-r1');
+    expect(entries).toHaveLength(1);
+    expect(entries[0].cssText).toBe('.x{color:red}');
+    expect(document.head.querySelectorAll('style[data-mp-light-styles="t-r1"]').length).toBeLessThanOrEqual(1);
+    if (!entries[0].sheet) expect(styleFor('t-r1')?.textContent).toBe('.x{color:red}');
+  });
+
+  it('keeps the verbatim copy when the scoped one installs later', () => {
+    installLightStyles('t-r2', '.x{color:red}', { replace: true });
+    installLightStyles('t-r2', '.x:where([data-mps]){color:red}');
+    expect(getLightStyleEntries().find((e) => e.key === 't-r2')?.cssText).toBe('.x{color:red}');
+  });
+
+  it('upgrades an SSR-emitted copy', () => {
+    const ssr = document.createElement('style');
+    ssr.setAttribute('data-mp-light-styles', 't-r3');
+    ssr.textContent = '.x:where([data-mps]){color:red}';
+    document.head.appendChild(ssr);
+    installLightStyles('t-r3', '.x{color:red}', { replace: true });
+    expect(document.head.querySelectorAll('style[data-mp-light-styles="t-r3"]')).toHaveLength(1);
+    expect(styleFor('t-r3')?.textContent).toBe('.x{color:red}');
+  });
+
+  it('writeScopedStyleTag replaces only when asked', () => {
+    writeScopedStyleTag(document, 't-r4', 'a');
+    expect(writeScopedStyleTag(document, 't-r4', 'b')).toBe(false);
+    expect(styleFor('t-r4')?.textContent).toBe('a');
+    expect(writeScopedStyleTag(document, 't-r4', 'b', { replace: true })).toBe(true);
+    expect(styleFor('t-r4')?.textContent).toBe('b');
+  });
+});
+
+// #452: Bootstrap parts share one cascade layer, so the registry keeps them in
+// stock order whatever the install order (equal-specificity ties).
+const orderedKeys = (parent: ParentNode, keys: string[]): string[] =>
+  [...parent.querySelectorAll('style[data-mp-light-styles]')]
+    .map((el) => el.getAttribute('data-mp-light-styles')!)
+    .filter((key) => keys.includes(key));
+
+describe('installLightStyles — order', () => {
+  it('writes ordered <style> tags sorted by order, whatever the install order', () => {
+    installLightStyles('t-o10', 'a{}', { order: 110 });
+    installLightStyles('t-o3', 'b{}', { order: 103 });
+    installLightStyles('t-o7', 'c{}', { order: 107 });
+    expect(orderedKeys(document.head, ['t-o3', 't-o7', 't-o10'])).toEqual(['t-o3', 't-o7', 't-o10']);
+    expect(styleFor('t-o7')?.getAttribute('data-mp-order')).toBe('107');
+  });
+
+  it('writeScopedStyleTag (the server DOCUMENT) sorts the same way', () => {
+    writeScopedStyleTag(document, 't-w9', 'a{}', { order: 129 });
+    writeScopedStyleTag(document, 't-w2', 'b{}', { order: 122 });
+    expect(orderedKeys(document.head, ['t-w2', 't-w9'])).toEqual(['t-w2', 't-w9']);
+  });
+
+  it('writes ordered tags into a head without an iterable `children` (Angular SSR, domino)', () => {
+    // domino's head threw "children is not iterable" on the server render.
+    Object.defineProperty(document.head, 'children', { configurable: true, get: () => ({ length: 0 }) });
+    try {
+      writeScopedStyleTag(document, 't-dom9', 'a{}', { order: 159 });
+      writeScopedStyleTag(document, 't-dom2', 'b{}', { order: 152 });
+    } finally {
+      delete (document.head as unknown as Record<string, unknown>)['children'];
+    }
+    expect(orderedKeys(document.head, ['t-dom2', 't-dom9'])).toEqual(['t-dom2', 't-dom9']);
+  });
+
+  it('a replacing install keeps the position of the first', () => {
+    installLightStyles('t-p5', '.x:where([data-mps]){}', { order: 135 });
+    installLightStyles('t-p6', 'y{}', { order: 136 });
+    installLightStyles('t-p5', '.x{}', { order: 135, replace: true });
+    expect(orderedKeys(document.head, ['t-p5', 't-p6'])).toEqual(['t-p5', 't-p6']);
+    expect(styleFor('t-p5')?.textContent).toBe('.x{}');
+  });
+
+  it('collectScopedStyles emits ordered sheets sorted, with their order', async () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    const { styles: tags } = await collectScopedStyles(() => {
+      installLightStyles('t-s8', 'a{}', { order: 148 });
+      installLightStyles('t-s1', 'b{}', { order: 141 });
+    });
+    head.mockRestore();
+    expect(tags.indexOf('"t-s1"')).toBeLessThan(tags.indexOf('"t-s8"'));
+    expect(tags).toContain('<style data-mp-light-styles="t-s1" data-mp-order="141">b{}</style>');
+  });
+});
+
 describe('adoptLightStyles', () => {
   it('mirrors current and future sheets into a shadow root', () => {
     installLightStyles('t-c', 'mp-c{color:red}');
@@ -130,6 +222,43 @@ describe('installLightStyles — constructable stylesheets', () => {
     expect(document.adoptedStyleSheets).toContain(entry.sheet);
   });
 
+  const sheetOf = (key: string) => getLightStyleEntries().find((e) => e.key === key)!.sheet!;
+
+  it('adopts ordered sheets at their sorted position', () => {
+    installLightStyles('t-a10', 'a{}', { order: 210 });
+    installLightStyles('t-a3', 'b{}', { order: 203 });
+    installLightStyles('t-a7', 'c{}', { order: 207 });
+    const order = document.adoptedStyleSheets.filter((s) => [sheetOf('t-a3'), sheetOf('t-a7'), sheetOf('t-a10')].includes(s));
+    expect(order).toEqual([sheetOf('t-a3'), sheetOf('t-a7'), sheetOf('t-a10')]);
+  });
+
+  it('writes a <style> before a later server-rendered part instead of adopting after it', () => {
+    // Adopted sheets cascade after every <style>, so a part that must precede
+    // a server-rendered (marker <style>) part has to be a <style> too.
+    const ssr = document.createElement('style');
+    ssr.setAttribute('data-mp-light-styles', 't-ssr5');
+    ssr.setAttribute('data-mp-order', '305');
+    document.head.appendChild(ssr);
+    installLightStyles('t-ssr5', '', { order: 305 });
+    installLightStyles('t-c2', 'a{}', { order: 302 });
+    installLightStyles('t-c9', 'b{}', { order: 309 });
+    expect(orderedKeys(document.head, ['t-c2', 't-ssr5'])).toEqual(['t-c2', 't-ssr5']);
+    expect(document.adoptedStyleSheets).not.toContain(sheetOf('t-c2'));
+    expect(document.adoptedStyleSheets).toContain(sheetOf('t-c9'));
+    expect(styleFor('t-c9')).toBeNull();
+  });
+
+  it('mirrors ordered sheets into a shadow root in order', () => {
+    installLightStyles('t-m9', 'a{}', { order: 409 });
+    installLightStyles('t-m1', 'b{}', { order: 401 });
+    const root = document.createElement('div').attachShadow({ mode: 'open' });
+    const dispose = adoptLightStyles(root);
+    installLightStyles('t-m5', 'c{}', { order: 405 });
+    const order = root.adoptedStyleSheets.filter((s) => [sheetOf('t-m1'), sheetOf('t-m5'), sheetOf('t-m9')].includes(s));
+    expect(order).toEqual([sheetOf('t-m1'), sheetOf('t-m5'), sheetOf('t-m9')]);
+    dispose();
+  });
+
   it('mirrors sheets into a shadow root once, without duplicates', () => {
     installLightStyles('t-sheet-e', 'mp-j{color:red}');
     const host = document.createElement('div');
@@ -151,13 +280,28 @@ describe('installLightStyles — SSR guard', () => {
     expect(getLightStyleEntries().some((e) => e.key === 't-ssr')).toBe(false);
   });
 
-  it('records the sheet for collectScopedStyles, once per key, with </style> neutralised', () => {
+  it('records the sheet for collectScopedStyles, once per key, with </style> neutralised', async () => {
     const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
-    installLightStyles('t-srv', 'mp-s{content:"</style>"}');
-    installLightStyles('t-srv', 'mp-s{color:blue}');
+    const { result, styles: tags } = await collectScopedStyles(() => {
+      installLightStyles('t-srv', 'mp-s{content:"</style>"}');
+      installLightStyles('t-srv', 'mp-s{color:blue}');
+      return 'html';
+    });
     head.mockRestore();
-    const tags = collectScopedStyles();
+    expect(result).toBe('html');
     expect(tags).toContain('<style data-mp-light-styles="t-srv">mp-s{content:"<\\/style>"}</style>');
     expect(tags).not.toContain('color:blue');
+  });
+
+  it('collects per render: a page never carries a sheet an earlier render installed', async () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    const first = await collectScopedStyles(async () => installLightStyles('t-card', 'mp-card{}'));
+    const second = await collectScopedStyles(async () => installLightStyles('t-home', 'mp-home{}'));
+    installLightStyles('t-outside', 'mp-x{}');
+    head.mockRestore();
+    expect(first.styles).toContain('"t-card"');
+    expect(second.styles).not.toContain('"t-card"');
+    expect(second.styles).toContain('"t-home"');
+    expect(first.styles + second.styles).not.toContain('t-outside');
   });
 });

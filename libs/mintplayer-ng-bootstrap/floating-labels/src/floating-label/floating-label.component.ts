@@ -1,4 +1,6 @@
 import { AfterViewInit, Component, ChangeDetectionStrategy, ElementRef, inject } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 let instanceCounter = 0;
@@ -12,6 +14,8 @@ export class BsFloatingLabelComponent implements AfterViewInit {
   private readonly hostRef = inject(ElementRef<HTMLElement>);
 
   constructor() {
+    // #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="floating-label").
+    useBootstrap(bootstrapForms);
     const bsForm = inject(BsFormComponent, { optional: true });
     if (!bsForm) {
       throw '<bs-floating-label> must be inside a <bs-form>';

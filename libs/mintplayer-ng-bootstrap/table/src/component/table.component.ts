@@ -1,14 +1,19 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { BsTableStylesComponent } from '../table-styles/table-styles.component';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapTables } from '@mintplayer/ui-core/bootstrap/tables';
 
 @Component({
   selector: 'bs-table',
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
-  imports: [BsTableStylesComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BsTableComponent {
+  constructor() {
+    // #452: the tables partial ships with the table, scoped to its stamped <table>.
+    useBootstrap(bootstrapTables);
+  }
+
   isResponsive = input(false);
   striped = input(false);
   hover = input(false);

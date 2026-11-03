@@ -1,5 +1,5 @@
 @if (isOpen()) {
-    <div class="modal d-block"
+    <div data-mps="modal" class="modal d-block"
         [@fadeInOut]
         [@enterFromTop]
         role="dialog"
@@ -8,14 +8,14 @@
         [attr.aria-describedby]="context.bodyId()"
         [bsOverlayFocus]="true"
         tabindex="-1">
-        <div class="modal-dialog" [class.modal-dialog-scrollable]="scrollable()">
-            <div class="modal-content">
+        <div data-mps="modal" class="modal-dialog" [class.modal-dialog-scrollable]="scrollable()">
+            <div data-mps="modal" class="modal-content">
                 <ng-container *ngTemplateOutlet="template; injector: injector"></ng-container>
             </div>
         </div>
     </div>
 
-    <div [@fadeInOut]>
-        <div class="modal-backdrop fade" [class.show]="isOpen()" aria-hidden="true"></div>
+    <div data-mps="modal" [@fadeInOut]>
+        <div data-mps="modal" class="modal-backdrop fade" [class.show]="isOpen()" aria-hidden="true"></div>
     </div>
 }

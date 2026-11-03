@@ -90,7 +90,8 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
         ? `    <template v-if="$slots.${slot.name}" #${slot.name}="slotProps"><slot name="${slot.name}" v-bind="slotProps" /></template>`
         : `    <template v-if="$slots.${slot.name}" #${slot.name}><slot name="${slot.name}" /></template>`,
     ),
-    ...(hasDefault ? ['    <slot />'] : []),
+    // An extension's `Children` component wraps the default slot's content (the nav item marks its link).
+    ...(hasDefault ? [has('Children') ? '    <ext_Children><slot /></ext_Children>' : '    <slot />'] : []),
   ];
   const text = [
     `<script setup lang="ts">`,

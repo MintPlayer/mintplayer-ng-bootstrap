@@ -3,10 +3,29 @@
 // Angular lib forwards it from bootstrap.scss, React/Vue apps link it (or the
 // prebuilt bootstrap.css next to it).
 //
-// The order statement must be the first rule on the page. It is repeated at
-// the top of every component sheet, so whichever arrives first fixes the same
-// order (S1, measured: without it a component sheet installed before the
-// baseline lost to Bootstrap). Consumer CSS that is not in a layer beats both.
+// The order statements must be the first rules on the page. The first is
+// repeated at the top of every component sheet, and both at the top of every
+// Bootstrap part sheet, so whichever arrives first fixes the same order (S1,
+// measured: without it a component sheet installed before the baseline lost to
+// Bootstrap). Consumer CSS that is not in a layer beats both.
+//
+// Only the PAGE-LEVEL partials are here (base, buttons, helpers, utilities).
+// Every other partial ships with the component that renders it, as a part sheet
+// from @mintplayer/ui-core/bootstrap (#452), so a consumer who never renders a
+// card bundles none of .card. Do not add a component partial here; give the
+// component a part instead.
+//
+// mp.bootstrap has four sublayers: base, components, helpers, utilities. The
+// baseline and the parts are separate sheets that reach the page in any order,
+// so base must be first and helpers/utilities last (.fixed-top must beat
+// .navbar). Buttons and EVERY component part share `components`: Bootstrap's
+// cross-partial overrides are specificity-based and often point backwards
+// (.card > .list-group lives before list-group), which a layer per partial
+// broke. Inside `components` the registry inserts the part sheets in stock
+// order; buttons has no equal-specificity tie with any part, so its position
+// (this sheet, usually first) does not matter. The list must match
+// BOOTSTRAP_SUBLAYERS in tools/scripts/lib/wc-codegen.mjs (checked by
+// bootstrap-baseline-superset.spec.ts).
 //
 // Trade-off (documented, C3): a consumer's unlayered !important now LOSES to
 // Bootstrap's layered !important utilities (.d-none and friends), because
@@ -14,7 +33,25 @@
 @use 'sass:meta';
 
 @layer mp.bootstrap, mp.components;
+@layer mp.bootstrap.base, mp.bootstrap.components, mp.bootstrap.helpers, mp.bootstrap.utilities;
 
-@layer mp.bootstrap {
-  @include meta.load-css('bootstrap-stack');
+@layer mp.bootstrap.base {
+  @include meta.load-css('baseline/base');
+  // --mp-color-mode, the dark-mode token (PRD dark-mode D6). Page-level, so it
+  // belongs to the baseline. One copy: the file also ships on its own for pages
+  // that link stock bootstrap.min.css. Layered, so a custom theme's unlayered
+  // --mp-color-mode wins.
+  @include meta.load-css('../theming/color-mode');
+}
+
+@layer mp.bootstrap.components {
+  @include meta.load-css('baseline/buttons');
+}
+
+@layer mp.bootstrap.helpers {
+  @include meta.load-css('baseline/helpers');
+}
+
+@layer mp.bootstrap.utilities {
+  @include meta.load-css('baseline/utilities');
 }

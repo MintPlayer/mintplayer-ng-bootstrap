@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Codegen: libs/mintplayer-ui-core/theming/src/preboot.ts
- *       -> libs/mintplayer-web-components/theming/bs-theme-preboot.js (gitignored build artifact)
+ *       -> libs/mintplayer-ui-core/theming/bs-theme-preboot.js (gitignored build artifact)
  *
  * PRD dark-mode D5: a minified ES5 IIFE that consumers load with a blocking
  * `<script src>` in `<head>`. It is generated from the same core modules the
@@ -19,7 +19,7 @@
  * `startsWith`, ... in the modules preboot.ts pulls in) is a source rule,
  * documented in theming/src/cookie.ts.
  *
- * Run as part of `nx run mintplayer-web-components:codegen-wc`.
+ * Run as part of `nx run mintplayer-ui-core:codegen`.
  */
 import { build, transform } from 'esbuild';
 import { parse } from 'acorn';
@@ -29,9 +29,9 @@ import { resolve } from 'node:path';
 
 import { runCli } from './lib/cli.mjs';
 
-// Source in ui-core (with the cookie/resolve it bundles); the artifact ships from the WC package, where pages load it.
+// Source and artifact both live in ui-core, which publishes it as @mintplayer/ui-core/theming/bs-theme-preboot.js.
 export const ENTRY = resolve(import.meta.dirname, '../../libs/mintplayer-ui-core/theming/src/preboot.ts');
-export const OUTFILE = resolve(import.meta.dirname, '../../libs/mintplayer-web-components/theming/bs-theme-preboot.js');
+export const OUTFILE = resolve(import.meta.dirname, '../../libs/mintplayer-ui-core/theming/bs-theme-preboot.js');
 export const BUDGET = 1024;
 
 /** The three-stage pipeline: bundle at es2015, lower to ES5, minify at es5. Returns the trimmed script. */

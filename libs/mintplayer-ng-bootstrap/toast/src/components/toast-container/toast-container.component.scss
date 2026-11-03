@@ -1,3 +1,5 @@
+// The toasts partial ships with bs-toast (#452, useBootstrap).
+//
 // The container is a POSITIONING overlay: without this it blocks clicks and
 // wheel-scroll over everything it covers (audit 4.10-adjacent Critical).
 // The toasts themselves re-enable interaction.
@@ -7,15 +9,4 @@
 
 :host ::ng-deep .toast {
   pointer-events: auto;
-}
-
-:host ::ng-deep {
-	// Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-    
-    // Layout & components
-    @import "node_modules/bootstrap/scss/toasts";
 }

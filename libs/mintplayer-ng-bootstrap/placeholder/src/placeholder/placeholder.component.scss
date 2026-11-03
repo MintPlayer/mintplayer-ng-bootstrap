@@ -1,14 +1,7 @@
-:host ::ng-deep {
-    // Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-
-    // Layout & components
-    @import "node_modules/bootstrap/scss/placeholders";
-
-    .placeholder {
-        min-height: calc(1em - 1px) !important;
-    }
+// The placeholders partial is installed by the component (#452, useBootstrap).
+//
+// An empty placeholder field keeps one line of height. The fields are the
+// consumer's projected content, hence ::ng-deep, anchored on this host.
+:host ::ng-deep .placeholder {
+    min-height: calc(1em - 1px) !important;
 }

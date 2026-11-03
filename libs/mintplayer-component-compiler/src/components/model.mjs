@@ -42,13 +42,29 @@ function inputKind(field) {
  * The group's one sheet and the scope its templates are stamped with (S15). The
  * sheet's export name follows from the scope as the codegen derives both from
  * `<scope>.scoped.scss`, so a stamp and the sheet that styles it cannot disagree.
+ * `style.bootstrap` lists the Bootstrap partials the group's markup uses; the
+ * fronts install those part sheets before the group's own (#452).
  */
-export function groupStyle(group, entry) {
+export const BOOTSTRAP_PARTS = ['containers', 'grid', 'tables', 'forms', 'transitions', 'dropdown', 'button-group', 'nav', 'navbar', 'card', 'accordion', 'breadcrumb', 'pagination', 'badge', 'alert', 'progress', 'list-group', 'close', 'toasts', 'modal', 'tooltip', 'popover', 'carousel', 'spinners', 'offcanvas', 'placeholders'];
+
+export function groupStyle(group, entry, corePackage = '@mintplayer/ui-core') {
   if (group.styles) throw new Error(`${entry}: \`styles\` is replaced by one \`style: { scope }\` per group (S15)`);
   if (!group.style) return null;
-  const { scope, from } = group.style;
+  const { scope, from, bootstrap = [] } = group.style;
   if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(scope ?? '')) throw new Error(`${entry}: style.scope must be a kebab-case literal (got ${JSON.stringify(scope)})`);
-  return { scope, sheet: `${camel(scope)}ScopedStyles`, from: from ?? null };
+  const unknown = bootstrap.filter((name) => !BOOTSTRAP_PARTS.includes(name));
+  if (unknown.length) throw new Error(`${entry}: style.bootstrap names unknown Bootstrap part(s) ${unknown.join(', ')} (one of: ${BOOTSTRAP_PARTS.join(', ')})`);
+  // Installed in Bootstrap's order whatever order the manifest lists them in.
+  // Each part is its own subpath entry (`<core>/bootstrap/<partial>`), so a part
+  // rides the chunk of the component that installs it in every bundler.
+  const names = BOOTSTRAP_PARTS.filter((name) => bootstrap.includes(name));
+  return {
+    scope,
+    sheet: `${camel(scope)}ScopedStyles`,
+    from: from ?? null,
+    bootstrap: names.map((name) => `bootstrap${pascal(name)}`),
+    bootstrapImports: names.map((name) => ({ module: `${corePackage}/bootstrap/${name}`, names: [`bootstrap${pascal(name)}`] })),
+  };
 }
 
 /** Named exports of an extension file: `export const x`, `export function x`. */
@@ -68,7 +84,7 @@ function exportsOf(file) {
  */
 export function componentModels({ group, entry, corePackage, template, extension, literals = () => null, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
-  const style = groupStyle(group, entry);
+  const style = groupStyle(group, entry, corePackage);
   const models = Object.entries(group.components).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
     const { root, host } = rootElement(src);
@@ -216,11 +232,22 @@ export function coreImports(model, { values = [], types = [], slotTypes = false,
 
 /** `import { sheet } from '<module>';` for a sheet from another module. */
 export function styleImports(model) {
-  return model.style?.from ? [{ module: model.style.from, names: [model.style.sheet] }] : [];
+  return [
+    ...(model.style?.bootstrapImports ?? []),
+    ...(model.style?.from ? [{ module: model.style.from, names: [model.style.sheet] }] : []),
+  ];
 }
 
-/** The group's sheet install, as `<call>('<scope>', <sheet>);`, or none. */
-export const styleInstall = (model, call) => (model.style ? `${call}('${model.style.scope}', ${model.style.sheet});` : null);
+/**
+ * The group's sheet install, as `<call>('<scope>', <sheet>);`, or none. Its
+ * Bootstrap parts go first, each with its stock `order` so the registry keeps
+ * Bootstrap's order between part sheets (#452). A component always installs the
+ * scoped variant, which never replaces an installed copy.
+ */
+export const styleInstall = (model, call) =>
+  model.style
+    ? [...model.style.bootstrap.map((part) => `${call}(${part}.key, ${part}.css, { order: ${part}.order });`), `${call}('${model.style.scope}', ${model.style.sheet});`].join(' ')
+    : null;
 
 /** A host bag stamped with the group's scope (Angular and Lit render no root element to stamp). */
 export function scopedHostBag(model, bag) {

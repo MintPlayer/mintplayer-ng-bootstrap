@@ -23,12 +23,14 @@
       "executor": "nx:run-commands",
       "outputs": [
         "{projectRoot}/**/*.scoped.styles.ts",
+        "{projectRoot}/**/*.bootstrap.styles.ts",
         "{projectRoot}/styles/bootstrap.css",
         "{projectRoot}/phone-core/src/metadata-loaders.generated.ts",
         "{projectRoot}/phone-core/src/metadata/*.generated.ts",
         "{projectRoot}/code-snippet/src/hljs-loaders.generated.ts",
         "{projectRoot}/flags/src/flag-loaders.generated.ts",
-        "{projectRoot}/flags/src/all-flags.generated.ts"
+        "{projectRoot}/flags/src/all-flags.generated.ts",
+        "{projectRoot}/theming/bs-theme-preboot.js"
       ],
       "inputs": [
         "{projectRoot}/**/*.scss",
@@ -38,6 +40,8 @@
         "{workspaceRoot}/tools/scripts/build-hljs-loaders.mjs",
         "{projectRoot}/flags/src/assets/*.svg",
         "{workspaceRoot}/tools/scripts/build-flag-loaders.mjs",
+        "{workspaceRoot}/tools/scripts/build-theme-preboot.mjs",
+        "{projectRoot}/theming/src/**/*.ts",
         {
           "externalDependencies": [
             "libphonenumber-js",
@@ -52,7 +56,8 @@
           "node tools/scripts/build-web-components.mjs libs/mintplayer-ui-core",
           "node tools/scripts/build-phone-metadata.mjs",
           "node tools/scripts/build-hljs-loaders.mjs",
-          "node tools/scripts/build-flag-loaders.mjs"
+          "node tools/scripts/build-flag-loaders.mjs",
+          "node tools/scripts/build-theme-preboot.mjs"
         ]
       },
       "dependsOn": [

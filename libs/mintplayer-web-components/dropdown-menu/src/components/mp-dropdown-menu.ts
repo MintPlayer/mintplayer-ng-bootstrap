@@ -1,3 +1,5 @@
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { ReactiveElement } from 'lit';
 import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import { applyHostProps, EMPTY_HOST_PROPS } from '@mintplayer/web-components/machine';
@@ -11,6 +13,9 @@ import {
 
 /** The consumer names the menu on the element itself; the bag must not overwrite it. */
 const NAMING = new Set(['aria-label', 'aria-labelledby']);
+
+/** The rows a menu owns: the Bootstrap classes its children carry. */
+const ITEM_ROWS = '.dropdown-item, .dropdown-divider, .dropdown-header';
 
 /**
  * `<mp-dropdown-menu>` — the Lit front of the dropdown menu (#437). The
@@ -55,6 +60,8 @@ export class MpDropdownMenu extends ReactiveElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.#stampItems();
+    this.#items.observe(this, { childList: true });
     this.#dispose = attachDropdownMenu(this, {
       onSelect: (detail) =>
         this.dispatchEvent(new CustomEvent<DropdownSelectEventDetail>('select', { detail, bubbles: true, composed: true })),
@@ -63,8 +70,23 @@ export class MpDropdownMenu extends ReactiveElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.#items.disconnect();
     this.#dispose?.();
     this.#dispose = null;
+  }
+
+  readonly #items = new MutationObserver(() => this.#stampItems());
+
+  /**
+   * The items are the element's own parts, so it stamps them with its scope:
+   * the dropdown part (`.dropdown-item:where([data-mps])`) matches only DOM a
+   * component stamped (#452). Only the item rows themselves, never what a
+   * consumer puts inside them.
+   */
+  #stampItems(): void {
+    [...this.children]
+      .filter((child) => child.matches(ITEM_ROWS) && child.getAttribute('data-mps') !== DROPDOWN_MENU_SCOPE)
+      .forEach((child) => child.setAttribute('data-mps', DROPDOWN_MENU_SCOPE));
   }
 
   protected override update(changed: Map<string, unknown>): void {
@@ -78,6 +100,7 @@ export class MpDropdownMenu extends ReactiveElement {
 }
 
 if (typeof document !== 'undefined' && document.head) {
+  installBootstrap(bootstrapDropdown);
   installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 }
 

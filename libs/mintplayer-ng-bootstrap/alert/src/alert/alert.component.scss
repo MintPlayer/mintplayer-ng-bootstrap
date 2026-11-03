@@ -1,17 +1,9 @@
-:host ::ng-deep {
-    // Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
-
-    // Layout & components
-    @import "node_modules/bootstrap/scss/alert";
-
-    // Custom SCSS
-    .alert .btn {
-        bottom: 0;
-        display: inline-flex;
-        align-items: center;
-    }
+// The alert partial is installed by the component (#452, useBootstrap).
+//
+// A button projected into the alert (the close button) sits centred on the
+// alert's own line box.
+:host ::ng-deep .alert .btn {
+    bottom: 0;
+    display: inline-flex;
+    align-items: center;
 }

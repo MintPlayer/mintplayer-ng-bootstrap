@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap/pagination';
 /**
  * Bootstrap's .pagination markup (#437) from @mintplayer/ui-core/pagination.
  * Pages are buttons; with hrefFor they are links and a plain click selects in
@@ -12,6 +14,9 @@ import {
   type PaginationLabels,
   type PaginationSize,
 } from '@mintplayer/ui-core/pagination';
+
+// #452: the pagination partial ships with this component, scoped to the elements it stamps (data-mps="pagination").
+installBootstrap(bootstrapPagination);
 
 defineOptions({ inheritAttrs: false });
 
@@ -61,17 +66,17 @@ function onLinkClick(event: MouseEvent, page: number | null): void {
 </script>
 
 <template>
-  <nav v-bind="{ ...view.nav, ...$attrs }">
-    <ul :class="view.listClass">
-      <li v-for="entry in view.entries" :key="entry.key" :class="entry.itemClass">
-        <span v-if="entry.kind === 'gap'" v-bind="entry.attrs">{{ entry.text }}</span>
-        <a
+  <nav data-mps="pagination" v-bind="{ ...view.nav, ...$attrs }">
+    <ul data-mps="pagination" :class="view.listClass">
+      <li data-mps="pagination" v-for="entry in view.entries" :key="entry.key" :class="entry.itemClass">
+        <span data-mps="pagination" v-if="entry.kind === 'gap'" v-bind="entry.attrs">{{ entry.text }}</span>
+        <a data-mps="pagination"
           v-else-if="view.tag === 'a'"
           v-bind="entry.attrs"
           :href="entry.href ?? undefined"
           @click="onLinkClick($event, entry.target)"
         >{{ entry.text }}</a>
-        <button v-else v-bind="entry.attrs" @click="select(entry.target)">{{ entry.text }}</button>
+        <button data-mps="pagination" v-else v-bind="entry.attrs" @click="select(entry.target)">{{ entry.text }}</button>
       </li>
     </ul>
   </nav>

@@ -12,6 +12,9 @@ import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+
 import './TimelinePage.css';
 
 // Shared seed data — a list of project milestones.
@@ -66,6 +69,8 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
 </BsTimeline>`;
 
 export function TimelinePage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [orientation, setOrientation] = useState<TimelineOrientation>('vertical');
   const [align, setAlign] = useState<TimelineAlign>('start');
   const [selectable, setSelectable] = useState<TimelineSelectable>('none');

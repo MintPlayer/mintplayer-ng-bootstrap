@@ -1,3 +1,5 @@
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import {
   INPUT_GROUP_SCOPE,
@@ -69,6 +71,7 @@ export class MpInputGroup extends Base {
 }
 
 if (typeof customElements !== 'undefined' && !customElements.get('mp-input-group')) {
+  installBootstrap(bootstrapForms);
   installLightStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
   customElements.define('mp-input-group', MpInputGroup);
 }

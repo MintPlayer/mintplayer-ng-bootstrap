@@ -1,4 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap/modal';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -17,6 +19,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapModalPage);
+  }
+
   gitRepo = inject(GIT_REPO);
 
   isOpen = false;

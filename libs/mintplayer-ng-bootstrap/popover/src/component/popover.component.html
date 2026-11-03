@@ -1,5 +1,5 @@
 @if (isVisible()) {
-    <div class="popover position-relative fade show"
+    <div data-mps="popover" class="popover position-relative fade show"
         role="dialog"
         [bsOverlayFocus]="isVisible()"
         tabindex="-1"
@@ -9,7 +9,7 @@
         [class]="[marginClass(), positionClass()]"
         [@fadeInOut]>
         <ng-container *ngTemplateOutlet="template; injector: injector"></ng-container>
-        <div class="popover-arrow position-absolute" aria-hidden="true"></div>
+        <div data-mps="popover" class="popover-arrow position-absolute" aria-hidden="true"></div>
         <bs-has-overlay></bs-has-overlay>
     </div>
 }

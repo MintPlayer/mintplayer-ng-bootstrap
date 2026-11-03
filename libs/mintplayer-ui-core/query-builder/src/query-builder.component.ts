@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'query-builder',
-  style: { scope: 'query-builder' },
+  style: { scope: 'query-builder', bootstrap: ['forms', 'button-group'] },
   components: {
     'query-builder': {
       core: 'queryBuilderCore',

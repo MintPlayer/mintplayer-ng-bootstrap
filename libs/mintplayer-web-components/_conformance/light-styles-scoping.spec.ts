@@ -22,6 +22,7 @@ import '@mintplayer/web-components/dropdown-menu';
 import '@mintplayer/web-components/file-manager';
 import '@mintplayer/web-components/input-group';
 import '@mintplayer/web-components/multi-range';
+import '@mintplayer/web-components/nav';
 import '@mintplayer/web-components/navbar';
 import '@mintplayer/web-components/otp-input';
 import '@mintplayer/web-components/phone-input';
@@ -31,6 +32,7 @@ import '@mintplayer/web-components/scheduler';
 import '@mintplayer/web-components/select';
 import '@mintplayer/web-components/shell';
 import '@mintplayer/web-components/signature-pad';
+import '@mintplayer/web-components/spinner';
 import '@mintplayer/web-components/splitter';
 import '@mintplayer/web-components/theming';
 import '@mintplayer/web-components/tile-manager';
@@ -111,7 +113,12 @@ const installedKeysInSource = (): string[] =>
 const documentSheets = () =>
   getLightStyleEntries()
     .map((entry) => ({ key: entry.key, css: entry.cssText }))
-    .filter((s) => s.css.trim().length > 0);
+    .filter((s) => s.css.trim().length > 0)
+    // Bootstrap parts (#452, keys `bootstrap-<partial>`) are not owned by one
+    // component: they are scoped by `:where([data-mps])` PRESENCE, since partials
+    // cross components. Their own no-leak checks (structure + decoy) are
+    // ui-core/_conformance/bootstrap-parts-scoping.spec.ts.
+    .filter((s) => !s.key.startsWith('bootstrap-'));
 
 /**
  * Whether a selector can only match inside the owning component.

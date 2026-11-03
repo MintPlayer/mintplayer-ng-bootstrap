@@ -1,3 +1,5 @@
+import { placePopover, trackPopovers } from '@mintplayer/ui-core/overlay';
+import type { OverlayPosition, PopoverPlacementOptions } from '@mintplayer/ui-core/overlay';
 import { rovingTarget } from '@mintplayer/ui-core/roving';
 import { hydratedAttr } from '@mintplayer/ui-core/store';
 import { connectDropdownMenu, dropdownItemControl, dropdownItemDisabled, dropdownMenuItems, syncDropdownMenu } from '@mintplayer/ui-core/dropdown-menu';
@@ -196,6 +198,12 @@ export interface NavbarDropdownOptions {
   depth: number;
   /** A descendant link's route is active. */
   active?: boolean;
+  /**
+   * Script runs: a submenu's panel becomes a manual popover, which the
+   * attachment shows in the top layer next to its trigger, so the panel it
+   * sits in can scroll without clipping it.
+   */
+  hydrated?: boolean;
 }
 
 export interface NavbarDropdownView {
@@ -216,7 +224,7 @@ export function connectNavbarDropdown(options: NavbarDropdownOptions): NavbarDro
       class: classes(submenu ? 'dropdown-item' : 'nav-link', 'dropdown-toggle', active && 'active'),
     },
     // Navigation, not a menu: never role=menu, whatever the hydration state.
-    panel: connectDropdownMenu({ hydrated: false }),
+    panel: { ...connectDropdownMenu({ hydrated: false }), popover: submenu && options.hydrated ? 'manual' : null },
   };
 }
 
@@ -225,6 +233,42 @@ export function connectNavbarDropdown(options: NavbarDropdownOptions): NavbarDro
 /* ------------------------------------------------------------------------ */
 
 const DETAILS = 'details.dropdown[data-mps=navbar]';
+
+/** Kept between a panel and the viewport's bottom. */
+const VIEWPORT_MARGIN = 8;
+
+/**
+ * A submenu beside its trigger, its first item level with the trigger (the
+ * panel's padding-top plus border: Bootstrap's 0.5rem + 1px); mirrored to the
+ * inline-start side when the end side has no room, bottom-aligned when the
+ * viewport has none below.
+ */
+const SUBMENU_POSITIONS: readonly OverlayPosition[] = [
+  { originX: 'end', originY: 'top', overlayX: 'start', overlayY: 'top', offsetY: -9 },
+  { originX: 'start', originY: 'top', overlayX: 'end', overlayY: 'top', offsetY: -9 },
+  { originX: 'end', originY: 'bottom', overlayX: 'start', overlayY: 'bottom', offsetY: 9 },
+  { originX: 'start', originY: 'bottom', overlayX: 'end', overlayY: 'bottom', offsetY: 9 },
+];
+const SUBMENU_PLACEMENT: PopoverPlacementOptions = { positions: SUBMENU_POSITIONS, margin: VIEWPORT_MARGIN };
+
+/** The trigger of a submenu panel that is a popover; null for any other node. */
+function submenuAnchor(panel: HTMLElement): HTMLElement | null {
+  const details = panel.parentElement;
+  return panel.hasAttribute('popover') && details instanceof HTMLDetailsElement && details.classList.contains('dropdown-submenu')
+    ? summaryOf(details)
+    : null;
+}
+
+/**
+ * Cap a top-level panel at the viewport's bottom; the dropdown-menu sheet
+ * scrolls it (`--mp-dropdown-max-height`). Its submenus are popovers, so the
+ * scroll clips none of them.
+ */
+function fitPanel(panel: HTMLElement): void {
+  if (typeof innerHeight === 'undefined') return;
+  const top = panel.getBoundingClientRect().top;
+  panel.style.setProperty('--mp-dropdown-max-height', `${Math.max(0, Math.floor(innerHeight - top - VIEWPORT_MARGIN))}px`);
+}
 
 function toggleOf(root: HTMLElement): HTMLInputElement | null {
   return root.querySelector<HTMLInputElement>('.navbar-toggle[data-mps=navbar]');
@@ -379,19 +423,28 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
   };
 
   // `toggle` does not bubble: capture it. On open: name the panel's chrome,
-  // and flip a wide submenu that would run off the viewport's end.
+  // then, wide, show a submenu in the top layer next to its trigger, or cap a
+  // top-level panel at the viewport's bottom. On close: hide the popover and
+  // close the submenus inside, whose top-layer panels would outlive it.
   const onToggle = (event: Event) => {
     const details = event.target;
-    if (!(details instanceof HTMLDetailsElement) || !details.matches(DETAILS) || !details.open) return;
+    if (!(details instanceof HTMLDetailsElement) || !details.matches(DETAILS)) return;
     const panel = panelOf(details);
     if (!panel) return;
+    const anchor = submenuAnchor(panel);
+    if (!details.open) {
+      closeNavbarDropdowns(details);
+      if (anchor) panel.togglePopover?.(false);
+      return;
+    }
     syncDropdownMenu(panel, 0, 'navigation');
-    if (!details.classList.contains('dropdown-submenu')) return;
-    details.removeAttribute('data-flip');
-    if (!wide || typeof innerWidth === 'undefined') return;
-    const rect = panel.getBoundingClientRect();
-    const overflows = rtl() ? rect.left < 0 : rect.right > innerWidth;
-    if (overflows) details.setAttribute('data-flip', '');
+    if (!wide) return;
+    if (anchor) {
+      panel.togglePopover?.(true);
+      placePopover(panel, anchor, SUBMENU_PLACEMENT);
+    } else if (!details.classList.contains('dropdown-submenu')) {
+      fitPanel(panel);
+    }
   };
 
   // A mouse press on a trigger toggles its dropdown at press time, and the
@@ -414,13 +467,25 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
     closeNavbarDropdowns(root, inside);
   };
 
-  // A breakpoint crossing changes where every panel sits: close them.
+  // A breakpoint crossing changes where every panel sits: close them. Within
+  // the wide layout an open top-level panel is re-capped (the popovers follow
+  // through trackPopovers).
   const onResize = () => {
     const now = isWide(root);
-    if (now === wide) return;
-    wide = now;
-    closeNavbarDropdowns(root);
+    if (now !== wide) {
+      wide = now;
+      closeNavbarDropdowns(root);
+      // A collapsed panel is never capped.
+      [...root.querySelectorAll<HTMLElement>(`${DETAILS} > .dropdown-menu`)].map((panel) => panel.style.removeProperty('--mp-dropdown-max-height'));
+      return;
+    }
+    if (!wide) return;
+    [...root.querySelectorAll<HTMLDetailsElement>(`${DETAILS}[open]:not(.dropdown-submenu)`)]
+      .map(panelOf)
+      .filter((panel): panel is HTMLElement => !!panel)
+      .map(fitPanel);
   };
+  const untrack = trackPopovers(root, submenuAnchor, SUBMENU_PLACEMENT);
 
   root.addEventListener('change', onChange);
   root.addEventListener('click', onClick);
@@ -429,6 +494,7 @@ export function attachNavbar(root: HTMLElement, options: AttachNavbarOptions = {
   document.addEventListener('pointerdown', onPointerdown, true);
   addEventListener('resize', onResize);
   return () => {
+    untrack();
     root.removeEventListener('change', onChange);
     root.removeEventListener('click', onClick);
     root.removeEventListener('keydown', onKeydown);

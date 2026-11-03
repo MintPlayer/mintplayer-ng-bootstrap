@@ -1,13 +1,18 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
 /**
- * Plain React `card-subtitle` element. Renders a `div.card-subtitle`; the page
- * baseline styles it. Merges an incoming `className` and spreads remaining props.
+ * Plain React `card-subtitle` element. Renders a `div.card-subtitle`; the card part
+ * (#452) styles it. Merges an incoming `className` and spreads remaining props.
  */
 export const BsCardSubtitle = forwardRef<HTMLDivElement, PropsWithChildren<HTMLAttributes<HTMLDivElement>>>(
-  ({ className, ...rest }, ref) => <div ref={ref} className={cx('card-subtitle', className)} {...rest} />,
+  ({ className, ...rest }, ref) => {
+    installBootstrap(bootstrapCard);
+    return <div ref={ref} data-mps="card" className={cx('card-subtitle', className)} {...rest} />;
+  },
 );
 BsCardSubtitle.displayName = 'BsCardSubtitle';

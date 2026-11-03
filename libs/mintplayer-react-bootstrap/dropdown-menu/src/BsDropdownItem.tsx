@@ -1,5 +1,5 @@
 import * as React from 'react';
-import type { DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
+import { DROPDOWN_MENU_SCOPE, type DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
 
 export interface BsDropdownItemProps extends Omit<React.LiHTMLAttributes<HTMLLIElement>, 'value'> {
   /** Bootstrap `.active` appearance. */
@@ -31,7 +31,7 @@ export const BsDropdownItem = React.forwardRef<HTMLLIElement, BsDropdownItemProp
       .join(' ');
 
     return (
-      <li ref={innerRef} className={classes} aria-disabled={disabled ? true : undefined} {...rest}>
+      <li ref={innerRef} className={classes} data-mps={DROPDOWN_MENU_SCOPE} aria-disabled={disabled ? true : undefined} {...rest}>
         {children}
       </li>
     );

@@ -116,6 +116,14 @@ describe('connectNavbarDropdown and items', () => {
     expect(top.panel['role']).toBeNull();
   });
 
+  // No popover in server HTML: an unshown popover is display:none, and without
+  // script the submenu must open inline below its trigger.
+  it('makes only a hydrated submenu panel a manual popover', () => {
+    expect(connectNavbarDropdown({ depth: 1 }).panel['popover']).toBeNull();
+    expect(connectNavbarDropdown({ depth: 1, hydrated: true }).panel['popover']).toBe('manual');
+    expect(connectNavbarDropdown({ depth: 0, hydrated: true }).panel['popover']).toBeNull();
+  });
+
   it('marks the current page and disabled items', () => {
     expect(connectNavbarItem({ active: true })).toMatchObject({ class: 'nav-item active', 'aria-current': 'page' });
     expect(connectNavbarItem({ inMenu: true, disabled: true })).toMatchObject({ class: 'dropdown-item disabled', 'aria-disabled': 'true' });

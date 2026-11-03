@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
@@ -9,6 +11,9 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
  * `className` and spreads remaining props.
  */
 export const BsCardGroup = forwardRef<HTMLDivElement, PropsWithChildren<HTMLAttributes<HTMLDivElement>>>(
-  ({ className, ...rest }, ref) => <div ref={ref} className={cx('card-group', className)} {...rest} />,
+  ({ className, ...rest }, ref) => {
+    installBootstrap(bootstrapCard);
+    return <div ref={ref} data-mps="card" className={cx('card-group', className)} {...rest} />;
+  },
 );
 BsCardGroup.displayName = 'BsCardGroup';

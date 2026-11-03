@@ -89,7 +89,10 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `  });`,
   );
   const slotsProp = named.length ? ` slots={{ ${named.map((s) => s.name).join(', ')} }}` : '';
-  const node = `<${model.templateName}Template {...core.props}${slotsProp} className={className} attrs={rest} rootRef={rootRef}>{children}</${model.templateName}Template>`;
+  // An extension's `Children` component wraps the default slot's content (the nav item marks its link).
+  // createElement: JSX would read the lowercase `ext_` alias as an intrinsic tag.
+  const content = has('Children') ? '{React.createElement(ext_Children, null, children)}' : '{children}';
+  const node = `<${model.templateName}Template {...core.props}${slotsProp} className={className} attrs={rest} rootRef={rootRef}>${content}</${model.templateName}Template>`;
   lines.push(model.provides ? `  return <Context.Provider value={core.provided}>${node}</Context.Provider>;` : `  return ${node};`);
   lines.push(`});`, '');
 

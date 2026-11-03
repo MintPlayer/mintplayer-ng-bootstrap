@@ -10,6 +10,13 @@ import {
 import { BsCheckbox } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/vue-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapBadgePage } from '@mintplayer/ui-core/bootstrap/badge';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage);
 import './TileManagerView.scss';
 
 const STORAGE_KEY = 'tile-manager-demo-layouts-v2';

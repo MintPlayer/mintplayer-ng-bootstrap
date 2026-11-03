@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { computed, useAttrs } from 'vue';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
@@ -16,6 +18,7 @@ defineOptions({ inheritAttrs: false });
 const props = withDefaults(defineProps<{ size?: InputGroupSize }>(), { size: 'md' });
 const attrs = useAttrs();
 
+installBootstrap(bootstrapForms);
 installLightStyles(INPUT_GROUP_SCOPE, inputGroupScopedStyles);
 
 const classes = computed(() => inputGroupClasses(props.size));

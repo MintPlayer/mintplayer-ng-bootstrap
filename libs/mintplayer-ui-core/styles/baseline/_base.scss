@@ -1,0 +1,14 @@
+// Baseline sublayer mp.bootstrap.base: the page-level partials Bootstrap imports
+// before any component partial.
+//
+// The [data-bs-theme=dark] token block in root is pruned by Angular's
+// critical-CSS inliner (beasties), because the static index.html carries no
+// data-bs-theme, and its include markers do not survive the production
+// minifier (PRD dark-mode D5c, measured). Apps must set
+// optimization.styles.inlineCritical to false; see the ng demo's project.json
+// and nx run ng-bootstrap-demo:check-critical-css.
+@import "../parts/config";
+@import "bootstrap/scss/root";
+@import "bootstrap/scss/reboot";
+@import "bootstrap/scss/type";
+@import "bootstrap/scss/images";

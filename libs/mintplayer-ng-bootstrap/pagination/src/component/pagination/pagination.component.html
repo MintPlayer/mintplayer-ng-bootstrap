@@ -1,13 +1,13 @@
-<nav [mpProps]="navBag()">
-  <ul [class]="view().listClass">
+<nav data-mps="pagination" [mpProps]="navBag()">
+  <ul data-mps="pagination" [class]="view().listClass">
     @for (entry of view().entries; track entry.key) {
-      <li [class]="entry.itemClass">
+      <li data-mps="pagination" [class]="entry.itemClass">
         @if (entry.kind === 'gap') {
-          <span [mpProps]="entry.attrs">{{ entry.text }}</span>
+          <span data-mps="pagination" [mpProps]="entry.attrs">{{ entry.text }}</span>
         } @else if (view().tag === 'a') {
-          <a [mpProps]="entry.attrs" [attr.href]="entry.href" (click)="onLinkClick($event, entry.target)">{{ entry.text }}</a>
+          <a data-mps="pagination" [mpProps]="entry.attrs" [attr.href]="entry.href" (click)="onLinkClick($event, entry.target)">{{ entry.text }}</a>
         } @else {
-          <button [mpProps]="entry.attrs" (click)="select(entry.target)">{{ entry.text }}</button>
+          <button data-mps="pagination" [mpProps]="entry.attrs" (click)="select(entry.target)">{{ entry.text }}</button>
         }
       </li>
     }

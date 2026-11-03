@@ -1,5 +1,5 @@
 import { computed, inject } from '@angular/core';
-import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import type { OtpInputInputs } from '@mintplayer/ui-core/otp-input';
 import { BsOtpInputFocusDirective, BsOtpInputValueAccessor } from './value-accessor/otp-input-value-accessor';
 

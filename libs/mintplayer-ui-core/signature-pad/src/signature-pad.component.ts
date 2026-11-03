@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'signature-pad',
-  style: { scope: 'signature-pad' },
+  style: { scope: 'signature-pad', bootstrap: ['forms'] },
   components: {
     'signature-pad': {
       core: 'signaturePadCore',

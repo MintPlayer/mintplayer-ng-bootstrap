@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { DROPDOWN_MENU_SCOPE } from '@mintplayer/ui-core/dropdown-menu';
 
 /**
  * `<BsDropdownDivider>` — a Bootstrap `.dropdown-divider` separating groups of
@@ -8,6 +9,6 @@ import * as React from 'react';
 export const BsDropdownDivider = React.forwardRef<HTMLLIElement, React.LiHTMLAttributes<HTMLLIElement>>(
   function BsDropdownDivider({ className, ...rest }, ref) {
     const classes = ['dropdown-divider', className ?? ''].filter(Boolean).join(' ');
-    return <li ref={ref} role="separator" className={classes} {...rest} />;
+    return <li ref={ref} role="separator" className={classes} data-mps={DROPDOWN_MENU_SCOPE} {...rest} />;
   },
 );

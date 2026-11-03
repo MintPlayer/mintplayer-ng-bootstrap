@@ -1,13 +1,5 @@
-:host ::ng-deep {
-    // Configuration
-    @import "node_modules/bootstrap/scss/functions";
-    @import "node_modules/bootstrap/scss/variables";
-    @import "node_modules/bootstrap/scss/variables-dark";
-    @import "node_modules/bootstrap/scss/mixins";
+// The badge partial is installed by the component (#452, useBootstrap).
 
-    // Layout & components
-    @import "node_modules/bootstrap/scss/badge";
-}
 // Spoken, not seen.
 .visually-hidden-unit {
     position: absolute;

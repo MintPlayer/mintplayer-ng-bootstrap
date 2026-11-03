@@ -30,6 +30,11 @@ const SNIPPET_HEIGHT = `/* The shell becomes its own scroll region (top bar + si
 const SNIPPET_STATE = `<script setup lang="ts">
 import { ref } from 'vue';
 import { BsShell, type ShellStateChange } from '@mintplayer/vue-bootstrap/shell';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
+
+// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+installBootstrap(bootstrapTablesPage);
 
 // 'auto' is responsive; 'show'/'hide' force the sidebar open/closed.
 const state = ref<'auto' | 'show' | 'hide'>('auto');

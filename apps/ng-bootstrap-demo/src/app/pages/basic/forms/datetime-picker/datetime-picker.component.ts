@@ -2,6 +2,8 @@ import { DemoFormStateComponent } from '../../../../components/form-state/form-s
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap/button-group';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';
@@ -15,6 +17,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatetimePickerComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapButtonGroupPage);
+  }
+
   /** Angular forms: the same control bound template-driven and reactive. */
   protected readonly formsValue = signal<Date | null>(null);
   protected readonly formsControl = new FormControl<Date | null>(null, { nonNullable: true });

@@ -10,6 +10,64 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **`collectScopedStyles` collects per render (issue #452).** It now takes the render and returns
+  `{ result, styles }`: `await collectScopedStyles(() => renderApp(url))`. It used to return every sheet the
+  process had ever installed, so a page's head carried the CSS of components only other pages render. A
+  sheet installed at module scope reaches no page now: call `installBootstrap` / `installLightStyles` while
+  rendering (component body, Vue `setup`), as every front does.
+- **Navbar links are Bootstrap `.nav-link`s (issue #452).** The navbar sheet no longer restates the
+  nav-link rules for `bs-navbar-item > a`; each front marks the item's link `.nav-link` instead, so
+  Bootstrap's own nav and navbar rules style it. **Angular:** import `BsNavbarLinkDirective` from
+  `@mintplayer/ng-bootstrap/navbar` with the navbar components, or the links render unstyled. React,
+  Vue and Lit need no change. A link inside a dropdown panel stays as it was.
+- **Navbar submenus are popovers once hydrated (issue #452).** A wide navbar's dropdown panel is capped
+  at the viewport's bottom and scrolls again, as before #390, so a submenu panel is a `popover="manual"`
+  shown in the top layer next to its trigger (the `@mintplayer/ui-core/overlay` placement) instead of an
+  absolutely positioned child, and the `data-flip` attribute is gone. CSS that positions a submenu
+  panel inside its parent panel no longer applies. Without JavaScript a submenu opens inline below its
+  trigger.
+- **`bs-spinner` is generated from `@mintplayer/ui-core/spinner` (issue #452), and React, Vue and Lit
+  get one too** (`BsSpinner`, `mp-spinner`). `color` is now a theme colour name (`color="primary"`)
+  instead of the `Color` enum, and defaults to inheriting the text colour instead of `dark`. New
+  inputs: `small` (`spinner-border-sm` / `-grow-sm`) and `label`, the visually hidden status text
+  (default `Loading…`).
+- **Bootstrap's component partials ship per component (issue #452).** The global stylesheet
+  (`@mintplayer/ng-bootstrap/bootstrap.scss`, `@mintplayer/ui-core/styles/bootstrap`) now holds only the
+  page-level baseline: root, reboot, type, images, buttons, helpers and utilities. Each component installs
+  the partials its markup uses (`.card`, `.list-group`, `.form-control`, `.modal`, …) once per page, scoped to
+  the DOM it rendered (`:where([data-mps])`, stock specificity), in its own lazy chunk and in the SSR head.
+  - **Raw Bootstrap markup you write yourself** (`<div class="card">`, `<table class="table">`, a plain
+    `.form-control`) is no longer styled by the global sheet. Install the verbatim part from the page that
+    renders it: Angular `useBootstrap(bootstrapCardPage)` (`@mintplayer/ng-bootstrap/machine`) in the
+    constructor, React/Vue/plain `installBootstrap(bootstrapCardPage)`. Each part is its own entry,
+    `@mintplayer/ui-core/bootstrap/<partial>` (`import { bootstrapCardPage } from
+    '@mintplayer/ui-core/bootstrap/card'`); `@mintplayer/ui-core/bootstrap` exports only `installBootstrap`,
+    `bootstrapInstallOptions` and the `BootstrapPart` type. One entry per part keeps a part in the lazy chunk
+    of whoever installs it under esbuild (Angular), which assigns a barrel's every reachable part to the shell.
+  - Sub-classes on content you project into a component (`<h5 class="card-title">` inside `bs-card-body`)
+    are not styled by the scoped part: use the component (`bs-card-title`) or install the `…Page` part.
+  - `@mintplayer/ng-bootstrap/container` and `@mintplayer/ng-bootstrap/table-styles` are removed. `bs-grid`
+    and `bs-table` install the containers and tables parts; raw markup installs `bootstrapContainersPage` /
+    `bootstrapTablesPage`.
+  - `@layer mp.bootstrap` now has sublayers `base, components, helpers, utilities`; every partial sits in
+    `mp.bootstrap.components`. CSS that adds rules to `@layer mp.bootstrap` directly now lands after them.
+  - The Angular card parts (`bs-card-header`, `-body`, `-footer`, `-title`, `-subtitle`, `-text`, `-img`)
+    are `display: block` hosts and no longer carry the `d-block` class.
+  - `bs-list-group`'s host is now the `.list-group` (`role="list"`); the inner `<ul>` is gone. Stock
+    `.card > .list-group` therefore applies to a list group in a `bs-card`.
+- **The dark-mode page files moved to `@mintplayer/ui-core/theming` (issue #452).** No Angular, React or
+  Vue package depends on `@mintplayer/web-components` any more.
+  - `bs-theme-preboot.js` is now `@mintplayer/ui-core/theming/bs-theme-preboot.js`. Point the assets glob
+    (Angular) or your copy step at `node_modules/@mintplayer/ui-core/theming`.
+  - `color-mode.css` is now `@mintplayer/ui-core/theming/color-mode.css`, and the page baseline
+    (`@mintplayer/ui-core/styles/bootstrap`, `@mintplayer/ng-bootstrap/bootstrap.scss`) loads it itself:
+    drop your `@import` of it. Only a page that links stock `bootstrap.min.css` imports it.
+  - Its global `.theme-toggle` box rule is gone; the toggle's own sheet carries it.
+  - `@mintplayer/ng-bootstrap` no longer lists `@mintplayer/web-components` as a peer dependency.
+- **`BsControlValidityDirective` moved to `@mintplayer/ng-bootstrap/a11y/forms` (issue #452)**, so
+  `@mintplayer/ng-bootstrap/a11y` no longer pulls `@angular/forms` into your bundle. **Migration**: change the
+  import path.
+
 - **Datatable filters are a two-way model applied by the server (issue #448).** A `fetch` table never
   filters rows itself any more; it sends the active filters with every request.
   - **`filters` model** (`[(filters)]`, `v-model:filters`, `filters` + `onFiltersChange`, Lit `filters`
@@ -872,6 +930,16 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     full-width table.
 
 ### Added
+
+- **Nav component (issue #452).** `bs-nav` / `bs-nav-item` (Angular), `BsNav` / `BsNavItem` (React,
+  Vue) and `mp-nav` / `mp-nav-item` (Lit), from one source in `@mintplayer/ui-core/nav`. Inputs
+  `variant` (`tabs`, `pills`, `underline`), `fill`, `justified` and `cardHeader`. It ships Bootstrap's
+  nav part, so a page with tabs no longer installs `bootstrapNavPage`. The item's own `<a>` (a router link
+  too) becomes its `.nav-link`: in Angular import `BsNavLinkDirective` with the components. The
+  component compiler gains a `Children` (React, Vue) / `children` (Lit) extension hook for this.
+- **`bs-list-group` `[flush]` input (issue #452).** Applies Bootstrap's `.list-group-flush` (no outer
+  borders, no rounded corners), so a list group in a `bs-card` sits edge to edge inside the card's border.
+  It replaces the `.card-body { margin: -1px }` the card shipped before #308.
 
 - **Datatable `pageLoad` output and response `extra` (issue #450).** `DatatableFetchResponse` takes an optional
   `extra` (JSON) for whatever else `fetch` reads off its response, and the seeded first page transfers it

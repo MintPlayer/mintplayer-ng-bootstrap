@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsNavComponent, BsNavItemComponent, BsNavLinkDirective } from '@mintplayer/ng-bootstrap/nav';
 import {
   BsCardBodyComponent,
   BsCardComponent,
@@ -57,6 +58,9 @@ function makePlaceholder(width: number, height: number, label: string): string {
     BsGridComponent,
     BsGridRowDirective,
     BsGridColumnDirective,
+    BsNavComponent,
+    BsNavItemComponent,
+    BsNavLinkDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -90,7 +94,7 @@ export class CardComponent {
   readonly activePill = signal<typeof this.pillPages[number]>('Inbox');
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>Header</bs-card-header>
       <bs-card-body>
         <bs-card-title>Card title</bs-card-title>
@@ -124,7 +128,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetSimpleHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-body>
         <bs-card-title>Simple card</bs-card-title>
         <bs-card-text>Basic card with only body content.</bs-card-text>
@@ -133,7 +137,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetHeaderBodyFooterHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>Header</bs-card-header>
       <bs-card-body>
         <bs-card-title>Body title</bs-card-title>
@@ -147,7 +151,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetNestedHtml = dedent`
-    <bs-card class="d-block" style="max-width: 24rem;">
+    <bs-card style="max-width: 24rem;">
       <bs-card-body>
         <bs-card-title>Outer card</bs-card-title>
         <bs-card-text>A card can be nested inside another card's body:</bs-card-text>
@@ -162,9 +166,9 @@ export class CardComponent {
   `;
 
   protected readonly snippetListGroupHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>List of elements</bs-card-header>
-      <bs-list-group>
+      <bs-list-group [flush]="true">
         <bs-list-group-item>Cras justo odio</bs-list-group-item>
         <bs-list-group-item>Dapibus ac facilisis in</bs-list-group-item>
         <bs-list-group-item>Morbi leo risus</bs-list-group-item>
@@ -174,7 +178,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageTopHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-img position="top" [src]="imageUrl" alt="placeholder"></bs-card-img>
       <bs-card-body>
         <bs-card-title>Top image</bs-card-title>
@@ -184,7 +188,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageBottomHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-body>
         <bs-card-title>Bottom image</bs-card-title>
         <bs-card-text>Text above the image, inside the body.</bs-card-text>
@@ -194,7 +198,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetImageOverlayHtml = dedent`
-    <bs-card class="d-block" style="max-width: 320px;">
+    <bs-card style="max-width: 320px;">
       <bs-card-img position="overlay" [src]="imageUrl" alt="background">
         <bs-card-title>Overlaid title</bs-card-title>
         <bs-card-text>Overlaid description.</bs-card-text>
@@ -203,7 +207,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorFilledHtml = dedent`
-    <bs-card class="d-block" [color]="colors.primary">
+    <bs-card[color]="colors.primary">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>text-bg-primary applied to the host.</bs-card-text>
@@ -212,7 +216,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorOutlineHtml = dedent`
-    <bs-card class="d-block" [color]="colors.primary" [outline]="true">
+    <bs-card[color]="colors.primary" [outline]="true">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>border border-primary bg-transparent applied to the host.</bs-card-text>
@@ -221,7 +225,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetIndependentColorsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
       <bs-card-body>
         <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
@@ -250,7 +254,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetHorizontalHtml = dedent`
-    <bs-card class="d-block" style="max-width: 540px;">
+    <bs-card style="max-width: 540px;">
       <bs-grid>
         <div bsRow class="g-0">
           <div [md]="4">
@@ -268,16 +272,16 @@ export class CardComponent {
   `;
 
   protected readonly snippetNavTabsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>
-        <ul class="nav card-header-tabs">
+        <bs-nav variant="tabs" [cardHeader]="true">
           @for (page of tabPages; track page) {
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="page === activeTab()" href="#"
+            <bs-nav-item>
+              <a [class.active]="page === activeTab()" href="#"
                  (click)="$event.preventDefault(); activeTab.set(page)">{{ page }}</a>
-            </li>
+            </bs-nav-item>
           }
-        </ul>
+        </bs-nav>
       </bs-card-header>
       <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
@@ -286,17 +290,31 @@ export class CardComponent {
     </bs-card>
   `;
 
+  protected readonly snippetNavTs = dedent`
+    import { Component, signal } from '@angular/core';
+    import { BsNavComponent, BsNavItemComponent, BsNavLinkDirective } from '@mintplayer/ng-bootstrap/nav';
+
+    @Component({
+      imports: [BsNavComponent, BsNavItemComponent, BsNavLinkDirective, …],
+      …
+    })
+    export class MyCardNavDemoComponent {
+      readonly tabPages = ['Profile', 'Activity', 'Settings'] as const;
+      readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
+    }
+  `;
+
   protected readonly snippetNavPillsHtml = dedent`
-    <bs-card class="d-block">
+    <bs-card>
       <bs-card-header>
-        <ul class="nav card-header-pills">
+        <bs-nav variant="pills" [cardHeader]="true">
           @for (page of pillPages; track page) {
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="page === activePill()" href="#"
+            <bs-nav-item>
+              <a [class.active]="page === activePill()" href="#"
                  (click)="$event.preventDefault(); activePill.set(page)">{{ page }}</a>
-            </li>
+            </bs-nav-item>
           }
-        </ul>
+        </bs-nav>
       </bs-card-header>
       <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>

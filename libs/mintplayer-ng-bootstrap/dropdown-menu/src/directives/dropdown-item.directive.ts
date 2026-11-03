@@ -20,6 +20,8 @@ import type { DropdownItemElement } from '@mintplayer/ui-core/dropdown-menu';
   selector: '[bsDropdownItem]',
   host: {
     '[class.dropdown-item]': 'true',
+    // The menu's scope: the dropdown part matches only DOM a component stamped (#452).
+    'data-mps': 'dropdown-menu',
     '[class.active]': 'active()',
     '[class.disabled]': 'disabled()',
     '[attr.aria-disabled]': "disabled() ? 'true' : null",

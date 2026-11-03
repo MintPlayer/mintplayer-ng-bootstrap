@@ -1,14 +1,12 @@
-<bs-table-styles>
-    <div class="d-block" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
-        <table class="table" cellspacing="0"
-            [class.mb-0]="isResponsive()"
-            [class.table-striped]="striped()"
-            [class.table-hover]="hover()"
-            [class.border]="border()"
-            [attr.aria-rowcount]="ariaRowCount()">
+<div class="d-block" data-mps="table" [class.table-responsive]="isResponsive()" [class.nowrap]="isResponsive()">
+    <table class="table" data-mps="table" cellspacing="0"
+        [class.mb-0]="isResponsive()"
+        [class.table-striped]="striped()"
+        [class.table-hover]="hover()"
+        [class.border]="border()"
+        [attr.aria-rowcount]="ariaRowCount()">
 
-            <ng-content></ng-content>
+        <ng-content></ng-content>
 
-        </table>
-    </div>
-</bs-table-styles>
+    </table>
+</div>

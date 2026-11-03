@@ -1,5 +1,8 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, Injector, output, PLATFORM_ID, signal, TemplateRef, untracked, ChangeDetectionStrategy } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapModal } from '@mintplayer/ui-core/bootstrap/modal';
+import { bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap/offcanvas';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { Position } from '@mintplayer/ng-bootstrap';
@@ -29,6 +32,8 @@ export class BsOffcanvasComponent {
   injector = inject(Injector);
 
   constructor() {
+    // #452: the modal and offcanvas partials ship with this component, scoped to the elements it stamps (data-mps="offcanvas").
+    useBootstrap(bootstrapModal, bootstrapOffcanvas);
     // Effect to handle position changes - disable transition temporarily
     effect(() => {
       const position = this.position();

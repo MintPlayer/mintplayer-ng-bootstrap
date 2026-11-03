@@ -4,9 +4,9 @@
  * The dark icons inside component sheets (the `mp-select` caret, the
  * query-condition select caret, the `mp-checkbox` switch knob) switch through
  * `@container style(--mp-color-mode: dark)`. That token is declared by
- * `@mintplayer/web-components/theming/color-mode.css`, which the Angular
- * `_bootstrap.scss` pulls in automatically, but a React/Vue page that loads
- * stock `bootstrap.min.css` must import it itself. Without it every icon stays
+ * `@mintplayer/ui-core/theming/color-mode.css`, which the ui-core page
+ * baseline (`@mintplayer/ui-core/styles/bootstrap`) loads automatically, but a
+ * page that links stock `bootstrap.min.css` must import it itself. Without it every icon stays
  * light-mode in dark mode and nothing reports why, so the first component that
  * relies on the token checks for it once per page.
  *
@@ -24,7 +24,7 @@ function check(): void {
   if (value === '') {
     console.warn(
       '[@mintplayer/web-components] The --mp-color-mode token is not set on <html>, so component icons will not ' +
-        'follow dark mode. Import "@mintplayer/web-components/theming/color-mode.css" next to your Bootstrap CSS ' +
+        'follow dark mode. Load the @mintplayer/ui-core/styles/bootstrap baseline, or import "@mintplayer/ui-core/theming/color-mode.css" next to your Bootstrap CSS ' +
         '(custom themes declare --mp-color-mode: light|dark themselves).',
     );
   }

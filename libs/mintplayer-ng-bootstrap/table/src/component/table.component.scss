@@ -1,5 +1,9 @@
-:host ::ng-deep {
-    .nowrap th, td {
-        white-space: nowrap;
-    }
+// The tables partial is installed by the component (#452, useBootstrap).
+//
+// A responsive table keeps every cell on one line, so it scrolls instead of
+// wrapping. The cells are the consumer's projected content, hence ::ng-deep,
+// anchored on this component's own wrapper. (It used to read `.nowrap th, td`,
+// which made every td on the page nowrap.)
+:host ::ng-deep .table-responsive.nowrap :is(th, td) {
+    white-space: nowrap;
 }

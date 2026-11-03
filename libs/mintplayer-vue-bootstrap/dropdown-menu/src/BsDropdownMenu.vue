@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   DROPDOWN_MENU_SCOPE,
@@ -23,6 +25,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ select: [detail: DropdownSelectEventDetail] }>();
 
+installBootstrap(bootstrapDropdown);
 installLightStyles(DROPDOWN_MENU_SCOPE, dropdownMenuScopedStyles);
 
 const menu = useTemplateRef<HTMLUListElement>('menu');

@@ -1,9 +1,9 @@
 @if (showBackdrop()) {
-    <div [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }">
-        <div class="modal-backdrop show" (click)="onBackdropClick($event)" aria-hidden="true"></div>
+    <div data-mps="offcanvas" [@fadeInOut]="{value: ':leave', params: {duration: '300ms'} }">
+        <div data-mps="offcanvas" class="modal-backdrop show" (click)="onBackdropClick($event)" aria-hidden="true"></div>
     </div>
 }
-<div class="offcanvas"
+<div data-mps="offcanvas" class="offcanvas"
     [class.show]="show()"
     [class.disable-transition]="disableTransition()"
     [class]="[offcanvasClass(), overflowClass()]"

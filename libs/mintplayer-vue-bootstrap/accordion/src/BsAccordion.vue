@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap/accordion';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   ACCORDION_SCOPE,
@@ -25,6 +27,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ tabToggle: [change: AccordionTabToggle] }>();
 
+installBootstrap(bootstrapAccordion);
 installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
 // useId, not the instance uid: it matches between the server render and hydration.

@@ -2,6 +2,8 @@ import * as React from 'react';
 import { createContext, forwardRef, useContext, useId, useState } from 'react';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { reactProps } from '../../machine/src/react-props';
 
 /** What `BsRadioGroup` hands its radios. `value` is `undefined` when the group is uncontrolled. */
@@ -86,6 +88,8 @@ export const BsRadio = forwardRef<HTMLInputElement, BsRadioProps>(function BsRad
     errorText: errorText ?? null,
   };
   const bags = connectRadio(state, rootId, consumerDescribedBy);
+  // #452: the forms partial ships with the control, scoped to the elements stamped below.
+  installBootstrap(bootstrapForms);
   const classes = radioClasses(type, color, invalid);
   const inputId = consumerId ?? String(bags.input.id);
 
@@ -96,6 +100,7 @@ export const BsRadio = forwardRef<HTMLInputElement, BsRadioProps>(function BsRad
   const control = (
     <input
       ref={ref}
+      data-mps="radio"
       className={[classes.input, className].filter(Boolean).join(' ')}
       {...reactProps(bags.input)}
       {...rest}
@@ -111,22 +116,22 @@ export const BsRadio = forwardRef<HTMLInputElement, BsRadioProps>(function BsRad
     />
   );
 
-  const feedback = bags.feedback && <div {...reactProps(bags.feedback.attrs)}>{bags.feedback.text}</div>;
+  const feedback = bags.feedback && <div data-mps="radio" {...reactProps(bags.feedback.attrs)}>{bags.feedback.text}</div>;
 
   if (classes.root === null) {
     return (
       <>
         {control}
-        <label className={classes.label} htmlFor={inputId}>{children}</label>
+        <label data-mps="radio" className={classes.label} htmlFor={inputId}>{children}</label>
         {feedback}
       </>
     );
   }
   return (
     <>
-      <label className={classes.root}>
+      <label data-mps="radio" className={classes.root}>
         {control}
-        <span className={classes.label}>{children}</span>
+        <span data-mps="radio" className={classes.label}>{children}</span>
       </label>
       {feedback}
     </>

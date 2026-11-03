@@ -1,3 +1,5 @@
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap/accordion';
 import * as React from 'react';
 import { createContext, forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
@@ -87,6 +89,7 @@ export const BsAccordion = forwardRef<HTMLDivElement | null, BsAccordionProps>(f
   { multi, highlightActiveTab, onTabToggle, className, children, ...rest },
   ref,
 ) {
+  installBootstrap(bootstrapAccordion);
   installLightStyles(ACCORDION_SCOPE, accordionScopedStyles);
 
   const reactId = useId();

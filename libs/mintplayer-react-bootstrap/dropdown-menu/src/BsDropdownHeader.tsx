@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { DROPDOWN_MENU_SCOPE } from '@mintplayer/ui-core/dropdown-menu';
 
 /**
  * `<BsDropdownHeader>` — a Bootstrap `.dropdown-header` labelling a group of items
@@ -9,7 +10,7 @@ export const BsDropdownHeader = React.forwardRef<HTMLLIElement, React.LiHTMLAttr
   function BsDropdownHeader({ className, children, ...rest }, ref) {
     const classes = ['dropdown-header', className ?? ''].filter(Boolean).join(' ');
     return (
-      <li ref={ref} className={classes} {...rest}>
+      <li ref={ref} className={classes} data-mps={DROPDOWN_MENU_SCOPE} {...rest}>
         {children}
       </li>
     );

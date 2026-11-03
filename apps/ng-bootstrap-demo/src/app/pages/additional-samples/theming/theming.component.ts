@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
@@ -53,6 +55,11 @@ interface ApiEntry {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ThemingComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapFormsPage);
+  }
+
   private readonly theme = inject(BsThemeService);
   protected readonly colors = Color;
 
@@ -124,7 +131,7 @@ export class ThemingComponent {
     "assets": [
       {
         "glob": "bs-theme-preboot.js",
-        "input": "node_modules/@mintplayer/web-components/theming",
+        "input": "node_modules/@mintplayer/ui-core/theming",
         "output": "theming"
       }
     ]

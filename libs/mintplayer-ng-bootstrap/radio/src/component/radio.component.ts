@@ -8,6 +8,8 @@ import {
   input,
   model,
 } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   connectRadio,
@@ -16,7 +18,8 @@ import {
   type RadioState,
 } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
-import { BsControlValidityDirective, BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsIdService, takeHostAria } from '@mintplayer/ng-bootstrap/a11y';
+import { BsControlValidityDirective } from '@mintplayer/ng-bootstrap/a11y/forms';
 import { MpPropsDirective } from '@mintplayer/ng-bootstrap/machine';
 import { BsRadioGroupDirective } from '../directives/radio-group/radio-group.directive';
 import { BsRadioType } from '../types/radio-type';
@@ -100,6 +103,8 @@ export class BsRadioComponent {
   });
 
   constructor() {
+    // #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="radio").
+    useBootstrap(bootstrapForms);
     // Keep `[(isToggled)]` honest in a group, where a sibling's selection unchecks this radio.
     effect(() => {
       if (this.resolvedGroup()) this.isToggled.set(this.checked());

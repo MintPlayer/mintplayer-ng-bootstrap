@@ -1,6 +1,7 @@
 import { DOCUMENT, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
-import { installLightStyles, writeScopedStyleTag } from '@mintplayer/ui-core/scoped-styles';
+import { bootstrapInstallOptions, type BootstrapPart } from '@mintplayer/ui-core/bootstrap';
+import { installLightStyles, writeScopedStyleTag, type InstallOptions } from '@mintplayer/ui-core/scoped-styles';
 
 /**
  * Install a core's scoped stylesheet from an Angular front. In the browser it
@@ -16,13 +17,25 @@ import { installLightStyles, writeScopedStyleTag } from '@mintplayer/ui-core/sco
  *
  * Call from the component's constructor (an injection context).
  */
-export function useScopedStyles(key: string, cssText: string): void {
+export function useScopedStyles(key: string, cssText: string, options: InstallOptions = {}): void {
   if (isPlatformServer(inject(PLATFORM_ID))) {
-    writeScopedStyleTag(inject(DOCUMENT), key, cssText);
+    writeScopedStyleTag(inject(DOCUMENT), key, cssText, options);
   } else {
     repairEventReplayBodyPaths(inject(DOCUMENT));
-    installLightStyles(key, cssText);
+    installLightStyles(key, cssText, options);
   }
+}
+
+/**
+ * Install Bootstrap parts (`@mintplayer/ui-core/bootstrap`, #452) from an
+ * Angular front, the same way as {@link useScopedStyles}: once per page, and
+ * written into the server `DOCUMENT` during SSR. A component passes the scoped
+ * parts its markup uses; a page that renders raw Bootstrap markup passes the
+ * `…Page` variants, which replace a scoped copy under the same key. Call from
+ * the constructor (an injection context).
+ */
+export function useBootstrap(...parts: readonly BootstrapPart[]): void {
+  parts.forEach((part) => useScopedStyles(part.key, part.css, bootstrapInstallOptions(part)));
 }
 
 /**

@@ -1,12 +1,19 @@
 import { Directive, computed, input } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapGrid } from '@mintplayer/ui-core/bootstrap/grid';
 
 @Directive({
   selector: '[xxs],[xs],[sm],[md],[lg],[xl],[xxl]',
   host: {
     '[class]': 'classList()',
+    // #452: the directive owns the col-* classes, so it stamps the element for the scoped grid part.
+    '[attr.data-mps]': '"grid"',
   },
 })
 export class BsGridColumnDirective {
+  constructor() {
+    useBootstrap(bootstrapGrid);
+  }
 
   xxs = input<number | undefined>(undefined);
   xs = input<number | undefined>(undefined);
@@ -47,8 +54,12 @@ export class BsGridColumnDirective {
   selector: '[col]',
   host: {
     '[class.col]': 'true',
+    '[attr.data-mps]': '"grid"',
   },
 })
 export class BsGridColDirective {
+  constructor() {
+    useBootstrap(bootstrapGrid);
+  }
   readonly col = input<undefined>(undefined);
 }

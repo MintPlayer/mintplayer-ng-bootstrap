@@ -1,5 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
+import { bootstrapContainersPage } from '@mintplayer/ui-core/bootstrap/containers';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BsOtpInputComponent } from '@mintplayer/ng-bootstrap/otp-input';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -14,6 +17,11 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OtpInputDemoComponent {
+  constructor() {
+    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
+    useBootstrap(bootstrapContainersPage, bootstrapAlertPage);
+  }
+
   // Classic OTP — template-driven with auto-submit on complete.
   readonly classicCode = signal<string | undefined>(undefined);
   readonly classicSubmitted = signal<string | null>(null);

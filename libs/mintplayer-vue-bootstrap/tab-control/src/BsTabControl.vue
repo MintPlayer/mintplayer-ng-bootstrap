@@ -1,5 +1,7 @@
 <script lang="ts">
 import { defineComponent, h, onMounted, ref, shallowRef, useId, type PropType, type VNode } from 'vue';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap/nav';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   TAB_CONTROL_SCOPE,
@@ -43,6 +45,7 @@ export default defineComponent({
   },
   emits: { 'update:modelValue': (_tabId: string) => true },
   setup(props, { slots, emit, attrs }) {
+    installBootstrap(bootstrapNav);
     installLightStyles(TAB_CONTROL_SCOPE, tabControlScopedStyles);
 
     // useId: the same on the server and at hydration.

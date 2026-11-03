@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 interface Dish {
   id: number;
@@ -24,6 +26,8 @@ const SOURCE = `<BsSelect aria-label="Dish"
 </BsSelect>`;
 
 export function SelectPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [selected, setSelected] = useState<Dish | null>(null);
   const [size, setSize] = useState<'sm' | 'md' | 'lg'>('md');
 

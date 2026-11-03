@@ -6,17 +6,17 @@ import { readThemeCookie } from './cookie';
 import { readDefaultModeMeta, resolveMode } from './resolve';
 
 // Smoke test of the GENERATED bundle (PRD dark-mode D5). It is produced by
-// tools/scripts/build-theme-preboot.mjs during codegen-wc; the file is a
+// tools/scripts/build-theme-preboot.mjs during ui-core codegen; the file is a
 // gitignored build artifact, so a fresh checkout has to run codegen first.
 // jsdom gives import.meta.url a non-file scheme, so resolve from the cwd the
 // way _conformance/light-styles-scoping.spec.ts does.
 const LIB_ROOT = existsSync(join(process.cwd(), 'theming'))
   ? process.cwd()
-  : join(process.cwd(), 'libs', 'mintplayer-web-components');
+  : join(process.cwd(), 'libs', 'mintplayer-ui-core');
 const BUNDLE_PATH = join(LIB_ROOT, 'theming', 'bs-theme-preboot.js');
 const bundleExists = existsSync(BUNDLE_PATH);
 const SKIP_REASON =
-  'theming/bs-theme-preboot.js does not exist: run `npx nx run mintplayer-web-components:codegen-wc` first';
+  'theming/bs-theme-preboot.js does not exist: run `npx nx run mintplayer-ui-core:codegen` first';
 
 interface Env {
   cookie: string;

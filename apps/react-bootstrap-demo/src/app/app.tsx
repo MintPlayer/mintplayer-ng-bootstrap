@@ -3,6 +3,8 @@ import { Route, Routes } from 'react-router-dom';
 import { AppShell } from './shell/AppShell';
 import { HomePage } from './pages/HomePage';
 import { ComingSoonPage } from './pages/ComingSoonPage';
+// The route fallback's spinner: the shell renders it, so its styles ride the main bundle (#452).
+import { BsSpinner } from '@mintplayer/react-bootstrap/spinner';
 
 /**
  * React.lazy() expects a module with a `default` export. Our pages use
@@ -61,8 +63,9 @@ const ThemingPage      = lazyNamed(() => import('./pages/ThemingPage'),      'Th
 function PageFallback() {
   return (
     <div className="demo-page text-body-secondary">
-      <div className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-      Loading…
+      {/* The spinner announces "Loading…"; the visible copy stays out of the accessibility tree. */}
+      <BsSpinner small className="me-2" />
+      <span aria-hidden="true">Loading…</span>
     </div>
   );
 }

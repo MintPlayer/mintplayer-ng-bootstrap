@@ -9,7 +9,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'file-manager',
-  style: { scope: 'file-manager' },
+  style: { scope: 'file-manager', bootstrap: ['breadcrumb'] },
   components: {
     'file-manager': {
       core: 'fileManagerCore',

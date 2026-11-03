@@ -23,8 +23,7 @@
       "executor": "nx:run-commands",
       "outputs": [
         "{projectRoot}/**/*.element.template.ts",
-        "{projectRoot}/**/*.styles.ts",
-        "{projectRoot}/theming/bs-theme-preboot.js"
+        "{projectRoot}/**/*.styles.ts"
       ],
       "inputs": [
         "{projectRoot}/**/*.element.html",
@@ -35,16 +34,13 @@
         "{workspaceRoot}/tools/scripts/lib/wc-codegen.mjs",
         "{workspaceRoot}/tools/scripts/lib/rescope-css.mjs",
         "{projectRoot}/theming/src/**/*.ts",
-        "{workspaceRoot}/libs/mintplayer-ui-core/theming/src/**/*.ts",
-        "{workspaceRoot}/tools/scripts/build-theme-preboot.mjs",
         "{workspaceRoot}/tools/scripts/lib/cli.mjs"
       ],
       "cache": true,
       "options": {
         "parallel": false,
         "commands": [
-          "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components",
-          "node tools/scripts/build-theme-preboot.mjs"
+          "node tools/scripts/build-web-components.mjs libs/mintplayer-web-components"
         ]
       }
     },
@@ -123,6 +119,12 @@
             "mintplayer-ui-core"
           ],
           "target": "codegen"
+        },
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
         }
       ],
       "outputs": [

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 /**
  * Checkbox, switch or toggle button: a native <input type=checkbox> in
  * Bootstrap's .form-check / .form-switch / .btn-check markup (#437), with the
@@ -17,6 +19,9 @@ import {
   type CheckboxType,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
+
+// #452: the forms partial ships with this component, scoped to the elements it stamps (data-mps="checkbox").
+installBootstrap(bootstrapForms);
 
 defineOptions({ inheritAttrs: false });
 
@@ -90,12 +95,12 @@ function onChange(event: Event): void {
 
 <template>
   <template v-if="classes.root === null">
-    <input ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
-    <label :class="classes.label" :for="inputId()"><slot /></label>
+    <input data-mps="checkbox" ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <label data-mps="checkbox" :class="classes.label" :for="inputId()"><slot /></label>
   </template>
-  <label v-else :class="classes.root">
-    <input ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
-    <span :class="classes.label"><slot /></span>
+  <label data-mps="checkbox" v-else :class="classes.root">
+    <input data-mps="checkbox" ref="input" type="checkbox" :class="classes.input" v-bind="inputAttrs()" :checked="checked" @change="onChange" />
+    <span data-mps="checkbox" :class="classes.label"><slot /></span>
   </label>
-  <div v-if="bags.feedback" v-bind="bags.feedback.attrs">{{ bags.feedback.text }}</div>
+  <div data-mps="checkbox" v-if="bags.feedback" v-bind="bags.feedback.attrs">{{ bags.feedback.text }}</div>
 </template>
