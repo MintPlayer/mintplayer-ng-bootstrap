@@ -42,8 +42,7 @@ import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
-import { BsRadio } from '@mintplayer/react-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/react-bootstrap/radio';
 import {
   BsQuickAccessToolbar,
   BsRibbon,

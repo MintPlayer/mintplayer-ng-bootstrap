@@ -459,12 +459,31 @@ only.
    - `kind: 'directive'` (§4.3).
    - Body host per bridge and the `overlay-stack` core (§4.4).
    - `hydratedAttr()`-gated no-JS styling helpers.
-3. **Light-DOM hand-written groups → D10:** input-group, typeahead, sparkline, radio, radio-group,
-   toggle-button.
-4. **Shadow-root groups → D10:** accordion, card, charts, checkbox, pagination, shell, tab-control,
-   tile-manager. Delete `web-components/_styles` and the page-variant install. Retire
-   `light-styles-nesting`.
-5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range.
+3. **Light-DOM hand-written groups → D10:** input-group, typeahead, sparkline, radio, radio-group.
+   Toggle-button moved to M4, next to the checkbox it shares a core shape with (owner, 2026-11-03).
+   - **Radio groups (owner, 2026-11-03).** `radio` and `radio-group` are ONE D10 group
+     (`ui-core/radio`). The group hands its radios a `RADIO_GROUP` context (name, selection,
+     disabled, required), so the nearest group wins and groups nest: a row selection on a `<tbody>`
+     and a radio list in one of its cells are two independent sets. Each group handles only the
+     `change` events of its own radios (`ownsRadio`: the radio's closest `[data-radio-group]` is
+     this group). The `[group]` input is gone.
+   - **Angular adds an attribute form**, `[bsRadioGroup]`, by hand. It goes on a host the page
+     already has (a `<tbody>`, a cell, a button group), provides the same context through
+     `coreContextToken(RADIO_GROUP)` and adds no role. `bs-radio-group` and `[bsRadioGroup]` share one
+     `ControlValueAccessor` (`BsRadioGroupValueAccessor`) as a host directive. React and Vue get
+     the element form only.
+   - **Known gap, fixed in M5.** A `type="toggle_button"` radio renders a `display: contents`
+     wrapper around `.btn-check + .btn`. A `.btn-group`'s corner joining (`> .btn:not(:first-child)`)
+     cannot see through it in any front. The M5 `bs-button-group` sheet joins hosted children
+     (`.btn-group[data-mps] > * > .btn`) rather than the radio knowing about button groups.
+   - The compiler now refuses a `<slot>` that `defineSlots<…>()` does not declare. The Lit and React
+     fronts type their `slots` from that declaration, so the old failure appeared in tsc, far from
+     its cause.
+4. **Shadow-root groups → D10:** accordion, card, charts, checkbox, toggle-button, pagination,
+   shell, tab-control, tile-manager. Delete `web-components/_styles` and the page-variant install.
+   Retire `light-styles-nesting`.
+5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
+   `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the
    unified dropdown with the navbar (§4.5).
 7. **#455 tier D and the calendar fold:** color-picker, rating, resizable, priority-nav, scrollspy,

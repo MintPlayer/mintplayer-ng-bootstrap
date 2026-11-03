@@ -29,8 +29,7 @@ import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
-import { BsRadio } from '@mintplayer/react-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/react-bootstrap/radio';
 import {
   BsQuickAccessToolbar, BsRibbon, BsRibbonButton, BsRibbonCheckBox, BsRibbonColorPicker, BsRibbonComboBox,
   BsRibbonContextualTabSet, BsRibbonDropdownButton, BsRibbonGallery, BsRibbonGalleryItem, BsRibbonGroup,

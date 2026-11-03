@@ -1,2 +1,2 @@
-export { default as BsRadio } from './BsRadio.vue';
-export { radioGroupKey, type RadioGroupContext } from './radio-group-key';
+// Generated from @mintplayer/ui-core/radio (#458 M3, D10): the radio and the radio group.
+export * from './generated';

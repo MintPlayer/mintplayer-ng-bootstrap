@@ -70,9 +70,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
     const FILTERED_FORWARDING = [
       '../checkbox/src/BsCheckbox.vue',
-      '../radio/src/BsRadio.vue',
       '../pagination/src/BsPagination.vue',
-      '../radio-group/src/BsRadioGroup.vue',
       '../shell/src/BsShell.vue',
       '../tab-control/src/BsTabControl.vue',
       '../tab-control/src/BsTabPage.vue',

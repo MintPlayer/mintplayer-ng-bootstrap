@@ -1,16 +1,17 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, type WritableSignal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
 import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 import { JsonPipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+import { BsRadioComponent, BsRadioGroupComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 interface Row {
   id: string;
   label: string;
+  size: WritableSignal<string | null>;
 }
 
 @Component({
@@ -26,6 +27,7 @@ interface Row {
     BsGridColumnDirective,
     BsGridColDirective,
     BsRadioComponent,
+    BsRadioGroupComponent,
     BsRadioGroupDirective,
     BsCodeSnippetComponent,
   ],
@@ -48,10 +50,11 @@ export class RadioComponent {
   readonly layout = signal<string>('grid');
 
   // 4. Group, non-adjacent (table row pattern)
+  readonly sizes = ['S', 'M', 'L'];
   readonly rows = signal<Row[]>([
-    { id: 'r1', label: 'Row 1' },
-    { id: 'r2', label: 'Row 2' },
-    { id: 'r3', label: 'Row 3' },
+    { id: 'r1', label: 'Row 1', size: signal<string | null>('M') },
+    { id: 'r2', label: 'Row 2', size: signal<string | null>(null) },
+    { id: 'r3', label: 'Row 3', size: signal<string | null>('L') },
   ]);
   readonly selectedRow = signal<string | null>(null);
 
@@ -60,11 +63,11 @@ export class RadioComponent {
   readonly groupTemplateTs = dedent`
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
-    import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+    import { BsRadioComponent, BsRadioGroupComponent } from '@mintplayer/ng-bootstrap/radio';
 
     @Component({
       selector: 'app-radio-group',
-      imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],
+      imports: [FormsModule, BsRadioComponent, BsRadioGroupComponent],
       templateUrl: './radio-group.component.html',
     })
     export class RadioGroupComponent {
@@ -80,11 +83,11 @@ export class RadioComponent {
   readonly groupReactiveTs = dedent`
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
-    import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+    import { BsRadioComponent, BsRadioGroupComponent } from '@mintplayer/ng-bootstrap/radio';
 
     @Component({
       selector: 'app-radio-group-reactive',
-      imports: [ReactiveFormsModule, BsRadioComponent, BsRadioGroupDirective],
+      imports: [ReactiveFormsModule, BsRadioComponent, BsRadioGroupComponent],
       templateUrl: './radio-group-reactive.component.html',
     })
     export class RadioGroupReactiveComponent {
@@ -100,11 +103,11 @@ export class RadioComponent {
   readonly toggleButtonTs = dedent`
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
-    import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+    import { BsRadioComponent, BsRadioGroupComponent } from '@mintplayer/ng-bootstrap/radio';
 
     @Component({
       selector: 'app-radio-toggle-button',
-      imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],
+      imports: [FormsModule, BsRadioComponent, BsRadioGroupComponent],
       templateUrl: './radio-toggle-button.component.html',
     })
     export class RadioToggleButtonComponent {
@@ -120,31 +123,40 @@ export class RadioComponent {
   readonly groupTableTs = dedent`
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
-    import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
+    import { BsRadioComponent, BsRadioGroupComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 
     @Component({
       selector: 'app-radio-table',
-      imports: [FormsModule, BsRadioComponent, BsRadioGroupDirective],
+      imports: [FormsModule, BsRadioComponent, BsRadioGroupComponent, BsRadioGroupDirective],
       templateUrl: './radio-table.component.html',
     })
     export class RadioTableComponent {
+      readonly sizes = ['S', 'M', 'L'];
       readonly rows = signal([
-        { id: 'r1', label: 'Row 1' },
-        { id: 'r2', label: 'Row 2' },
-        { id: 'r3', label: 'Row 3' },
+        { id: 'r1', label: 'Row 1', size: signal<string | null>('M') },
+        { id: 'r2', label: 'Row 2', size: signal<string | null>(null) },
+        { id: 'r3', label: 'Row 3', size: signal<string | null>('L') },
       ]);
       readonly selectedRow = signal<string | null>(null);
     }`;
   readonly groupTableHtml = dedent`
     <table>
-      <tbody bsRadioGroup name="selectedRow"
-             #g="bsRadioGroup"
-             [(ngModel)]="selectedRow">
+      <!-- The attribute form: a group on a host the page already has. -->
+      <tbody bsRadioGroup name="selectedRow" [(ngModel)]="selectedRow">
         @for (row of rows(); track row.id) {
           <tr>
-            <td><bs-radio [group]="g" [value]="row.id"
+            <td><bs-radio [value]="row.id"
                           [inputLabel]="'Select ' + row.label" /></td>
             <td>{{ row.label }}</td>
+            <td>
+              <!-- A group of its own: the nearest group wins. -->
+              <bs-radio-group [attr.aria-label]="'Size of ' + row.label"
+                              [(value)]="row.size">
+                @for (size of sizes; track size) {
+                  <bs-radio [value]="size" [inline]="true">{{ size }}</bs-radio>
+                }
+              </bs-radio-group>
+            </td>
           </tr>
         }
       </tbody>

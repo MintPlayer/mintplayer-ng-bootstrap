@@ -78,6 +78,12 @@ describe('scope stamping (S15)', () => {
     expect(() => stampScope(read('<div mp-host v-bind="bag"><span v-if="label">{{ label }}</span><select v-bind="bag"><button><selectedcontent></selectedcontent></button></select><slot /></div>'), 'other')).toThrow(/two groups/);
   });
 
+  it('refuses a <slot> that defineSlots does not declare', () => {
+    const noSlots = 'defineProps<{ bag: Record<string, string | null> }>();';
+    expect(() => read('<div v-bind="bag"><slot /></div>', noSlots)).toThrow(/<slot> is not declared: add "default"/);
+    expect(() => read('<div v-bind="bag"><slot name="icon" /></div>')).toThrow(/<slot name="icon"> is not declared/);
+  });
+
   it('refuses a template that writes data-mps itself, static or bound', () => {
     expect(() => stampScope(read('<div v-bind="bag" data-mps="x"></div>'), 'demo')).toThrow(/stamps data-mps/);
     expect(() => stampScope(read('<div v-bind="bag" :data-mps="label"></div>'), 'demo')).toThrow(/stamps data-mps/);

@@ -11,7 +11,7 @@ export const HOST_MARKER = 'mp-host';
 /** Named in every generated file's header. */
 export const GENERATOR = '@mintplayer/nx-component-compiler';
 
-export const NODE = { ROOT: 0, ELEMENT: 1, TEXT: 2, COMMENT: 3, INTERPOLATION: 5 };
+export const NODE = { ROOT: 0, ELEMENT: 1, TEXT: 2, COMMENT: 3, INTERPOLATION: 5, ATTRIBUTE: 6 };
 export const PROP = { ATTRIBUTE: 6, DIRECTIVE: 7 };
 export const TAG = { ELEMENT: 0, COMPONENT: 1, SLOT: 2, TEMPLATE: 3 };
 
@@ -71,6 +71,21 @@ function markNativeTags(node) {
   (node.children ?? []).forEach(markNativeTags);
 }
 
+/**
+ * Every `<slot>` the template renders must be declared in `defineSlots<…>()`: the
+ * Lit and React fronts type their `slots` from that declaration, so an undeclared
+ * slot compiles here and fails the front's type-check far from its cause.
+ */
+function checkSlotsDeclared(file, node, slots) {
+  if (node.type === NODE.ELEMENT && node.tag === 'slot') {
+    const name = node.props.find((p) => p.type === NODE.ATTRIBUTE && p.name === 'name')?.value?.content ?? 'default';
+    if (!slots.members.some((m) => m.name === name)) {
+      throw new TemplateError(file, node, `<slot${name === 'default' ? '' : ` name="${name}"`}> is not declared: add "${name}" to defineSlots<…>()`);
+    }
+  }
+  (node.children ?? []).forEach((child) => checkSlotsDeclared(file, child, slots));
+}
+
 export function readSource(file, text) {
   const { descriptor, errors } = parseSfc(text, { filename: file });
   if (errors.length) throw new Error(`${file}: ${errors[0].message ?? errors[0]}`);
@@ -108,6 +123,7 @@ export function readSource(file, text) {
   markNativeTags(descriptor.template.ast);
   const props = typeMembers(scriptText, ast, 'defineProps');
   const slots = typeMembers(scriptText, ast, 'defineSlots');
+  checkSlotsDeclared(file, descriptor.template.ast, slots);
   return {
     file,
     name: pascalName(file),

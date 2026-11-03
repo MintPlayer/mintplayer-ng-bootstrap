@@ -3,6 +3,7 @@
 import type { InputGroupProps } from '@mintplayer/ui-core/input-group';
 
 defineProps<{ root: InputGroupProps['root'] }>();
+defineSlots<{ default?: () => unknown }>();
 </script>
 
 <template>
