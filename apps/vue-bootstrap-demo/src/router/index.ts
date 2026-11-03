@@ -34,6 +34,8 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/placeholder',   name: 'placeholder',   component: () => import('../views/PlaceholderView.vue') },
     { path: '/basic/table',         name: 'table',         component: () => import('../views/TableView.vue') },
     { path: '/basic/marquee',       name: 'marquee',       component: () => import('../views/MarqueeView.vue') },
+    { path: '/overlay/modal',       name: 'modal',         component: () => import('../views/overlay/ModalView.vue') },
+    { path: '/overlay/offcanvas',   name: 'offcanvas',     component: () => import('../views/overlay/OffcanvasView.vue') },
     { path: '/basic/carousel',      name: 'carousel',      component: () => import('../views/CarouselView.vue') },
     { path: '/basic/checkbox',      name: 'checkbox',      component: () => import('../views/CheckboxView.vue') },
     { path: '/basic/code-snippet',  name: 'code-snippet',  component: () => import('../views/CodeSnippetView.vue') },

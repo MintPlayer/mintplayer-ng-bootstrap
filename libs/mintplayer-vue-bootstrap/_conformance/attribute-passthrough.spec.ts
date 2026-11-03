@@ -87,6 +87,8 @@ const TARGETS: Record<string, string> = {
   BsNavbarToggler: 'button.navbar-toggler',
   BsMarquee: 'span.marquee',
   BsParallax: 'div.parallax-host',
+  BsModal: 'div.modal-host',
+  BsOffcanvas: 'div.offcanvas-host',
   BsStickyFooter: 'footer',
   BsForm: 'form',
   BsFloatingLabel: 'div.form-floating',

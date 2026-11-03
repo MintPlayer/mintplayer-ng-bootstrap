@@ -39,6 +39,10 @@ const SECTIONS = [
     { path: '/basic/tab-control', label: 'Tab control' },
     { path: '/basic/code-snippet', label: 'Code snippet' },
   ]},
+  { title: 'Overlay', routes: [
+    { path: '/overlay/modal', label: 'Modal' },
+    { path: '/overlay/offcanvas', label: 'Offcanvas' },
+  ]},
   { title: 'Advanced', routes: [
     { path: '/advanced/splitter', label: 'Splitter' },
     { path: '/advanced/toggle-buttons', label: 'Toggle buttons' },

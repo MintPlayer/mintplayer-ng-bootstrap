@@ -42,13 +42,8 @@
     <div class="container bg-dark"></div>
 </bs-scrollspy>
 
-<bs-modal [(isOpen)]="isModalOpen" [scrollable]="true">
-    <div *bsModal>
-        <div bsModalHeader>
-            <h5 class="modal-title flex-grow-1">Scrollspy in modal</h5>
-            <bs-close bsModalClose></bs-close>
-        </div>
-        <div bsModalBody>
+<bs-modal [(open)]="isModalOpen" [scrollable]="true">
+    <span *bsModalHeader>Scrollspy in modal</span>
             <bs-scrollspy>
                 <h2>Modal</h2>
                 <h3 bsScrollspy>Primary</h3>
@@ -69,8 +64,6 @@
                 <h3 bsScrollspy>Dark</h3>
                 <div class="container compact bg-dark"></div>
             </bs-scrollspy>
-        </div>
-    </div>
 </bs-modal>
 
 <bs-code-snippet [code]="snippetModalHtml" [language]="'html'"></bs-code-snippet>

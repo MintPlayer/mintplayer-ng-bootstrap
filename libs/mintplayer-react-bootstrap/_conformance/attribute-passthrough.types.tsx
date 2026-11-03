@@ -20,6 +20,8 @@ import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsModal } from '@mintplayer/react-bootstrap/modal';
+import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
 import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
 import { BsForm } from '@mintplayer/react-bootstrap/form';
@@ -120,6 +122,8 @@ export const everyWrapperProbes = [
   <BsGrid role="none" id="x" tabIndex={-1} />,
   <BsNavbarToggler role="none" id="x" tabIndex={-1} />,
   <BsMarquee role="none" id="x" tabIndex={-1} />,
+  <BsModal role="none" id="x" tabIndex={-1} />,
+  <BsOffcanvas role="none" id="x" tabIndex={-1} />,
   <BsParallax role="none" id="x" tabIndex={-1} />,
   <BsStickyFooter role="none" id="x" tabIndex={-1} />,
   <BsForm role="none" id="x" tabIndex={-1} />,

@@ -75,6 +75,8 @@ import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsModal } from '@mintplayer/react-bootstrap/modal';
+import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
 import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
 import { BsForm } from '@mintplayer/react-bootstrap/form';
@@ -188,6 +190,8 @@ const CASES: Case[] = [
   bare('BsNavbarToggler', 'button.navbar-toggler', BsNavbarToggler),
   { ...bare('BsMarquee', 'span.marquee', BsMarquee), fixedRole: 'marquee' },
   bare('BsParallax', 'div.parallax-host', BsParallax),
+  bare('BsModal', 'div.modal-host', BsModal),
+  bare('BsOffcanvas', 'div.offcanvas-host', BsOffcanvas),
   bare('BsStickyFooter', 'footer', BsStickyFooter),
   bare('BsForm', 'form', BsForm),
   bare('BsFloatingLabel', 'div.form-floating', BsFloatingLabel),

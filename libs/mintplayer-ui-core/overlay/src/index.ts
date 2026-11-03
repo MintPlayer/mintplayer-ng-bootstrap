@@ -4,6 +4,8 @@ export type { AnchorBox, PanelSize, Placement, Viewport } from './placement';
 export { dismissStack } from './dismiss-stack';
 export { OVERLAY_Z_BASE, OVERLAY_Z_STEP, openOverlay, resetOverlayStackForTesting } from './overlay-stack';
 export type { OverlayDismissReason, OverlayHandle, OverlayOptions } from './overlay-stack';
+export { OverlayPresence, afterTransition, findByAttribute, isRendered, isShown, transitionMs, whenRendered } from './presence';
+export type { OverlayPhase, PresenceOptions } from './presence';
 export { BODY_HOST_ATTRIBUTE, INHERITED_ATTRIBUTES, createBodyHost, removeBodyHost } from './body-host';
 export { measureOpenSide, openSide, trackOpenSide } from './open-side';
 export type { OpenSide, OpenSideTarget } from './open-side';

@@ -1,24 +1,13 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
-import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap/modal';
-import {
-  BsModalHostComponent, BsModalDirective, BsModalHeaderDirective,
-  BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective,
-} from '@mintplayer/ng-bootstrap/modal';
+import { BsModalComponent, BsModalFooterDirective, BsModalHeaderDirective } from '@mintplayer/ng-bootstrap/modal';
 
 @Component({
   selector: 'demo-confirm-dialog',
   templateUrl: './confirm-dialog.component.html',
-  imports: [BsModalHostComponent, BsModalDirective, BsModalHeaderDirective,
-    BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective],
+  imports: [BsModalComponent, BsModalHeaderDirective, BsModalFooterDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConfirmDialogComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapModalPage);
-  }
-
   readonly title = input('Confirm');
   isOpen = signal(false);
   message = signal('Are you sure?');

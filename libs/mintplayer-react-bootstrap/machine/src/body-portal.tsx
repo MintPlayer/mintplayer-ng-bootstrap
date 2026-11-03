@@ -1,10 +1,13 @@
-import { useEffect, useId, useState, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useState, type ReactNode, type Ref } from 'react';
 import { createPortal } from 'react-dom';
 import { createBodyHost, removeBodyHost } from '@mintplayer/ui-core/overlay';
 
 export interface BodyPortalProps {
-  /** The overlay's declaring element: the host copies its inherited `data-bs-theme`, `dir` and `lang`. */
-  from?: RefObject<Element | null>;
+  /**
+   * The overlay's declaring element: the host copies its inherited `data-bs-theme`, `dir` and `lang`.
+   * Only an object ref can be read; with a callback ref the host inherits nothing.
+   */
+  from?: Ref<Element> | undefined;
   children?: ReactNode;
 }
 
@@ -19,7 +22,7 @@ export function BodyPortal({ from, children }: BodyPortalProps): ReactNode {
   const id = `mp-overlay-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const [host, setHost] = useState<HTMLElement | null>(null);
   useEffect(() => {
-    setHost(createBodyHost(document, id, from?.current ?? null));
+    setHost(createBodyHost(document, id, from && typeof from === 'object' ? from.current : null));
     return () => {
       setHost(null);
       removeBodyHost(document, id);

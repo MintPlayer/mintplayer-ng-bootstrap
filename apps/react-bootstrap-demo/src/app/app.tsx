@@ -65,6 +65,8 @@ const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage')
 const FloatingLabelsPage = lazyNamed(() => import('./pages/forms/FloatingLabelsPage'), 'FloatingLabelsPage');
 const RangePage        = lazyNamed(() => import('./pages/forms/RangePage'),          'RangePage');
 const MarqueePage      = lazyNamed(() => import('./pages/MarqueePage'),              'MarqueePage');
+const ModalPage        = lazyNamed(() => import('./pages/overlay/ModalPage'),        'ModalPage');
+const OffcanvasPage    = lazyNamed(() => import('./pages/overlay/OffcanvasPage'),    'OffcanvasPage');
 const ToggleButtonsPage = lazyNamed(() => import('./pages/advanced/ToggleButtonsPage'), 'ToggleButtonsPage');
 const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage'),    'ParallaxPage');
 const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
@@ -115,6 +117,8 @@ export function App() {
           <Route path="/basic/forms/floating-labels" element={<FloatingLabelsPage />} />
           <Route path="/basic/forms/range" element={<RangePage />} />
           <Route path="/basic/marquee" element={<MarqueePage />} />
+          <Route path="/overlay/modal" element={<ModalPage />} />
+          <Route path="/overlay/offcanvas" element={<OffcanvasPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />

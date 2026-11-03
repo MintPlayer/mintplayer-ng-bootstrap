@@ -21,13 +21,9 @@ import {
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
 import {
-  BsModalBodyDirective,
-  BsModalCloseDirective,
   BsModalComponent,
-  BsModalDirective,
   BsModalFooterDirective,
   BsModalHeaderDirective,
-  BsModalHostComponent,
 } from '@mintplayer/ng-bootstrap/modal';
 import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
@@ -86,7 +82,7 @@ const pages: {
       MockDirective(BsForDirective),
       MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsModalComponent), MockComponent(BsModalHostComponent), MockDirective(BsModalDirective), MockDirective(BsModalHeaderDirective), MockDirective(BsModalBodyDirective), MockDirective(BsModalFooterDirective), MockDirective(BsModalCloseDirective),
+      MockComponent(BsModalComponent), MockDirective(BsModalHeaderDirective), MockDirective(BsModalFooterDirective),
       MockDirective(BsButtonTypeDirective),
       // Unit to test (standalone)
       FocusTrapComponent,

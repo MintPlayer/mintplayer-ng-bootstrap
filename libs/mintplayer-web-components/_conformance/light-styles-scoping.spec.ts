@@ -41,6 +41,8 @@ import '@mintplayer/web-components/table';
 import '@mintplayer/web-components/grid';
 import '@mintplayer/web-components/navbar-toggler';
 import '@mintplayer/web-components/marquee';
+import '@mintplayer/web-components/modal';
+import '@mintplayer/web-components/offcanvas';
 import '@mintplayer/web-components/parallax';
 import '@mintplayer/web-components/sticky-footer';
 import '@mintplayer/web-components/form';

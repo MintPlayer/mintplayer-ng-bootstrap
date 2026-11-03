@@ -1,19 +1,19 @@
-import { Component, ChangeDetectionStrategy} from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
-import { BsOffcanvasHostComponent, BsOffcanvasContentDirective } from '@mintplayer/ng-bootstrap/offcanvas';
+import { BsOffcanvasComponent } from '@mintplayer/ng-bootstrap/offcanvas';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-copy',
   templateUrl: './copy.component.html',
   styleUrls: ['./copy.component.scss'],
-  imports: [BsCodeSnippetComponent, BsCopyDirective, BsOffcanvasHostComponent, BsOffcanvasContentDirective],
+  imports: [BsCodeSnippetComponent, BsCopyDirective, BsOffcanvasComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CopyComponent {
 
-  offcanvasVisible = false;
+  readonly offcanvasVisible = signal(false);
   codeToCopy = dedent`
     <!DOCTYPE html>
     <html>
@@ -28,8 +28,8 @@ export class CopyComponent {
 
 
   copiedHtml() {
-    this.offcanvasVisible = true;
-    setTimeout(() => this.offcanvasVisible = false, 3000);
+    this.offcanvasVisible.set(true);
+    setTimeout(() => this.offcanvasVisible.set(false), 3000);
   }
 
   protected readonly snippetBasicHtml = dedent`

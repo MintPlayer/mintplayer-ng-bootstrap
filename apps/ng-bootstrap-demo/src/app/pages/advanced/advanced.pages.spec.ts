@@ -47,9 +47,7 @@ import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggle
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import {
   BsOffcanvasComponent,
-  BsOffcanvasHostComponent,
-  OffcanvasBodyComponent,
-  OffcanvasHeaderComponent,
+  BsOffcanvasHeaderDirective,
 } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
 import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
@@ -170,7 +168,7 @@ const pages: {
     component: CopyComponent,
     imports: () => [
       MockDirective(BsCopyDirective),
-      MockComponent(BsOffcanvasComponent), MockComponent(OffcanvasHeaderComponent), MockComponent(OffcanvasBodyComponent), MockComponent(BsOffcanvasHostComponent),
+      MockComponent(BsOffcanvasComponent), MockDirective(BsOffcanvasHeaderDirective),
       MockComponent(BsCodeSnippetComponent),
       // Unit to test (standalone)
       CopyComponent,
