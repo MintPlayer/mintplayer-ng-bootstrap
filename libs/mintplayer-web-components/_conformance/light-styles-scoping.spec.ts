@@ -10,6 +10,7 @@ import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 // asserted below against the installLightStyles calls in the source.
 import '@mintplayer/web-components/accordion';
 import '@mintplayer/web-components/calendar';
+import '@mintplayer/web-components/card';
 import '@mintplayer/web-components/carousel';
 import '@mintplayer/web-components/charts/hierarchy';
 import '@mintplayer/web-components/charts/sparkline';
@@ -27,6 +28,7 @@ import '@mintplayer/web-components/multi-range';
 import '@mintplayer/web-components/nav';
 import '@mintplayer/web-components/navbar';
 import '@mintplayer/web-components/otp-input';
+import '@mintplayer/web-components/pagination';
 import '@mintplayer/web-components/phone-input';
 import '@mintplayer/web-components/query-builder';
 import '@mintplayer/web-components/radio';
@@ -48,8 +50,8 @@ import '@mintplayer/web-components/typeahead';
 
 /**
  * The no-leak guarantee for every stylesheet installed at DOCUMENT level —
- * light-tier (emulated-encapsulation) components, and the document sheet a
- * slot-based component such as mp-card ships for its slotted content.
+ * light-tier (emulated-encapsulation) components, generated D10 groups, and the
+ * document sheet a slot-based component ships for its slotted content.
  *
  * A document-level sheet has no browser-enforced boundary, so the boundary has
  * to be *checked* rather than trusted. This suite is that check: it reads every

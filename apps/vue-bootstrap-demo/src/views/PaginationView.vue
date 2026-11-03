@@ -19,7 +19,7 @@ const page = ref(1);
 <template>
   <BsPagination
     :page-numbers="pages"
-    v-model="page"
+    v-model:selectedPageNumber="page"
     :number-of-boxes="9"
   />
 </template>`;
@@ -36,13 +36,13 @@ const page = ref(1);
 
     <section>
       <h2>Small set</h2>
-      <BsPagination :page-numbers="smallPages" v-model="smallPage" />
+      <BsPagination :page-numbers="smallPages" v-model:selectedPageNumber="smallPage" />
       <small class="text-muted d-block mt-1">Selected: {{ smallPage }}</small>
     </section>
 
     <section>
       <h2>Capped with ellipsis</h2>
-      <BsPagination :page-numbers="largePages" v-model="bigPage" :number-of-boxes="9" />
+      <BsPagination :page-numbers="largePages" v-model:selectedPageNumber="bigPage" :number-of-boxes="9" />
       <small class="text-muted d-block mt-1">Selected: {{ bigPage }}</small>
     </section>
 

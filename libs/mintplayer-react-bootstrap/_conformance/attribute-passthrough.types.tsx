@@ -2,7 +2,7 @@ import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import * as React from 'react';
 
-import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/react-bootstrap/accordion';
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
@@ -69,7 +69,7 @@ export const probes = [
   <BsPhoneInput role="none" id="pi" tabIndex={-1} />,
   <BsAccordion role="none" id="a" tabIndex={-1} />,
   <BsAccordion>
-    <BsAccordionItem header="H" role="none" id="ai" tabIndex={-1} />
+    <BsAccordionTab header="H" role="none" id="ai" tabIndex={-1} />
   </BsAccordion>,
   <BsCarousel role="none" id="c" tabIndex={-1} />,
   <BsDropdownMenu role="none" id="dm" tabIndex={-1} />,

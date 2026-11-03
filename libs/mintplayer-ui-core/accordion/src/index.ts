@@ -1,10 +1,10 @@
 export {
-  ACCORDION_SCOPE,
-  accordionIds,
+  ACCORDION,
+  ACCORDION_ATTR,
+  accordionCore,
   accordionKeyTarget,
-  accordionKeydown,
   accordionRows,
-  accordionSummaryClick,
+  accordionTabCore,
   accordionToggled,
   closeAccordion,
   closeNestedAccordions,
@@ -12,9 +12,11 @@ export {
   connectAccordionTab,
 } from './accordion';
 export type {
-  AccordionBag,
-  AccordionOptions,
-  AccordionTabState,
+  AccordionContext,
+  AccordionInputs,
+  AccordionMethods,
+  AccordionTabInputs,
+  AccordionTabMethods,
   AccordionTabToggle,
   AccordionTabView,
 } from './accordion';

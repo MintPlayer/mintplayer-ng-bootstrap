@@ -81,7 +81,7 @@ describe('BsShell — lowering onto the shell markup', () => {
   it('lowers breakpoint and size', async () => {
     const el = await renderEl(<BsShell breakpoint="lg" size="15rem" />, 'div.shell');
     expect(el.getAttribute('data-breakpoint')).toBe('lg');
-    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
+    expect(el.querySelector<HTMLElement>('.sidebar-root')!.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
   it('lowers state onto the initial checks (checked means revealed)', async () => {

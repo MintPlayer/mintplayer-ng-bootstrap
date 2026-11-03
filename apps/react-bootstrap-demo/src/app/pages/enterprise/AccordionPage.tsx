@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/react-bootstrap/accordion';
 import type { AccordionTabToggle } from '@mintplayer/react-bootstrap/accordion';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import './AccordionPage.css';
 
 const SOURCE = `<BsAccordion multi highlightActiveTab
   onTabToggle={({ index, active }) => console.log(index, active)}>
-  <BsAccordionItem header="Profile">Profile content</BsAccordionItem>
-  <BsAccordionItem header="Sign in">Sign-in content</BsAccordionItem>
+  <BsAccordionTab header="Profile">Profile content</BsAccordionTab>
+  <BsAccordionTab header="Sign in">Sign-in content</BsAccordionTab>
 </BsAccordion>`;
 
 const SECTIONS = [
@@ -25,7 +25,7 @@ export function AccordionPage() {
       <p>
         <code>BsAccordion</code> renders Bootstrap&apos;s accordion markup itself, from the
         framework-neutral <code>@mintplayer/ui-core/accordion</code> core. Each{' '}
-        <code>BsAccordionItem</code> is one row: its <code>header</code> goes in the row&apos;s
+        <code>BsAccordionTab</code> is one row: its <code>header</code> goes in the row&apos;s
         summary, its children in the collapsible region.
       </p>
       <p>
@@ -43,9 +43,9 @@ export function AccordionPage() {
             setLastToggle(`tab ${index} → ${active ? 'open' : 'closed'}`)
           }>
           {SECTIONS.map((section) => (
-            <BsAccordionItem key={section.title} header={section.title}>
+            <BsAccordionTab key={section.title} header={section.title}>
               <span className="d-block px-3 py-2">{section.body}</span>
-            </BsAccordionItem>
+            </BsAccordionTab>
           ))}
         </BsAccordion>
         <p className="mt-2">
@@ -57,9 +57,9 @@ export function AccordionPage() {
         <h2>Multi</h2>
         <BsAccordion multi>
           {SECTIONS.map((section) => (
-            <BsAccordionItem key={section.title} header={section.title}>
+            <BsAccordionTab key={section.title} header={section.title}>
               <span className="d-block px-3 py-2">{section.body}</span>
-            </BsAccordionItem>
+            </BsAccordionTab>
           ))}
         </BsAccordion>
       </section>
@@ -68,19 +68,19 @@ export function AccordionPage() {
         <h2>Nested</h2>
         <p>Closing an outer tab collapses every accordion inside it, at any depth.</p>
         <BsAccordion className="multi-level">
-          <BsAccordionItem header="Profile">
+          <BsAccordionTab header="Profile">
             <BsAccordion>
-              <BsAccordionItem header="Email">
+              <BsAccordionTab header="Email">
                 <span className="d-block px-3 py-2">info@example.com</span>
-              </BsAccordionItem>
-              <BsAccordionItem header="Username">
+              </BsAccordionTab>
+              <BsAccordionTab header="Username">
                 <span className="d-block px-3 py-2">user-name</span>
-              </BsAccordionItem>
+              </BsAccordionTab>
             </BsAccordion>
-          </BsAccordionItem>
-          <BsAccordionItem header="Sign in">
+          </BsAccordionTab>
+          <BsAccordionTab header="Sign in">
             <span className="d-block px-3 py-2">Sign-in content</span>
-          </BsAccordionItem>
+          </BsAccordionTab>
         </BsAccordion>
       </section>
 

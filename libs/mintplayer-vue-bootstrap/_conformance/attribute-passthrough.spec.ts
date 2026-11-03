@@ -69,8 +69,6 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     // (the core owns role and the IDREFs); the runtime sweep below pins where
     // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
     const FILTERED_FORWARDING = [
-      '../pagination/src/BsPagination.vue',
-      '../shell/src/BsShell.vue',
       '../tab-control/src/BsTabControl.vue',
       '../tab-control/src/BsTabPage.vue',
       '../tile-manager/src/BsTileManager.vue',
@@ -89,7 +87,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
 /** SFC name → CSS selector of the element a consumer's attributes must land on. */
 const TARGETS: Record<string, string> = {
   BsAccordion: 'div.accordion',
-  BsAccordionItem: 'details.accordion-item',
+  BsAccordionTab: 'summary.accordion-button',
   BsCalendar: 'div.mp-calendar',
   BsCard: 'div.card',
   BsCardBody: 'div.card-body',

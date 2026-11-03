@@ -513,6 +513,37 @@ only.
      `checkbox`.
    - The Lit `FormAssociatedMixin` lost its last user (the hand-written `mp-checkbox`) and is
      deleted: every form control is a light-DOM native input that submits on its own.
+   - **Accordion.** `accordion` + `accordion-tab` are one D10 group on native `<details name>`. The
+     accordion PROVIDES `ACCORDION` (the shared `name`, null when `multi`, and
+     `highlightActiveTab`); each tab renders its own `<details>` and derives its ids from its own id,
+     so the React index counting and the Vue provide/inject registry are gone. `isActive` is renamed
+     `open` (two-way); React/Vue `BsAccordionItem` becomes `BsAccordionTab` with a `header` slot.
+     Rows belong to the accordion whose `[data-accordion]` root is their closest marked ancestor,
+     which keeps nested accordions apart. `data-highlight-active` moves from the root to each row.
+     Angular and Lit put a `display: contents` tab host around each row, so the sheet restates
+     Bootstrap's first/last-of-type joining on `.accordion-tab`.
+   - **Card.** The ten card parts are one D10 group of presentational cores (`ui-core/card`). Each
+     part's root is the Bootstrap element (the host in Angular and Lit, a `div` in React and Vue);
+     the sheet gives the hosts a block box. `color` is a `CardColor` string in every front (the
+     Angular `Color` enum input is gone). `bs-card-title` is `role="heading"` at `level` in every
+     front. The image is a `card-img-*` box around the `<img>` (the attribute node) with the overlay
+     content inside it; the link is a `card-link` box around a real `<a>`. URLs (`src`, `href`) are
+     bound by the template, never carried in a bag. `mp-card` and its unscoped page-part install
+     are gone; raw card markup on a page still installs `bootstrapCardPage` from that page.
+   - **Pagination.** `paginationCore` (`ui-core/pagination`) wraps `connectPagination`: the
+     selected page is a two-way `selectedPageNumber` in every front (`onSelectedPageNumberChange`
+     in React, `v-model:selectedPageNumber` in Vue, `selectedpagenumberchange` in Lit; the old
+     React `onPageChange` and the Lit `mp-pagination-page-change` event are gone). Every link
+     carries `data-page`, so one delegated click selects; a modified click on an `hrefFor` link
+     stays the browser's. The consumer `aria-label` names the `<nav>`. `pageNumbers` is
+     property-only in Lit (the comma-list attribute is gone). The layout table moved to the
+     ui-core spec.
+   - **Shell.** `shellCore` (`ui-core/shell`) wraps `connectShell`; the root is the host in Angular
+     and Lit. `topbar` and `sidebar` are slots (`*bsShellTopbar` / `*bsShellSidebar`, React props,
+     Vue named slots, Lit `slot="topbar"`), the default content is the main region. `toggle()` is a
+     method in every front; the Angular `size` model and `setSize()` are a plain `size` input,
+     lowered onto `.sidebar-root` as `--mp-shell-size` (`:style` is refused on the root). The
+     `BsShellState` / `BsShellStateChange` aliases are `ShellState` / `ShellStateChange`.
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the

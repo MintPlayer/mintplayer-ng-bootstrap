@@ -3,7 +3,7 @@ import * as React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 
-import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/react-bootstrap/accordion';
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
 import {
   BsCard,
@@ -154,11 +154,12 @@ const bare = (name: string, target: string, Component: React.ElementType): Case 
 const CASES: Case[] = [
   bare('BsAccordion', 'div.accordion', BsAccordion),
   {
-    name: 'BsAccordionItem',
-    target: 'details.accordion-item',
+    name: 'BsAccordionTab',
+    // The header is the tab's interactive node, so the summary is its role node (mp-attrs).
+    target: 'summary.accordion-button',
     render: (p) => (
       <BsAccordion>
-        <BsAccordionItem header="Header" {...p} />
+        <BsAccordionTab header="Header" {...p} />
       </BsAccordion>
     ),
   },
@@ -172,7 +173,7 @@ const CASES: Case[] = [
   bare('BsCardLink', 'a.card-link', BsCardLink),
   bare('BsCardSubtitle', 'div.card-subtitle', BsCardSubtitle),
   bare('BsCardText', 'div.card-text', BsCardText),
-  bare('BsCardTitle', 'div.card-title', BsCardTitle),
+  { ...bare('BsCardTitle', 'div.card-title', BsCardTitle), fixedRole: 'heading' },
   { ...bare('BsCarousel', 'div.carousel', BsCarousel), fixedRole: 'region' },
   { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
   bare('BsHierarchyChart', 'div.hierarchy-chart', BsHierarchyChart),

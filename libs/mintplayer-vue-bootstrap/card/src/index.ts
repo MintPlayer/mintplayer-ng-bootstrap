@@ -1,10 +1,4 @@
-export { default as BsCard } from './BsCard.vue';
-export { default as BsCardBody } from './BsCardBody.vue';
-export { default as BsCardFooter } from './BsCardFooter.vue';
-export { default as BsCardGroup } from './BsCardGroup.vue';
-export { default as BsCardHeader } from './BsCardHeader.vue';
-export { default as BsCardImg } from './BsCardImg.vue';
-export { default as BsCardLink } from './BsCardLink.vue';
-export { default as BsCardSubtitle } from './BsCardSubtitle.vue';
-export { default as BsCardText } from './BsCardText.vue';
-export { default as BsCardTitle } from './BsCardTitle.vue';
+// Generated from @mintplayer/ui-core/card (#458 M4, D10): the card and its parts.
+export * from './generated';
+export { CARD_COLORS, isCardColor } from '@mintplayer/ui-core/card';
+export type { CardColor, CardImagePosition } from '@mintplayer/ui-core/card';

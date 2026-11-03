@@ -1,3 +1,3 @@
-export * from './src/shell/shell.component';
-export * from './src/shell-sidebar/shell-sidebar.directive';
-export * from './src/shell-state';
+// Generated from @mintplayer/ui-core/shell (#458 M4, D10).
+export * from './src/generated';
+export type { ShellBreakpoint, ShellLabels, ShellState, ShellStateChange } from '@mintplayer/ui-core/shell';

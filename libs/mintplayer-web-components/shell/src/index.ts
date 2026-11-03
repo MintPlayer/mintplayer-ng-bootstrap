@@ -1,3 +1,3 @@
-export { MpShell } from './components';
-export type { ShellStateChangeEventDetail } from './components';
-export type { ShellBreakpoint, ShellState } from '@mintplayer/ui-core/shell';
+// Generated from @mintplayer/ui-core/shell (#458 M4, D10).
+export * from './generated';
+export type { ShellBreakpoint, ShellLabels, ShellState, ShellStateChange } from '@mintplayer/ui-core/shell';

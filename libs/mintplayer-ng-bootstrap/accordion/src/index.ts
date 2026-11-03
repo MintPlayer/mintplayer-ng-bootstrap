@@ -1,4 +1,4 @@
-export * from './accordion/accordion.component';
-export * from './accordion-tab/accordion-tab.component';
-export * from './accordion-tab-header/accordion-tab-header.directive';
+// Generated from @mintplayer/ui-core/accordion (#458 M4, D10): bs-accordion, bs-accordion-tab and
+// the *bsAccordionTabHeader slot.
+export * from './generated';
 export type { AccordionTabToggle } from '@mintplayer/ui-core/accordion';
