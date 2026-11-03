@@ -10,6 +10,11 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **`collectScopedStyles` collects per render (issue #452).** It now takes the render and returns
+  `{ result, styles }`: `await collectScopedStyles(() => renderApp(url))`. It used to return every sheet the
+  process had ever installed, so a page's head carried the CSS of components only other pages render. A
+  sheet installed at module scope reaches no page now: call `installBootstrap` / `installLightStyles` while
+  rendering (component body, Vue `setup`), as every front does.
 - **Navbar links are Bootstrap `.nav-link`s (issue #452).** The navbar sheet no longer restates the
   nav-link rules for `bs-navbar-item > a`; each front marks the item's link `.nav-link` instead, so
   Bootstrap's own nav and navbar rules style it. **Angular:** import `BsNavbarLinkDirective` from

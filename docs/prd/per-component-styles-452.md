@@ -160,8 +160,8 @@ registry inserts part sheets in that order whatever order components install the
 - in the browser, a part is adopted at its sorted position among the adopted sheets; if a server-rendered
   part `<style data-mp-order>` with a higher order is already in the head, it is written as a `<style>`
   right before that tag instead (adopted sheets cascade after every `<style>`);
-- Angular SSR writes into `DOCUMENT.head` at the sorted position; React/Vue `collectScopedStyles()` emits
-  sorted, with `data-mp-order`;
+- Angular SSR writes into `DOCUMENT.head` at the sorted position; React/Vue `collectScopedStyles(render)`
+  emits the render's sheets sorted, with `data-mp-order`;
 - `adoptLightStyles` mirrors into a shadow root in the same order.
 
 The baseline's buttons (stock order 4) never tie with a part at equal specificity, so they need no
@@ -173,7 +173,11 @@ The install calls `installLightStyles(part.key, part.css)` from `ui-core/scoped-
 per page per key and is safe across bundles. SSR is already wired:
 
 - Angular writes the sheet into `DOCUMENT.head` through `useScopedStyles`.
-- React and Vue servers emit `collectScopedStyles()` into the head.
+- React and Vue servers wrap the render in `collectScopedStyles(render)` and emit its tags into the head.
+  The record is **per render**, not per process: the first version emitted every sheet any earlier request
+  had installed, so `/` carried the card part once `/card` had been served, which defeats per-component
+  styles. A front must therefore install while it renders (component body, Vue `setup`), never at module
+  scope; the React card files and demo pages were moved for this.
 
 How each kind of component gets it:
 

@@ -5,9 +5,6 @@ import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/react-bootstrap/phone-input';
 import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage);
-
 const SOURCE = `<BsPhoneInput
   value={phone}
   defaultCountry="be"
@@ -24,6 +21,8 @@ const GROUP_SOURCE = `{/* The group joins a whole phone input: its outer
 </BsInputGroup>`;
 
 export function PhoneInputPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [phone, setPhone] = useState<string | null>(null);
   const [detail, setDetail] = useState<PhoneChangeEventDetail | null>(null);
   const [locale, setLocale] = useState('');

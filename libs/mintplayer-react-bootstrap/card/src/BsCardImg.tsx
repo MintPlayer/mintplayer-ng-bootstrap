@@ -3,9 +3,6 @@ import { forwardRef, ImgHTMLAttributes, PropsWithChildren } from 'react';
 import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
 import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
 
-// #452: the card partial ships with the card, scoped to the elements it stamps.
-installBootstrap(bootstrapCard);
-
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 
 interface BsCardImgProps extends ImgHTMLAttributes<HTMLImageElement> {
@@ -23,6 +20,7 @@ interface BsCardImgProps extends ImgHTMLAttributes<HTMLImageElement> {
  */
 export const BsCardImg = forwardRef<HTMLImageElement, PropsWithChildren<BsCardImgProps>>(
   ({ className, position = 'top', src, alt, children, ...rest }, ref) => {
+    installBootstrap(bootstrapCard);
     if (position === 'overlay') {
       return (
         <>

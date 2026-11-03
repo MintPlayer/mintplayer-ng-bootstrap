@@ -11,9 +11,6 @@ import {
 import type { DatatableColumnDef } from '@mintplayer/react-bootstrap/datatable';
 import { installBootstrap, bootstrapFormsPage, bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage, bootstrapSpinnersPage);
-
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).
 const API_BASE = import.meta.env.PROD ? 'https://api.bootstrap.mintplayer.com' : '';
@@ -45,6 +42,8 @@ const withCustomDateEditor = (schema: EntitySchema[]): EntitySchema[] =>
   schema.map((e) => ({ ...e, fields: e.fields.map((f) => (f.name === 'orderDate' ? { ...f, editor: 'custom' as const } : f)) }));
 
 export function QueryBuilderPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage, bootstrapSpinnersPage);
   const [schema, setSchema] = useState<EntitySchema[]>([]);
   const [rootEntity, setRootEntity] = useState('orders');
   const [query, setQuery] = useState<Expression>(() => emptyGroup());

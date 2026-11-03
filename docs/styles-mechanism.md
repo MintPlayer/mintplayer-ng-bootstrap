@@ -65,8 +65,9 @@ What the selectors mean:
     order, or at the sorted index in `adoptedStyleSheets`);
   - with `replace`, upgrades the existing copy in place. This is how a page's verbatim part
     (`bootstrapCarouselPage`) replaces the scoped one under the same key, so a page never holds two copies.
-- With no usable `document.head` (React/Vue server render) it records the sheet in a per-process map
-  instead; `collectScopedStyles()` turns that map into the `<style>` tags for the server's `<head>`.
+- With no usable `document.head` (React/Vue server render) it records the sheet into every render in
+  progress instead; `collectScopedStyles(render)` runs one render and returns the `<style>` tags of what
+  that render installed, for the server's `<head>`.
 - `writeScopedStyleTag(doc, …)` writes into a given document: Angular SSR uses it with the request's
   `DOCUMENT`.
 - `adoptLightStyles(shadowRoot)` mirrors every installed sheet, in order, into a shadow root (for the few
@@ -230,10 +231,13 @@ The published library keeps this property. `libs/mintplayer-ui-core/vite.config.
   the response's `<head>`, the part at its stock position (the head is walked with `childNodes`, because
   Angular's server DOM does not make `children` iterable). On hydration the client's install finds the tags
   by `data-mp-light-styles` and adds nothing.
-- **React / Vue SSR:** the render records the sheets in the per-process map; `entry-server` re-exports
-  `collectScopedStyles`, and `server.mjs` splices its output into `<!--app-head-->`. The map is per process,
-  not per request, so it is a superset: it always holds the current page's sheets, plus any earlier page's.
-  This is accepted and documented in the PRD.
+- **React / Vue SSR:** `entry-server` wraps its render in `collectScopedStyles(() => …)`, which opens a
+  collector for that render; every install the render makes lands in it, and the returned tags go into
+  `<!--app-head-->` ahead of the transfer state. The record is **per render**: `/` never carries the card
+  part because `/card` was rendered first. Renders that overlap in time (both awaiting a lazy route) see each
+  other's installs: a superset, never a miss. The rule this puts on a front: **install while rendering** (the
+  component body, Vue `setup`), never once at module scope — a module-scope install runs before any
+  collector exists, and no page would get that sheet.
 - **No JavaScript:** the server HTML already carries the `<style>` tags, so the page looks the same.
 
 ### Raw Bootstrap markup on a page

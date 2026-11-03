@@ -21,8 +21,9 @@
  *
  * Server rendering: without a `document.head` (Node, or the lit-ssr DOM shim
  * the React and Vue demos run under) `installLightStyles` only RECORDS the
- * sheet, and {@link collectScopedStyles} returns the recorded sheets as marker
- * `<style>` tags for the server to splice into the page head (PRD #437 S12).
+ * sheet into the renders in progress, and {@link collectScopedStyles} returns
+ * one render's sheets as marker `<style>` tags for the server to splice into
+ * the page head (PRD #437 S12, per render since #452).
  * Angular SSR has a real `DOCUMENT` and writes the tag itself with
  * {@link writeScopedStyleTag}. Either way the client registry treats the marker
  * as installed, so hydration adds no second copy.
@@ -220,37 +221,57 @@ export function writeScopedStyleTag(doc: Document, key: string, cssText: string,
   return true;
 }
 
-const SERVER_KEY = Symbol.for('mp.scopedStyles.server');
+const COLLECTORS_KEY = Symbol.for('mp.scopedStyles.collectors');
 
 interface ServerSheet {
   cssText: string;
   order?: number;
 }
 
-/** Sheets installed where there is no document to write to: the server's record, per process. */
-function serverSheets(): Map<string, ServerSheet> {
+/** The sheets one server render installed, by key. */
+type Collector = Map<string, ServerSheet>;
+
+/** The renders in progress: every install where there is no document goes to each of them. */
+function openCollectors(): Set<Collector> {
   const g = globalThis as Record<symbol, unknown>;
-  return ((g[SERVER_KEY] as Map<string, ServerSheet> | undefined) ??= new Map());
+  return ((g[COLLECTORS_KEY] as Set<Collector> | undefined) ??= new Set());
 }
 
 function recordServerSheet(key: string, cssText: string, options: InstallOptions): void {
-  const sheets = serverSheets();
-  const existing = sheets.get(key);
-  if (!existing) sheets.set(key, { cssText, order: options.order });
-  else if (options.replace) existing.cssText = cssText;
+  openCollectors().forEach((sheets) => {
+    const existing = sheets.get(key);
+    if (!existing) sheets.set(key, { cssText, order: options.order });
+    else if (options.replace) existing.cssText = cssText;
+  });
 }
 
 /**
- * The scoped sheets installed during server rendering, as marker `<style>`
- * tags for the page head (React/Vue `entry-server`). The record is per
- * process, not per request: a superset that always holds the current page's
- * sheets, because a front installs its sheet before it first renders. Every
- * sheet starts with the layer order statement, so only the ORDERED sheets
+ * Run a server render and collect the scoped sheets it installed, as marker
+ * `<style>` tags for the page head (React/Vue `entry-server`). The record is
+ * PER RENDER (#452): a page's head carries only what that page rendered, never
+ * a sheet an earlier request installed. Renders that overlap in time (an async
+ * React or Vue render awaiting a lazy route) each see the other's installs too;
+ * a superset, never a miss. So a front must install while it renders (in the
+ * component body / setup), not once at module scope.
+ *
+ * Every sheet starts with the layer order statement, so only the ORDERED sheets
  * (Bootstrap parts, sharing one layer) need an order among themselves: they are
  * emitted sorted, each carrying its order for the client registry.
  */
-export function collectScopedStyles(): string {
-  return [...serverSheets()]
+export async function collectScopedStyles<T>(render: () => Promise<T> | T): Promise<{ result: T; styles: string }> {
+  const sheets: Collector = new Map();
+  const collectors = openCollectors();
+  collectors.add(sheets);
+  try {
+    const result = await render();
+    return { result, styles: serializeSheets(sheets) };
+  } finally {
+    collectors.delete(sheets);
+  }
+}
+
+function serializeSheets(sheets: Collector): string {
+  return [...sheets]
     .map(([key, sheet], index) => ({ key, ...sheet, index }))
     .sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.index - b.index)
     .map(({ key, cssText, order }) => `<style ${SCOPED_STYLE_MARKER}="${key}"${order === undefined ? '' : ` ${SCOPED_STYLE_ORDER}="${order}"`}>${cssText.replace(/<\/style/gi, '<\\/style')}</style>`)

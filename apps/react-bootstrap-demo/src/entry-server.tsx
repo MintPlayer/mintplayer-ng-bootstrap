@@ -11,22 +11,28 @@ import { Writable } from 'node:stream';
 // cannot resolve the @mintplayer path alias itself (PRD dark-mode D8, FR-6).
 // Import-safe on the server: the store is only created on first browser use.
 export { injectThemeAttribute, resolveServerTheme } from '@mintplayer/ui-core/theming';
-// The component sheets the render installed, as marker <style> tags for the
-// <!--app-head--> slot (PRD #437 S12). Read AFTER render(): fronts install on first render.
-export { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
+import { collectScopedStyles } from '@mintplayer/ui-core/scoped-styles';
 import { createTransferStore, serializeTransferState } from '@mintplayer/ui-core/transfer-state';
 import { MpTransferStateProvider } from '@mintplayer/react-bootstrap/machine';
 import App from './app/app';
 
 /**
- * Render the app for `url` to an HTML string, plus the head markup it needs (the transfer state).
- *
+ * Render the app for `url` to an HTML string, plus the head markup it needs:
+ * the component sheets THIS render installed, as marker <style> tags (PRD #437
+ * S12, per render since #452), and the transfer state.
+ */
+export async function render(url: string): Promise<{ html: string; head: string }> {
+  const { result, styles } = await collectScopedStyles(() => renderApp(url));
+  return { html: result.html, head: styles + result.head };
+}
+
+/**
  * Uses `renderToPipeableStream` + `onAllReady` (rather than `renderToString`)
  * so lazy/`Suspense` routes fully resolve server-side — every page's markup is
  * present in the response, not just the shell, which is what makes the
  * no-JavaScript experience render real content.
  */
-export function render(url: string): Promise<{ html: string; head: string }> {
+function renderApp(url: string): Promise<{ html: string; head: string }> {
   // Per request: what the render prefetched (a stateKey datatable), handed to the browser (#448).
   const store = createTransferStore();
   return new Promise((resolve, reject) => {

@@ -120,12 +120,13 @@ describe('installLightStyles — order', () => {
     expect(styleFor('t-p5')?.textContent).toBe('.x{}');
   });
 
-  it('collectScopedStyles emits ordered sheets sorted, with their order', () => {
+  it('collectScopedStyles emits ordered sheets sorted, with their order', async () => {
     const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
-    installLightStyles('t-s8', 'a{}', { order: 148 });
-    installLightStyles('t-s1', 'b{}', { order: 141 });
+    const { styles: tags } = await collectScopedStyles(() => {
+      installLightStyles('t-s8', 'a{}', { order: 148 });
+      installLightStyles('t-s1', 'b{}', { order: 141 });
+    });
     head.mockRestore();
-    const tags = collectScopedStyles();
     expect(tags.indexOf('"t-s1"')).toBeLessThan(tags.indexOf('"t-s8"'));
     expect(tags).toContain('<style data-mp-light-styles="t-s1" data-mp-order="141">b{}</style>');
   });
@@ -279,13 +280,28 @@ describe('installLightStyles — SSR guard', () => {
     expect(getLightStyleEntries().some((e) => e.key === 't-ssr')).toBe(false);
   });
 
-  it('records the sheet for collectScopedStyles, once per key, with </style> neutralised', () => {
+  it('records the sheet for collectScopedStyles, once per key, with </style> neutralised', async () => {
     const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
-    installLightStyles('t-srv', 'mp-s{content:"</style>"}');
-    installLightStyles('t-srv', 'mp-s{color:blue}');
+    const { result, styles: tags } = await collectScopedStyles(() => {
+      installLightStyles('t-srv', 'mp-s{content:"</style>"}');
+      installLightStyles('t-srv', 'mp-s{color:blue}');
+      return 'html';
+    });
     head.mockRestore();
-    const tags = collectScopedStyles();
+    expect(result).toBe('html');
     expect(tags).toContain('<style data-mp-light-styles="t-srv">mp-s{content:"<\\/style>"}</style>');
     expect(tags).not.toContain('color:blue');
+  });
+
+  it('collects per render: a page never carries a sheet an earlier render installed', async () => {
+    const head = vi.spyOn(document, 'head', 'get').mockReturnValue(null as unknown as HTMLHeadElement);
+    const first = await collectScopedStyles(async () => installLightStyles('t-card', 'mp-card{}'));
+    const second = await collectScopedStyles(async () => installLightStyles('t-home', 'mp-home{}'));
+    installLightStyles('t-outside', 'mp-x{}');
+    head.mockRestore();
+    expect(first.styles).toContain('"t-card"');
+    expect(second.styles).not.toContain('"t-card"');
+    expect(second.styles).toContain('"t-home"');
+    expect(first.styles + second.styles).not.toContain('t-outside');
   });
 });

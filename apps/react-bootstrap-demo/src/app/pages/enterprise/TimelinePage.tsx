@@ -14,8 +14,6 @@ import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@min
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage);
 import './TimelinePage.css';
 
 // Shared seed data — a list of project milestones.
@@ -70,6 +68,8 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
 </BsTimeline>`;
 
 export function TimelinePage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [orientation, setOrientation] = useState<TimelineOrientation>('vertical');
   const [align, setAlign] = useState<TimelineAlign>('start');
   const [selectable, setSelectable] = useState<TimelineSelectable>('none');

@@ -3,9 +3,6 @@ import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage);
-
 interface Dish {
   id: number;
   name: string;
@@ -28,6 +25,8 @@ const SOURCE = `<BsSelect aria-label="Dish"
 </BsSelect>`;
 
 export function SelectPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [selected, setSelected] = useState<Dish | null>(null);
   const [size, setSize] = useState<'sm' | 'md' | 'lg'>('md');
 

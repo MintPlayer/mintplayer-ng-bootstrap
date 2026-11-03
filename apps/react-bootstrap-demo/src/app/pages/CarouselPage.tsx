@@ -4,8 +4,6 @@ import type { CarouselAnimation, CarouselOrientation } from '@mintplayer/react-b
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage);
 import './CarouselPage.css';
 
 const BASIC_SOURCE = `<BsCarousel indicators interval={4000} aria-label="Animal photos"
@@ -25,6 +23,8 @@ const IMAGES = [
 ] as const;
 
 export function CarouselPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [animation, setAnimation] = useState<CarouselAnimation>('slide');
   const [orientation, setOrientation] = useState<CarouselOrientation>('horizontal');
   const [paused, setPaused] = useState(false);

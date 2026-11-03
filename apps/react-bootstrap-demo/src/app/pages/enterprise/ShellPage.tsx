@@ -1,9 +1,6 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapTablesPage);
-
 const SNIPPET_BASIC = `import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -58,6 +55,8 @@ const SNIPPET_EXTERNAL = `// Hide the built-in hamburger and drive the toggle fr
 </BsShell>`;
 
 export function ShellPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapTablesPage);
   return (
     <div className="demo-page">
       <h1>Shell</h1>

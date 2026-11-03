@@ -18,8 +18,6 @@ import type {
 } from '@mintplayer/react-bootstrap/datatable';
 import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapFormsPage);
 import './DatatablePage.css';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts — for the
@@ -312,6 +310,8 @@ const fetchTree = useCallback(
 />`;
 
 export function DatatablePage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapFormsPage);
   const [fetchedPages, setFetchedPages] = useState<number[]>([]);
   const [selectedRows, setSelectedRows] = useState<TreeItem[]>([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);

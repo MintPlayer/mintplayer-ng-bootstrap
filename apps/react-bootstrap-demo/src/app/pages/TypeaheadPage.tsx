@@ -3,9 +3,6 @@ import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsTypeahead, inMemoryTypeaheadProvider, type TypeaheadRequest } from '@mintplayer/react-bootstrap/typeahead';
 import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
 
-// Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-installBootstrap(bootstrapTablesPage);
-
 interface Artist {
   id: number;
   text: string;
@@ -47,6 +44,8 @@ const snippet = `<BsTypeahead
 />`;
 
 export function TypeaheadPage() {
+  // Raw Bootstrap markup on this page: it installs the verbatim parts while it renders (#452).
+  installBootstrap(bootstrapTablesPage);
   const [aborted, setAborted] = useState(0);
   const [selected, setSelected] = useState<Artist | null>(null);
   const [value, setValue] = useState('');
