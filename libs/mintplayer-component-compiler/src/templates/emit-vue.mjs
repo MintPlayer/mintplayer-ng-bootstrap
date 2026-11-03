@@ -3,7 +3,7 @@
 // `mp-attrs`), dropping React-only select seeds, and routing the consumer's
 // attributes to the `mp-attrs` element when that is not the root.
 import { basename } from 'node:path';
-import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, NODE, PROP, TemplateError, attrsTarget, componentTags, composedUse, contentSlotUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
+import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, NODE, PROP, TemplateError, attrsTarget, componentTags, composedUse, contentSlotUse, instanceStyleUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
 
 /** The Vue slot-name prefix of one content query's lent slots; the component emitter names them alike. */
 export const contentSlotPrefix = (query) => `content:${query}:`;
@@ -70,6 +70,12 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
     const name = `'${contentSlotPrefix(lent.query)}' + (${lent.index}) + ':${lent.name}'`;
     edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: `<slot :name="${name}" />` });
   });
+  // An instance's own sheet: Vue's template compiler drops a literal <style>.
+  walk(src.root, (node) => {
+    const sheet = node.type === NODE.ELEMENT ? instanceStyleUse(src, node) : null;
+    if (!sheet) return;
+    edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: `<component :is="'style'" v-if="${sheet.css}">{{ ${sheet.css} }}</component>` });
+  });
   // Those names are computed, so the declared slots gain an index signature for them.
   const LENT_SLOTS = 'Record<string, (() => unknown) | undefined>';
   const slotsAt = lends ? text.indexOf('defineSlots<') : -1;
@@ -117,7 +123,7 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
     else edits.push({ start: end - el.tag.length - 3, end: end - el.tag.length - 3, text: forward });
   });
 
-  const { root } = rootElement(src);
+  const { root, host } = rootElement(src);
   const target = attrsTarget(src, root);
   let script = composedImports + (bodyTeleport ? `import { MpBodyTeleport } from '${runtime}';\n` : '');
   if (lends && slotsAt < 0) script += `defineSlots<${LENT_SLOTS}>();\n`;
@@ -135,6 +141,19 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
     const at = root.loc.start.offset + 1 + root.tag.length;
     edits.push({ start: at, end: at, text: ' :class="$attrs.class" :style="$attrs.style"' });
     script += 'defineOptions({ inheritAttrs: false });\n';
+  } else if (host && root) {
+    // The root takes the consumer's attributes itself. Vue's fallthrough would let a consumer
+    // role replace the core's (#458: a role the core writes is its contract), so merge by hand.
+    const bag = root.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && !p.arg);
+    if (bag) {
+      const b = bag.exp.content;
+      edits.push({
+        start: bag.loc.start.offset,
+        end: bag.loc.end.offset,
+        text: `v-bind="{ ...${b}, ...$attrs, class: undefined, style: undefined, role: String(${b}['role'] ?? $attrs['role'] ?? '') || undefined }" :class="[${b}['class'], $attrs.class]" :style="$attrs.style"`,
+      });
+      script += 'defineOptions({ inheritAttrs: false });\n';
+    }
   }
 
   const body = edits

@@ -26,12 +26,12 @@ describe('connect — before the first measure (Tier 2, D14)', () => {
     expect(b.attrs).toMatchObject({ role: 'group', 'aria-label': null, 'aria-labelledby': ids.header('b') });
     expect(b.header['id']).toBe(ids.header('b'));
     expect(api().tiles.every((t) => t.grips.length === 0 && t.header['data-drag-handle'] === null)).toBe(true);
-    expect(api().descriptions).toEqual([{ key: 'description', attrs: { 'data-mps': 'tile-manager', id: ids.description }, text: 'Read-only.' }]);
+    expect(api().descriptions).toEqual([{ key: 'description', attrs: { id: ids.description }, text: 'Read-only.' }]);
   });
 
   it('scopes the board by the root id and carries the floors as custom properties', () => {
-    expect(api().board.attrs).toMatchObject({ id: 'board', role: 'region', 'aria-label': 'Tile board', 'aria-describedby': ids.description });
-    expect(api().board.style).toEqual({ '--mp-tile-min-column': '100px', '--mp-tile-gap': '0px', '--mp-tile-row-height': '8rem' });
+    expect(api().board).toMatchObject({ id: 'board', role: 'region', 'aria-label': 'Tile board', 'aria-describedby': ids.description });
+    expect(api().container.style).toEqual({ '--mp-tile-min-column': '100px', '--mp-tile-gap': '0px', '--mp-tile-row-height': '8rem' });
   });
 });
 
@@ -70,11 +70,11 @@ describe('connect — measured', () => {
 
   it('marks the drag handle per dragMode', () => {
     const { machine, api } = setup([{ id: 'a' }]);
-    expect(api().tiles[0].header['data-drag-handle']).toBe(true);
+    expect(api().tiles[0].header['data-drag-handle']).toBe('');
     expect(api().tiles[0].attrs['data-draggable']).toBeNull();
     machine.setInputs({ dragMode: 'tile' });
     expect(api().tiles[0].header['data-drag-handle']).toBeNull();
-    expect(api().tiles[0].attrs['data-draggable']).toBe(true);
+    expect(api().tiles[0].attrs['data-draggable']).toBe('');
   });
 
   it('reflects M and R mode on aria-pressed and data-mode', () => {
@@ -100,7 +100,7 @@ describe('connect — measured', () => {
   it('uses the label input and keeps distinct tile ids distinct in IDREFs', () => {
     const { machine, api } = setup([{ id: 'a b' }, { id: 'a_20_b' }]);
     machine.setInputs({ label: 'Sales dashboard' });
-    expect(api().board.attrs['aria-label']).toBe('Sales dashboard');
+    expect(api().board['aria-label']).toBe('Sales dashboard');
     const [x, y] = api().tiles.map((t) => t.header['id']);
     expect(x).not.toBe(y);
     expect(x).toMatch(/^[A-Za-z0-9_-]+$/);

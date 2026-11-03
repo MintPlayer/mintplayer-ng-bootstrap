@@ -7,3 +7,4 @@ export * from './ssr';
 export * from './teleport.directive';
 export * from './trusted-html.pipe';
 export * from './body-teleport.directive';
+export * from './instance-style.directive';

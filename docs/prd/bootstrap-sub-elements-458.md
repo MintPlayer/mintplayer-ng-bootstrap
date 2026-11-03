@@ -561,6 +561,21 @@ only.
      two-way everywhere (`onActiveTabChange`, `v-model:activeTab`, `activetabchange`); React's
      `onTabActivate`, the Angular `BsTabsPosition` alias and the Vue `BsTabPage.vue` registry are
      gone. `border` is a boolean in every front.
+   - **Tile manager.** `tileManagerCore` hosts one `TileManagerMachine` per instance and wires
+     what the four hand-written fronts did: delegated pointer, key and focus handlers on the
+     board (a nested board's tiles are skipped), the grid's ResizeObserver → `measure` in the
+     next frame, pointer capture, the FLIP reflow and the keyboard focus requests. `view` feeds
+     the inputs to the machine idempotently (only changed inputs, never the echo of its own
+     commit), so the server render and the first client render agree. `connect()` lost its
+     scope and changed shape: `board` is a flat bag and the input custom properties moved to
+     `container.style`, because a compiled root may not bind `:style`. The server layout rules
+     (D14) ride a new template primitive, `<instance-style :name :css>`. Consumer API: the
+     header and content are scoped slots receiving `{ tile }` (`*bsTileManagerHeader="let tile
+     = tile"`, React `header={({ tile }) => …}`, Vue `#header="{ tile }"`, Lit `headerRenderer`)
+     instead of the Angular `*bsTile` loop and React `renderHeader`; `tiles` is an input in
+     every front. `layouts` is two-way (`layoutsChange` keeps React controlled); outputs follow
+     the lowercase rule (`layoutchange`, `columncountchange`, `gestureblocked`), and
+     `TileColumnCountChange` replaces the per-front `BsTileColumnCountChange`.
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the

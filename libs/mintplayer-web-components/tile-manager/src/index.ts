@@ -1,16 +1,19 @@
-export { MintTileManagerElement } from './components';
-// The model types live in the headless core; listed, not `export *`: ui-core is external to this build.
-export { withoutNarrowerLayouts } from '@mintplayer/ui-core/tile-manager';
+// Generated from @mintplayer/ui-core/tile-manager (#458 M4, D10).
+export * from './generated';
 export type {
   MintTile,
   TileBreakpoint,
+  TileColumnCountChange,
   TileDragMode,
   TileGestureBlocked,
   TileLayoutChange,
   TileLayouts,
   TileLayoutSnapshot,
+  TileManagerComponentInputs,
   TileManagerMessages,
+  TileManagerMethods,
   TilePosition,
   TileResizeMode,
   TileSize,
 } from '@mintplayer/ui-core/tile-manager';
+export { withoutNarrowerLayouts } from '@mintplayer/ui-core/tile-manager';

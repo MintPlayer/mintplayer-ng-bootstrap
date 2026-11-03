@@ -41,8 +41,7 @@ export function tileManagerDomMismatches(root: ParentNode, inputs: TileManagerIn
     }
   };
 
-  attrs('board', board, api.board.attrs);
-  style('board', board, api.board.style);
+  attrs('board', board, api.board);
 
   const tiles = [...board.querySelectorAll<HTMLElement>('[data-tile-id]')];
   const order = tiles.map((t) => t.dataset['tileId']).join(',');
@@ -52,6 +51,8 @@ export function tileManagerDomMismatches(root: ParentNode, inputs: TileManagerIn
   const grid = tiles[0]?.parentElement ?? null;
   attrs('grid', grid, api.grid.attrs);
   style('grid', grid, api.grid.style);
+  attrs('container', grid?.parentElement ?? null, api.container.attrs);
+  style('container', grid?.parentElement ?? null, api.container.style);
 
   for (const view of api.tiles) {
     const el = board.querySelector<HTMLElement>(`[data-tile-id="${quote(view.id)}"]`);

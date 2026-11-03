@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import {
   BsTileManager,
-  type BsTileColumnCountChange,
+  type TileColumnCountChange,
   type MintTile,
   type TileGestureBlocked,
   type TileLayouts,
@@ -57,8 +57,8 @@ watch(layouts, (next) => localStorage.setItem('dashboard', JSON.stringify(next))
   :gap="12"
   label="Dashboard"
 >
-  <template #header="{ tile }">{{ tile.title }}</template>
-  <template #content="{ tile }"><div class="tile-body">{{ tile.body }}</div></template>
+  <template #header="{ tile }">{{ (tile as DashboardTile).title }}</template>
+  <template #content="{ tile }"><div class="tile-body">{{ (tile as DashboardTile).body }}</div></template>
 </BsTileManager>`;
 
 function loadLayouts(): TileLayouts {
@@ -100,7 +100,9 @@ watch(layouts, (next) => {
   }
 });
 
-const onColumnCountChange = (change: BsTileColumnCountChange) => (columnCount.value = change.columnCount);
+const onColumnCountChange = (change: TileColumnCountChange) => (columnCount.value = change.columnCount);
+// The slots receive the tile object passed in `tiles`.
+const panel = (tile: MintTile) => tile as DemoTile;
 
 // The board's width: what `stackBelow` and the column count are resolved against.
 const boardRef = ref<HTMLDivElement | null>(null);
@@ -172,11 +174,11 @@ onBeforeUnmount(() => observer?.disconnect());
         :resize-mode="resizeMode"
         :animate-reflow="animateReflow"
         label="Demo dashboard"
-        @column-count-change="onColumnCountChange"
-        @gesture-blocked="blocked = $event"
+        @columncountchange="onColumnCountChange"
+        @gestureblocked="blocked = $event"
       >
-        <template #header="{ tile }"><span>{{ tile.title }}</span></template>
-        <template #content="{ tile }"><div class="tile-body">{{ tile.body }}</div></template>
+        <template #header="{ tile }"><span>{{ panel(tile).title }}</span></template>
+        <template #content="{ tile }"><div class="tile-body">{{ panel(tile).body }}</div></template>
       </BsTileManager>
     </div>
 

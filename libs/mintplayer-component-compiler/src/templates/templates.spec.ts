@@ -42,11 +42,15 @@ describe('emitters', () => {
     expect(text).toContain('export function demoTemplate(');
   });
 
-  it('Vue is the source minus the host marker', () => {
+  it('Vue is the source minus the host marker, the root merging $attrs under the core role', () => {
     const hosted = read('<div mp-host v-bind="bag"><slot /></div>');
     const text = emitVue(hosted);
-    expect(text).toContain('<div v-bind="bag">');
+    expect(text).toContain(
+      `<div v-bind="{ ...bag, ...$attrs, class: undefined, style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }" :class="[bag['class'], $attrs.class]" :style="$attrs.style">`,
+    );
+    expect(text).toContain('defineOptions({ inheritAttrs: false });');
     expect(text).not.toContain('mp-host');
+    expect(emitVue(read('<div v-bind="bag"><slot /></div>'))).toContain('<div v-bind="bag">');
   });
 
   it('React and Lit refuse to emit without a runtime module', () => {
@@ -224,6 +228,27 @@ describe('content-slot (#458 Q15)', () => {
     expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" /></div>', script), RUNTIME)).toThrow(/:index/);
     expect(() => emitLit(read('<div v-bind="bag"><content-slot :query="bag" :index="0" /></div>', script), RUNTIME)).toThrow(/query/);
     expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" :index="0">x</content-slot></div>', script), RUNTIME)).toThrow();
+  });
+});
+
+describe('instance-style (#458 M4)', () => {
+  const script = 'defineProps<{ bag: Record<string, string | null>; css: string | null; name: string }>();';
+  const src = read('<div v-bind="bag"><instance-style :name="name" :css="css" /></div>', script);
+
+  it("each front renders one instance's own sheet", () => {
+    const angular = emitAngular(src);
+    expect(angular.text).toContain('<ng-container [mpInstanceStyle]="css()" [mpInstanceStyleName]="name()" />');
+    expect([...angular.uses]).toContain('MpInstanceStyleDirective');
+    expect(emitReact(src, RUNTIME)).toContain('{(css) ? <style>{css}</style> : null}');
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain('${instanceStyle(css)}');
+    expect(lit).toMatch(/import \{[^}]*instanceStyle[^}]*\} from/);
+    expect(emitVue(src)).toContain(`<component :is="'style'" v-if="css">{{ css }}</component>`);
+  });
+
+  it('takes :name and :css only, and no content', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><instance-style :css="css" /></div>', script), RUNTIME)).toThrow(/name/);
+    expect(() => emitLit(read('<div v-bind="bag"><instance-style :name="name" :css="css">x</instance-style></div>', script), RUNTIME)).toThrow();
   });
 });
 

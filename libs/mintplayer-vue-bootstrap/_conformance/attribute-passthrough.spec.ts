@@ -65,14 +65,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
   });
 
   it('every inheritAttrs:false wrapper re-binds v-bind="$attrs"', () => {
-    // Fronts of a headless core merge useAttrs() with the core's bags instead
-    // (the core owns role and the IDREFs); the runtime sweep below pins where
-    // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
-    const FILTERED_FORWARDING = [
-      '../tile-manager/src/BsTileManager.vue',
-    ];
     const offenders = Object.entries(SFC_SOURCES)
-      .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
       // A compiled view merges $attrs into its mp-attrs element's bag instead.
       .filter(([, source]) => !/v-bind="(\$attrs"|\{[^"]*\.\.\.\$attrs)/.test(source))

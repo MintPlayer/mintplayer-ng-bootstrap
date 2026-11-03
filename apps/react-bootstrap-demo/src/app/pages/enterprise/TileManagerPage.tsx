@@ -55,8 +55,8 @@ useEffect(() => localStorage.setItem('dashboard', JSON.stringify(layouts)), [lay
   stackBelow={576}
   gap={12}
   label="Dashboard"
-  renderHeader={(tile) => tile.title}
-  renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+  header={({ tile }) => (tile as DashboardTile).title}
+  content={({ tile }) => <div className="tile-body">{(tile as DashboardTile).body}</div>}
 />`;
 
 function loadLayouts(): TileLayouts {
@@ -173,8 +173,8 @@ export function TileManagerPage() {
           label="Demo dashboard"
           onColumnCountChange={(change) => setColumnCount(change.columnCount)}
           onGestureBlocked={setBlocked}
-          renderHeader={(tile) => <span>{tile.title}</span>}
-          renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+          header={({ tile }) => <span>{(tile as DemoTile).title}</span>}
+          content={({ tile }) => <div className="tile-body">{(tile as DemoTile).body}</div>}
         />
       </div>
 

@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, contentSlotUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, contentSlotUse, instanceStyleUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -139,6 +139,12 @@ function bare(ctx, el, depth) {
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
   const lent = contentSlotUse(ctx.src, el);
   if (lent) return contentSlot(ctx, lent, depth);
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    // A template cannot hold a <style> in Angular: the directive writes the sheet into the head.
+    ctx.uses.add('MpInstanceStyleDirective');
+    return `${pad(depth)}<ng-container [mpInstanceStyle]="${escapeAttr(x(ctx, sheet.css))}" [mpInstanceStyleName]="${escapeAttr(x(ctx, sheet.name))}" />\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const use = partialUse(ctx.src, el, ctx.partials);

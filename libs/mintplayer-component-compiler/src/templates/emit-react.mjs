@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, contentSlotUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, contentSlotUse, instanceStyleUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -128,6 +128,11 @@ function bare(ctx, el, depth) {
     // A queried child's lent slot: the node its element carried as a prop (or its children).
     ctx.uses.add('contentSlots');
     return `${pad(depth)}{contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? null}\n`;
+  }
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    const css = x(ctx, sheet.css);
+    return `${pad(depth)}{(${css}) ? <style>{${css}}</style> : null}\n`;
   }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {

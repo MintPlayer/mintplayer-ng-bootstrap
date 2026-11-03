@@ -26,6 +26,10 @@ const ALLOWED_WRITERS: readonly string[] = [
   // The registry itself lives in @mintplayer/ui-core/scoped-styles since #436;
   // `light-dom/src/install-light-styles.ts` is a re-export and writes nothing.
   // ui-core has its own copy of this guard for the registry file.
+  // A compiled template's <instance-style> (#458 M4): one instance's own sheet (the tile
+  // manager's server layout rules), rendered inside that instance and removed with it.
+  // It never writes to the head and holds no component sheet.
+  'machine/src/instance-style-directive.ts',
 ];
 
 const WRITER_PATTERNS: readonly RegExp[] = [

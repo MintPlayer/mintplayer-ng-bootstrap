@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, contentSlotUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, contentSlotUse, instanceStyleUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -34,7 +34,7 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
   if (ctx.uses.has('unsafeHTML')) directives.push("import { unsafeHTML } from 'lit/directives/unsafe-html.js';");
   if (ctx.uses.has('styleMap')) directives.push("import { styleMap } from 'lit/directives/style-map.js';");
-  const runtimeDirectives = ['bodyTeleport', 'props', 'teleport'].filter((u) => ctx.uses.has(u));
+  const runtimeDirectives = ['bodyTeleport', 'instanceStyle', 'props', 'teleport'].filter((u) => ctx.uses.has(u));
   if (runtimeDirectives.length) directives.push(`import { ${runtimeDirectives.join(', ')} } from '${runtime}';`);
   const helpers = ctx.uses.has('renderSlot')
     ? ["function renderSlot<A>(slot: unknown, args: A): unknown {", "  return typeof slot === 'function' ? (slot as (args: A) => unknown)(args) : slot;", '}', '']
@@ -133,6 +133,12 @@ function bare(ctx, el, depth) {
     ctx.uses.add('contentSlots');
     ctx.uses.add('nothing');
     return `${pad(depth)}\${contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? nothing}\n`;
+  }
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    // A binding inside a lit <style> is not supported: the directive renders the element.
+    ctx.uses.add('instanceStyle');
+    return `${pad(depth)}\${instanceStyle(${x(ctx, sheet.css)})}\n`;
   }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {

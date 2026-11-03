@@ -158,6 +158,13 @@ the template of every front. A template without a manifest is still compiled on 
   - Lit: the `bodyTeleport()` directive.
 
   React, Vue and Lit mount it on the client only, because an overlay cannot be opened without JS.
+- **`<instance-style :name="key" :css="text" />`** (#458 M4) renders one instance's own sheet,
+  such as the tile manager's server layout rules. It takes `:name` (unique per instance) and
+  `:css` (the text, or null for none) and nothing else. Angular strips `<style>` from templates,
+  so `MpInstanceStyleDirective` writes it into the head under `name`, on the server too, and
+  removes it when `css` turns null or the component is destroyed. React and Vue render a
+  `<style>` in place; Lit the `instanceStyle()` directive. Not for a component's own sheet:
+  that is the scoped sheet, installed once per page.
   The overlay's core puts the host on `openOverlay` (ui-core `overlay`), which handles z-order,
   focus trap and return, `inert`, and Escape and outside dismissal.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions

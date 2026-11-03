@@ -453,6 +453,25 @@ export function contentSlotUse(src, el) {
   return { query, name, index };
 }
 
+/**
+ * `<instance-style :name="key" :css="text" />` (#458 M4): a style sheet of this
+ * instance's own, computed by the core (the tile manager's server layout rules).
+ * `css` null renders nothing. React, Vue and Lit render a `<style>` where the tag
+ * sits; Angular strips `<style>` from templates, so it writes the sheet into the
+ * document head under `name`, server and client alike.
+ */
+export const INSTANCE_STYLE_TAG = 'instance-style';
+
+export function instanceStyleUse(src, el) {
+  if (el.type !== NODE.ELEMENT || el.tag !== INSTANCE_STYLE_TAG) return null;
+  const bound = (arg) => el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === arg)?.exp?.content;
+  const name = bound('name');
+  const css = bound('css');
+  if (!name || !css || el.props.length !== 2) throw new TemplateError(src.file, el, `<${INSTANCE_STYLE_TAG}> takes :name="<unique key>" and :css="<text or null>" only (put v-if / v-for on a <template> around it)`);
+  if (meaningful(el.children).length) throw new TemplateError(src.file, el, `<${INSTANCE_STYLE_TAG}> takes no content`);
+  return { name, css };
+}
+
 /** Every `<content-slot>` a template renders. */
 export function contentSlotUses(src) {
   const uses = [];
@@ -469,7 +488,7 @@ export function contentSlotUses(src) {
 export function componentTags(src) {
   const tags = [];
   const walk = (node) => {
-    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport' && node.tag !== CONTENT_SLOT_TAG) tags.push(node);
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport' && node.tag !== CONTENT_SLOT_TAG && node.tag !== INSTANCE_STYLE_TAG) tags.push(node);
     (node.children ?? []).forEach(walk);
   };
   walk(src.root);

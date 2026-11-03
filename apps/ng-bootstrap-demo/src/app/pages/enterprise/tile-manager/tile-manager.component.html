@@ -64,6 +64,7 @@
   </p>
 
   <bs-tile-manager
+    [tiles]="tiles()"
     [(layouts)]="layouts"
     [stackBelow]="stackBelow() || null"
     [gap]="gap()"
@@ -71,12 +72,10 @@
     [resizeMode]="resizeMode()"
     [animateReflow]="animateReflow()"
     label="Demo dashboard"
-    (columnCountChange)="onColumnCountChange($event)"
-    (gestureBlocked)="latestBlocked.set($event)">
-    <ng-container *bsTile="let tile of tiles()">
-      <span *bsTileHeader>{{ tile.title }}</span>
-      <div *bsTileContent class="tile-body">{{ tile.body }}</div>
-    </ng-container>
+    (columncountchange)="onColumnCountChange($event)"
+    (gestureblocked)="latestBlocked.set($event)">
+    <span *bsTileManagerHeader="let tile = tile">{{ panel(tile).title }}</span>
+    <div *bsTileManagerContent="let tile = tile" class="tile-body">{{ panel(tile).body }}</div>
   </bs-tile-manager>
 
   <bs-grid class="mt-3">
