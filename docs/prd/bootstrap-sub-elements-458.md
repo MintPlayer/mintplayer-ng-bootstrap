@@ -320,6 +320,33 @@ Selectors rewritten, out of the partial's total:
   | `.input-group > .form-control` vs the base `.form-control` | keeps stock precedence |
   | `tr.table-active` in a stamped table | styled |
 
+**S4 Directive kind (2026-11-03): design read; the code prototype moves into M2.** A directive is a
+`ComponentCore` with no template. Its bag is the core's existing `host(props)` hook (`ui-core/component`),
+applied to the consumer's element. Per front:
+
+| Front | How it emits | Runtime work |
+|---|---|---|
+| Angular | The generated component class body, as is, under `@Directive({ selector: '[bsX]' })`: `useCore(…, { hostBag })` plus `useScopedStyles` (compare `nav.component.generated.ts`). Structural use is a `TemplateRef` rendered into the body host (§4.4) | none |
+| Lit | An `AsyncDirective` that runs `coreRuntime(core)` and writes the bag with the existing `applyHostProps(element, prev, bag)`. Template use renders into the body host with `render()` | new `coreDirective()` helper |
+| React | `useBsX(inputs) → props`, built on `useCore`. It needs a new `mergeProps(ours, theirs)`: `className` joined, refs composed (its ref is `rootRef`), handlers chained, and the consumer's `aria-*`/`id`/`tabindex` winning except a fixed `role`. Template use returns `[props, overlay]`, where `overlay` is a portal node | `mergeProps`, ref composition |
+| Vue | `useCore` relies on `useAttrs`/`useId`/`inject`, so it **cannot run inside a custom directive**. It needs a separate `vueCoreDirective(core)`: `created`/`mounted`/`updated`/`unmounted` over `coreRuntime`, plus `getSSRProps(binding)`, which computes `host(view(state(inputs)))` purely so the server HTML carries the bag | new runtime |
+
+Two Vue limits follow, and they decide the Vue API shape:
+- A custom directive cannot `inject`, so it **cannot consume a core context**. `bsModalHeader` reads the
+  modal's context, for example.
+- A custom directive **cannot render slot content**. That affects `*[bsTooltip]`, the popover and
+  `[bsDropdownMenu]`.
+
+**Proposal: for those cases, the Vue front emits a renderless component instead.** For example
+`<BsTooltip v-slot="{ props }"><button v-bind="props">…</button></BsTooltip>`, the standard Vue
+headless pattern. A directive that consumes no context and renders no template stays a custom directive
+(`v-bs-row`, `v-bs-col`).
+
+Related finding: the `markLinks` helpers in every front add `.nav-link` and the scope to a consumer's
+link, which means they stamp consumer DOM. With the anchored guard (`nav-link` is a sub class of `.nav` /
+`.navbar-nav`), the scope stamp is no longer needed for styling. M6 removes the stamp and keeps the class
+only.
+
 ## 6. Milestones (one PR, one branch off `master`; commit per milestone, no per-milestone test runs)
 
 0. **Spikes S1–S8.** Update this PRD with the results.
