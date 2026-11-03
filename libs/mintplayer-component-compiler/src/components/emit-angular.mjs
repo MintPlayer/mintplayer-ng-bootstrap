@@ -13,12 +13,14 @@ export function inputLine(model, input) {
   const transform =
     input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? `(v: unknown) => numberAttribute(v) as ${type}` : null;
   const value = input.default ?? 'undefined';
+  const alias = input.alias ? `alias: '${input.alias}'` : null;
+  const opts = (...entries) => (entries.filter(Boolean).length ? `, { ${entries.filter(Boolean).join(', ')} }` : '');
   const call = input.model
-    ? `model<${type}>(${value})`
+    ? `model<${type}>(${value}${opts(alias)})`
     : transform
-    ? `input<${type}, unknown>(${value}, { transform: ${transform} })`
-    : input.default !== undefined
-      ? `input<${type}>(${value})`
+    ? `input<${type}, unknown>(${value}${opts(`transform: ${transform}`, alias)})`
+    : input.default !== undefined || alias
+      ? `input<${type}>(${value}${opts(alias)})`
       : `input<${type}>()`;
   return `${jsdoc(input.doc, '  ')}  readonly ${input.name} = ${call};`;
 }

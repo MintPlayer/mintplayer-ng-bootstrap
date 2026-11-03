@@ -32,12 +32,7 @@ import {
   BsOffcanvasComponent,
   BsOffcanvasHeaderDirective,
 } from '@mintplayer/ng-bootstrap/offcanvas';
-import {
-  BsPopoverBodyDirective,
-  BsPopoverComponent,
-  BsPopoverDirective,
-  BsPopoverHeaderDirective,
-} from '@mintplayer/ng-bootstrap/popover';
+import { BsPopoverDirective } from '@mintplayer/ng-bootstrap/popover';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
@@ -123,7 +118,7 @@ const pages: {
     component: PopoverComponent,
     imports: () => [
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsPopoverComponent), MockDirective(BsPopoverDirective), MockDirective(BsPopoverBodyDirective), MockDirective(BsPopoverHeaderDirective),
+      MockDirective(BsPopoverDirective),
       MockDirective(BsButtonTypeDirective),
       PopoverComponent,
     ],

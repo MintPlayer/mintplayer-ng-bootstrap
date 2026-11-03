@@ -11,3 +11,5 @@ export { measureOpenSide, openSide, trackOpenSide } from './open-side';
 export type { OpenSide, OpenSideTarget } from './open-side';
 export { DROPDOWN_POSITIONS, placePopover, trackPopovers } from './popover';
 export type { PopoverPlacementOptions } from './popover';
+export { ANCHOR_SIDES, anchorSide, besidePlacement, placeBeside, trackBeside } from './anchored';
+export type { AnchorSide } from './anchored';

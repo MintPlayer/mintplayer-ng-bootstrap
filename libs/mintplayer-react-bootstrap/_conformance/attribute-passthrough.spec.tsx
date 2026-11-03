@@ -77,6 +77,9 @@ import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
 import { BsModal } from '@mintplayer/react-bootstrap/modal';
 import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
+import { BsPopoverPanel } from '@mintplayer/react-bootstrap/popover';
+import { BsTooltipPanel } from '@mintplayer/react-bootstrap/tooltip';
+import { BsToast, BsToastBody, BsToaster, BsToastHeader } from '@mintplayer/react-bootstrap/toast';
 import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
 import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
 import { BsForm } from '@mintplayer/react-bootstrap/form';
@@ -192,6 +195,12 @@ const CASES: Case[] = [
   bare('BsParallax', 'div.parallax-host', BsParallax),
   bare('BsModal', 'div.modal-host', BsModal),
   bare('BsOffcanvas', 'div.offcanvas-host', BsOffcanvas),
+  { ...bare('BsPopoverPanel', 'div.popover', BsPopoverPanel), fixedRole: 'dialog' },
+  { ...bare('BsTooltipPanel', 'div.tooltip', BsTooltipPanel), fixedRole: 'tooltip' },
+  bare('BsToast', 'div.toast', BsToast),
+  bare('BsToastHeader', 'div.toast-header', BsToastHeader),
+  bare('BsToastBody', 'div.toast-body', BsToastBody),
+  bare('BsToaster', 'div.toast-container', BsToaster),
   bare('BsStickyFooter', 'footer', BsStickyFooter),
   bare('BsForm', 'form', BsForm),
   bare('BsFloatingLabel', 'div.form-floating', BsFloatingLabel),

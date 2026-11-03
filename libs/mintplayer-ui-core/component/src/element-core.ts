@@ -20,6 +20,8 @@ export interface ElementCoreOptions<P, I = unknown> {
   readonly bag: (props: P) => CoreBag | null | undefined;
   /** The manifest's input defaults: a binding passes only what the consumer wrote. */
   readonly defaults?: Partial<I>;
+  /** Every render's props, after the bag is written (an overlay directive renders its panel from them). */
+  readonly onProps?: (props: P) => void;
 }
 
 /** A binding's value over the manifest's defaults. */
@@ -93,7 +95,9 @@ export function elementCore<I, S, P, E, C, PC, M>(
   let applied = EMPTY_APPLIED_BAG;
   const render = () => {
     const args: ViewArgs<I, S, C, E> = { inputs: current, state, id, hydrated, context: undefined as C, label, api: () => runtime.api };
-    applied = applyElementBag(element, applied, options.bag(core.view(args)) ?? {});
+    const props = core.view(args);
+    applied = applyElementBag(element, applied, options.bag(props) ?? {});
+    options.onProps?.(props);
   };
   const runtime = coreRuntime(core, {
     inputs: () => current,

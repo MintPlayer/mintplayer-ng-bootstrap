@@ -3,24 +3,26 @@
 // returns that element's bag; every front stamps it with the group's scope and
 // installs the group's sheets, so the element opts in to them.
 import { inputLine } from './emit-angular.mjs';
+import { emitAngularOverlay, emitLitOverlay, emitReactOverlay, emitVueOverlay } from './emit-overlay-directives.mjs';
 import { banner, coreImports, directiveBag, jsdoc, styleImports, styleInstall } from './model.mjs';
 
 /** Sheet imports from another module than the entry. */
-const sheetImports = (model) =>
+export const sheetImports = (model) =>
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .map(({ module, names }) => `import { ${names.join(', ')} } from '${module}';`);
 
 /** The manifest's defaults as an object literal, for the fronts whose binding passes only what the consumer wrote. */
-const defaultsObject = (model) => {
+export const defaultsObject = (model) => {
   const entries = model.inputs.filter((input) => input.default !== undefined).map((input) => `${input.name}: ${input.default}`);
   return entries.length ? `{ ${entries.join(', ')} }` : null;
 };
 
-const finish = (lines) => lines.filter((line, i, all) => !(line === '' && all[i - 1] === '')).join('\n');
+export const finish = (lines) => lines.filter((line, i, all) => !(line === '' && all[i - 1] === '')).join('\n');
 
 /** Angular: an attribute directive hosting the core through `useCore`, its bag on the host. */
 export function emitAngularDirective(model, { generator, runtime = '@mintplayer/ng-bootstrap/machine' }) {
+  if (model.overlay) return emitAngularOverlay(model, { generator, runtime });
   const { names } = model;
   const angular = new Set(['Directive']);
   if (model.inputs.length) angular.add('input');
@@ -58,6 +60,7 @@ export function emitAngularDirective(model, { generator, runtime = '@mintplayer/
  * with the consumer's own through `mergeProps`.
  */
 export function emitReactDirective(model, { generator, runtime, scopedStyles }) {
+  if (model.overlay) return emitReactOverlay(model, { generator, runtime, scopedStyles });
   const { names } = model;
   const optionsName = `${names.react[3].toUpperCase()}${names.react.slice(4)}Options`;
   // An array or object default is hoisted: a literal in the destructure is a new value each render.
@@ -108,6 +111,7 @@ export function emitReactDirective(model, { generator, runtime, scopedStyles }) 
 
 /** Vue: a custom directive (`v-bs-row`); its value is the inputs object. */
 export function emitVueDirective(model, { generator, runtime, scopedStyles }) {
+  if (model.overlay) return emitVueOverlay(model, { generator, runtime, scopedStyles });
   const { names } = model;
   const defaults = defaultsObject(model);
   const options = [
@@ -133,6 +137,7 @@ export function emitVueDirective(model, { generator, runtime, scopedStyles }) {
 
 /** Lit: an element-part directive (`<div ${bsRow()}>`); its argument is the inputs object. */
 export function emitLitDirective(model, { generator, runtime, scopedStyles }) {
+  if (model.overlay) return emitLitOverlay(model, { generator, runtime, scopedStyles });
   const { names } = model;
   const defaults = defaultsObject(model);
   const options = [`idPrefix: 'mp-${model.element}'`, `bag: (props) => ${directiveBag(model, 'props')}`, ...(defaults ? [`defaults: ${defaults}`] : [])];

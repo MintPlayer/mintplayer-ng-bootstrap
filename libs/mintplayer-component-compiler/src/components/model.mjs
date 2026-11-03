@@ -181,7 +181,15 @@ export function componentModels({ group, entry, corePackage, template, extension
   const declarations = declarationModels({ group, entry, entryModule, literals });
   resolveContent([...models, ...declarations], entry);
   checkContentSlots(models, entry);
-  return [...models, ...declarations, ...directiveModels({ group, entry, entryModule, style, literals })];
+  const directives = directiveModels({ group, entry, entryModule, style, literals });
+  directives
+    .filter((directive) => directive.manifest.overlay)
+    .forEach((directive) => {
+      const panel = models.find((model) => model.element === directive.manifest.overlay);
+      if (!panel) throw new Error(`${entry}/${directive.element} (directive): overlay "${directive.manifest.overlay}" is not a component of the group`);
+      directive.overlay = panel;
+    });
+  return [...models, ...declarations, ...directives];
 }
 
 /**
@@ -300,16 +308,25 @@ function directiveModels({ group, entry, entryModule, style, literals }) {
         selector: names.selector ?? `[bs${base}]`,
         react: names.react ?? `useBs${base}`,
         vue: names.vue ?? `vBs${base}`,
+        // An overlay directive is a renderless component in Vue (S4).
+        vueComponent: `Bs${base}`,
         lit: names.lit ?? `bs${base}`,
         file: `${name}.directive`,
       },
       camel: camel(name),
+      /** An overlay directive's panel: the component model of `manifest.overlay` (resolved by the caller). */
+      overlay: null,
     };
   });
 }
 
-/** The bag a directive's view returns, stamped with the group's scope: the element opts in to the group's sheets. */
-export const directiveBag = (model, props) => (model.style ? `({ ...${props}, 'data-mps': '${model.style.scope}' })` : props);
+/**
+ * The bag a directive puts on its element. A plain directive's view returns it, stamped with the group's
+ * scope: the element opts in to the group's sheets. An overlay directive's view returns `{ anchor, overlay }`;
+ * its anchor is not stamped (only the panel is styled, and the element may carry another group's scope).
+ */
+export const directiveBag = (model, props) =>
+  model.manifest.overlay ? `${props}.anchor` : model.style ? `({ ...${props}, 'data-mps': '${model.style.scope}' })` : props;
 
 /** Links each manifest `content` query to the group's element models it names. */
 function resolveContent(models, entry) {

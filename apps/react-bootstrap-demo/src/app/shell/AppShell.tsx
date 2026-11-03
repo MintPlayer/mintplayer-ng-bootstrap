@@ -42,6 +42,9 @@ const SECTIONS = [
   { title: 'Overlay', routes: [
     { path: '/overlay/modal', label: 'Modal' },
     { path: '/overlay/offcanvas', label: 'Offcanvas' },
+    { path: '/overlay/popover', label: 'Popover' },
+    { path: '/overlay/tooltip', label: 'Tooltip' },
+    { path: '/overlay/toast', label: 'Toast' },
   ]},
   { title: 'Advanced', routes: [
     { path: '/advanced/splitter', label: 'Splitter' },

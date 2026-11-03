@@ -295,7 +295,7 @@ function entryOutputs(cwd, described, registry, name, front) {
     const options = { generator: GENERATOR, runtime, scopedStyles: described.config.scopedStyles ?? '@mintplayer/ui-core/scoped-styles', extension: (file) => relativeSpecifier(file, outDir, cwd) };
     const outputs = models.map((model) =>
       model.kind === 'directive'
-        ? { ...FRONTS[name].directive(model, options), barrel: namedBarrel }
+        ? { barrel: namedBarrel, ...FRONTS[name].directive(model, options) }
         : model.kind === 'declaration'
         ? { ...FRONTS[name].declaration(model, options), barrel: namedBarrel }
         : { ...FRONTS[name].component({ ...model, components }, options), barrel: FRONTS[name].barrel },

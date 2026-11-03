@@ -50,6 +50,11 @@ export interface UseCoreOptions<I, P> {
   readonly hostBag?: (props: P) => CoreBag | null | undefined;
   /** Two-way inputs (`model()`), by name; written back when the core changes the state of the same name. */
   readonly models?: Readonly<Record<string, { set(value: never): void }>>;
+  /**
+   * The element the core runs on, where it is not the host: a structural directive's anchor
+   * (`anchorElement`), whose own node is a comment. Read lazily, after the view placed it.
+   */
+  readonly element?: () => HTMLElement | null;
 }
 
 export interface CoreHandle<P, PC> {
@@ -67,11 +72,13 @@ export interface CoreHandle<P, PC> {
  * where `hostBag` is given, else the host's first element child.
  */
 export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C, PC, M>, options: UseCoreOptions<I, P>): CoreHandle<P, PC> {
-  const element = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+  const element = (): HTMLElement | null => (options.element ? options.element() : host);
   const consumed = core.consume ? inject(coreContextToken(core.consume), { optional: true, skipSelf: true }) : null;
   const id = inject(BsIdService).next(options.idPrefix);
   // Read once: a host attribute is static content, and Angular does not observe it.
-  const label = element.getAttribute('aria-label');
+  let label: string | null | undefined;
+  const readLabel = () => (label === undefined ? (label = element()?.getAttribute('aria-label') ?? null) : label);
   const hydrated = signal(false);
   // The state is seeded at its first read, in the first change detection: the
   // template's bindings have set the inputs by then. In the constructor they
@@ -130,14 +137,14 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
     id,
     hydrated: hydrated(),
     context: (consumed ? consumed() : core.consume?.defaultValue) as C,
-    label,
+    label: readLabel(),
     api: () => runtime.api,
   }));
   const props = computed(() => core.view(args()));
   const provided = computed(() => core.provide?.(args()) as PC);
 
   const hostBag = options.hostBag ?? core.host?.bind(core);
-  if (hostBag) useHostProps(() => hostBag(props()));
+  if (hostBag) useHostProps(() => hostBag(props()), options.element);
 
   const runtime = coreRuntime(core, {
     inputs: () => untracked(options.inputs),
@@ -149,7 +156,7 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   });
   afterNextRender(() => {
     hydrated.set(true);
-    const root = options.hostBag ? element : (element.firstElementChild as HTMLElement | null);
+    const root = options.element ? element() : options.hostBag ? host : (host.firstElementChild as HTMLElement | null);
     if (root) runtime.attachTo(root);
   });
   effect(() => {

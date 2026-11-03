@@ -1,2 +1,2 @@
-export * from './directive/tooltip.directive';
-// export * from './component/tooltip.component';
+// Generated from @mintplayer/ui-core/tooltip (#458 D10).
+export * from './generated';

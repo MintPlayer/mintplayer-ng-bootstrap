@@ -217,6 +217,25 @@ Without JS a closed overlay cannot be opened, so nothing depends on its server c
 only for an overlay that is open at load. The imperative toast API (`toastService.show(template)`) is a
 per-front service over a framework-neutral toast queue core.
 
+**As built (M6).** The queue IS the service: `ToastQueue` (`ui-core/toast`, `push(data)` / `close(id)` /
+`hold` / `release`) is plain TypeScript any front can own (an Angular service, a React context, a
+module). The rendering half is a generated D10 component, `toaster`, which takes `[queue]` and renders its
+`toast` slot once per entry inside a fixed `.toast-container`; no front needs hand-written service code.
+The toaster renders in place (it is `position: fixed`), not in a body host. A toast announces its text
+when it turns visible through `announceToPage` (`ui-core/announce`), a page-level live region that exists
+before its text; autohide (default 5 s) pauses while the pointer or focus is on the toaster (WCAG 2.2.1).
+
+**Overlay directives (M6, tooltip and popover).** A manifest directive with `overlay: '<panel component>'`
+renders that panel into a body host while its core's `props.overlay` is non-null; `props.anchor` is the
+trigger's bag. Per front: Angular `<ng-template bsTooltip="top">…</ng-template>` inside the trigger (the
+template is the content; input `alias` gives the structural microsyntax), React
+`const [props, node] = useBsTooltip({ position, content })`, Vue the renderless
+`<BsTooltip v-slot="{ props }">` with a `#content` slot (its `$attrs` join the trigger's props), Lit
+`${bsTooltip({ position }, () => content)}`. Placement is `ui-core/overlay` `placeBeside`: the requested
+side, the opposite one when it does not fit, then clamped; always tracked (scroll, resize, panel size), so
+the former `updatePosition()` is gone. The popover's title is `bsPopoverTitle` (Angular) / `title`; its
+header and body directives are gone.
+
 ### 4.5 Unified dropdown
 
 `bs-dropdown-menu` / `bs-dropdown-item` are the presentational component, used both standalone (under

@@ -89,6 +89,15 @@ const TARGETS: Record<string, string> = {
   BsParallax: 'div.parallax-host',
   BsModal: 'div.modal-host',
   BsOffcanvas: 'div.offcanvas-host',
+  // Renderless overlay directives (#458 M6): the attributes reach the trigger the slot renders.
+  BsPopover: 'button.trigger',
+  BsTooltip: 'button.trigger',
+  BsPopoverPanel: 'div.popover',
+  BsTooltipPanel: 'div.tooltip',
+  BsToast: 'div.toast',
+  BsToastHeader: 'div.toast-header',
+  BsToastBody: 'div.toast-body',
+  BsToaster: 'div.toast-container',
   BsStickyFooter: 'footer',
   BsForm: 'form',
   BsFloatingLabel: 'div.form-floating',
@@ -189,6 +198,10 @@ const TARGETS: Record<string, string> = {
  */
 const slots = { default: () => h('span', { class: 'slot-content' }, 'content') };
 
+/** A renderless directive renders only its trigger slot, given the props to bind. */
+const triggerSlots = { default: ({ props }: { props: Record<string, unknown> }) => h('button', { ...props, class: 'trigger' }, 'trigger') };
+const CASE_SLOTS: Record<string, Record<string, unknown>> = { BsPopover: triggerSlots, BsTooltip: triggerSlots };
+
 const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
 
 /**
@@ -229,7 +242,7 @@ describe('Vue wrapper attribute passthrough — every SFC, at runtime', () => {
   });
 
   it.each(CASES)('$name forwards consumer attributes to $target', ({ name, target }) => {
-    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots });
+    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots: CASE_SLOTS[name] ?? slots });
     const host: HTMLElement = (wrapper.element as Node).parentElement ?? document.body;
     const el = host.querySelector<HTMLElement>(target);
 

@@ -38,6 +38,11 @@ export interface InputField {
    * React stays controlled through the matching `<name>Change` output.
    */
   readonly model?: boolean;
+  /**
+   * Angular only: the input's public name. A structural directive's inputs are named after its selector
+   * (`*bsPopover="'top'; title: 'Hi'"` sets `bsPopover` and `bsPopoverTitle`).
+   */
+  readonly alias?: string;
   readonly doc?: string;
 }
 
@@ -164,6 +169,17 @@ export interface DirectiveManifest {
   readonly inputs?: ComponentManifest['inputs'];
   /** DOM events on the element in Vue and Lit; Angular outputs; React `on<Name>` options. */
   readonly outputs?: ComponentManifest['outputs'];
+  /**
+   * An overlay directive (#458 M6, tooltip and popover): the component of the group its content renders
+   * in. The core's view returns `{ anchor, overlay }`: `anchor` is the element's bag (not scoped: the
+   * element is the consumer's, and only the panel is styled), `overlay` the panel's inputs while it
+   * renders, else null. Every front renders that component into a body host with the consumer's
+   * content as its default slot. Angular: a structural directive (`*bsTooltip`), its template the
+   * content. React: the hook returns `[props, overlay]`, the content an option. Vue: a renderless
+   * component whose default slot receives `{ props }`, the content its `content` slot. Lit: the
+   * directive's second argument, a function returning the content.
+   */
+  readonly overlay?: string;
   readonly names?: DirectiveNames;
   readonly doc?: string;
 }

@@ -13,13 +13,16 @@ import { applyPropBag, type PropBag } from './props.directive';
  *
  *     constructor() { useHostProps(() => this.view().root); }
  */
-export function useHostProps(bag: () => PropBag | null | undefined): void {
-  const element = inject(ElementRef).nativeElement as Element;
+export function useHostProps(bag: () => PropBag | null | undefined, target?: () => Element | null): void {
+  const host = inject(ElementRef).nativeElement as Element;
   const renderer = inject(Renderer2);
   let applied: PropBag = {};
   let classes: string[] = [];
   effect(() => {
+    // `target`: another element than the host (a structural directive's anchor), not placed yet in the constructor.
+    const element = target ? target() : host;
     const { class: className, ...rest } = bag() ?? {};
+    if (!element) return;
     const next = typeof className === 'string' ? className.split(/\s+/).filter(Boolean) : [];
     classes.filter((name) => !next.includes(name)).forEach((name) => renderer.removeClass(element, name));
     next.filter((name) => !classes.includes(name)).forEach((name) => renderer.addClass(element, name));
