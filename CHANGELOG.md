@@ -20,6 +20,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   Bootstrap's own nav and navbar rules style it. **Angular:** import `BsNavbarLinkDirective` from
   `@mintplayer/ng-bootstrap/navbar` with the navbar components, or the links render unstyled. React,
   Vue and Lit need no change. A link inside a dropdown panel stays as it was.
+- **Navbar submenus are popovers once hydrated (issue #452).** A wide navbar's dropdown panel is capped
+  at the viewport's bottom and scrolls again, as before #390, so a submenu panel is a `popover="manual"`
+  shown in the top layer next to its trigger (the `@mintplayer/ui-core/overlay` placement) instead of an
+  absolutely positioned child, and the `data-flip` attribute is gone. CSS that positions a submenu
+  panel inside its parent panel no longer applies. Without JavaScript a submenu opens inline below its
+  trigger.
 - **`bs-spinner` is generated from `@mintplayer/ui-core/spinner` (issue #452), and React, Vue and Lit
   get one too** (`BsSpinner`, `mp-spinner`). `color` is now a theme colour name (`color="primary"`)
   instead of the `Color` enum, and defaults to inheriting the text colour instead of `dark`. New
