@@ -28,8 +28,10 @@ function propertyOptions(input) {
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
-export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
+export function emitLitComponent(model, { generator, runtime, scopedStyles, extension }) {
   const { names } = model;
+  const ext = model.extensions.lit;
+  const has = (name) => !!ext?.exports.has(name);
   const slotNames = model.slots.map((slot) => slot.name);
   // Every slot also takes a render callback, the `<slot>Renderer` property: a composing
   // template passes its content that way, and a scoped slot's callback gets the args.
@@ -50,7 +52,9 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => lines.push(`import { ${list.join(', ')} } from '${module}';`));
-  lines.push(`import { ${[templateFunction(model), ...renderers.filter((r) => r.args).map((r) => `type ${r.args}`)].join(', ')} } from './${model.templateBase}.generated';`, '');
+  lines.push(`import { ${[templateFunction(model), ...renderers.filter((r) => r.args).map((r) => `type ${r.args}`)].join(', ')} } from './${model.templateBase}.generated';`);
+  if (ext) lines.push(`import { ${[...ext.exports].map((n) => `${n} as ext_${n}`).join(', ')} } from '${extension(ext.file)}';`);
+  lines.push('');
 
   lines.push(jsdoc(model.doc).trimEnd(), `export class ${names.lit} extends LitElement {`);
   lines.push(`  static override properties = {`, ...model.inputs.map((input) => `    ${input.name}: ${propertyOptions(input)},`), ...renderers.map((r) => `    ${r.prop}: { attribute: false },`), `  };`, '');
@@ -83,7 +87,9 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles }) {
     lines.push(`  constructor() {`, `    super();`, ...defaults.map((input) => `    this.${input.name} = ${input.default};`), `  }`, '');
   }
   lines.push(`  protected override createRenderRoot(): HTMLElement {`, `    return this;`, `  }`, '');
-  if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, `  }`, '');
+  // An extension's `children(nodes)` sees the default slot's captured content (the nav item marks its link).
+  const withChildren = has('children') ? [`    ext_children(this.#children.slots['default'] ?? []);`] : [];
+  if (slotNames.length) lines.push(`  protected override willUpdate(): void {`, `    this.#children.capture();`, ...withChildren, `  }`, '');
   if (model.queried || model.wrapsContent) {
     lines.push(
       `  /** This element's inputs, as a parent's content query reads them. */`,

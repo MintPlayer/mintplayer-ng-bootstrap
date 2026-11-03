@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapNavPage, bootstrapCardPage } from '@mintplayer/ui-core/bootstrap';
 import { Color } from '@mintplayer/ng-bootstrap';
+import { BsNavComponent, BsNavItemComponent, BsNavLinkDirective } from '@mintplayer/ng-bootstrap/nav';
 import {
   BsCardBodyComponent,
   BsCardComponent,
@@ -59,15 +58,13 @@ function makePlaceholder(width: number, height: number, label: string): string {
     BsGridComponent,
     BsGridRowDirective,
     BsGridColumnDirective,
+    BsNavComponent,
+    BsNavItemComponent,
+    BsNavLinkDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapNavPage, bootstrapCardPage);
-  }
-
   readonly colors = Color;
   readonly colorKeys: ReadonlyArray<keyof typeof Color> = [
     'primary',
@@ -277,14 +274,14 @@ export class CardComponent {
   protected readonly snippetNavTabsHtml = dedent`
     <bs-card>
       <bs-card-header>
-        <ul class="nav nav-tabs card-header-tabs">
+        <bs-nav variant="tabs" [cardHeader]="true">
           @for (page of tabPages; track page) {
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="page === activeTab()" href="#"
+            <bs-nav-item>
+              <a [class.active]="page === activeTab()" href="#"
                  (click)="$event.preventDefault(); activeTab.set(page)">{{ page }}</a>
-            </li>
+            </bs-nav-item>
           }
-        </ul>
+        </bs-nav>
       </bs-card-header>
       <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
@@ -293,36 +290,31 @@ export class CardComponent {
     </bs-card>
   `;
 
-  // Raw <ul class="nav …"> is consumer markup: no component installs the nav
-  // part for it, so the page does (the verbatim variant, in its own chunk).
   protected readonly snippetNavTs = dedent`
     import { Component, signal } from '@angular/core';
-    import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-    import { bootstrapNavPage } from '@mintplayer/ui-core/bootstrap';
+    import { BsNavComponent, BsNavItemComponent, BsNavLinkDirective } from '@mintplayer/ng-bootstrap/nav';
 
-    @Component({ … })
+    @Component({
+      imports: [BsNavComponent, BsNavItemComponent, BsNavLinkDirective, …],
+      …
+    })
     export class MyCardNavDemoComponent {
       readonly tabPages = ['Profile', 'Activity', 'Settings'] as const;
       readonly activeTab = signal<typeof this.tabPages[number]>('Profile');
-
-      constructor() {
-        // The page renders raw .nav markup, so it installs Bootstrap's nav styles itself.
-        useBootstrap(bootstrapNavPage);
-      }
     }
   `;
 
   protected readonly snippetNavPillsHtml = dedent`
     <bs-card>
       <bs-card-header>
-        <ul class="nav nav-pills card-header-pills">
+        <bs-nav variant="pills" [cardHeader]="true">
           @for (page of pillPages; track page) {
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="page === activePill()" href="#"
+            <bs-nav-item>
+              <a [class.active]="page === activePill()" href="#"
                  (click)="$event.preventDefault(); activePill.set(page)">{{ page }}</a>
-            </li>
+            </bs-nav-item>
           }
-        </ul>
+        </bs-nav>
       </bs-card-header>
       <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>

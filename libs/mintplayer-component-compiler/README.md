@@ -27,10 +27,13 @@ when the core changes it. React stays controlled through the matching output.
 picks up these named exports:
 
 - Angular: `hostDirectives`, `providers`, `extendInputs`
-- Vue: `extendInputs`
-- React: `useExtendInputs(inputs, { children })` (a hook; the declared children let it read what the server render must know, like a carousel's slide count)
+- Vue: `extendInputs`, `Children` (a component wrapped around the default slot's content)
+- React: `useExtendInputs(inputs, { children })` (a hook; the declared children let it read what the server render must know, like a carousel's slide count), `Children` (a component wrapped around the default slot's content)
+- Lit: `children(nodes)` (called with the default slot's captured nodes before every render)
 
-`navbar-dropdown.angular.ts` (router-active state) is the example.
+`navbar-dropdown.angular.ts` (router-active state) is the example. `nav-item.{react,vue,lit}.ts` use
+`Children` / `children` to mark the consumer's link a `.nav-link`; Angular does that with a directive
+on the link itself (`BsNavLinkDirective` in `@mintplayer/ng-bootstrap/nav`), as the old nav-link directive did.
 
 ## Nx
 

@@ -907,6 +907,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Added
 
+- **Nav component (issue #452).** `bs-nav` / `bs-nav-item` (Angular), `BsNav` / `BsNavItem` (React,
+  Vue) and `mp-nav` / `mp-nav-item` (Lit), from one source in `@mintplayer/ui-core/nav`. Inputs
+  `variant` (`tabs`, `pills`, `underline`), `fill`, `justified` and `cardHeader`. It ships Bootstrap's
+  nav part, so a page with tabs no longer installs `bootstrapNavPage`. The item's own `<a>` (a router link
+  too) becomes its `.nav-link`: in Angular import `BsNavLinkDirective` with the components. The
+  component compiler gains a `Children` (React, Vue) / `children` (Lit) extension hook for this.
 - **`bs-list-group` `[flush]` input (issue #452).** Applies Bootstrap's `.list-group-flush` (no outer
   borders, no rounded corners), so a list group in a `bs-card` sits edge to edge inside the card's border.
   It replaces the `.card-body { margin: -1px }` the card shipped before #308.

@@ -198,26 +198,27 @@
 
 <bs-card class="mb-3">
     <bs-card-header>
-        <ul class="nav nav-tabs card-header-tabs">
+        <bs-nav variant="tabs" [cardHeader]="true">
             @for (page of tabPages; track page) {
-                <li class="nav-item">
-                    <a class="nav-link" [class.active]="page === activeTab()" href="#"
+                <bs-nav-item>
+                    <a [class.active]="page === activeTab()" href="#"
                        (click)="$event.preventDefault(); activeTab.set(page)">{{ page }}</a>
-                </li>
+                </bs-nav-item>
             }
-        </ul>
+        </bs-nav>
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activeTab() }}</bs-card-title>
-        <bs-card-text>The &lt;ul class="nav nav-tabs card-header-tabs"&gt; carries Bootstrap's own classes; click a tab to switch the body content.</bs-card-text>
+        <bs-card-text>A <code>bs-nav</code> with <code>variant="tabs"</code> in a card header; click a tab to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
 <bs-code-snippet [code]="snippetNavTabsHtml" [language]="'html'"></bs-code-snippet>
 
 <p>
-    The <code>&lt;ul class="nav"&gt;</code> is your own markup, so no component installs Bootstrap's nav
-    styles for it: the page that renders it installs them, and they load with that page only.
+    <code>bs-nav</code> ships Bootstrap's nav styles itself, so they load with the page that renders it.
+    Import <code>BsNavLinkDirective</code> next to the components: it makes each item's own
+    <code>&lt;a&gt;</code> (a <code>routerLink</code> too) the item's <code>.nav-link</code>.
 </p>
 
 <bs-code-snippet [code]="snippetNavTs" [language]="'ts'"></bs-code-snippet>
@@ -226,18 +227,18 @@
 
 <bs-card class="mb-3">
     <bs-card-header>
-        <ul class="nav nav-pills card-header-pills">
+        <bs-nav variant="pills" [cardHeader]="true">
             @for (page of pillPages; track page) {
-                <li class="nav-item">
-                    <a class="nav-link" [class.active]="page === activePill()" href="#"
+                <bs-nav-item>
+                    <a [class.active]="page === activePill()" href="#"
                        (click)="$event.preventDefault(); activePill.set(page)">{{ page }}</a>
-                </li>
+                </bs-nav-item>
             }
-        </ul>
+        </bs-nav>
     </bs-card-header>
     <bs-card-body>
         <bs-card-title>{{ activePill() }}</bs-card-title>
-        <bs-card-text>The nav carries <code>nav-pills card-header-pills</code>; click a pill to switch the body content.</bs-card-text>
+        <bs-card-text>A <code>bs-nav</code> with <code>variant="pills"</code> in a card header; click a pill to switch the body content.</bs-card-text>
     </bs-card-body>
 </bs-card>
 
