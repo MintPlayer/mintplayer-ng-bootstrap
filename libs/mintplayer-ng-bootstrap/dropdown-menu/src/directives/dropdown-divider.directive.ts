@@ -9,6 +9,8 @@ import { Directive } from '@angular/core';
   selector: '[bsDropdownDivider]',
   host: {
     '[class.dropdown-divider]': 'true',
+    // The menu's scope: the dropdown part matches only DOM a component stamped (#452).
+    'data-mps': 'dropdown-menu',
     role: 'separator',
   },
 })

@@ -14,6 +14,9 @@ import {
 /** The consumer names the menu on the element itself; the bag must not overwrite it. */
 const NAMING = new Set(['aria-label', 'aria-labelledby']);
 
+/** The rows a menu owns: the Bootstrap classes its children carry. */
+const ITEM_ROWS = '.dropdown-item, .dropdown-divider, .dropdown-header';
+
 /**
  * `<mp-dropdown-menu>` — the Lit front of the dropdown menu (#437). The
  * element itself is the Bootstrap `.dropdown-menu`, in the light DOM, and its
@@ -57,6 +60,8 @@ export class MpDropdownMenu extends ReactiveElement {
 
   override connectedCallback(): void {
     super.connectedCallback();
+    this.#stampItems();
+    this.#items.observe(this, { childList: true });
     this.#dispose = attachDropdownMenu(this, {
       onSelect: (detail) =>
         this.dispatchEvent(new CustomEvent<DropdownSelectEventDetail>('select', { detail, bubbles: true, composed: true })),
@@ -65,8 +70,23 @@ export class MpDropdownMenu extends ReactiveElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.#items.disconnect();
     this.#dispose?.();
     this.#dispose = null;
+  }
+
+  readonly #items = new MutationObserver(() => this.#stampItems());
+
+  /**
+   * The items are the element's own parts, so it stamps them with its scope:
+   * the dropdown part (`.dropdown-item:where([data-mps])`) matches only DOM a
+   * component stamped (#452). Only the item rows themselves, never what a
+   * consumer puts inside them.
+   */
+  #stampItems(): void {
+    [...this.children]
+      .filter((child) => child.matches(ITEM_ROWS) && child.getAttribute('data-mps') !== DROPDOWN_MENU_SCOPE)
+      .forEach((child) => child.setAttribute('data-mps', DROPDOWN_MENU_SCOPE));
   }
 
   protected override update(changed: Map<string, unknown>): void {

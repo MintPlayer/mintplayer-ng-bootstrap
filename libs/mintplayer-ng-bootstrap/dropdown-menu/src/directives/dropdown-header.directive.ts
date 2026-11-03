@@ -9,6 +9,8 @@ import { Directive } from '@angular/core';
   selector: '[bsDropdownHeader]',
   host: {
     '[class.dropdown-header]': 'true',
+    // The menu's scope: the dropdown part matches only DOM a component stamped (#452).
+    'data-mps': 'dropdown-menu',
   },
 })
 export class BsDropdownHeaderDirective {}

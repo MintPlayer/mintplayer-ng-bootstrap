@@ -3,10 +3,10 @@
 // front stamped are matched and nothing leaks to the page. Consumer-rendered
 // rows are never stamped and keep the page's styles.
 //
-// Bootstrap itself (.form-control, .dropdown-menu, .dropdown-item,
-// .visually-hidden) comes from the page baseline in @layer mp.bootstrap
-// (libs/mintplayer-ui-core/styles/bootstrap.scss); this sheet lands in
-// @layer mp.components above it. Only the configuration partials are imported,
+// Bootstrap itself comes from the parts the fronts install (forms, dropdown;
+// #452) and .visually-hidden from the page baseline, all in @layer mp.bootstrap;
+// this sheet lands in @layer mp.components above them, so a rule here beats
+// Bootstrap's whatever its specificity: override only what Bootstrap lacks. Only the configuration partials are imported,
 // for the Sass variables below: they emit no CSS. A partial that emits rules must
 // never be imported here (PRD #437 C4, _conformance/no-bootstrap-partials-in-scoped).
 @import "node_modules/bootstrap/scss/functions";
@@ -39,7 +39,6 @@ mp-typeahead {
   max-height: 20rem;
   overflow-y: auto;
   display: block;
-  padding-top: 0;
 
   &[hidden] {
     display: none;
@@ -56,12 +55,14 @@ mp-typeahead {
 }
 
 // A thin indeterminate progress line at the top of the open panel while a
-// request is in flight (replaces the Angular-only bs-progress bar).
+// request is in flight (replaces the Angular-only bs-progress bar). It sits in
+// the menu's top padding, which stays Bootstrap's when nothing is loading.
 .mp-typeahead > .dropdown-menu[aria-busy="true"]::before {
   content: "";
   display: block;
   height: 2px;
-  margin-bottom: 0.25rem;
+  margin-top: calc(-1 * var(--bs-dropdown-padding-y));
+  margin-bottom: calc(var(--bs-dropdown-padding-y) - 2px);
   background: linear-gradient(90deg, transparent 0%, var(--bs-primary) 50%, transparent 100%);
   background-size: 50% 100%;
   animation: mp-typeahead-busy 1s linear infinite;
