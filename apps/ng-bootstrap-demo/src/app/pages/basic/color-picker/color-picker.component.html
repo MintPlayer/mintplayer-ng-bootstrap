@@ -15,7 +15,7 @@
         </div>
         <div [md]="6">
             <div bsRow class="mb-3">
-                <div [col]>
+                <div col>
                     <bs-button-group>
                         <button (click)="setColor('#FF0000')" [color]="colors.primary">Set red</button>
                         <button (click)="setColor('#00FF00')" [color]="colors.primary">Set green</button>
@@ -24,22 +24,22 @@
                 </div>
             </div>
             <div bsRow class="mb-3">
-                <div [col]>
+                <div col>
                     <bs-checkbox [(ngModel)]="allowAlpha">Allow alpha</bs-checkbox>
                 </div>
             </div>
             <div bsRow class="mb-3">
-                <div [col]>
+                <div col>
                     <bs-checkbox type="checkbox" [(ngModel)]="screenreaderFriendly">Screenreader-friendly</bs-checkbox>
                 </div>
             </div>
             <div bsRow>
-                <div [col]>
+                <div col>
                     <span class="me-2 align-middle">Native color picker:</span>
                     <input type="color" [(ngModel)]="selectedColor" class="align-middle">
                 </div>
                 @if (allowAlpha()) {
-                    <div [col]>
+                    <div col>
                         <span class="me-2 align-middle">
                             <span>Alpha:</span>
                             &nbsp;

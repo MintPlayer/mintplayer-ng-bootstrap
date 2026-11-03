@@ -1,3 +1,6 @@
 // The grid group's sheet (#458). Bootstrap's container and grid parts style the
-// rows and columns; the group adds nothing of its own yet. bs-grid's host rule
-// moves here when the component is generated (M5).
+// rows and columns; the container needs a block box where its root is a host
+// element (Angular, Lit).
+.grid-host {
+  display: block;
+}

@@ -4,7 +4,8 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective } from '@mintplayer/ng-bootstrap/accordion';
 
 import { StickyFooterComponent } from './sticky-footer.component';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsStickyFooterComponent, BsStickyFooterParentDirective } from '@mintplayer/ng-bootstrap/sticky-footer';
 
 describe('StickyFooterComponent', () => {

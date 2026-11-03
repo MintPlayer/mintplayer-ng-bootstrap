@@ -1,4 +1,13 @@
-import { columnClasses } from './grid.core';
+import { columnClasses, containerClass } from './grid.core';
+
+describe('containerClass', () => {
+  it('is .container up to sm, a breakpoint container above, fluid for never', () => {
+    expect(containerClass('xs')).toBe('container');
+    expect(containerClass('sm')).toBe('container');
+    expect(containerClass('lg')).toBe('container-lg');
+    expect(containerClass('never')).toBe('container-fluid');
+  });
+});
 
 describe('columnClasses', () => {
   it('maps spans per breakpoint, xxs to the unprefixed col-N', () => {

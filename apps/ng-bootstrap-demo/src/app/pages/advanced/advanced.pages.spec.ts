@@ -16,12 +16,11 @@ import {
 } from '@mintplayer/ng-bootstrap/file-upload';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import {
+  BsColFormLabelDirective,
   BsFormComponent,
   BsFormControlDirective,
-  BsFormGroupDirective,
-} from '@mintplayer/ng-bootstrap/form';
+  } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsColFormLabelDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
@@ -231,7 +230,7 @@ const pages: {
     component: LazyLoadedComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       LazyLoadedComponent,
     ],
   },
@@ -248,7 +247,7 @@ const pages: {
     component: LinifyComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipe(BsLinifyPipe),
       MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
@@ -263,7 +262,7 @@ const pages: {
     component: MarkdownComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipes(BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe),
       MarkdownComponent,
@@ -299,7 +298,7 @@ const pages: {
     component: OrdinalNumberComponent,
     imports: () => [
       MockModule(FormsModule),
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsOrdinalNumberPipe),
       OrdinalNumberComponent,
     ],
@@ -341,7 +340,7 @@ const pages: {
     component: SlugifyComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsSlugifyPipe),
       SlugifyComponent,
     ],
@@ -352,7 +351,7 @@ const pages: {
     imports: () => [
       // Mock dependencies
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
       MockPipe(BsSplitStringPipe),
@@ -385,7 +384,7 @@ const pages: {
     component: TrustHtmlComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipe(BsTrustHtmlPipe),
       TrustHtmlComponent,
@@ -404,7 +403,7 @@ const pages: {
     component: WordCountComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsWordCountPipe),
       WordCountComponent,
     ],

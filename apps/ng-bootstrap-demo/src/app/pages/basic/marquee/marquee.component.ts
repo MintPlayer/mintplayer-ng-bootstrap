@@ -13,7 +13,7 @@ import { dedent } from 'ts-dedent';
 export class MarqueeComponent {
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-marquee>Hello world</bs-marquee>
+    <bs-marquee label="Greeting">Hello world</bs-marquee>
   `;
 
   protected readonly snippetBasicTs = dedent`

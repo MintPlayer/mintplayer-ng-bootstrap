@@ -1,7 +1,7 @@
 <h1 class="text-center">Checkbox</h1>
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <h2>Single, template-driven</h2>
             <p class="text-muted">Boolean toggle via <code>[(ngModel)]</code>.</p>
         </div>
@@ -15,14 +15,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="singleTemplateTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="singleTemplateHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Single, reactive</h2>
             <p class="text-muted">Boolean toggle via <code>[formControl]</code>.</p>
         </div>
@@ -36,14 +36,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="singleReactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="singleReactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Switch variant</h2>
             <p class="text-muted">Same form contract as <code>'checkbox'</code>; only the visual differs.</p>
         </div>
@@ -57,14 +57,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="switchTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="switchHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Toggle-button variant</h2>
             <p class="text-muted">Checkbox-style button-toggle (standalone, single boolean).</p>
         </div>
@@ -78,14 +78,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="toggleButtonTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="toggleButtonHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), adjacent, template-driven</h2>
             <p class="text-muted"><code>string[]</code> form value. The group's <code>[name]</code> wins; per-instance <code>[name]</code> on the children is ignored.</p>
         </div>
@@ -103,14 +103,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTemplateTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTemplateHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), adjacent, reactive</h2>
             <p class="text-muted">Same shape via <code>[formControl]</code> bound on the group element.</p>
         </div>
@@ -128,14 +128,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupReactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupReactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), non-adjacent (table row pattern)</h2>
             <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one checkbox. The attribute form <code>bsCheckboxGroup</code> lives on <code>&lt;tbody&gt;</code>; every checkbox below it joins the nearest group.</p>
         </div>
@@ -164,7 +164,7 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTableTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTableHtml" [language]="'html'"></bs-code-snippet>
         </div>

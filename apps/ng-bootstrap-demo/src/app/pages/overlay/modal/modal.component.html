@@ -13,7 +13,7 @@
 
 <bs-grid class="text-center">
     <div bsRow>
-        <div [col] class="text-center">
+        <div col class="text-center">
             <button [color]="colors.primary" (click)="isOpen = true">Show modal</button>
             <bs-modal [(isOpen)]="isOpen">
                 <div *bsModal cdkTrapFocus>
@@ -24,7 +24,7 @@
                         <bs-form>
                             <bs-grid>
                                 <div bsRow class="form-group">
-                                    <div [col] bsColFormLabel>Search for tags</div>
+                                    <div col bsColFormLabel>Search for tags</div>
                                 </div>
                                 <div bsRow class="form-group">
                                     <div [md]="3" [lg]="6">

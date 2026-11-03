@@ -1,7 +1,7 @@
 <h1 class="text-center">Multi-range</h1>
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <h2>Basic 2-thumb (ngModel)</h2>
             <p class="text-muted">Two thumbs over <code>[0, 100]</code>. Block-crossing — value[0] is always lowest.</p>
         </div>
@@ -15,19 +15,19 @@
         </div>
     </div>
     <div bsRow>
-        <div [col] class="text-center">
+        <div col class="text-center">
             <bs-checkbox [(ngModel)]="isDisabled" [type]="'checkbox'">Disabled</bs-checkbox>
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="basicTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="basicHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>3 thumbs</h2>
             <p class="text-muted">Initial value <code>[2, 5, 8]</code> on <code>[0, 10]</code>.</p>
         </div>
@@ -41,14 +41,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="threeThumbTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="threeThumbHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>minDistance</h2>
             <p class="text-muted">Thumbs cannot get closer than <code>20</code> units.</p>
         </div>
@@ -62,14 +62,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="minDistanceTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="minDistanceHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>formatValue (currency)</h2>
             <p class="text-muted">Tooltip + <code>aria-valuetext</code> formatted via <code>(v) =&gt; '$' + v.toFixed(2)</code>.</p>
         </div>
@@ -83,14 +83,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="currencyTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="currencyHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Vertical orientation</h2>
             <p class="text-muted">Min at the bottom (thermometer convention). Tooltip appears to the right.</p>
         </div>
@@ -106,14 +106,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="verticalTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="verticalHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>RTL</h2>
             <p class="text-muted">Wrapper has <code>dir="rtl"</code>; pointer + ←/→ keyboard math invert. Vertical mode unaffected by direction.</p>
         </div>
@@ -129,14 +129,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="rtlTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="rtlHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Disabled</h2>
             <p class="text-muted">Static state — cannot be focused or dragged.</p>
         </div>
@@ -150,14 +150,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="disabledTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="disabledHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Reactive forms (FormControl)</h2>
             <p class="text-muted">Bound via <code>[formControl]</code>. The JSON below reflects the live <code>formControl.value</code>.</p>
         </div>
@@ -171,7 +171,7 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="reactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="reactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>

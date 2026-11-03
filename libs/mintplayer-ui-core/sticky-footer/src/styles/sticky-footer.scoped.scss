@@ -1,0 +1,12 @@
+// The sticky footer (#458 M5): a flex column parent and a footer that takes
+// the free space above itself. No measuring, no rule on <html>.
+.sticky-footer-parent {
+  display: flex;
+  flex-direction: column;
+  min-height: var(--mp-sticky-footer-min-height, 100dvh);
+}
+
+.sticky-footer {
+  display: block;
+  margin-top: auto;
+}

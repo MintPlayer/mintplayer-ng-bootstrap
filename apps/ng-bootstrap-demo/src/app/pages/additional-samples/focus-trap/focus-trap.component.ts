@@ -7,8 +7,8 @@ import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCloseComponent } from '@mintplayer/ng-bootstrap/close';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
-import { BsFormComponent, BsFormControlDirective, BsFormGroupDirective } from '@mintplayer/ng-bootstrap/form';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective, BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { dedent } from 'ts-dedent';
@@ -17,7 +17,7 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-focus-trap',
   templateUrl: './focus-trap.component.html',
   styleUrls: ['./focus-trap.component.scss'],
-  imports: [A11yModule, BsForDirective, BsFormComponent, BsFormControlDirective, BsFormGroupDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective, BsCloseComponent, BsCodeSnippetComponent, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
+  imports: [A11yModule, BsForDirective, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsColFormLabelDirective, BsCloseComponent, BsCodeSnippetComponent, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FocusTrapComponent {
@@ -25,7 +25,6 @@ export class FocusTrapComponent {
     // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
     useBootstrap(bootstrapModalPage);
   }
-
 
   isOpen = false;
   colors = Color;

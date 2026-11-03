@@ -14,6 +14,18 @@ const span = (breakpoint: string) => ({
 export default {
   group: 'grid',
   style: { scope: 'grid', bootstrap: ['containers', 'grid'] },
+  components: {
+    grid: {
+      core: 'gridCore',
+      doc: "Bootstrap's container around the page's rows: full width below `stopFullWidthAt`, fixed widths from it up (`never`: always full width).",
+      inputs: {
+        type: 'GridInputs',
+        fields: {
+          stopFullWidthAt: { default: "'sm'", kind: 'string' },
+        },
+      },
+    },
+  },
   directives: {
     row: {
       core: 'gridRowCore',

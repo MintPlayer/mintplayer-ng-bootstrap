@@ -16,6 +16,30 @@ export function columnClasses(inputs: GridColumnInputs): string | null {
   );
 }
 
+/** Where a container stops being full width: a Bootstrap breakpoint, or `never` (`.container-fluid`). */
+export type ContainerBreakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'never';
+
+export interface GridInputs {
+  stopFullWidthAt: ContainerBreakpoint;
+}
+
+/** Bootstrap's container class: `.container` is full width below `sm` already, `xs` is the same box. */
+export function containerClass(stopFullWidthAt: string | null | undefined): string {
+  switch (stopFullWidthAt) {
+    case 'never': return 'container-fluid';
+    case 'md': case 'lg': case 'xl': case 'xxl': return `container-${stopFullWidthAt}`;
+    default: return 'container';
+  }
+}
+
+/**
+ * `bs-grid` (#458 M5): Bootstrap's container around the consumer's rows. No-JS
+ * tier 2, presentational.
+ */
+export const gridCore = defineCore<GridInputs, Record<never, never>, { root: CoreBag }>({
+  view: ({ inputs }) => ({ root: { class: `grid-host ${containerClass(inputs.stopFullWidthAt)}` } }),
+});
+
 /** `.row` on the consumer's element (`bsRow`): a directive core, its view is the element's bag (#458). */
 export const gridRowCore = defineCore<Record<never, never>, Record<never, never>, CoreBag>({
   view: () => ({ class: 'row' }),

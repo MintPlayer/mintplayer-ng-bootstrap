@@ -12,7 +12,8 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 - **Presentational components are generated from `@mintplayer/ui-core` (issue #458), and React, Vue
   and Lit get each of them too.** Badge, close, button group, alert, breadcrumb, list group,
-  progress, placeholder and table. Colours are theme colour names (`color="warning"`) instead of the
+  progress, placeholder, table, grid, navbar toggler, marquee, parallax, sticky footer, form,
+  floating label and range. Colours are theme colour names (`color="warning"`) instead of the
   `Color` enum. Renames:
   - **Badge:** `type` → `color`.
   - **Close, button group:** `ariaLabel` → `label`.
@@ -26,6 +27,22 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `data-placeholder-field` attribute.
   - **Table:** `isResponsive` → `responsive`; `border` → `bordered`; `ariaRowCount` is gone, set
     `aria-rowcount` on the component and it lands on the `<table>`.
+  - **Grid:** `bs-grid` carries the container class on itself (no inner div).
+  - **Navbar toggler:** `[(state)]` → `[(open)]`; `ariaLabel` → `label`. The button is disabled
+    until hydrated.
+  - **Marquee:** `ariaLabel` → `label`; the pause button's text is `pauseText` / `resumeText` and
+    it no longer reports `aria-pressed`.
+  - **Sticky footer:** pure CSS now. The parent is a flex column at least
+    `--mp-sticky-footer-min-height` tall (default `100dvh`); lower it when a navbar takes part of
+    the viewport. The global `html { position: relative; min-height: 100% }` rule is gone.
+  - **Form:** `bsFormGroup` is removed (Bootstrap 5 has no `.form-group`); `BsColFormLabelDirective`
+    moved from `@mintplayer/ng-bootstrap/grid` to `@mintplayer/ng-bootstrap/form`; `method` is
+    `GET` or `POST`; with an `action` the browser now submits natively.
+  - **Floating label:** no longer requires a surrounding `bs-form`. Write the control first, then
+    its `<label>` (Bootstrap's order).
+  - **Range:** `ariaLabel` → `label`; new two-way `value` and `disabled` inputs.
+  - Each of these is available in React, Vue and Lit too (`BsMarquee`, `mp-marquee`, …); the
+    directives as `useBsFormControl` / `vBsFormControl` / `bsFormControl` and so on.
 - **`collectScopedStyles` collects per render (issue #452).** It now takes the render and returns
   `{ result, styles }`: `await collectScopedStyles(() => renderApp(url))`. It used to return every sheet the
   process had ever installed, so a page's head carried the CSS of components only other pages render. A

@@ -62,6 +62,12 @@ const TypeaheadPage    = lazyNamed(() => import('./pages/TypeaheadPage'),    'Ty
 const DropdownMenuPage = lazyNamed(() => import('./pages/DropdownMenuPage'), 'DropdownMenuPage');
 const NavbarPage       = lazyNamed(() => import('./pages/NavbarPage'),       'NavbarPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
+const FloatingLabelsPage = lazyNamed(() => import('./pages/forms/FloatingLabelsPage'), 'FloatingLabelsPage');
+const RangePage        = lazyNamed(() => import('./pages/forms/RangePage'),          'RangePage');
+const MarqueePage      = lazyNamed(() => import('./pages/MarqueePage'),              'MarqueePage');
+const ToggleButtonsPage = lazyNamed(() => import('./pages/advanced/ToggleButtonsPage'), 'ToggleButtonsPage');
+const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage'),    'ParallaxPage');
+const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
@@ -106,6 +112,9 @@ export function App() {
           <Route path="/basic/forms/select" element={<SelectPage />} />
           <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/forms/multi-range" element={<MultiRangePage />} />
+          <Route path="/basic/forms/floating-labels" element={<FloatingLabelsPage />} />
+          <Route path="/basic/forms/range" element={<RangePage />} />
+          <Route path="/basic/marquee" element={<MarqueePage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
@@ -119,6 +128,9 @@ export function App() {
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/signature-pad" element={<SignaturePadPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
+          <Route path="/advanced/toggle-buttons" element={<ToggleButtonsPage />} />
+          <Route path="/advanced/parallax" element={<ParallaxPage />} />
+          <Route path="/advanced/sticky-footer" element={<StickyFooterPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/charts" element={<ChartsPage />} />

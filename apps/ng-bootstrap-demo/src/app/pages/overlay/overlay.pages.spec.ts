@@ -17,11 +17,11 @@ import {
   BsDropdownToggleDirective,
 } from '@mintplayer/ng-bootstrap/dropdown';
 import {
-  BsColFormLabelDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
 import {
   BsModalBodyDirective,

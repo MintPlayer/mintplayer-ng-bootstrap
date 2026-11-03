@@ -1,0 +1,5 @@
+// The form group (#458 M5). Bootstrap's forms part styles everything inside the
+// stamped <form> (its anchor); the host only needs a block box.
+.form-host {
+  display: block;
+}

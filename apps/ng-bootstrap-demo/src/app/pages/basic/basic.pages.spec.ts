@@ -30,12 +30,11 @@ import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import {
+  BsColFormLabelDirective,
   BsFormComponent,
   BsFormControlDirective,
-  BsFormGroupDirective,
-} from '@mintplayer/ng-bootstrap/form';
+  } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsColFormLabelDirective,
   BsGridColDirective,
   BsGridColumnDirective,
   BsGridComponent,
@@ -109,7 +108,7 @@ const pages: {
     imports: () => [
       NoopAnimationsModule,
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsAlertComponent),
       MockComponent(BsInputGroupComponent),
       MockDirective(BsButtonTypeDirective),
@@ -207,7 +206,7 @@ const pages: {
     name: 'FloatingLabelsComponent',
     component: FloatingLabelsComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsFloatingLabelComponent),
       FloatingLabelsComponent,
     ],
@@ -217,7 +216,7 @@ const pages: {
     component: ForDirectiveComponent,
     imports: () => [
       MockDirective(BsForDirective),
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       ForDirectiveComponent,
     ],
@@ -244,7 +243,7 @@ const pages: {
     name: 'InputGroupComponent',
     component: InputGroupComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockDirective(BsButtonTypeDirective),
       MockComponent(BsInputGroupComponent),
       InputGroupComponent,
@@ -357,7 +356,7 @@ const pages: {
     name: 'TimepickerComponent',
     component: TimepickerComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(BsTimepickerComponent),
       TimepickerComponent,

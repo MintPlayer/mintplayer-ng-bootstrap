@@ -609,6 +609,27 @@ only.
    - **Table.** A `table-host` around a real `<table mp-attrs>`; the consumer's `aria-rowcount`
      and friends land on the table, so the `ariaRowCount` input is gone. `isResponsive` →
      `responsive`, `border` → `bordered`.
+   - **Grid.** `bs-grid` joins the M2 grid group as a component: the container class is on its
+     root (the host in Angular and Lit) instead of an inner div.
+   - **Navbar toggler.** A real button, `open` two-way (was `state`), named by `label`, with
+     `aria-expanded` / `aria-controls`; disabled until hydrated (tier 2).
+   - **Marquee.** `role="marquee"` named by `label`; the pause button's text is localisable
+     (`pauseText` / `resumeText`) and, since it changes, the button reports no `aria-pressed`.
+     Hover and focus pause it too.
+   - **Parallax.** Image and height ride custom properties on an inner band (the URL quoted by
+     `cssUrl`); reduced motion lets the background scroll.
+   - **Sticky footer.** Pure CSS: the `sticky-footer-parent` directive makes a flex column at
+     least `--mp-sticky-footer-min-height` (default `100dvh`) tall and the footer takes
+     `margin-top: auto`. The ResizeObserver, the inline margin and the `::ng-deep html` rule are
+     gone (an `html` rule cannot be anchored on a stamped element).
+   - **Form, floating labels, range** (three groups, each installing `forms`). `bs-form`'s
+     stamped `<form>` is the forms anchor; the `form-control` directive keeps its Angular
+     selector (every input/textarea in a `bs-form`) and `col-form-label` moved here from grid.
+     `bsFormGroup` is gone (`.form-group` is a Bootstrap 4 class with no rule in 5). Without an
+     `action` the native submit is cancelled; with one the browser submits. The floating label no
+     longer needs a `bs-form` (`.form-floating` is an anchor) and points a label without `for`
+     at its control. The range is a native slider with a two-way `value`, `disabled` and
+     `label`; Angular keeps a CVA (`range.angular.ts`).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the
    unified dropdown with the navbar (§4.5).
 7. **#455 tier D and the calendar fold:** color-picker, rating, resizable, priority-nav, scrollspy,

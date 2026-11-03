@@ -12,25 +12,25 @@
 
 <bs-form>
     <bs-grid>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtFirstName">First name</label>
             <div [md]="6">
                 <input type="text" #txtFirstName>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtLastName">Last name</label>
             <div [md]="6">
                 <input type="text" #txtLastName>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtBirthday">Birthday</label>
             <div [md]="6">
                 <input type="date" #txtBirthday>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <div [md]="6" bsColFormLabel>Address</div>
             <div [md]="6" class="text-center">
                 <button (click)="isOpen = true" [color]="colors.primary">Specify address</button>
@@ -47,25 +47,25 @@
         <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
             <bs-form class="w-100">
                 <bs-grid>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtStreet">Street</label>
                         <div [md]="6">
                             <input type="text" autofocus #txtStreet>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtNumber">Number</label>
                         <div [md]="6">
                             <input type="number" #txtNumber>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtPostalCode">Postal code</label>
                         <div [md]="6">
                             <input type="number" #txtPostalCode>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup>
+                    <div bsRow>
                         <label [md]="6" bsColFormLabel [bsFor]="txtCity">City</label>
                         <div [md]="6">
                             <input type="text" #txtCity>

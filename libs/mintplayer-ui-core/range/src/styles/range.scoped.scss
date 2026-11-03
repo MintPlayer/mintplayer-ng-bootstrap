@@ -1,0 +1,5 @@
+// The range (#458 M5). Bootstrap's forms part styles .form-range; the host
+// only needs a block box.
+.range-host {
+  display: block;
+}

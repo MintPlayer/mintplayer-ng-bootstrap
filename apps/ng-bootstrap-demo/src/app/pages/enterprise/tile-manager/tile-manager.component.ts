@@ -162,7 +162,7 @@ export class TileManagerComponent {
       // One layout per column count; a commit writes the full next record.
       readonly layouts = signal<TileLayouts>(JSON.parse(localStorage.getItem('dashboard') ?? '{}'));
 
-      // The slots receive the tile object passed in `tiles`.
+      // The slots receive the tile object passed in tiles.
       panel(tile: MintTile): DashboardTile {
         return tile as DashboardTile;
       }

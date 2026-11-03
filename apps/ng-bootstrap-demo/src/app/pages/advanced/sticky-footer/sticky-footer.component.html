@@ -4,7 +4,9 @@
     Use <code>bsStickyFooterParent</code> on the outer wrapper and
     <code>bs-sticky-footer</code> on the footer to keep the footer pinned to the bottom of
     the viewport when content is short, and to flow naturally when content is taller than
-    the screen.
+    the screen. It is pure CSS: the parent becomes a flex column at least
+    <code>--mp-sticky-footer-min-height</code> tall (default <code>100dvh</code>; lower it when a navbar
+    already takes part of the viewport) and the footer takes the free space above itself.
 </p>
 
 <h2>Basic usage</h2>
@@ -19,7 +21,6 @@
         }
     </bs-accordion>
 
-    <!-- Inside the parent: the footer sits on the document's last N pixels, and only the parent reserves them. -->
     <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
     <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
 

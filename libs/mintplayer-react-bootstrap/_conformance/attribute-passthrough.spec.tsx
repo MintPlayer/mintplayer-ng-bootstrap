@@ -72,6 +72,14 @@ import { BsAlert } from '@mintplayer/react-bootstrap/alert';
 import { BsBadge } from '@mintplayer/react-bootstrap/badge';
 import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
 import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsGrid } from '@mintplayer/react-bootstrap/grid';
+import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
+import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
+import { BsForm } from '@mintplayer/react-bootstrap/form';
+import { BsFloatingLabel } from '@mintplayer/react-bootstrap/floating-labels';
+import { BsRange } from '@mintplayer/react-bootstrap/range';
 import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
 import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
 import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
@@ -176,6 +184,14 @@ const CASES: Case[] = [
   bare('BsBadge', 'span.badge', BsBadge),
   bare('BsPlaceholder', 'div.placeholder-region', BsPlaceholder),
   bare('BsTable', 'table.table', BsTable),
+  bare('BsGrid', 'div.grid-host', BsGrid),
+  bare('BsNavbarToggler', 'button.navbar-toggler', BsNavbarToggler),
+  { ...bare('BsMarquee', 'span.marquee', BsMarquee), fixedRole: 'marquee' },
+  bare('BsParallax', 'div.parallax-host', BsParallax),
+  bare('BsStickyFooter', 'footer', BsStickyFooter),
+  bare('BsForm', 'form', BsForm),
+  bare('BsFloatingLabel', 'div.form-floating', BsFloatingLabel),
+  bare('BsRange', 'input.form-range', BsRange),
   { ...bare('BsListGroup', 'div.list-group', BsListGroup), fixedRole: 'list' },
   { ...bare('BsListGroupItem', 'div.list-group-item', BsListGroupItem), fixedRole: 'listitem' },
   bare('BsProgress', 'div.progress-host', BsProgress),

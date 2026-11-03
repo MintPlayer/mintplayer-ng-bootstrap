@@ -17,6 +17,14 @@ import { BsAlert } from '@mintplayer/react-bootstrap/alert';
 import { BsBadge } from '@mintplayer/react-bootstrap/badge';
 import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
 import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsGrid } from '@mintplayer/react-bootstrap/grid';
+import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
+import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
+import { BsForm } from '@mintplayer/react-bootstrap/form';
+import { BsFloatingLabel } from '@mintplayer/react-bootstrap/floating-labels';
+import { BsRange } from '@mintplayer/react-bootstrap/range';
 import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
 import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
 import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
@@ -109,6 +117,14 @@ export const everyWrapperProbes = [
   <BsBadge role="none" id="x" tabIndex={-1} />,
   <BsPlaceholder role="none" id="x" tabIndex={-1} />,
   <BsTable role="none" id="x" tabIndex={-1} />,
+  <BsGrid role="none" id="x" tabIndex={-1} />,
+  <BsNavbarToggler role="none" id="x" tabIndex={-1} />,
+  <BsMarquee role="none" id="x" tabIndex={-1} />,
+  <BsParallax role="none" id="x" tabIndex={-1} />,
+  <BsStickyFooter role="none" id="x" tabIndex={-1} />,
+  <BsForm role="none" id="x" tabIndex={-1} />,
+  <BsFloatingLabel role="none" id="x" tabIndex={-1} />,
+  <BsRange role="none" id="x" tabIndex={-1} />,
   <BsListGroup role="none" id="x" tabIndex={-1} />,
   <BsListGroupItem role="none" id="x" tabIndex={-1} />,
   <BsProgress role="none" id="x" tabIndex={-1} />,

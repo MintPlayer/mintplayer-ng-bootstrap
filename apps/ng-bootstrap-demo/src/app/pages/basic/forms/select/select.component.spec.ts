@@ -4,7 +4,8 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 
 import { JsonPipe } from '@angular/common';
 import { SelectComponent } from './select.component';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 
