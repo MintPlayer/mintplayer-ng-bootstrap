@@ -69,8 +69,6 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     // (the core owns role and the IDREFs); the runtime sweep below pins where
     // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
     const FILTERED_FORWARDING = [
-      '../tab-control/src/BsTabControl.vue',
-      '../tab-control/src/BsTabPage.vue',
       '../tile-manager/src/BsTileManager.vue',
     ];
     const offenders = Object.entries(SFC_SOURCES)
@@ -156,8 +154,6 @@ const TARGETS: Record<string, string> = {
   BsSplitter: 'div.splitter',
   BsSplitterPanel: 'div.splitter-panel',
   BsTabControl: 'div.tab-control',
-  // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
-  BsTabPage: 'div.tab-pane',
   BsThemeToggle: 'span.theme-toggle',
   BsTileManager: '.mp-tile-manager',
   BsTimeline: 'div.timeline',
@@ -179,13 +175,6 @@ const TARGETS: Record<string, string> = {
 const slots = { default: () => h('span', { class: 'slot-content' }, 'content') };
 
 const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
-
-/** Marker SFCs that render nothing alone: mounted inside their parent, with the probe on the marker. */
-const COMPOSED: Record<string, () => Component> = {
-  BsTabPage: () => ({
-    render: () => h(SFC_COMPONENTS['BsTabControl'], null, { default: () => [h(SFC_COMPONENTS['BsTabPage'], PROBE, slots)] }),
-  }),
-};
 
 /**
  * Where the label lands when the target is a box around the role-bearing node:
@@ -225,9 +214,7 @@ describe('Vue wrapper attribute passthrough — every SFC, at runtime', () => {
   });
 
   it.each(CASES)('$name forwards consumer attributes to $target', ({ name, target }) => {
-    const wrapper = COMPOSED[name]
-      ? mountWrapper(COMPOSED[name]())
-      : mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots });
+    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots });
     const host: HTMLElement = (wrapper.element as Node).parentElement ?? document.body;
     const el = host.querySelector<HTMLElement>(target);
 

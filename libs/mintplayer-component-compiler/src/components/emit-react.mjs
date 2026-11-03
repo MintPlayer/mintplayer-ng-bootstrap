@@ -27,7 +27,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `import * as React from 'react';`,
     `import { forwardRef, useImperativeHandle, useRef } from 'react';`,
     `import { installLightStyles } from '${scopedStyles}';`,
-    `import { ${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
+    `import { ${model.content.some((c) => c.lends) ? 'lentSlots, ' : ''}${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core, ...(model.provides ? [model.provides] : [])], types: [model.inputsType].filter(Boolean) }),
   ];
   styleImports(model)
@@ -79,9 +79,11 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   lines.push(`  { ${params.join(', ')} },`, `  ref,`, `) {`);
   if (model.style) lines.push(`  ${styleInstall(model, 'installLightStyles')}`);
   lines.push(`  const rootRef = useRef<${element}>(null);`, `  useImperativeHandle(ref, () => rootRef.current as ${element});`);
-  model.content.forEach(({ input, child, within }) =>
-    lines.push(`  const content_${input} = useContent(children, { type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),
-  );
+  // A declaration's slot props are not inputs: the template renders them (<content-slot>).
+  const query = ({ child, within, lends }) =>
+    `{ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''}${lends ? `, slots: [${child.slots.map((s) => `'${s.name}'`).join(', ')}]` : ''} }`;
+  model.content.forEach((c) => lines.push(`  const content_${c.input} = useContent(children, ${query(c)});`));
+  model.content.filter((c) => c.lends).forEach((c) => lines.push(`  const lent_${c.input} = lentSlots(children, ${query(c)});`));
   const inputsExpr = has('useExtendInputs') ? `ext_useExtendInputs(${inputsObject}, { children })` : inputsObject;
   lines.push(
     `  const core = useCore(${model.core}, ${inputsExpr}, {`,
@@ -91,7 +93,8 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `    emit: ${emit},`,
     `  });`,
   );
-  const slotsProp = named.length ? ` slots={{ ${named.map((s) => s.name).join(', ')} }}` : '';
+  const lent = model.content.filter((c) => c.lends);
+  const slotsProp = (named.length ? ` slots={{ ${named.map((s) => s.name).join(', ')} }}` : '') + (lent.length ? ` contentSlots={{ ${lent.map((c) => `${c.input}: lent_${c.input}`).join(', ')} }}` : '');
   // An extension's `Children` component wraps the default slot's content (the nav item marks its link).
   // createElement: JSX would read the lowercase `ext_` alias as an intrinsic tag.
   const content = has('Children') ? '{React.createElement(ext_Children, null, children)}' : '{children}';

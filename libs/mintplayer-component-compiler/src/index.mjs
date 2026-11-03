@@ -29,12 +29,14 @@ import { emitReactComponent } from './components/emit-react.mjs';
 import { emitVueComponent } from './components/emit-vue.mjs';
 import { emitLitComponent } from './components/emit-lit.mjs';
 import { emitAngularDirective, emitLitDirective, emitReactDirective, emitVueDirective } from './components/emit-directives.mjs';
+import { emitAngularDeclaration, emitLitDeclaration, emitReactDeclaration, emitVueDeclaration } from './components/emit-declarations.mjs';
 
 export { readSource, groupPartials, stampScope, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
 export { groupStyle } from './components/model.mjs';
 export { emitAngular, emitReact, emitVue, emitLit };
 export { emitAngularComponent, emitReactComponent, emitVueComponent, emitLitComponent, componentModels };
 export { emitAngularDirective, emitReactDirective, emitVueDirective, emitLitDirective };
+export { emitAngularDeclaration, emitReactDeclaration, emitVueDeclaration, emitLitDeclaration };
 
 /** A generated Angular component holds its template's props in one `props` signal, so a prop never clashes with an input. */
 const ANGULAR_PROP = (name) => `props().${name}`;
@@ -49,6 +51,7 @@ export const FRONTS = {
     template: (src, options) => emitAngular(src, options).text,
     component: emitAngularComponent,
     directive: emitAngularDirective,
+    declaration: emitAngularDeclaration,
     barrel: namedBarrel,
   },
   react: {
@@ -56,6 +59,7 @@ export const FRONTS = {
     template: emitReact,
     component: emitReactComponent,
     directive: emitReactDirective,
+    declaration: emitReactDeclaration,
     barrel: namedBarrel,
   },
   vue: {
@@ -63,6 +67,7 @@ export const FRONTS = {
     template: emitVue,
     component: emitVueComponent,
     directive: emitVueDirective,
+    declaration: emitVueDeclaration,
     barrel: (out) => `export { default as ${out.exports[0]} } from './${out.file}';`,
   },
   lit: {
@@ -70,6 +75,7 @@ export const FRONTS = {
     template: emitLit,
     component: emitLitComponent,
     directive: emitLitDirective,
+    declaration: emitLitDeclaration,
     barrel: namedBarrel,
   },
 };
@@ -290,6 +296,8 @@ function entryOutputs(cwd, described, registry, name, front) {
     const outputs = models.map((model) =>
       model.kind === 'directive'
         ? { ...FRONTS[name].directive(model, options), barrel: namedBarrel }
+        : model.kind === 'declaration'
+        ? { ...FRONTS[name].declaration(model, options), barrel: namedBarrel }
         : { ...FRONTS[name].component({ ...model, components }, options), barrel: FRONTS[name].barrel },
     );
     outputs.forEach((out) => files.set(join(outDir, out.file), out.text));
@@ -324,9 +332,9 @@ export async function compileComponents(config, { cwd = process.cwd(), check = f
   const others = await Promise.all(
     (await registryConfigs(config, cwd)).map(async (other) => Promise.all(findEntries(other, cwd).map((entry) => describeEntry(other, cwd, entry)))),
   );
-  // Only elements compose; a directive sits on an element the consumer renders.
+  // Only elements compose: a directive sits on an element the consumer renders, a declaration only in a parent's content.
   const registry = [...own, ...others.flat()].flatMap(({ config: from, entry, models }) =>
-    models.filter((model) => model.kind !== 'directive').map((model) => ({
+    models.filter((model) => !model.kind).map((model) => ({
       config: from,
       entry: entry.entry,
       element: model.element,

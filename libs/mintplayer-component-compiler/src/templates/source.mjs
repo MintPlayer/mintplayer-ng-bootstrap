@@ -428,11 +428,48 @@ export function teleportTarget(src, el) {
   return prop.exp.content;
 }
 
+/**
+ * `<content-slot query="pages" name="header" :index="i" />` (#458 Q15): renders
+ * the `name` slot (default: the default slot) of the `index`-th child that the
+ * component's content query `query` collected. The child is a manifest
+ * declaration: it renders nothing itself and lends its slots to the parent, so
+ * the parent places rich consumer content (a tab's header, a page's body) inside
+ * its own markup, on the server too. Angular renders the child's TemplateRef,
+ * React its prop node, Vue its slot function and Lit its `slot=` children.
+ * Returns null for any other element.
+ */
+export const CONTENT_SLOT_TAG = 'content-slot';
+
+export function contentSlotUse(src, el) {
+  if (el.type !== NODE.ELEMENT || el.tag !== CONTENT_SLOT_TAG) return null;
+  const usage = `<${CONTENT_SLOT_TAG}> takes query="<content query>", :index="<expression>" and an optional name="<slot>" (put v-if / v-for on a <template> around it)`;
+  const query = attribute(el, 'query')?.value?.content;
+  const named = attribute(el, 'name');
+  const name = named?.value?.content ?? 'default';
+  const index = el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'index')?.exp?.content;
+  if (!query || !index || el.props.length !== (named ? 3 : 2)) throw new TemplateError(src.file, el, usage);
+  if (![query, name].every((id) => /^[A-Za-z_$][\w$]*$/.test(id))) throw new TemplateError(src.file, el, usage);
+  if (meaningful(el.children).length) throw new TemplateError(src.file, el, `<${CONTENT_SLOT_TAG}> takes no content`);
+  return { query, name, index };
+}
+
+/** Every `<content-slot>` a template renders. */
+export function contentSlotUses(src) {
+  const uses = [];
+  const walk = (node) => {
+    const use = node.type === NODE.ELEMENT ? contentSlotUse(src, node) : null;
+    if (use) uses.push(use);
+    (node.children ?? []).forEach(walk);
+  };
+  walk(src.root);
+  return uses;
+}
+
 /** Every component tag (a partial or a composed element) in a template. */
 export function componentTags(src) {
   const tags = [];
   const walk = (node) => {
-    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport') tags.push(node);
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport' && node.tag !== CONTENT_SLOT_TAG) tags.push(node);
     (node.children ?? []).forEach(walk);
   };
   walk(src.root);
@@ -507,6 +544,7 @@ export function groupPartials(sources, components) {
   });
   partials.forEach((src) => {
     if (src.slots.members.some((s) => s.name === 'default')) throw new Error(`${src.file}: a partial takes named slots only`);
+    if (contentSlotUses(src).length) throw new Error(`${src.file}: a partial cannot render a <${CONTENT_SLOT_TAG}>; render it from the component's own template`);
     const marked = [];
     const walk = (node) => {
       if (node.type === NODE.ELEMENT && [HOST_MARKER, ATTRS_MARKER, 'ref'].some((name) => attribute(node, name))) marked.push(node);

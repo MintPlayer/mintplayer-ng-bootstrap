@@ -3,7 +3,10 @@
 // `mp-attrs`), dropping React-only select seeds, and routing the consumer's
 // attributes to the `mp-attrs` element when that is not the root.
 import { basename } from 'node:path';
-import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
+import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, NODE, PROP, TemplateError, attrsTarget, componentTags, composedUse, contentSlotUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
+
+/** The Vue slot-name prefix of one content query's lent slots; the component emitter names them alike. */
+export const contentSlotPrefix = (query) => `content:${query}:`;
 
 const walk = (node, visit) => {
   visit(node);
@@ -57,6 +60,21 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
     edits.push({ start: at, end: at, text: ` v-if="${to}"` });
   });
 
+  // A queried child's lent slot arrives as a slot of its own, named by query, position and
+  // slot (`content:pages:0:header`): the component forwards each child's slot functions.
+  let lends = false;
+  walk(src.root, (node) => {
+    const lent = node.type === NODE.ELEMENT ? contentSlotUse(src, node) : null;
+    if (!lent) return;
+    lends = true;
+    const name = `'${contentSlotPrefix(lent.query)}' + (${lent.index}) + ':${lent.name}'`;
+    edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: `<slot :name="${name}" />` });
+  });
+  // Those names are computed, so the declared slots gain an index signature for them.
+  const LENT_SLOTS = 'Record<string, (() => unknown) | undefined>';
+  const slotsAt = lends ? text.indexOf('defineSlots<') : -1;
+  if (slotsAt >= 0) edits.push({ start: slotsAt + 'defineSlots<'.length, end: slotsAt + 'defineSlots<'.length, text: `${LENT_SLOTS} & ` });
+
   // A partial call forwards this template's slots into the partial, which declares a subset of them.
   // A composed child is its Vue component, under its component name: an output listens
   // to the lowercased event the child emits, v-model:x binds a ModelBinding's value and set.
@@ -102,6 +120,7 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
   const { root } = rootElement(src);
   const target = attrsTarget(src, root);
   let script = composedImports + (bodyTeleport ? `import { MpBodyTeleport } from '${runtime}';\n` : '');
+  if (lends && slotsAt < 0) script += `defineSlots<${LENT_SLOTS}>();\n`;
   // A partial imports its generated sibling; one that calls itself imports itself, since
   // Vue would name it after its generated file.
   if (partialNames(src).has(src.name)) script += `import ${src.name} from './${basename(src.file).replace(/\.vue$/, '')}.generated.vue';\n`;

@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, contentSlotUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -24,7 +24,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
     .map((s) => `${s.name}?: React.ReactNode${s.paramType ? ` | ((args: ${s.paramType}) => React.ReactNode)` : ''};`);
   const refMembers = [...ctx.refs].map(([r, tag]) => `${r}Ref?: React.Ref<HTMLElementTagNameMap['${tag}']>;`);
   const propNames = [...src.propNames];
-  const destructure = [...propNames, 'slots = {}', 'children', 'className', 'attrs', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
+  const destructure = [...propNames, 'slots = {}', ...(ctx.uses.has('contentSlots') ? ['contentSlots = {}'] : []), 'children', 'className', 'attrs', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
 
   const helpers = [];
   if (ctx.uses.has('renderSlot')) {
@@ -48,6 +48,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
     '',
     `export type ${name}Props = ${src.props.text} & {`,
     `  slots?: { ${slotMembers.join(' ')} };`,
+    ...(ctx.uses.has('contentSlots') ? ["  /** Each content query's children's lent slots, by query and position (<content-slot>). */", '  contentSlots?: Partial<Record<string, ReadonlyArray<Partial<Record<string, React.ReactNode>>>>>;'] : []),
     '  children?: React.ReactNode;',
     '  /** Merged onto the root element after the bag. */',
     '  className?: string;',
@@ -122,6 +123,12 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}{(${target}) ? createPortal(${fragment(ctx, children(ctx, el.children, depth + 1), depth)}, ${target}) : null}\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) {
+    // A queried child's lent slot: the node its element carried as a prop (or its children).
+    ctx.uses.add('contentSlots');
+    return `${pad(depth)}{contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? null}\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const composed = composedUse(ctx.src, el, ctx.components);

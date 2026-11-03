@@ -44,7 +44,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
   // Content queries: a parent reads each queried child's `contentChild`, which carries its wrapper's `contentInputs`.
   if (model.content.length) angularImports.add('contentChildren');
-  if (model.queried || model.wrapsContent) angularImports.add('computed');
+  if (model.queried || model.wrapsContent || model.content.some((c) => c.lends)) angularImports.add('computed');
   const contentImports = [...model.content.map(({ child }) => child), ...(model.queried?.within ? [model.queried.within] : [])].filter(
     (other, i, all) => other !== model && all.indexOf(other) === i,
   );
@@ -152,7 +152,23 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
       `  readonly contentChild = computed(() => ({ inputs: ${ownInputs}, within: ${within ? 'this.#contentWithin?.contentInputs() ?? null' : 'null'} }));`,
     );
   }
-  model.content.forEach(({ input, child }) => lines.push(`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`));
+  model.content.forEach(({ input, child, lends }) =>
+    lines.push(
+      ...(lends
+        ? [
+            // A declaration in a nested control of the same kind is that control's.
+            `  private readonly query_${input} = contentChildren(${child.names.angular}, { descendants: true });`,
+            `  private readonly content_${input} = computed(() => this.query_${input}().filter((c) => c.contentParent === this));`,
+          ]
+        : [`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`]),
+    ),
+  );
+  const lent = model.content.filter((c) => c.lends);
+  if (lent.length) {
+    // `| undefined`: the template reads `contentSlots().<query>[i]?.<slot>`.
+    const entries = lent.map(({ input, child }) => `${input}: this.content_${input}().map((c): ReturnType<${child.names.angular}['contentSlots']> | undefined => c.contentSlots())`);
+    lines.push(`  /** The slots each content query's declarations lend the template (<content-slot>). */`, `  protected readonly contentSlots = computed(() => ({ ${entries.join(', ')} }));`);
+  }
   const inputEntries = [
     ...model.inputs.map((i) => `${i.name}: this.${i.name}()`),
     ...model.content.map(({ input }) => `${input}: this.content_${input}().map((c) => c.contentChild())`),

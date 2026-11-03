@@ -69,7 +69,7 @@ import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
 import { BsSpinner } from '@mintplayer/react-bootstrap/spinner';
 import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
-import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
+import { BsTabControl } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
@@ -247,13 +247,6 @@ const CASES: Case[] = [
   bare('BsSplitter', 'div.splitter', BsSplitter),
   bare('BsSplitterPanel', 'div.splitter-panel', BsSplitterPanel),
   bare('BsTabControl', 'div.tab-control', BsTabControl),
-  {
-    // A marker: BsTabControl renders its pane and forwards the page's attributes there.
-    name: 'BsTabPage',
-    target: 'div.tab-pane',
-    render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
-    fixedRole: 'tabpanel',
-  },
   bare('BsThemeToggle', 'span.theme-toggle', BsThemeToggle),
   {
     name: 'BsTileManager',
@@ -285,6 +278,13 @@ const ENTRY_MODULES = import.meta.glob<Record<string, unknown>>(
   ['../*/src/index.ts', '../*/*/src/index.ts'],
   { eager: true },
 );
+
+/**
+ * Declarations (#458 Q15): data the parent reads, rendering nothing themselves. A
+ * page's header and body render inside the parent's own nodes, so the page has no
+ * element of its own for an attribute to land on.
+ */
+const DECLARATIONS = ['BsTabPage'];
 
 /** A `Bs*` export that React can render: a function or a forwardRef/memo object. */
 const isWrapperExport = ([name, value]: [string, unknown]): boolean =>
@@ -362,7 +362,7 @@ describe('React wrapper attribute passthrough', () => {
   it('covers every Bs* component exported by any entry point', () => {
     const exported = Object.values(ENTRY_MODULES)
       .flatMap((mod) => Object.entries(mod).filter(isWrapperExport).map(([name]) => name));
-    const covered = new Set(CASES.map((c) => c.name));
+    const covered = new Set([...CASES.map((c) => c.name), ...DECLARATIONS]);
 
     expect(new Set(CASES.map((c) => c.name)).size, 'duplicate case names').toBe(CASES.length);
     expect(exported.filter((name) => !covered.has(name)), 'exported wrappers with no passthrough case').toEqual([]);

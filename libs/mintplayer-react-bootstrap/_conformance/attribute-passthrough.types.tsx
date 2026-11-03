@@ -40,7 +40,7 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
 import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
-import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
+import { BsTabControl } from '@mintplayer/react-bootstrap/tab-control';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
@@ -147,7 +147,6 @@ export const everyWrapperProbes = [
   <BsSignaturePad role="none" id="x" tabIndex={-1} />,
   <BsSplitter role="none" id="x" tabIndex={-1} />,
   <BsTabControl role="none" id="x" tabIndex={-1} />,
-  <BsTabPage role="none" id="x" tabIndex={-1} />,
   <BsTileManager tiles={[]} id="x" tabIndex={-1} />,
   <BsTimelineItem role="none" id="x" tabIndex={-1} />,
   <BsTimeList role="none" id="x" tabIndex={-1} />,

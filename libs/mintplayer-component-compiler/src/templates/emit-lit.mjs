@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, contentSlotUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -39,7 +39,7 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
   const helpers = ctx.uses.has('renderSlot')
     ? ["function renderSlot<A>(slot: unknown, args: A): unknown {", "  return typeof slot === 'function' ? (slot as (args: A) => unknown)(args) : slot;", '}', '']
     : [];
-  const destructure = [...src.propNames, 'slots = {}', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
+  const destructure = [...src.propNames, 'slots = {}', ...(ctx.uses.has('contentSlots') ? ['contentSlots = {}'] : []), ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -54,6 +54,7 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
     ...src.slots.members.filter((s) => s.paramType).map((s) => `export type ${slotArgsType(src, s.name)} = ${s.paramType};`),
     `export type ${type} = ${src.props.text} & {`,
     `  slots?: { ${slotMembers.join(' ')} };`,
+    ...(ctx.uses.has('contentSlots') ? ["  /** Each content query's children's lent slots, by query and position (<content-slot>). */", '  contentSlots?: Partial<Record<string, ReadonlyArray<Partial<Record<string, unknown>>>>>;'] : []),
     ...[...ctx.refs].map(([r, tag]) => `  ${r}Ref?: Ref<HTMLElementTagNameMap['${tag}']>;`),
     '};',
     '',
@@ -126,6 +127,13 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}\${teleport(${x(ctx, to)}, ${sub(ctx, children(ctx, el.children, depth + 1), depth)})}\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) {
+    // A queried child's lent slot: the `slot=` children its element captured, moved here.
+    ctx.uses.add('contentSlots');
+    ctx.uses.add('nothing');
+    return `${pad(depth)}\${contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? nothing}\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const composed = composedUse(ctx.src, el, ctx.components);

@@ -3,7 +3,7 @@
 // the four emitters read (PRD #437 D10).
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { attribute, attrsTarget, directive, rootElement } from '../templates/source.mjs';
+import { attribute, attrsTarget, contentSlotUses, directive, rootElement } from '../templates/source.mjs';
 
 const pascal = (name) => name.split(/[-_]/).map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 const camel = (name) => pascal(name).replace(/^./, (c) => c.toLowerCase());
@@ -178,7 +178,84 @@ export function componentModels({ group, entry, corePackage, template, extension
       wrapsContent: false,
     };
   });
-  return [...resolveContent(models, entry), ...directiveModels({ group, entry, entryModule, style, literals })];
+  const declarations = declarationModels({ group, entry, entryModule, literals });
+  resolveContent([...models, ...declarations], entry);
+  checkContentSlots(models, entry);
+  return [...models, ...declarations, ...directiveModels({ group, entry, entryModule, style, literals })];
+}
+
+/**
+ * The group's declarations (#458 Q15): elements with inputs and slots but no
+ * core and no template, which a parent's content query collects and whose
+ * slots the parent renders (`<content-slot>`). They carry `kind: 'declaration'`.
+ */
+function declarationModels({ group, entry, entryModule, literals }) {
+  return Object.entries(group.declarations ?? {}).map(([element, manifest]) => {
+    const where = `${entry}/${element} (declaration)`;
+    if (group.components?.[element] || group.directives?.[element]) throw new Error(`${where}: another element of the group has the same name`);
+    const unsupported = ['core', 'template', 'provides', 'content', 'methods', 'outputs'].filter((key) => key in manifest);
+    if (unsupported.length) throw new Error(`${where}: a declaration has no ${unsupported.join(', ')}`);
+    const inputs = Object.entries(manifest.inputs?.fields ?? {}).map(([name, field]) => {
+      if (field.model) throw new Error(`${where}: input "${name}" cannot be two-way on a declaration`);
+      const kind = inputKind(field);
+      return { name, ...field, kind, values: kind === 'string' ? literals(manifest.inputs?.type, name) : null };
+    });
+    const clash = inputs.find((input) => RESERVED.has(input.name));
+    if (clash) throw new Error(`${where}: input "${clash.name}" shadows an HTMLElement member; pick another name`);
+    const slots = [{ name: 'default', params: null }, ...Object.entries(manifest.slots ?? {}).map(([name, slot]) => ({ name, params: null, doc: slot.doc ?? null }))];
+    slots.forEach((slot) => {
+      if (!/^[A-Za-z_$][\w$]*$/.test(slot.name)) throw new Error(`${where}: slot "${slot.name}" must be an identifier (camelCase)`);
+      if (inputs.some((input) => input.name === slot.name)) throw new Error(`${where}: slot "${slot.name}" has the name of an input; rename one of them`);
+    });
+    const names = manifest.names ?? {};
+    const base = pascal(element);
+    return {
+      kind: 'declaration',
+      element,
+      entry,
+      entryModule,
+      group,
+      manifest,
+      doc: manifest.doc ?? null,
+      core: null,
+      inputs,
+      inputsType: manifest.inputs?.type ?? null,
+      outputs: [],
+      methods: [],
+      methodsType: null,
+      slots,
+      provides: null,
+      style: null,
+      names: {
+        angular: names.angular ?? `Bs${base}Component`,
+        selector: names.selector ?? `bs-${element}`,
+        component: names.component ?? `Bs${base}`,
+        lit: names.lit ?? `Mp${base}`,
+        tag: names.tag ?? `mp-${element}`,
+        slotDirective: (slot) => `Bs${base}${pascal(slot)}Directive`,
+        slotSelector: (slot) => `bs${base}${pascal(slot)}`,
+        file: element,
+      },
+      extensions: {},
+      camel: camel(element),
+      content: [],
+      queried: null,
+      wrapsContent: false,
+    };
+  });
+}
+
+/** Every `<content-slot>` names a content query of its component over a declaration, and one of its slots. */
+function checkContentSlots(models, entry) {
+  models.forEach((model) =>
+    contentSlotUses(model.src).forEach(({ query, name }) => {
+      const where = `${entry}/${model.element}: <content-slot query="${query}">`;
+      const content = model.content.find((c) => c.input === query);
+      if (!content) throw new Error(`${where} names no content query of the component`);
+      if (content.child.kind !== 'declaration') throw new Error(`${where} queries "${content.child.element}", which renders itself; only a declaration lends its slots`);
+      if (!content.child.slots.some((slot) => slot.name === name)) throw new Error(`${where}: "${content.child.element}" has no "${name}" slot`);
+    }),
+  );
 }
 
 /**
@@ -244,9 +321,11 @@ function resolveContent(models, entry) {
       if (!child) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.component}", which is not in the group`);
       if (query.within && !within) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.within}" as within, which is not in the group`);
       if (model.inputs.some((i) => i.name === input)) throw new Error(`${entry}/${model.element}: content query "${input}" is also a manifest input`);
-      child.queried = { within };
+      if (within?.kind === 'declaration') throw new Error(`${entry}/${model.element}: content query "${input}" names the declaration "${query.within}" as within; a wrapper renders itself`);
+      child.queried = { within, by: model };
       if (within) within.wrapsContent = true;
-      return { input, child, within };
+      // A declaration lends its slots: the front collects them beside its inputs.
+      return { input, child, within, lends: child.kind === 'declaration' };
     });
   });
   return models;

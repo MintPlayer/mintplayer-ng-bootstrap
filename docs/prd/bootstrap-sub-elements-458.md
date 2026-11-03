@@ -89,6 +89,7 @@ Bootstrap was global.
 | Q12 | **Behaviour and presentation are separate.** `[bsDropdown]` / `[bsDropdownToggle]` / `[bsDropdownMenu]` are pure-behaviour directives: open state, `aria-expanded`/`-controls`, dismissal, placement, the body overlay; no part, no styles. `bs-dropdown-menu` / `bs-dropdown-item` are the presentational components: the `dropdown` part plus the `dropdown-menu` core's in-menu contract (`role=menu`, roving, arrows, submenus). `calendar-month` folds into the `calendar` core as the month-grid building block shared by `bs-calendar` and `bs-scheduler`. That part is at the implementer's discretion |
 | Q13 | **The navbar dropdown and `bs-dropdown-menu` become one component.** Hard requirement: the navbar stays fully usable with JS off under SSR. Everything is rendered, and hidden until it opens |
 | Q14 | **No-JS reveal: `<details>` plus a gated `:focus-within`.** `<details>`/`<summary>` holds the open state for click, tap and Enter in every state. A `:focus-within` reveal applies **only until hydration**: `:not([data-mp-hydrated])`, ui-core `hydratedAttr()`. Without JS, nested submenus open inline inside their parent (`docs/prd/navbar-noscript.md` §3, §6). `BsNoNoscript` is deleted. `hydratedAttr()` is its framework-neutral replacement, and `priority-nav` and `tab-control` switch to it |
+| Q15 | **Content queries carry slots (owner, 2026-11-03).** A parent may render a queried child's named slot, so the tab control renders each `bs-tab-page`'s rich `header` inside its own `ul.nav-tabs > li > label`, on the server too. The compiler gains it in all four fronts: Angular renders the child's slot `TemplateRef`, React the child element's slot prop, Vue the child vnode's slot, Lit the child's `slot="…"` light children. Rejected: a text-only header with a client-only teleport (rich headers missing from SSR and no-JS), and pages that render their own tabs (drops `nav-tabs > li` and the scrolling strip) |
 
 ## 4. Design
 
@@ -544,6 +545,22 @@ only.
      method in every front; the Angular `size` model and `setSize()` are a plain `size` input,
      lowered onto `.sidebar-root` as `--mp-shell-size` (`:style` is refused on the root). The
      `BsShellState` / `BsShellStateChange` aliases are `ShellState` / `ShellStateChange`.
+   - **Tab control (Q15).** `tabControlCore` (`ui-core/tab-control`) wraps `connectTabControl`;
+     the bags carry no `data-mps` any more (the compiler stamps the scope). `tab-page` is a
+     **declaration**, a new manifest kind (`declarations:` beside `components:`): inputs and
+     slots, no core and no template, and it renders nothing. The parent queries it
+     (`content: { pages: { component: 'tab-page' } }`) and renders its slots with
+     `<content-slot query="pages" name="header" :index="i" />` (no `name`: the default slot).
+     The transports: Angular, the declaration's `contentSlots` TemplateRefs (default content
+     through an `<ng-template>` view child) rendered by `ngTemplateOutlet`; React, the child
+     element's `children` and slot props (`lentSlots`); Vue, the child vnode's slot functions,
+     forwarded as `content:<query>:<i>:<slot>` slots (`useLentSlots`); Lit, the child's light
+     children moved by `slot=` (`LightChildren`, `ContentQuery.lent`). A nested control keeps
+     its own pages: Lit's query skips children whose closest host is another control, Angular's
+     filters on `contentParent`. `activeTab` is the page's `tabId` (else its position) and
+     two-way everywhere (`onActiveTabChange`, `v-model:activeTab`, `activetabchange`); React's
+     `onTabActivate`, the Angular `BsTabsPosition` alias and the Vue `BsTabPage.vue` registry are
+     gone. `border` is a boolean in every front.
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the

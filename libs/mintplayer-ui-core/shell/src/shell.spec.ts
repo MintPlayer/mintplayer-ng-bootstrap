@@ -33,8 +33,9 @@ describe('shell core', () => {
 
   it('stamps the scope and the root attributes on every node', () => {
     const view = connectShell({ id: 's', breakpoint: 'lg', externalToggle: true });
-    expect(view.root).toMatchObject({ 'data-mps': 'shell', 'data-breakpoint': 'lg', 'data-external-toggle': '' });
-    expect([view.skip, view.topbar, view.sidebarRoot, view.sidebar, view.content].every((bag) => bag['data-mps'] === 'shell')).toBe(true);
+    expect(view.root).toMatchObject({ 'data-breakpoint': 'lg', 'data-external-toggle': '' });
+    // The compiler stamps the scope (S15): no bag carries it.
+    expect([view.root, view.skip, view.topbar, view.sidebarRoot, view.sidebar, view.content].some((bag) => 'data-mps' in bag)).toBe(false);
   });
 
   it('dismisses only for an href link inside the sidebar without data-no-dismiss', () => {

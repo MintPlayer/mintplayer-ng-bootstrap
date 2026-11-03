@@ -4,7 +4,7 @@ import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
-import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective, BsTabsPosition } from '@mintplayer/ng-bootstrap/tab-control';
+import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective, type TabsPosition } from '@mintplayer/ng-bootstrap/tab-control';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -15,7 +15,7 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TabControlComponent {
-  tabsPosition = model<BsTabsPosition>('top');
+  tabsPosition = model<TabsPosition>('top');
   numbers = Array.from(Array(20).keys()).map(i => i + 1);
 
   protected readonly snippetBasicHtml = dedent`

@@ -1,3 +1,3 @@
-export { default as BsTabControl } from './BsTabControl.vue';
-export { default as BsTabPage } from './BsTabPage.vue';
-export type { TabsPosition } from '@mintplayer/ui-core/tab-control';
+// Generated from @mintplayer/ui-core/tab-control (#458 M4, D10).
+export * from './generated';
+export type { TabControlInputs, TabPageInputs, TabsPosition } from '@mintplayer/ui-core/tab-control';

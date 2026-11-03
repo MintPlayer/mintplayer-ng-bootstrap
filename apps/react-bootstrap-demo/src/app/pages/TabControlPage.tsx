@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
-const SOURCE = `<BsTabControl activeTab={active} onTabActivate={setActive}>
+const SOURCE = `<BsTabControl activeTab={active} onActiveTabChange={setActive}>
   <BsTabPage tabId="home" header="Home"><div className="p-3">Home content</div></BsTabPage>
   <BsTabPage tabId="profile" header="Profile"><div className="p-3">Profile content</div></BsTabPage>
   <BsTabPage tabId="settings" header="Settings" disabled>…</BsTabPage>
@@ -22,7 +22,7 @@ export function TabControlPage() {
 
       <section>
         <h2>Three tabs</h2>
-        <BsTabControl activeTab={active} onTabActivate={setActive}>
+        <BsTabControl activeTab={active} onActiveTabChange={setActive}>
           <BsTabPage tabId="home" header="Home">
             <div className="p-3">Home content lives here.</div>
           </BsTabPage>

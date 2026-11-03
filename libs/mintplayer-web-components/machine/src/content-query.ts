@@ -9,7 +9,16 @@ export function notifyContentChange(element: HTMLElement): void {
   element.dispatchEvent(new Event(CONTENT_CHANGE, { bubbles: true }));
 }
 
-type Queried = HTMLElement & { readonly contentInputs?: Record<string, unknown> };
+type LentSlots = Readonly<Record<string, Node[] | undefined>>;
+type Queried = HTMLElement & { readonly contentInputs?: Record<string, unknown>; readonly lentSlots?: LentSlots };
+
+/** Same slots: per slot, the same captured array (a capture adopting nodes replaces it). */
+const sameLent = (a: readonly LentSlots[], b: readonly LentSlots[]): boolean =>
+  a.length === b.length &&
+  a.every((slots, i) => {
+    const keys = new Set([...Object.keys(slots), ...Object.keys(b[i])]);
+    return [...keys].every((key) => slots[key] === b[i][key]);
+  });
 
 /**
  * A manifest content query in Lit (PRD #437 D10): every `tag` element in the
@@ -19,6 +28,8 @@ type Queried = HTMLElement & { readonly contentInputs?: Record<string, unknown> 
  */
 export class ContentQuery implements ReactiveController {
   value: readonly ContentChild[] = [];
+  /** Each child's lent slots (a declaration's captured `slot=` children), in the same order (#458 Q15). */
+  lent: readonly LentSlots[] = [];
   #observer: MutationObserver | null = null;
 
   constructor(
@@ -60,12 +71,20 @@ export class ContentQuery implements ReactiveController {
 
   /** Re-reads the content; true when the result changed. */
   #refresh(): boolean {
-    const next = [...this.host.querySelectorAll<Queried>(this.tag)].map((element) => {
+    // A child of a nested host of the same kind is that host's, not ours: a tab
+    // page's body (moved into our pane) may hold a tab control of its own.
+    const host = this.host.localName;
+    const elements = [...this.host.querySelectorAll<Queried>(this.tag)].filter((element) => element.parentElement?.closest(host) === this.host);
+    const lent = elements.map((element) => ({ ...(element.lentSlots ?? {}) }));
+    const next = elements.map((element) => {
       const wrapper = this.within ? element.parentElement?.closest<Queried>(this.within) : null;
       return { inputs: element.contentInputs ?? {}, within: wrapper && this.host.contains(wrapper) ? (wrapper.contentInputs ?? {}) : null };
     });
-    if (sameContent(this.value, next)) return false;
-    this.value = next;
+    const sameInputs = sameContent(this.value, next);
+    const sameSlots = sameLent(this.lent, lent);
+    if (sameInputs && sameSlots) return false;
+    if (!sameInputs) this.value = next;
+    if (!sameSlots) this.lent = lent;
     return true;
   }
 }

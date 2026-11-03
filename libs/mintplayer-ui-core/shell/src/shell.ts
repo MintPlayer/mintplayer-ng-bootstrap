@@ -102,26 +102,23 @@ export function connectShell(options: ShellOptions): ShellView {
   const { id, externalToggle = false } = options;
   const labels = { ...DEFAULT_SHELL_LABELS, ...(options.labels ?? {}) };
   const checks = shellChecks(options.state);
-  const scope = { 'data-mps': SHELL_SCOPE };
   const sidebarId = `${id}-sidebar`;
   const contentId = `${id}-content`;
   const toggleId = (mode: ShellMode) => `${id}-toggle-${mode}`;
   return {
     root: {
-      ...scope,
       class: 'shell',
       'data-breakpoint': options.breakpoint ?? 'md',
       'data-external-toggle': externalToggle ? '' : null,
       ...hydratedAttr(options.hydrated ?? false),
     },
-    skip: { ...scope, class: 'skip-link' },
+    skip: { class: 'skip-link' },
     skipHref: `#${contentId}`,
     skipText: labels.skip,
     toggles: MODES.map((mode) => ({
       mode,
       checked: checks[mode],
       input: {
-        ...scope,
         type: 'checkbox',
         id: toggleId(mode),
         class: `shell-toggle shell-toggle-${mode}`,
@@ -130,17 +127,16 @@ export function connectShell(options: ShellOptions): ShellView {
         checked: checks[mode] ? true : null,
       },
       label: {
-        ...scope,
         for: toggleId(mode),
         class: `shell-hamburger shell-hamburger-${mode}`,
         title: labels.toggle,
       },
     })),
     hamburgerText: '☰',
-    topbar: { ...scope, class: 'topbar', role: 'banner' },
-    sidebarRoot: { ...scope, class: 'sidebar-root' },
-    sidebar: { ...scope, id: sidebarId, class: 'sidebar', 'aria-label': labels.sidebar },
-    content: { ...scope, id: contentId, class: 'content', role: 'main', tabindex: '0' },
+    topbar: { class: 'topbar', role: 'banner' },
+    sidebarRoot: { class: 'sidebar-root' },
+    sidebar: { id: sidebarId, class: 'sidebar', 'aria-label': labels.sidebar },
+    content: { id: contentId, class: 'content', role: 'main', tabindex: '0' },
   };
 }
 

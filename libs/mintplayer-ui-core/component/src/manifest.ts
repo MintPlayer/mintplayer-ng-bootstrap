@@ -68,7 +68,7 @@ export interface ComponentNames {
 
 /** A content query: every `component` in the content, in document order. */
 export interface ContentQuery {
-  /** The queried element of the same group (`ribbon-tab`). */
+  /** The queried element of the same group (`ribbon-tab`), or a declaration (`tab-page`). */
   readonly component: string;
   /** An element of the same group that may wrap it; its inputs ride along as `within`. */
   readonly within?: string;
@@ -168,6 +168,25 @@ export interface DirectiveManifest {
   readonly doc?: string;
 }
 
+/**
+ * A declaration (#458 Q15): an element with inputs and slots but no core and no
+ * markup of its own. A parent of the group queries it (`content`) and renders
+ * its slots inside the parent's markup with `<content-slot>`, so rich consumer
+ * content lands where the parent's structure needs it (a tab page's header in
+ * the tab strip, its body in the pane), on the server too. Angular: a hidden
+ * component lending its slots as TemplateRefs (named slots are structural
+ * directives, `*bsTabPageHeader`). React: a component rendering null whose slot
+ * props the parent reads. Vue: a component rendering nothing whose slots the
+ * parent reads. Lit: a hidden element whose `slot=` children the parent moves.
+ */
+export interface DeclarationManifest {
+  readonly inputs?: ComponentManifest['inputs'];
+  /** Named slots, besides the default slot every declaration lends. */
+  readonly slots?: Readonly<Record<string, { readonly doc?: string }>>;
+  readonly names?: ComponentNames;
+  readonly doc?: string;
+}
+
 export interface ComponentGroup {
   /** The entry point name; also the generated entry in every front lib. */
   readonly group: string;
@@ -177,4 +196,6 @@ export interface ComponentGroup {
   readonly components?: Readonly<Record<string, ComponentManifest>>;
   /** Keyed by directive name (`row`, `col`, …). */
   readonly directives?: Readonly<Record<string, DirectiveManifest>>;
+  /** Keyed by element name (`tab-page`); a component's content query collects them. */
+  readonly declarations?: Readonly<Record<string, DeclarationManifest>>;
 }

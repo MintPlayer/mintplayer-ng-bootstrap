@@ -89,7 +89,6 @@ const OVERRIDES: Record<string, Override> = {
   'mp-datetime-picker@step': { value: '30', reason: SLOW_STEP },
   'mp-otp-input.value': { value: '482193', reason: 'the default numeric type strips non-digits' },
   'mp-tab-control@tabs-position': { value: 'bottom', reason: 'enum read straight from the attribute: top | bottom' },
-  'mp-tab-control@border': { value: 'top', reason: 'enum read straight from the attribute: full | top | false' },
   'mp-otp-input@value': {
     value: '482193',
     restored: '',

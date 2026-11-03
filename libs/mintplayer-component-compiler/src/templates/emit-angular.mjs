@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, contentSlotUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -137,6 +137,8 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}<ng-template [mpTeleport]="${escapeAttr(x(ctx, to))}">\n${children(ctx, el.children, depth + 1)}${pad(depth)}</ng-template>\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) return contentSlot(ctx, lent, depth);
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const use = partialUse(ctx.src, el, ctx.partials);
@@ -181,6 +183,13 @@ function bare(ctx, el, depth) {
   if (VOID_TAGS.has(el.tag)) return `${pad(depth)}${open}\n`;
   const inner = children(ctx, el.children, depth + 1);
   return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open}</${el.tag}>\n`;
+}
+
+/** A queried child's lent slot: the TemplateRef the component collects in `contentSlots()`. */
+function contentSlot(ctx, { query, name, index }, depth) {
+  ctx.uses.add('NgTemplateOutlet');
+  const local = `lent_${query}_${name}`;
+  return `${pad(depth)}@if (contentSlots().${query}[${x(ctx, index)}]?.${name}; as ${local}) {\n${pad(depth + 1)}<ng-container [ngTemplateOutlet]="${local}" />\n${pad(depth)}}\n`;
 }
 
 function slot(ctx, el, depth) {

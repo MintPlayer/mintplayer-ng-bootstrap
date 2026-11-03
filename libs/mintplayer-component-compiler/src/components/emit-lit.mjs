@@ -7,7 +7,7 @@ import { rendererProperty, slotArgsType } from '../templates/emit-lit.mjs';
 
 const LIT_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
 
-function propertyOptions(input) {
+export function propertyOptions(input) {
   const options = [];
   if (input.kind) options.push(`type: ${LIT_TYPES[input.kind]}`);
   else options.push('attribute: false');
@@ -110,7 +110,10 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
   // An unscoped slot's callback is called here: the template renders its value.
   const callbacks = renderers.map((r) => `...(this.${r.prop} ? { ${JSON.stringify(r.slot)}: this.${r.prop}${r.args ? '' : '()'} } : {})`);
   const slots = slotNames.length ? (callbacks.length ? `, slots: { ...this.#children.slots, ${callbacks.join(', ')} }` : `, slots: this.#children.slots`) : '';
-  lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots} });`, `  }`);
+  // Each declaration's captured children, which the template moves into its own markup (<content-slot>).
+  const lent = model.content.filter((c) => c.lends);
+  const contentSlots = lent.length ? `, contentSlots: { ${lent.map(({ input }) => `${input}: this.#content_${input}.lent`).join(', ')} }` : '';
+  lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots}${contentSlots} });`, `  }`);
 
   model.methods.forEach((method) => {
     const sig = `${model.methodsType}['${method.name}']`;

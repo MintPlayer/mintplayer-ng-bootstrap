@@ -1,9 +1,3 @@
-// Components
-export { MpTabControl, MpTabPage } from './components';
-export type { TabActivateEventDetail } from './components';
-
-// Types
-export type { TabsPosition } from './types';
-
-// Styles (for custom styling extensions)
-export { tabControlStyles } from './styles';
+// Generated from @mintplayer/ui-core/tab-control (#458 M4, D10).
+export * from './generated';
+export type { TabControlInputs, TabPageInputs, TabsPosition } from '@mintplayer/ui-core/tab-control';

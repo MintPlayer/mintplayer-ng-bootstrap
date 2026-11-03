@@ -229,6 +229,18 @@ the template of every front. A template without a manifest is still compiled on 
   - The inputs are as written: an omitted input is missing rather than defaulted, and Vue's
     boolean shorthand arrives as `''`. Normalise in the core.
   - The query name may not also be a manifest input, and both elements must be in the group.
+- **Declarations** (the manifest's `declarations: { 'tab-page': { inputs, slots } }`, #458 Q15)
+  are queried children that render nothing: inputs and slots, no core, no template. The parent
+  renders their slots with `<content-slot query="pages" name="header" :index="i" />`: `query` is
+  a content query over a declaration, `name` one of its slots (omitted: the default content) and
+  `:index` the child's position. It takes no other attribute and no content, and a partial may
+  not use it. A declaration may not be a query's `within`.
+  - Angular: the declaration lends `TemplateRef`s (`contentSlots`); the parent renders them
+    with `ngTemplateOutlet`, and a declaration belongs to its nearest parent (`contentParent`).
+  - React: the child element's `children` and slot props; Vue: the child vnode's slot
+    functions, forwarded as `content:<query>:<i>:<slot>` slots.
+  - Lit: the declaration is `hidden` and lends its light children by `slot=`; the parent moves
+    them into place. A child whose nearest parent host is another instance is not queried.
 - **`mp-host`.** Marking the root element `mp-host` makes it the front's host element in
   Angular and Lit:
   - Those two fronts emit only its children. The component applies the root's bag to itself

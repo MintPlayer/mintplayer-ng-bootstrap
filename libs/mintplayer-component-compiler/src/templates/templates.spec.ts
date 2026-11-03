@@ -196,6 +196,37 @@ describe('teleport', () => {
   });
 });
 
+describe('content-slot (#458 Q15)', () => {
+  const script = 'defineProps<{ bag: Record<string, string | null>; items: string[] }>();\ndefineSlots<{ default?: () => unknown }>();';
+  const src = read(
+    '<div v-bind="bag"><label v-for="(item, i) in items" :key="item"><content-slot query="pages" name="header" :index="i" /></label><div v-for="(item, i) in items" :key="item"><content-slot query="pages" :index="i" /></div><slot /></div>',
+    script,
+  );
+
+  it("each front renders the queried child's slot at its position", () => {
+    const angular = emitAngular(src).text;
+    expect(angular).toContain('@if (contentSlots().pages[i]?.header; as lent_pages_header)');
+    expect(angular).toContain('[ngTemplateOutlet]="lent_pages_header"');
+    expect(angular).toContain('contentSlots().pages[i]?.default');
+    const react = emitReact(src, RUNTIME);
+    expect(react).toContain("{contentSlots['pages']?.[i]?.['header'] ?? null}");
+    expect(react).toContain("{contentSlots['pages']?.[i]?.['default'] ?? null}");
+    expect(react).toMatch(/contentSlots = \{\}/);
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain("${contentSlots['pages']?.[i]?.['header'] ?? nothing}");
+    const vue = emitVue(src);
+    expect(vue).toContain(`<slot :name="'content:pages:' + (i) + ':header'" />`);
+    expect(vue).toContain(`<slot :name="'content:pages:' + (i) + ':default'" />`);
+    expect(vue).toContain('defineSlots<Record<string, (() => unknown) | undefined> & {');
+  });
+
+  it('takes a static query, an optional name and :index, and no content', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" /></div>', script), RUNTIME)).toThrow(/:index/);
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot :query="bag" :index="0" /></div>', script), RUNTIME)).toThrow(/query/);
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" :index="0">x</content-slot></div>', script), RUNTIME)).toThrow();
+  });
+});
+
 describe('mp-attrs', () => {
   const src = read('<div v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
 

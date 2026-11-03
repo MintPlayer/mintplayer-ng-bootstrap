@@ -40,6 +40,7 @@ import '@mintplayer/web-components/shell';
 import '@mintplayer/web-components/signature-pad';
 import '@mintplayer/web-components/spinner';
 import '@mintplayer/web-components/splitter';
+import '@mintplayer/web-components/tab-control';
 import '@mintplayer/web-components/theming';
 import '@mintplayer/web-components/tile-manager';
 import '@mintplayer/web-components/timeline';
