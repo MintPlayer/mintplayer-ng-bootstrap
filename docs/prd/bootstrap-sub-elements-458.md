@@ -576,6 +576,15 @@ only.
      every front. `layouts` is two-way (`layoutsChange` keeps React controlled); outputs follow
      the lowercase rule (`layoutchange`, `columncountchange`, `gestureblocked`), and
      `TileColumnCountChange` replaces the per-front `BsTileColumnCountChange`.
+   - **Cleanup (done).** No shadow root and no hand-written Lit element remains but
+     `mp-dropdown-menu` (M6). `web-components/_styles` and `light-styles-nesting.spec.ts` are
+     deleted; `adoptLightStyles` stays as public API for a consumer's own shadow host. No
+     `…Page` install exists inside the libs. Lit gained the host transparency Angular already
+     had for a host-rooted template whose role lives on an inner `mp-attrs` node:
+     `takeHostAttrs` (once, before the first render) moves `id` / `tabindex` and copies
+     `aria-*`, and the template binds `forwardHostAttrs(bag, hostAttrs)` on that node, with the
+     same rule as `[mpHostAttrs]` (an id the core writes wins; the consumer's goes back to the
+     host). CLAUDE.md's "Hand-written Lit elements" section is now history (§4.8).
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the

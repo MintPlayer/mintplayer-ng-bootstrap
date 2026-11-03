@@ -70,8 +70,9 @@ What the selectors mean:
   that render installed, for the server's `<head>`.
 - `writeScopedStyleTag(doc, …)` writes into a given document: Angular SSR uses it with the request's
   `DOCUMENT`.
-- `adoptLightStyles(shadowRoot)` mirrors every installed sheet, in order, into a shadow root (for the few
-  hand-written shadow-root Lit elements that render a light-tier component inside them).
+- `adoptLightStyles(shadowRoot)` mirrors every installed sheet, in order, into a shadow root: for a
+  consumer's own shadow-root element that renders our components (no front of ours has a shadow root
+  since #458).
 
 ### 3. Who called the registry: the generated front
 

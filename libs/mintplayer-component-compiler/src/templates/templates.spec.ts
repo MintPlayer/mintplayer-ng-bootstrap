@@ -281,6 +281,16 @@ describe('mp-attrs', () => {
   it('rejects a conditional target', () => {
     expect(() => emitReact(read('<div v-bind="bag"><select v-if="label" mp-attrs v-bind="bag"></select></div>'), RUNTIME)).toThrow(/always render/);
   });
+
+  it("Angular and Lit forward the host's attributes to the marked element of an mp-host template", () => {
+    const hosted = read('<div mp-host v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
+    expect(emitAngular(hosted).text).toContain('[mpHostAttrs]="hostAttrs"');
+    const lit = emitLit(hosted, RUNTIME);
+    expect(lit).toContain('<select ${props(forwardHostAttrs(bag, hostAttrs))}>');
+    expect(lit).toContain("import { forwardHostAttrs, props, type HostAttrs } from '@test/machine'");
+    expect(lit).toContain('hostAttrs?: HostAttrs | null;');
+    expect(emitLit(src, RUNTIME)).not.toContain('forwardHostAttrs');
+  });
 });
 
 describe('refusals', () => {

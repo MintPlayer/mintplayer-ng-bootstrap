@@ -45,7 +45,7 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
     banner(model, generator),
     `import { LitElement } from 'lit';`,
     `import { installLightStyles } from '${scopedStyles}';`,
-    `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}${model.content.length ? 'ContentQuery, ' : ''}CoreController${slotNames.length ? ', LightChildren' : ''}${model.queried || model.wrapsContent ? ', notifyContentChange' : ''} } from '${runtime}';`,
+    `import { ${[...new Set(model.inputs.filter((i) => i.kind).map((i) => `${i.kind}Attribute`))].sort().map((name) => `${name}, `).join('')}${model.content.length ? 'ContentQuery, ' : ''}CoreController${slotNames.length ? ', LightChildren' : ''}${model.queried || model.wrapsContent ? ', notifyContentChange' : ''}${model.forwardsHost ? ', takeHostAttrs, type HostAttrs' : ''} } from '${runtime}';`,
     coreImports(model, { values: [model.core], types }),
   ];
   // A content query reads upgraded children, so their definitions come first.
@@ -113,7 +113,10 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
   // Each declaration's captured children, which the template moves into its own markup (<content-slot>).
   const lent = model.content.filter((c) => c.lends);
   const contentSlots = lent.length ? `, contentSlots: { ${lent.map(({ input }) => `${input}: this.#content_${input}.lent`).join(', ')} }` : '';
-  lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots}${contentSlots} });`, `  }`);
+  // A consumer's aria-* / id / tabindex on the element reach the inner role-bearing node (#458).
+  const forward = model.forwardsHost ? ', hostAttrs: (this.#hostAttrs ??= takeHostAttrs(this))' : '';
+  if (model.forwardsHost) lines.push(`  #hostAttrs: HostAttrs | null = null;`, '');
+  lines.push(`  override render() {`, `    return ${templateFunction(model)}({ ...this.#core.props()${slots}${contentSlots}${forward} });`, `  }`);
 
   model.methods.forEach((method) => {
     const sig = `${model.methodsType}['${method.name}']`;
