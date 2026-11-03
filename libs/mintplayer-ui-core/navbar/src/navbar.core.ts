@@ -142,8 +142,8 @@ export const navbarDropdownCore = defineCore<
 >({
   consume: NAVBAR_NESTING,
   provides: NAVBAR_NESTING,
-  view: ({ inputs, context }) => ({
-    view: connectNavbarDropdown({ depth: context.depth + 1, active: inputs.active }),
+  view: ({ inputs, context, hydrated }) => ({
+    view: connectNavbarDropdown({ depth: context.depth + 1, active: inputs.active, hydrated }),
     label: inputs.label ?? undefined,
   }),
   // Angular's and Lit's own host element sits around the <details>: out of the layout.

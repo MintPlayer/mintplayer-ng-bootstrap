@@ -133,6 +133,13 @@ summary.dropdown-toggle::-webkit-details-marker {
 .dropdown-submenu[data-mps=navbar] > .dropdown-menu {
   margin: 0 0.5rem;
 }
+// Collapsed, a hydrated submenu's panel is a popover that is never shown: undo
+// the UA's [popover] sizing so it lays out inline like any panel.
+/*! @mps-global */
+.dropdown-submenu[data-mps=navbar] > .dropdown-menu[popover] {
+  width: auto;
+  height: auto;
+}
 
 /*! @mps-global */
 .navbar-brand[data-mps=navbar] > a {
@@ -159,6 +166,9 @@ summary.dropdown-toggle::-webkit-details-marker {
     .nav-item.dropdown,
     .dropdown-submenu { position: relative; }
   }
+  // A top-level panel floats below its trigger and scrolls past the viewport's
+  // bottom (the dropdown-menu sheet's cap, --mp-dropdown-max-height, which the
+  // attachment measures when it opens).
   /*! @mps-global */
   .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .nav-item.dropdown[data-mps=navbar] > .dropdown-menu {
     position: absolute;
@@ -166,24 +176,30 @@ summary.dropdown-toggle::-webkit-details-marker {
     inset-inline-start: 0;
     z-index: 1000;
     margin: 0;
-    max-height: none;
-    overflow: visible;
   }
+  // Without script nothing measures: the cap assumes a bar at the viewport's
+  // top (the trigger's height, the bar's padding). A submenu stays inline below
+  // its trigger, inside the scrolling panel.
   /*! @mps-global */
-  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-mps=navbar] > .dropdown-menu {
-    position: absolute;
-    top: calc(-1 * var(--bs-dropdown-padding-y) - var(--bs-dropdown-border-width));
-    inset-inline-start: 100%;
-    z-index: 1000;
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}]:not([data-mp-hydrated]) .nav-item.dropdown[data-mps=navbar] > .dropdown-menu {
+    max-height: calc(100vh - 100% - 1rem);
+  }
+  // With script a submenu is a popover: shown by the attachment in the top
+  // layer (which no scrolling panel clips) and placed next to its trigger.
+  /*! @mps-global */
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-mps=navbar] > .dropdown-menu:popover-open {
+    position: fixed;
+    inset: auto;
+    left: var(--mp-popover-left);
+    top: var(--mp-popover-top);
     margin: 0;
-    max-height: none;
-    overflow: visible;
+    max-height: calc(100dvh - 16px);
   }
-  // Set by the attachment when the submenu would run off the viewport's end.
+  // Open, but not shown yet: the details' toggle event, on which the
+  // attachment shows the popover, fires a task after the details opens.
   /*! @mps-global */
-  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-flip][data-mps=navbar] > .dropdown-menu {
-    inset-inline-start: auto;
-    inset-inline-end: 100%;
+  .navbar[data-mps=navbar][data-breakpoint=#{$bp}] .dropdown-submenu[data-mps=navbar] > .dropdown-menu[popover]:not(:popover-open) {
+    display: none;
   }
 }
 
