@@ -119,6 +119,12 @@
             "mintplayer-ui-core"
           ],
           "target": "codegen"
+        },
+        {
+          "projects": [
+            "mintplayer-ui-core"
+          ],
+          "target": "build"
         }
       ],
       "outputs": [

@@ -36,6 +36,7 @@ import {
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
+import { BsNav, BsNavItem } from '@mintplayer/react-bootstrap/nav';
 import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
@@ -67,6 +68,7 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
+import { BsSpinner } from '@mintplayer/react-bootstrap/spinner';
 import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
@@ -196,6 +198,12 @@ const CASES: Case[] = [
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
   { ...bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange), fixedRole: 'group' },
   bare('BsNavbar', 'nav.navbar', BsNavbar),
+  bare('BsNav', 'ul.nav', BsNav),
+  {
+    name: 'BsNavItem',
+    target: 'li.nav-item',
+    render: (p) => <BsNav><BsNavItem {...p} /></BsNav>,
+  },
   {
     name: 'BsNavbarDropdown',
     target: 'details.dropdown',
@@ -235,6 +243,7 @@ const CASES: Case[] = [
   bare('BsSelect', 'select', BsSelect),
   bare('BsShell', 'div.shell', BsShell),
   bare('BsSignaturePad', 'div.mp-signature-pad', BsSignaturePad),
+  { ...bare('BsSpinner', 'div.spinner-border', BsSpinner), fixedRole: 'status' },
   bare('BsSplitter', 'div.splitter', BsSplitter),
   bare('BsSplitterPanel', 'div.splitter-panel', BsSplitterPanel),
   bare('BsTabControl', 'div.tab-control', BsTabControl),
