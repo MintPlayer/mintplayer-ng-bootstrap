@@ -23,7 +23,7 @@ import postcss from 'postcss';
 import type { BootstrapPart } from '../bootstrap/src/bootstrap-part';
 import selectorParser from 'postcss-selector-parser';
 // The ownership table is the codegen's; the spec holds the output to it.
-import { OWNED_CLASSES, SCOPE_GUARD } from '../../../tools/scripts/lib/scope-bootstrap.mjs';
+import { OWNED_CLASSES, PART_CLASSES, SCOPE_GUARD, subGuard } from '../../../tools/scripts/lib/scope-bootstrap.mjs';
 import { BOOTSTRAP_PARTIAL_ORDER, BOOTSTRAP_SUBLAYERS } from '../../../tools/scripts/lib/wc-codegen.mjs';
 
 type PartModule = Record<string, string>;
@@ -36,6 +36,13 @@ const parts = Object.entries(modules).map(([path, mod]) => {
 });
 
 const owned = OWNED_CLASSES as Record<string, RegExp>;
+const roles = PART_CLASSES as Record<string, { root: RegExp; sub?: RegExp; anchors?: string[] }>;
+
+/** The guards a part may carry: the root guard, and its sub guard (#458) when it has sub classes. */
+const guardsFor = (name: string): string[] => [SCOPE_GUARD, subGuard(name)].filter((g): g is string => !!g);
+const countGuards = (text: string, name: string) => guardsFor(name).reduce((n, g) => n + text.split(g).length - 1, 0);
+const stripGuards = (css: string, name: string) =>
+  [...guardsFor(name)].reverse().reduce((out, g) => out.split(g).join(''), css);
 
 /** Every style-rule selector, outside @keyframes and friends. */
 function selectorsOf(css: string): string[] {
@@ -49,7 +56,7 @@ function selectorsOf(css: string): string[] {
   return out;
 }
 
-const isGuard = (node: selectorParser.Node) => node.type === 'pseudo' && String(node) === SCOPE_GUARD;
+const isGuard = (node: selectorParser.Node, name: string) => node.type === 'pseudo' && guardsFor(name).includes(String(node));
 
 describe('Bootstrap parts', () => {
   it('compiles one module per component partial (buttons stays in the baseline)', () => {
@@ -87,11 +94,16 @@ describe('Bootstrap parts', () => {
   it('has an ownership entry for every part', () => {
     expect(parts.filter((part) => !owned[part.name]).map((part) => part.name)).toEqual([]);
   });
+
+  it('classifies every part, and gives every part with sub classes an anchor', () => {
+    expect(parts.filter((part) => !roles[part.name]).map((part) => part.name)).toEqual([]);
+    expect(parts.filter((part) => roles[part.name].sub && !roles[part.name].anchors?.length).map((part) => part.name)).toEqual([]);
+  });
 });
 
 describe.each(parts)('part "$name"', ({ name, scoped, page }) => {
   it('differs from the verbatim variant only by the guard', () => {
-    expect(scoped.split(SCOPE_GUARD).join('')).toBe(page);
+    expect(stripGuards(scoped, name)).toBe(page);
     expect(scoped).not.toBe(page);
   });
 
@@ -103,21 +115,24 @@ describe.each(parts)('part "$name"', ({ name, scoped, page }) => {
     expect((top[2] as postcss.AtRule).params).toBe('mp.bootstrap.components');
   });
 
-  it('guards exactly the leftmost owned class of every selector that has a class', () => {
+  it('guards exactly the leftmost owned class of every selector that has a class, by its role', () => {
     const offenders: string[] = [];
     selectorsOf(scoped).forEach((text) => {
       selectorParser((list) => {
         list.each((sel) => {
           const top = sel.nodes;
-          const guards = top.filter(isGuard);
-          const nested = String(sel).split(SCOPE_GUARD).length - 1;
+          const guards = top.filter((node) => isGuard(node, name));
+          const nested = countGuards(String(sel), name);
           const firstOwned = top.find((node) => node.type === 'class' && owned[name].test(node.value));
           const hasClass = top.some((node) => node.type === 'class');
           if (!hasClass) {
             if (nested !== 0) offenders.push(text);
             return;
           }
-          const ok = guards.length === 1 && nested === 1 && !!firstOwned && firstOwned.next() === guards[0];
+          // #458: a sub class carries the anchored guard, a root class the plain one.
+          const isSub = !!firstOwned && !!roles[name].sub?.test((firstOwned as selectorParser.ClassName).value);
+          const expected = isSub ? subGuard(name) : SCOPE_GUARD;
+          const ok = guards.length === 1 && nested === 1 && !!firstOwned && firstOwned.next() === guards[0] && String(guards[0]) === expected;
           if (!ok) offenders.push(text);
         });
       }).processSync(text);
@@ -126,15 +141,15 @@ describe.each(parts)('part "$name"', ({ name, scoped, page }) => {
   });
 
   it('ships only class-less token blocks unguarded', () => {
-    const unguarded = [...new Set(selectorsOf(scoped).filter((text) => !text.includes(SCOPE_GUARD)))];
+    const unguarded = [...new Set(selectorsOf(scoped).filter((text) => countGuards(text, name) === 0))];
     expect(unguarded.filter((text) => !/^(:root|\[data-bs-theme=(light|dark)\])$/.test(text))).toEqual([]);
   });
 });
 
 /** Rules jsdom can evaluate: the guard left in, pseudo-elements stripped. */
-function matchable(css: string): string[] {
+function matchable(css: string, name: string): string[] {
   return selectorsOf(css)
-    .filter((text) => text.includes(SCOPE_GUARD))
+    .filter((text) => countGuards(text, name) > 0)
     .map((text) => text.replace(/::?(before|after|placeholder|-webkit-[\w-]+|-moz-[\w-]+|file-selector-button)\b/g, ''));
 }
 
@@ -185,15 +200,63 @@ describe('Bootstrap parts against a decoy tree', () => {
   afterEach(() => host.remove());
 
   it('match nothing the consumer rendered (no data-mps)', () => {
-    expect(parts.flatMap(({ scoped }) => hits(matchable(scoped), host))).toEqual([]);
+    expect(parts.flatMap(({ scoped, name }) => hits(matchable(scoped, name), host))).toEqual([]);
+  });
+
+  it('match nothing under a stamped element that is no anchor (the shell case, #458)', () => {
+    // bs-shell stamps its .content, which wraps the whole app: that must not reach the sub classes.
+    host.setAttribute('data-mps', 'shell');
+    expect(parts.flatMap(({ scoped, name }) => hits(matchable(scoped, name), host))).toEqual([]);
+    host.removeAttribute('data-mps');
   });
 
   it('match the same tree once a component stamped it (positive control)', () => {
     host.querySelectorAll('*').forEach((el) => el.setAttribute('data-mps', 'x'));
     const unmatched = parts
       .filter(({ name }) => !['transitions'].includes(name))
-      .filter(({ scoped }) => hits(matchable(scoped), host).length === 0)
+      .filter(({ scoped, name }) => hits(matchable(scoped, name), host).length === 0)
       .map(({ name }) => name);
     expect(unmatched).toEqual([]);
+  });
+});
+
+/**
+ * #458: content a consumer projects into a component is unstamped; only the
+ * component's root carries data-mps. Each sub class must match there.
+ */
+describe('Bootstrap parts reach consumer content projected into a component (#458)', () => {
+  const cases: [part: string, html: string, selector: string][] = [
+    ['forms', '<form data-mps="form"><div><label class="form-label">x</label></div></form>', '.form-label'],
+    ['forms', '<form data-mps="form"><div class="form-text">x</div><div class="invalid-feedback">x</div></form>', '.form-text'],
+    ['forms', '<form data-mps="form"><input class="form-check-input" type="checkbox"></form>', '.form-check-input'],
+    ['forms', '<div class="input-group" data-mps="input-group"><span class="input-group-text">@</span></div>', '.input-group-text'],
+    ['modal', '<div class="modal-content" data-mps="modal"><div class="modal-header" data-mps="modal"><h5 class="modal-title">t</h5></div></div>', '.modal-title'],
+    ['offcanvas', '<div class="offcanvas offcanvas-start" data-mps="offcanvas"><div class="offcanvas-header"><h5 class="offcanvas-title">t</h5></div></div>', '.offcanvas-title'],
+    ['tables', '<table class="table" data-mps="table"><tbody><tr class="table-active"><td class="table-primary">c</td></tr></tbody></table>', '.table-active'],
+    ['dropdown', '<ul class="dropdown-menu" data-mps="dropdown-menu"><li><span class="dropdown-item-text">t</span></li></ul>', '.dropdown-item-text'],
+    ['alert', '<div class="alert alert-primary" data-mps="alert"><a class="alert-link">l</a></div>', '.alert-link'],
+    ['card', '<div class="card" data-mps="card"><div class="card-body"><h5 class="card-title">t</h5></div></div>', '.card-title'],
+    ['nav', '<ul class="navbar-nav" data-mps="navbar"><li class="nav-item"><a class="nav-link">l</a></li></ul>', '.nav-link'],
+  ];
+
+  it.each(cases)('%s: %s styles %s', (part, html, selector) => {
+    const { scoped } = parts.find((p) => p.name === part)!;
+    const host = document.createElement('div');
+    host.innerHTML = html;
+    document.body.appendChild(host);
+    try {
+      const target = host.querySelector(selector)!;
+      expect(target.hasAttribute('data-mps')).toBe(false);
+      const matching = matchable(scoped, part).filter((s) => {
+        try {
+          return [...host.querySelectorAll(s)].includes(target);
+        } catch {
+          return false;
+        }
+      });
+      expect(matching.length).toBeGreaterThan(0);
+    } finally {
+      host.remove();
+    }
   });
 });

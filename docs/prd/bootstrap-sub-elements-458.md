@@ -261,6 +261,11 @@ with nothing beyond the group's import:
    (`BS_NAVBAR = [BsNavbarComponent, BsNavbarNavComponent, BsNavbarItemComponent, …, BsNavbarLinkDirective]`,
    with the same shape for every group). The docs and demos import that array, so the consumer never names
    the marker directive.
+   - It works for **standalone** components: Angular flattens nested arrays in a standalone `imports`, so a
+     consumer writes `imports: [BS_NAVBAR]`.
+   - An `NgModule` can re-export the same array if one is ever wanted, but none is generated.
+   - The individual classes stay exported. A consumer who cherry-picks also names the marker directive,
+     and the demos and docs never do that.
 4. **Guard.** An e2e in all three demos renders a navbar and a nav with plain `<a>` links (at depth 0 and
    inside a dropdown) and asserts the computed Bootstrap link styles: padding, colour, and the
    hover/active state.

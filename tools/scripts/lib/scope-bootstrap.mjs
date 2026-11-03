@@ -19,10 +19,21 @@
  *    `.was-validated .form-control:where([data-mps]):invalid` (the form is the
  *    consumer's; state classes are owned by nobody).
  *
+ * 4. picks the guard by the owned class's ROLE (`PART_CLASSES`, #458): a ROOT
+ *    class (the component's outer element and its modifiers) gets
+ *    `:where([data-mps])`; a SUB class (documented content of a root:
+ *    `.form-label`, `.modal-title`, `tr.table-active`) gets
+ *    `:where([data-mps], <anchors>[data-mps] *)`, so it is styled when stamped
+ *    itself OR anywhere inside a stamped root of its own partial. That reaches
+ *    content the consumer projects into the component, and nothing else: the
+ *    anchors are the partial's own root classes, never "any stamped element"
+ *    (bs-shell's stamped `.content` wraps the whole app).
+ *
  * A selector with no class at all (`:root`, `[data-bs-theme=dark]` token
  * blocks) ships verbatim: it styles no component element. A selector with
- * classes but none owned is a hard error, so a Bootstrap upgrade that adds a
- * class family fails the codegen instead of shipping an unscoped rule.
+ * classes but none owned is a hard error, and so is an owned class that is
+ * neither ROOT nor SUB, so a Bootstrap upgrade that adds a class fails the
+ * codegen instead of shipping an unscoped or unclassified rule.
  */
 
 import postcss from 'postcss';
@@ -69,6 +80,70 @@ export const OWNED_CLASSES = {
   transitions: /^(fade|collapse|collapsing|collapse-horizontal)$/,
 };
 
+const VARIANTS = 'primary|secondary|success|info|warning|danger|light|dark';
+const BREAKPOINTS = 'sm|md|lg|xl|xxl';
+
+/**
+ * Each owned class's role (#458, docs/prd/bootstrap-sub-elements-458.md §4.1).
+ * `root`: the component's outer element and its modifiers. `sub`: the
+ * documented content of a root, which a consumer may write and project in.
+ * `anchors`: the root classes (or element) a sub class may sit inside.
+ * Every class a partial's selectors target must match `root` or `sub`.
+ */
+export const PART_CLASSES = {
+  accordion: { root: /^accordion(-flush)?$/, sub: /^accordion-(item|header|button|collapse|body)$/, anchors: ['.accordion'] },
+  alert: { root: new RegExp(`^alert(-dismissible|-(${VARIANTS}))?$`), sub: /^alert-(heading|link)$/, anchors: ['.alert'] },
+  badge: { root: /^badge$/ },
+  breadcrumb: { root: /^breadcrumb$/, sub: /^breadcrumb-item$/, anchors: ['.breadcrumb'] },
+  'button-group': { root: /^(btn-group(-vertical|-sm|-lg)?|btn-toolbar)$/, sub: /^dropdown-toggle-split$/, anchors: ['.btn-group', '.btn-group-vertical'] },
+  card: { root: /^card-group$/, sub: /^card(-.+)?$/, anchors: ['.card', '.card-group'] },
+  carousel: { root: /^carousel(-fade|-dark)?$/, sub: /^carousel-.+$/, anchors: ['.carousel'] },
+  close: { root: /^btn-close(-white)?$/ },
+  containers: { root: /^container(-.+)?$/ },
+  dropdown: {
+    root: new RegExp(`^(dropup|dropend|dropdown|dropstart|dropup-center|dropdown-center|dropdown-toggle|dropdown-menu(-dark|-start|-end|-(${BREAKPOINTS})-(start|end))?)$`),
+    sub: /^dropdown-(divider|item|header|item-text)$/,
+    anchors: ['.dropdown-menu'],
+  },
+  // A form has no root class: its roots are a stamped <form>, input group or floating label.
+  forms: { root: /^$/, sub: /^(form-.+|col-form-label(-.+)?|input-group(-.+)?|btn-check|(in)?valid-(feedback|tooltip))$/, anchors: ['form', '.input-group', '.form-floating'] },
+  grid: { root: /^(row|row-cols-.+|g[xy]?-.+)$/, sub: /^(col(-.+)?|offset-.+)$/, anchors: ['.row'] },
+  'list-group': { root: /^list-group(-numbered|-flush|-horizontal(-.+)?)?$/, sub: /^list-group-item(-.+)?$/, anchors: ['.list-group'] },
+  modal: { root: /^modal(-dialog(-.+)?|-content|-backdrop|-sm|-lg|-xl|-fullscreen(-.+)?)?$/, sub: /^modal-(header|title|body|footer)$/, anchors: ['.modal-content'] },
+  nav: { root: /^(nav(-tabs|-pills|-underline|-fill|-justified)?|tab-content)$/, sub: /^nav-link$/, anchors: ['.nav', '.navbar-nav'] },
+  navbar: { root: /^navbar(-expand(-.+)?|-dark)?$/, sub: /^navbar-(brand|nav|nav-scroll|text|collapse|toggler|toggler-icon)$/, anchors: ['.navbar'] },
+  offcanvas: {
+    root: new RegExp(`^offcanvas(-(${BREAKPOINTS})|-backdrop)?$`),
+    sub: /^offcanvas-(header|title|body)$/,
+    anchors: ['.offcanvas', ...BREAKPOINTS.split('|').map((bp) => `.offcanvas-${bp}`)],
+  },
+  pagination: { root: /^pagination(-lg|-sm)?$/, sub: /^page-(item|link)$/, anchors: ['.pagination'] },
+  placeholders: { root: /^placeholder-(glow|wave)$/, sub: /^placeholder(-xs|-sm|-lg)?$/, anchors: ['.placeholder-glow', '.placeholder-wave'] },
+  popover: { root: /^(popover|bs-popover-.+)$/, sub: /^popover-(header|body)$/, anchors: ['.popover'] },
+  progress: { root: /^progress(-stacked)?$/, sub: /^progress-bar(-.+)?$/, anchors: ['.progress', '.progress-stacked'] },
+  spinners: { root: /^spinner-.+$/ },
+  tables: {
+    root: /^(table(-sm|-bordered|-borderless|-striped(-columns)?|-hover|-responsive(-.+)?)?|caption-top)$/,
+    sub: new RegExp(`^table-(active|group-divider|${VARIANTS})$`),
+    anchors: ['.table'],
+  },
+  toasts: { root: /^toast(-container)?$/, sub: /^toast-(header|body)$/, anchors: ['.toast'] },
+  tooltip: { root: /^(tooltip|bs-tooltip-.+)$/, sub: /^tooltip-inner$/, anchors: ['.tooltip'] },
+  transitions: { root: /^(fade|collapse|collapsing|collapse-horizontal)$/ },
+};
+
+/**
+ * The guard of a partial's SUB classes, or null when it has none:
+ * `:where([data-mps], .table[data-mps] *)`, with several anchors folded into
+ * one `:is()` arm (`:is(form, .input-group, .form-floating)[data-mps] *`).
+ */
+export function subGuard(partial) {
+  const anchors = PART_CLASSES[partial]?.anchors;
+  if (!anchors?.length) return null;
+  const anchor = anchors.length === 1 ? anchors[0] : `:is(${anchors.join(', ')})`;
+  return `:where([${SCOPE_ATTRIBUTE}], ${anchor}[${SCOPE_ATTRIBUTE}] *)`;
+}
+
 /** At-rules whose blocks hold no element selectors. */
 const SKIP_ATRULES = /^(-\w+-)?(keyframes|font-face|property|page|counter-style)$/i;
 
@@ -93,11 +168,16 @@ function scopeSelector(selector, owns, partial) {
     if (owns.test(node.value)) target = node;
   });
   if (target) {
-    target.parent.insertAfter(target, selectorParser.pseudo({ value: ':where', nodes: [] }));
-    const where = target.next();
-    const inner = selectorParser.selector({ value: '' });
-    inner.append(selectorParser.attribute({ attribute: SCOPE_ATTRIBUTE }));
-    where.append(inner);
+    const { root, sub } = PART_CLASSES[partial];
+    const isSub = !!sub && sub.test(target.value);
+    if (!isSub && !root.test(target.value)) {
+      throw new Error(
+        `scopeBootstrapPart(${partial}): class "${target.value}" is neither root nor sub in ${JSON.stringify(String(selector).trim())}. ` +
+          `Classify it in PART_CLASSES in tools/scripts/lib/scope-bootstrap.mjs.`,
+      );
+    }
+    const guard = selectorParser().astSync(`a${isSub ? subGuard(partial) : SCOPE_GUARD}`).first.last;
+    target.parent.insertAfter(target, guard);
     return 'scoped';
   }
   if (!sawClass) return 'verbatim';
@@ -118,6 +198,9 @@ function scopeSelector(selector, owns, partial) {
 export function scopeBootstrapPart(css, partial) {
   const owns = OWNED_CLASSES[partial];
   if (!owns) throw new Error(`scopeBootstrapPart: unknown partial ${JSON.stringify(partial)} (no OWNED_CLASSES entry)`);
+  const roles = PART_CLASSES[partial];
+  if (!roles) throw new Error(`scopeBootstrapPart: no PART_CLASSES entry for ${JSON.stringify(partial)}`);
+  if (roles.sub && !roles.anchors?.length) throw new Error(`scopeBootstrapPart(${partial}): sub classes need anchors`);
   const verbatim = [];
   const root = postcss.parse(css);
   root.walkRules((rule) => {
