@@ -230,6 +230,41 @@ Content that must survive a move uses a core-owned host (`<teleport :to>`, the d
 children use a manifest `content:` query (the ribbon). After conversion, `::part()` and `::slotted()`
 hooks on these elements no longer exist.
 
+### 4.7a Consumer links inside nav and navbar items (owner requirement)
+
+`bs-navbar` > `bs-navbar-nav` > `bs-navbar-item` (and `bs-nav-item`, and an item inside a dropdown) always
+holds a **consumer-provided `<a>`** (or `<button>`). That element must get the stock Bootstrap link styles
+with nothing beyond the group's import:
+- `.nav-link` in the bar;
+- `.dropdown-item` in a dropdown panel.
+
+**Today.**
+- React, Vue and Lit mark the link through extension files (`markLinks(nodes, 'nav-link', scope)`). These
+  add the class *and* `data-mps`.
+- Angular needs the consumer to import `BsNavbarLinkDirective` / `BsNavLinkDirective` themselves
+  (`selector: 'a, button'`). The demo's `app.component.ts` does that, and it is exactly the boilerplate
+  #458 removes.
+
+**Design.**
+1. **The class is added, the scope is not.** The anchored guard styles the link, because `nav-link` is a
+   sub class of `.nav` / `.navbar-nav` and `dropdown-item` a sub class of `.dropdown-menu`. So marking
+   adds only the Bootstrap class. A consumer's class list is extended, never their attributes.
+2. **A compiler feature, not an extension file.** A manifest slot option such as
+   `slots: { default: { linkClass: 'nav-link', inMenu: 'dropdown-item' } }` generates the marking in every
+   front:
+   - React and Vue: a vnode/element clone (today's `markLinks`, without the scope);
+   - Lit: the captured light children;
+   - Angular: a generated marker directive (`a, button`, acting only inside the item, before the first
+     render so the server HTML carries the class).
+3. **Angular "import" means the group's export.** An Angular component cannot apply a directive to
+   content projected into it, so the compiler emits a **group import array**
+   (`BS_NAVBAR = [BsNavbarComponent, BsNavbarNavComponent, BsNavbarItemComponent, …, BsNavbarLinkDirective]`,
+   with the same shape for every group). The docs and demos import that array, so the consumer never names
+   the marker directive.
+4. **Guard.** An e2e in all three demos renders a navbar and a nav with plain `<a>` links (at depth 0 and
+   inside a dropdown) and asserts the computed Bootstrap link styles: padding, colour, and the
+   hover/active state.
+
 ### 4.8 Doc changes in the same PR
 
 `CLAUDE.md`:
@@ -337,7 +372,7 @@ Two Vue limits follow, and they decide the Vue API shape:
 - A custom directive **cannot render slot content**. That affects `*[bsTooltip]`, the popover and
   `[bsDropdownMenu]`.
 
-**Proposal: for those cases, the Vue front emits a renderless component instead.** For example
+**Decided (owner, 2026-11-03): for those cases, the Vue front emits a renderless component instead.** For example
 `<BsTooltip v-slot="{ props }"><button v-bind="props">…</button></BsTooltip>`, the standard Vue
 headless pattern. A directive that consumes no context and renders no template stays a custom directive
 (`v-bs-row`, `v-bs-col`).
@@ -407,6 +442,9 @@ only.
 - No hand-written front, no shadow root and no `_styles` copy remains for any UI component.
   `compile-components-check` is clean.
 - All four fronts expose every in-scope component.
+- Consumer `<a>`/`<button>` links in `bs-navbar-item` and `bs-nav-item` are styled like stock Bootstrap
+  `.nav-link`, and like `.dropdown-item` inside a dropdown, in all four fronts. The consumer imports only
+  the group's export (§4.7a).
 - With JS disabled, every navbar item and nested dropdown in the three demos can be reached and opened
   by mouse and keyboard.
 - Overlays render at the end of `<body>`, are not clipped by `overflow: hidden` ancestors, keep the
