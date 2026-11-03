@@ -141,19 +141,19 @@ onBeforeUnmount(() => observer?.disconnect());
         <label class="form-label mb-1">Gap</label>
         <BsSelect v-model:value="gap" aria-label="Gap" :options="GAP_OPTIONS" />
       </div>
-      <BsCheckbox v-model="editing" type="switch">Edit layout</BsCheckbox>
-      <BsCheckbox v-model="animateReflow">Animate reflow</BsCheckbox>
+      <BsCheckbox v-model:checked="editing" type="switch">Edit layout</BsCheckbox>
+      <BsCheckbox v-model:checked="animateReflow">Animate reflow</BsCheckbox>
     </div>
 
     <div class="tile-demo-checklist">
       <strong>Panels:</strong>
-      <BsCheckbox v-for="panel in PANELS" :key="panel.id" :model-value="!hidden.has(panel.id)" @update:model-value="hidden = toggled(hidden, panel.id)">
+      <BsCheckbox v-for="panel in PANELS" :key="panel.id" :checked="!hidden.has(panel.id)" @update:checked="hidden = toggled(hidden, panel.id)">
         {{ panel.title }}
       </BsCheckbox>
     </div>
     <div class="tile-demo-checklist">
       <strong>Lock:</strong>
-      <BsCheckbox v-for="panel in PANELS" :key="panel.id" :model-value="locked.has(panel.id)" @update:model-value="locked = toggled(locked, panel.id)">
+      <BsCheckbox v-for="panel in PANELS" :key="panel.id" :checked="locked.has(panel.id)" @update:checked="locked = toggled(locked, panel.id)">
         {{ panel.title }}
       </BsCheckbox>
     </div>

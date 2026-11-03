@@ -498,6 +498,21 @@ only.
 4. **Shadow-root groups → D10:** accordion, card, charts, checkbox, toggle-button, pagination,
    shell, tab-control, tile-manager. Delete `web-components/_styles` and the page-variant install.
    Retire `light-styles-nesting`.
+   - **Checkbox.** `checkbox`, `toggle-button` and `checkbox-group` are ONE D10 group
+     (`ui-core/checkbox`), mirroring the radio group. Markup is Bootstrap's canonical form in every
+     type: `div.form-check[.form-switch] > input + label[for]`, or a `display: contents` root around
+     `.btn-check + label.btn` (the old wrapping `<label>` is gone). `toggle-button` is the same core
+     with its type fixed and renders the checkbox template. `isToggled` is renamed `checked`;
+     `checked` and `indeterminate` are two-way, and a user toggle clears the mixed state.
+   - **Checkbox group.** `CHECKBOX_GROUP` hands the checkboxes the name (`<name>[]`), the selection
+     and `disabled`; the nearest group wins, and a group handles only its own checkboxes
+     (`ownsCheckbox`). Its value is read from the DOM in document order (`groupSelection`), as the
+     Angular directive did. `[bsCheckboxGroup]` stays as the Angular attribute form (role `group`
+     only on a generic host); its `label` and the checkbox's `[group]` inputs are gone. React and Vue
+     gain `BsCheckboxGroup`. The `toggle-button` entries of React, Vue and Lit are folded into
+     `checkbox`.
+   - The Lit `FormAssociatedMixin` lost its last user (the hand-written `mp-checkbox`) and is
+     deleted: every form control is a light-DOM native input that submits on its own.
 5. **#455 tiers A and B:** presentational components, grid, form, floating-labels, range. Includes
    `bs-button-group` as a D10 group whose sheet joins hosted children (see M3).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the

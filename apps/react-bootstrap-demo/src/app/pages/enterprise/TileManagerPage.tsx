@@ -142,7 +142,7 @@ export function TileManagerPage() {
       <div className="tile-demo-checklist">
         <strong>Panels:</strong>
         {PANELS.map((panel) => (
-          <BsCheckbox key={panel.id} type="checkbox" checked={!hidden.has(panel.id)} onChange={() => setHidden((ids) => toggled(ids, panel.id))}>
+          <BsCheckbox key={panel.id} type="checkbox" checked={!hidden.has(panel.id)} onCheckedChange={() => setHidden((ids) => toggled(ids, panel.id))}>
             {panel.title}
           </BsCheckbox>
         ))}
@@ -150,7 +150,7 @@ export function TileManagerPage() {
       <div className="tile-demo-checklist">
         <strong>Lock:</strong>
         {PANELS.map((panel) => (
-          <BsCheckbox key={panel.id} type="checkbox" checked={locked.has(panel.id)} onChange={() => setLocked((ids) => toggled(ids, panel.id))}>
+          <BsCheckbox key={panel.id} type="checkbox" checked={locked.has(panel.id)} onCheckedChange={() => setLocked((ids) => toggled(ids, panel.id))}>
             {panel.title}
           </BsCheckbox>
         ))}

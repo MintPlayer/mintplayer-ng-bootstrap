@@ -17,7 +17,7 @@ import {
   BsCard, BsCardBody, BsCardFooter, BsCardGroup, BsCardHeader, BsCardImg, BsCardLink, BsCardSubtitle,
   BsCardText, BsCardTitle,
 } from '@mintplayer/react-bootstrap/card';
-import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsCheckbox, BsCheckboxGroup, BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
@@ -43,7 +43,6 @@ import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
 import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
 import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
@@ -109,6 +108,7 @@ export const everyWrapperProbes = [
   <BsCardText role="none" id="x" tabIndex={-1} />,
   <BsCardTitle role="none" id="x" tabIndex={-1} />,
   <BsCheckbox id="x" tabIndex={-1} />,
+  <BsCheckboxGroup role="none" id="x" tabIndex={-1} />,
   <BsCodeSnippet role="none" id="x" tabIndex={-1} />,
   <BsDatatable role="none" id="x" tabIndex={-1} />,
   <BsDatepicker role="none" id="x" tabIndex={-1} />,
@@ -162,11 +162,6 @@ export const everyWrapperProbes = [
   // The board is a region by contract (#440).
   // @ts-expect-error role is not an accepted prop
   <BsTileManager tiles={[]} role="none" />,
-  // A native checkbox keeps its own role: role="button" on it hides the only state AT can read.
-  // @ts-expect-error role is not an accepted prop
-  <BsCheckbox role="none" />,
-  // @ts-expect-error role is not an accepted prop
-  <BsToggleButton role="none" />,
 ];
 
 /**

@@ -21,7 +21,7 @@ import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
-import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsCheckbox, BsCheckboxGroup, BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
@@ -74,7 +74,6 @@ import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
 import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
@@ -181,6 +180,7 @@ const CASES: Case[] = [
   { name: 'BsSparkline', target: 'svg', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, fixedRole: 'img' },
   bare('BsTrendChart', 'div.trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
+  { ...bare('BsCheckboxGroup', 'div', BsCheckboxGroup), fixedRole: 'group' },
   bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),
   { ...bare('BsDatatable', 'div.datatable', BsDatatable), labelTarget: 'table' },
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),

@@ -92,11 +92,11 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" label="Toppings" [(ngModel)]="toppings">
-                <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
-                <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
-                <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>
-            </div>
+            <bs-checkbox-group name="toppings" aria-label="Toppings" [(ngModel)]="toppings">
+                <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+                <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+                <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+            </bs-checkbox-group>
         </div>
         <div [md]="6">
             <span>Value: {{ toppings() | json }}</span>
@@ -117,11 +117,11 @@
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" label="Toppings" [formControl]="toppingsReactive">
-                <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
-                <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
-                <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>
-            </div>
+            <bs-checkbox-group name="toppings" aria-label="Toppings" [formControl]="toppingsReactive">
+                <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+                <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+                <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+            </bs-checkbox-group>
         </div>
         <div [md]="6">
             <span>Value: {{ toppingsReactive.value | json }}</span>
@@ -137,7 +137,7 @@
     <div bsRow class="mt-5">
         <div [col]>
             <h2>Group (multi-mode), non-adjacent (table row pattern)</h2>
-            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one checkbox. The group lives on <code>&lt;tbody&gt;</code> and each child uses <code>[group]="g"</code> for explicit wiring.</p>
+            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one checkbox. The attribute form <code>bsCheckboxGroup</code> lives on <code>&lt;tbody&gt;</code>; every checkbox below it joins the nearest group.</p>
         </div>
     </div>
     <div bsRow>
@@ -149,10 +149,10 @@
                         <th scope="col">Label</th>
                     </tr>
                 </thead>
-                <tbody bsCheckboxGroup name="rows" #g="bsCheckboxGroup" [(ngModel)]="selectedRows">
+                <tbody bsCheckboxGroup name="rows" [(ngModel)]="selectedRows">
                     @for (row of rows(); track row.id) {
                         <tr>
-                            <td><bs-checkbox [group]="g" [value]="row.id" [attr.aria-label]="'Select ' + row.label" /></td>
+                            <td><bs-checkbox [value]="row.id" [inputLabel]="'Select ' + row.label" /></td>
                             <td>{{ row.label }}</td>
                         </tr>
                     }

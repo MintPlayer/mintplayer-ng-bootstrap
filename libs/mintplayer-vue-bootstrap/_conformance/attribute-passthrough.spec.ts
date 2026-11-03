@@ -69,7 +69,6 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
     // (the core owns role and the IDREFs); the runtime sweep below pins where
     // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
     const FILTERED_FORWARDING = [
-      '../checkbox/src/BsCheckbox.vue',
       '../pagination/src/BsPagination.vue',
       '../shell/src/BsShell.vue',
       '../tab-control/src/BsTabControl.vue',
@@ -108,6 +107,7 @@ const TARGETS: Record<string, string> = {
   BsSparkline: 'svg',
   BsTrendChart: 'div.trend-chart',
   BsCheckbox: 'input[type=checkbox]',
+  BsCheckboxGroup: 'div[role=group]',
   BsCodeSnippet: 'div.code-snippet',
   BsDatatable: 'div.datatable',
   BsDatepicker: 'div.mp-datepicker',
