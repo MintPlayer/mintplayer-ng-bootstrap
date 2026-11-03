@@ -1,7 +1,8 @@
 import { isPlatformServer, NgTemplateOutlet } from '@angular/common';
 import { Component, computed, effect, inject, Injector, output, PLATFORM_ID, signal, TemplateRef, untracked, ChangeDetectionStrategy } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModal, bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModal } from '@mintplayer/ui-core/bootstrap/modal';
+import { bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap/offcanvas';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { Position } from '@mintplayer/ng-bootstrap';

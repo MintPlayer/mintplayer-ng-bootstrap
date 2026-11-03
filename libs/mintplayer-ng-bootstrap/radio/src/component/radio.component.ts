@@ -9,7 +9,7 @@ import {
   model,
 } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   connectRadio,

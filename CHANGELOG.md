@@ -33,8 +33,11 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Raw Bootstrap markup you write yourself** (`<div class="card">`, `<table class="table">`, a plain
     `.form-control`) is no longer styled by the global sheet. Install the verbatim part from the page that
     renders it: Angular `useBootstrap(bootstrapCardPage)` (`@mintplayer/ng-bootstrap/machine`) in the
-    constructor, React/Vue/plain `installBootstrap(bootstrapCardPage)`; the parts come from
-    `@mintplayer/ui-core/bootstrap`.
+    constructor, React/Vue/plain `installBootstrap(bootstrapCardPage)`. Each part is its own entry,
+    `@mintplayer/ui-core/bootstrap/<partial>` (`import { bootstrapCardPage } from
+    '@mintplayer/ui-core/bootstrap/card'`); `@mintplayer/ui-core/bootstrap` exports only `installBootstrap`,
+    `bootstrapInstallOptions` and the `BootstrapPart` type. One entry per part keeps a part in the lazy chunk
+    of whoever installs it under esbuild (Angular), which assigns a barrel's every reachable part to the shell.
   - Sub-classes on content you project into a component (`<h5 class="card-title">` inside `bs-card-body`)
     are not styled by the scoped part: use the component (`bs-card-title`) or install the `…Page` part.
   - `@mintplayer/ng-bootstrap/container` and `@mintplayer/ng-bootstrap/table-styles` are removed. `bs-grid`

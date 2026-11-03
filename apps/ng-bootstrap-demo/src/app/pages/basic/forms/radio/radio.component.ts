@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 import { JsonPipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { dedent } from 'ts-dedent';

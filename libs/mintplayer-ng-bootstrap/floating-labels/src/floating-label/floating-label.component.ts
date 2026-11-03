@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, ChangeDetectionStrategy, ElementRef, inject } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 
 let instanceCounter = 0;

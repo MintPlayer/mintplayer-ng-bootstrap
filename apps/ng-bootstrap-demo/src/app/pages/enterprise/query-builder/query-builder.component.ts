@@ -2,7 +2,8 @@ import { DemoFormStateComponent } from '../../../components/form-state/form-stat
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked, viewChild } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapContainersPage, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapContainersPage } from '@mintplayer/ui-core/bootstrap/containers';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';

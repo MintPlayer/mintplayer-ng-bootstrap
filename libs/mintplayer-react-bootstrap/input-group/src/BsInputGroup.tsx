@@ -1,4 +1,5 @@
-import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';

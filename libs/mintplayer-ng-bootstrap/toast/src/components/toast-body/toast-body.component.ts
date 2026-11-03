@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapToasts } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapToasts } from '@mintplayer/ui-core/bootstrap/toasts';
 
 @Component({
   selector: 'bs-toast-body',

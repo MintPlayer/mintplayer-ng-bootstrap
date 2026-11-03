@@ -1,6 +1,6 @@
 import { Directive, effect, inject } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap/placeholders';
 import { BsPlaceholderComponent } from '../placeholder/placeholder.component';
 
 @Directive({

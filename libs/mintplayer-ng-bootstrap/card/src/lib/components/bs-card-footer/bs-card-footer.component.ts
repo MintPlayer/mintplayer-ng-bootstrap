@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { capColorClasses } from '@mintplayer/ui-core/card';
 

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapBadge } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapBadge } from '@mintplayer/ui-core/bootstrap/badge';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 // `.badge` paints white text, and `bg-{color}` sets only the background: white

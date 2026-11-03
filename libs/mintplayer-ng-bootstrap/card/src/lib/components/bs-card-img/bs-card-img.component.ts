@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 import { cardImgClass, type CardImagePosition } from '@mintplayer/ui-core/card';
 
 /**

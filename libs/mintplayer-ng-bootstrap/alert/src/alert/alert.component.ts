@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, ElementRef, inject, input, model, output } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapAlert } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAlert } from '@mintplayer/ui-core/bootstrap/alert';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Color } from '@mintplayer/ng-bootstrap';
 

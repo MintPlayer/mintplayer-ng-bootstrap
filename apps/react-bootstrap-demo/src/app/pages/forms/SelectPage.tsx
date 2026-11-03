@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 interface Dish {
   id: number;

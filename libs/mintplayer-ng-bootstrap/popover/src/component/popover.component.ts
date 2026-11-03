@@ -1,7 +1,8 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Injector, input, TemplateRef } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapPopover, bootstrapTransitions } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPopover } from '@mintplayer/ui-core/bootstrap/popover';
+import { bootstrapTransitions } from '@mintplayer/ui-core/bootstrap/transitions';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';

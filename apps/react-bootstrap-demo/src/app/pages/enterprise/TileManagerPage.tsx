@@ -8,7 +8,10 @@ import {
 import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { installBootstrap, bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapBadgePage } from '@mintplayer/ui-core/bootstrap/badge';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
 
 import './TileManagerPage.scss';
 

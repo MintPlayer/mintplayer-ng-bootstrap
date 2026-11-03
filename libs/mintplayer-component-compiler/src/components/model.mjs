@@ -55,8 +55,16 @@ export function groupStyle(group, entry, corePackage = '@mintplayer/ui-core') {
   const unknown = bootstrap.filter((name) => !BOOTSTRAP_PARTS.includes(name));
   if (unknown.length) throw new Error(`${entry}: style.bootstrap names unknown Bootstrap part(s) ${unknown.join(', ')} (one of: ${BOOTSTRAP_PARTS.join(', ')})`);
   // Installed in Bootstrap's order whatever order the manifest lists them in.
-  const parts = BOOTSTRAP_PARTS.filter((name) => bootstrap.includes(name)).map((name) => `bootstrap${pascal(name)}`);
-  return { scope, sheet: `${camel(scope)}ScopedStyles`, from: from ?? null, bootstrap: parts, bootstrapModule: `${corePackage}/bootstrap` };
+  // Each part is its own subpath entry (`<core>/bootstrap/<partial>`), so a part
+  // rides the chunk of the component that installs it in every bundler.
+  const names = BOOTSTRAP_PARTS.filter((name) => bootstrap.includes(name));
+  return {
+    scope,
+    sheet: `${camel(scope)}ScopedStyles`,
+    from: from ?? null,
+    bootstrap: names.map((name) => `bootstrap${pascal(name)}`),
+    bootstrapImports: names.map((name) => ({ module: `${corePackage}/bootstrap/${name}`, names: [`bootstrap${pascal(name)}`] })),
+  };
 }
 
 /** Named exports of an extension file: `export const x`, `export function x`. */
@@ -225,7 +233,7 @@ export function coreImports(model, { values = [], types = [], slotTypes = false,
 /** `import { sheet } from '<module>';` for a sheet from another module. */
 export function styleImports(model) {
   return [
-    ...(model.style?.bootstrap.length ? [{ module: model.style.bootstrapModule, names: model.style.bootstrap }] : []),
+    ...(model.style?.bootstrapImports ?? []),
     ...(model.style?.from ? [{ module: model.style.from, names: [model.style.sheet] }] : []),
   ];
 }

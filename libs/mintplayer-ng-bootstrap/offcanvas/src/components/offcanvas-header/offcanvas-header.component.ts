@@ -1,6 +1,6 @@
 import { afterNextRender, Component, ElementRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapOffcanvas } from '@mintplayer/ui-core/bootstrap/offcanvas';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsOffcanvasContextService } from '../../services/offcanvas-context.service';
 

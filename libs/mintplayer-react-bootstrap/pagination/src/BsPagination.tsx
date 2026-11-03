@@ -6,7 +6,8 @@ import {
   type PaginationLabels,
   type PaginationSize,
 } from '@mintplayer/ui-core/pagination';
-import { bootstrapPagination, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap/pagination';
 import { reactProps } from '../../machine/src/react-props';
 
 export interface BsPaginationProps extends Omit<React.HTMLAttributes<HTMLElement>, 'children'> {

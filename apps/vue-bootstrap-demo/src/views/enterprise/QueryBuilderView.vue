@@ -10,7 +10,9 @@ import {
   type SortDescriptor,
 } from '@mintplayer/vue-bootstrap/query-builder';
 import type { DatatableColumnDef } from '@mintplayer/vue-bootstrap/datatable';
-import { installBootstrap, bootstrapFormsPage, bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap/spinners';
 
 // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
 installBootstrap(bootstrapFormsPage, bootstrapSpinnersPage);

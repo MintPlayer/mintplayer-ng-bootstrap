@@ -9,7 +9,9 @@ import {
   type SortDescriptor,
 } from '@mintplayer/web-components/query-builder';
 import type { DatatableColumnDef } from '@mintplayer/react-bootstrap/datatable';
-import { installBootstrap, bootstrapFormsPage, bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapSpinnersPage } from '@mintplayer/ui-core/bootstrap/spinners';
 
 // In dev, /api is proxied to localhost:5000 by vite.config.mts. In prod we
 // POST cross-origin to the API subdomain (CORS-allowed in apps/api/Program.cs).

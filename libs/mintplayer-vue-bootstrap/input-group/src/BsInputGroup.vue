@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { computed, useAttrs } from 'vue';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {

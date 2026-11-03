@@ -1,5 +1,6 @@
 import { ReactiveElement } from 'lit';
-import { bootstrapCardPage, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCardPage } from '@mintplayer/ui-core/bootstrap/card';
 import { cardColorClasses } from '@mintplayer/ui-core/card';
 
 /**

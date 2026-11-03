@@ -1,4 +1,5 @@
-import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { ReactiveElement } from 'lit';
 import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import { applyHostProps, EMPTY_HOST_PROPS } from '@mintplayer/web-components/machine';

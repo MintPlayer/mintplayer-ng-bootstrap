@@ -189,6 +189,13 @@ How each kind of component gets it:
     list-group, modal, offcanvas, placeholder, popover, progress, spinner, table, toast, tooltip, …);
   - the hand-written parts of accordion, tab-control, input-group, shell, typeahead, dropdown-menu.
 
+**Each part is its own subpath entry**, `@mintplayer/ui-core/bootstrap/<partial>`; `@mintplayer/ui-core/bootstrap`
+holds only `installBootstrap`, `bootstrapInstallOptions` and the `BootstrapPart` type. A barrel of per-part
+modules was enough for Rollup but not for esbuild: Angular's application builder assigns modules to chunks by
+file reachability, and the shell reaches the barrel through `useBootstrap`, so every part the app used
+anywhere landed in an initial chunk (measured in a minimal consumer repo, card + nav + navbar in `main`).
+Breaking, accepted: no compatibility barrel.
+
   Stamping means writing the attribute on their host and their own template elements, never on projected
   consumer content (the existing `stampScope` rule). The attribute name and the helpers live in
   `ui-core/scoped-styles`, so every front uses one implementation. Every component then uses the scoped

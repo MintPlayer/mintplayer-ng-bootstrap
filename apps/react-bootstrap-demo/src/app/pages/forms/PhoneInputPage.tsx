@@ -3,7 +3,8 @@ import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/react-bootstrap/phone-input';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 const SOURCE = `<BsPhoneInput
   value={phone}

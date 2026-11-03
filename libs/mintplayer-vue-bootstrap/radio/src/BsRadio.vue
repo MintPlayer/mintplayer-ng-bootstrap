@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 /**
  * A native <input type=radio> in Bootstrap's .form-check / .btn-check markup
  * (#437), with the ARIA contract from @mintplayer/ui-core/radio. Inside a

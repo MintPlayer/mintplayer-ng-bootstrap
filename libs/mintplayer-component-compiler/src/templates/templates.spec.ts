@@ -84,7 +84,7 @@ describe('scope stamping (S15)', () => {
   });
 
   it('takes one kebab-case literal scope per group and refuses the old styles list', () => {
-    expect(groupStyle({ style: { scope: 'tree-select' } }, 'x')).toEqual({ scope: 'tree-select', sheet: 'treeSelectScopedStyles', from: null, bootstrap: [], bootstrapModule: '@mintplayer/ui-core/bootstrap' });
+    expect(groupStyle({ style: { scope: 'tree-select' } }, 'x')).toEqual({ scope: 'tree-select', sheet: 'treeSelectScopedStyles', from: null, bootstrap: [], bootstrapImports: [] });
     expect(groupStyle({}, 'x')).toBeNull();
     expect(() => groupStyle({ style: { scope: 'TREE_SCOPE' } }, 'x')).toThrow();
     expect(() => groupStyle({ styles: [{ scope: 'A', sheet: 'a' }] }, 'x')).toThrow(/S15/);
@@ -95,6 +95,11 @@ describe('scope stamping (S15)', () => {
       'bootstrapDropdown',
       'bootstrapNav',
       'bootstrapNavbar',
+    ]);
+    // One subpath entry per part, so each rides the chunk of its installer (esbuild too).
+    expect(groupStyle({ style: { scope: 'card', bootstrap: ['card', 'list-group'] } }, 'x').bootstrapImports).toEqual([
+      { module: '@mintplayer/ui-core/bootstrap/card', names: ['bootstrapCard'] },
+      { module: '@mintplayer/ui-core/bootstrap/list-group', names: ['bootstrapListGroup'] },
     ]);
     expect(() => groupStyle({ style: { scope: 'x', bootstrap: ['bootstrap'] } }, 'x')).toThrow(/unknown Bootstrap part/);
   });

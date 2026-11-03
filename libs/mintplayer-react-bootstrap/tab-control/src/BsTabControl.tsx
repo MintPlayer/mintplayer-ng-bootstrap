@@ -1,4 +1,5 @@
-import { bootstrapNav, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap/nav';
 import * as React from 'react';
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';

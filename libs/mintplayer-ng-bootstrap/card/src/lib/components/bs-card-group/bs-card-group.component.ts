@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 
 /**
  * Card group. No host `display` of its own: Bootstrap's `.card-group` turns

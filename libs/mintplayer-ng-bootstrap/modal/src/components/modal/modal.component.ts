@@ -1,6 +1,7 @@
 import { Component, inject, Injector, signal, TemplateRef, ChangeDetectionStrategy } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModal, bootstrapTransitions } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModal } from '@mintplayer/ui-core/bootstrap/modal';
+import { bootstrapTransitions } from '@mintplayer/ui-core/bootstrap/transitions';
 import { NgTemplateOutlet } from '@angular/common';
 import { EnterFromTopAnimation, FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { BsOverlayFocusDirective } from '@mintplayer/ng-bootstrap/a11y';

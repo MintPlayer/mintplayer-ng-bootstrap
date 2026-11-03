@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 // A nav inside the header takes Bootstrap's own card-header-tabs /
 // card-header-pills class, written on the nav.
 import { computed } from 'vue';

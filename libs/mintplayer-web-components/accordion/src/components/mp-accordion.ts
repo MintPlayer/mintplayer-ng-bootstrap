@@ -1,4 +1,5 @@
-import { bootstrapAccordion, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap/accordion';
 import { LitElement, html, type TemplateResult } from 'lit';
 import { adoptLightStyles, installLightStyles } from '@mintplayer/web-components/light-dom';
 import { props } from '@mintplayer/web-components/machine';

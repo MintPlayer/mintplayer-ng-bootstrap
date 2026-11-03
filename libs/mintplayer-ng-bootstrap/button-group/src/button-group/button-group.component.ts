@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapButtonGroup } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapButtonGroup } from '@mintplayer/ui-core/bootstrap/button-group';
 
 @Component({
   selector: 'bs-button-group',

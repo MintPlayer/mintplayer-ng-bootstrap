@@ -1,4 +1,4 @@
-import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, output, signal, viewChild } from '@angular/core';
 import { BsForwardAriaDirective } from '@mintplayer/ng-bootstrap/a11y';
 import { MpPropsDirective, useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';

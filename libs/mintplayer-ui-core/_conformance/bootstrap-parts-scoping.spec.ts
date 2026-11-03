@@ -74,8 +74,14 @@ describe('Bootstrap parts', () => {
       expect(orders).toEqual([BOOTSTRAP_PARTIAL_ORDER.indexOf(name), BOOTSTRAP_PARTIAL_ORDER.indexOf(name)]);
       expect([...pages].sort()).toEqual([false, true]);
     });
-    const barrel = readFileSync(resolve(import.meta.dirname, '../bootstrap/src/parts.ts'), 'utf8');
-    expect(barrel.split('\n').filter((line) => /^(import|export const)\b/.test(line))).toEqual([]);
+    // ...and each is its own subpath entry, @mintplayer/ui-core/bootstrap/<partial>:
+    // esbuild (Angular) puts a barrel's every reachable part in the shell's chunk.
+    found.forEach(({ name }) => {
+      const entry = readFileSync(resolve(import.meta.dirname, `../bootstrap/${name}/index.ts`), 'utf8');
+      expect(entry.trim()).toBe(`export * from '../src/parts/${name}.part';`);
+    });
+    const barrel = readFileSync(resolve(import.meta.dirname, '../bootstrap/src/index.ts'), 'utf8');
+    expect(barrel).not.toMatch(/from '\.\/parts/);
   });
 
   it('has an ownership entry for every part', () => {

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { Breakpoint } from '@mintplayer/ng-bootstrap';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapContainers, bootstrapGrid } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapContainers } from '@mintplayer/ui-core/bootstrap/containers';
+import { bootstrapGrid } from '@mintplayer/ui-core/bootstrap/grid';
 
 @Component({
   selector: 'bs-grid',

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapContainersPage, bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapContainersPage } from '@mintplayer/ui-core/bootstrap/containers';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
 import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BsOtpInputComponent } from '@mintplayer/ng-bootstrap/otp-input';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';

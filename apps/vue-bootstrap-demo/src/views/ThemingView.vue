@@ -28,7 +28,8 @@ import {
   BsThemeToggle,
   useBsTheme,
 } from '@mintplayer/vue-bootstrap/theming';
-import { installBootstrap, bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap/button-group';
 
 // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
 installBootstrap(bootstrapButtonGroupPage);

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapToasts, bootstrapTransitions } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapToasts } from '@mintplayer/ui-core/bootstrap/toasts';
+import { bootstrapTransitions } from '@mintplayer/ui-core/bootstrap/transitions';
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 export type BsToastPoliteness = 'polite' | 'assertive';

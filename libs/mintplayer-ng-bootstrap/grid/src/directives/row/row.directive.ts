@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapGrid } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapGrid } from '@mintplayer/ui-core/bootstrap/grid';
 
 /**
  * Puts Bootstrap's `.row` on the element. The directive owns that class, so it

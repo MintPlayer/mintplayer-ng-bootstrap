@@ -1,4 +1,5 @@
-import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { installLightStyles } from '@mintplayer/web-components/light-dom';
 import {
   INPUT_GROUP_SCOPE,

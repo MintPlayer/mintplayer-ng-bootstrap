@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 import { JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PaginationRequest, PaginationResponse } from '@mintplayer/pagination';

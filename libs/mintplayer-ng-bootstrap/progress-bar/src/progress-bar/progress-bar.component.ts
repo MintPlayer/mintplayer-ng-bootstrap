@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapProgress } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapProgress } from '@mintplayer/ui-core/bootstrap/progress';
 import { Color } from '@mintplayer/ng-bootstrap';
 
 @Component({

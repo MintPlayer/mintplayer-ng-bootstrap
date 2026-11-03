@@ -1,5 +1,6 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 
 const SNIPPET_BASIC = `import { BsShell } from '@mintplayer/react-bootstrap/shell';
 

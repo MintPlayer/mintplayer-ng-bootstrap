@@ -1,4 +1,4 @@
-import { bootstrapNav } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap/nav';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,

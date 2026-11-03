@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   DROPDOWN_MENU_SCOPE,

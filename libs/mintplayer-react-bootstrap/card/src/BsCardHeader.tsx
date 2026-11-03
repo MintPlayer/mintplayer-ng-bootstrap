@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { forwardRef, HTMLAttributes, PropsWithChildren } from 'react';
 import { capColorClasses, type CardColor } from '@mintplayer/ui-core/card';
-import { bootstrapCard, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(' ');
 

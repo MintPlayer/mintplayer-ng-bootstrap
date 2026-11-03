@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 
 /**
  * Puts Bootstrap's `.col-form-label` on the element, stamps it (`data-mps`)

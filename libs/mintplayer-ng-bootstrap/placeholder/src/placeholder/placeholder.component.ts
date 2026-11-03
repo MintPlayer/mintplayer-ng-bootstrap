@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, model } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPlaceholders } from '@mintplayer/ui-core/bootstrap/placeholders';
 import { BsLiveAnnouncerService } from '@mintplayer/ng-bootstrap/a11y';
 
 @Component({

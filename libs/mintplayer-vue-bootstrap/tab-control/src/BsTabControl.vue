@@ -1,6 +1,7 @@
 <script lang="ts">
 import { defineComponent, h, onMounted, ref, shallowRef, useId, type PropType, type VNode } from 'vue';
-import { bootstrapNav, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapNav } from '@mintplayer/ui-core/bootstrap/nav';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   TAB_CONTROL_SCOPE,

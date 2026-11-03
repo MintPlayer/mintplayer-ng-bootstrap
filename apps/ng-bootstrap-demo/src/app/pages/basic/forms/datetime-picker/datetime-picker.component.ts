@@ -3,7 +3,7 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, model, ChangeDetectionStrategy, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapButtonGroupPage } from '@mintplayer/ui-core/bootstrap/button-group';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsDatetimePickerComponent } from '@mintplayer/ng-bootstrap/datetime-picker';

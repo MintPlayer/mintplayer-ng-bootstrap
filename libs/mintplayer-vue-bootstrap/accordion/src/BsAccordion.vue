@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { bootstrapAccordion, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap/accordion';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';
 import {
   ACCORDION_SCOPE,

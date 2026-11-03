@@ -8,7 +8,7 @@ import {
   model,
 } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap/pagination';
 import { Size } from '@mintplayer/ng-bootstrap';
 import {
   connectPagination,

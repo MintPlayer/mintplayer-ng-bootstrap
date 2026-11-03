@@ -1,4 +1,5 @@
-import { bootstrapForms, bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { isPlatformBrowser, NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,

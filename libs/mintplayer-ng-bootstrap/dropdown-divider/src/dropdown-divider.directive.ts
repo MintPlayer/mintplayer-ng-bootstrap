@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 
 @Directive({
   selector: '[bsDropdownDivider]',

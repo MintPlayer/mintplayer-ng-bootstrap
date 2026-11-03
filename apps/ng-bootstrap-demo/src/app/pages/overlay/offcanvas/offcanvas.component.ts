@@ -1,6 +1,6 @@
 import { Component, inject, model, signal, ChangeDetectionStrategy} from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapOffcanvasPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapOffcanvasPage } from '@mintplayer/ui-core/bootstrap/offcanvas';
 import { RouterLink } from '@angular/router';
 import { Color, Position } from '@mintplayer/ng-bootstrap';
 import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDirective } from '@mintplayer/ng-bootstrap/accordion';

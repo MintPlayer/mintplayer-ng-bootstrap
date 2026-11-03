@@ -16,7 +16,8 @@ import type {
   DistinctsRequest,
   FilterOperator,
 } from '@mintplayer/vue-bootstrap/datatable';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
 installBootstrap(bootstrapFormsPage);

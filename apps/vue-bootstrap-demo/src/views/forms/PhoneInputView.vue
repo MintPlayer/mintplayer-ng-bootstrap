@@ -4,7 +4,8 @@ import { BsPhoneInput } from '@mintplayer/vue-bootstrap/phone-input';
 import { BsInputGroup } from '@mintplayer/vue-bootstrap/input-group';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import type { PhoneChangeEventDetail } from '@mintplayer/vue-bootstrap/phone-input';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
 installBootstrap(bootstrapFormsPage);

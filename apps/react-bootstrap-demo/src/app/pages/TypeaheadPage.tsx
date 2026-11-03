@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsTypeahead, inMemoryTypeaheadProvider, type TypeaheadRequest } from '@mintplayer/react-bootstrap/typeahead';
-import { installBootstrap, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 
 interface Artist {
   id: number;

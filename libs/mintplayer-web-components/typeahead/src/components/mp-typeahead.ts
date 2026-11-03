@@ -1,4 +1,6 @@
-import { bootstrapForms, bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import { LitElement, nothing, type PropertyValues } from 'lit';
 import { live } from 'lit/directives/live.js';
 import { repeat } from 'lit/directives/repeat.js';

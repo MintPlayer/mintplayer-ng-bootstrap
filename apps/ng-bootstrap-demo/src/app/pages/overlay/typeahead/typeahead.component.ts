@@ -2,7 +2,9 @@ import { DemoFormStateComponent } from '../../../components/form-state/form-stat
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapGridPage, bootstrapFormsPage, bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapGridPage } from '@mintplayer/ui-core/bootstrap/grid';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 import { FormsModule, ReactiveFormsModule, FormControl } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsTypeaheadComponent, BsTypeaheadItemDirective, inMemoryTypeaheadProvider, TypeaheadRequest } from '@mintplayer/ng-bootstrap/typeahead';

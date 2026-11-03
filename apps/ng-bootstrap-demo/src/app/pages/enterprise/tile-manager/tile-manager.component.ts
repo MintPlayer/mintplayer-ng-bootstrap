@@ -1,6 +1,9 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, computed, DestroyRef, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapContainersPage, bootstrapFormsPage, bootstrapBadgePage, bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapContainersPage } from '@mintplayer/ui-core/bootstrap/containers';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapBadgePage } from '@mintplayer/ui-core/bootstrap/badge';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
 import { FormsModule } from '@angular/forms';
 import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';

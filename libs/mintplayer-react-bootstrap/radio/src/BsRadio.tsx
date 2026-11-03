@@ -2,7 +2,8 @@ import * as React from 'react';
 import { createContext, forwardRef, useContext, useId, useState } from 'react';
 import { connectRadio, radioClasses, type RadioType } from '@mintplayer/ui-core/radio';
 import type { ToggleButtonColor } from '@mintplayer/ui-core/checkbox';
-import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { reactProps } from '../../machine/src/react-props';
 
 /** What `BsRadioGroup` hands its radios. `value` is `undefined` when the group is uncontrolled. */

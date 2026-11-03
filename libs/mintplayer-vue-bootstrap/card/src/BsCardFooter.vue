@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 import { computed } from 'vue';
 import { capColorClasses, type CardColor } from '@mintplayer/ui-core/card';
 

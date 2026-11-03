@@ -92,7 +92,7 @@ by a component's copy of the partial: that copy only matches elements a componen
 Encapsulation). Install the partial from the page that renders the markup, so it rides that page's chunk:
 
 ```ts
-import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTablesPage } from '@mintplayer/ui-core/bootstrap/tables';
 // Angular: useBootstrap(bootstrapTablesPage) in the page component's constructor
 // React / Vue / plain TS: installBootstrap(bootstrapTablesPage)
 ```

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
 import type { CarouselAnimation, CarouselOrientation } from '@mintplayer/react-bootstrap/carousel';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 import './CarouselPage.css';
 

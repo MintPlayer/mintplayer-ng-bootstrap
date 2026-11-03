@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input, TemplateRef } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapTooltip } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTooltip } from '@mintplayer/ui-core/bootstrap/tooltip';
 import { FadeInOutAnimation } from '@mintplayer/ng-animations';
 import { Position } from '@mintplayer/ng-bootstrap';
 import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';

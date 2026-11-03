@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapCard } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCard } from '@mintplayer/ui-core/bootstrap/card';
 // The card root (PRD #437 wave A): a plain div.card, no custom element and
 // no core, so SSR emits the finished card and the card part (#452) styles it.
 import { computed } from 'vue';

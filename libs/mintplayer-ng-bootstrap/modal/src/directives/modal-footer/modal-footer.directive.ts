@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModal } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModal } from '@mintplayer/ui-core/bootstrap/modal';
 
 @Directive({
   selector: '[bsModalFooter]',

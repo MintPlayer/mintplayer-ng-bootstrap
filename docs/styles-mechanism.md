@@ -84,7 +84,7 @@ Each front's generated component installs both sheets **when it is created**, be
 | Vue | `libs/mintplayer-vue-bootstrap/carousel/src/generated/BsCarousel.generated.vue` | in `<script setup>`: same two calls |
 | Lit | `libs/mintplayer-web-components/carousel/src/generated/mp-carousel.generated.ts` | at module level, before `customElements.define`: same two calls |
 
-Each imports `bootstrapCarousel` from `@mintplayer/ui-core/bootstrap` and `carouselScopedStyles` from
+Each imports `bootstrapCarousel` from `@mintplayer/ui-core/bootstrap/carousel` and `carouselScopedStyles` from
 `@mintplayer/ui-core/carousel`.
 
 Angular's `useScopedStyles` (`libs/mintplayer-ng-bootstrap/machine/src/scoped-styles.ts`) is a thin
@@ -115,7 +115,7 @@ The manifest does not import anything: it is plain data (`import type` only; Nod
 stripped). The **component compiler** reads it (`libs/mintplayer-component-compiler/src/components/model.mjs`):
 
 - `groupStyle()` turns `bootstrap: ['carousel']` into the import name `bootstrapCarousel` from
-  `@mintplayer/ui-core/bootstrap`;
+  `@mintplayer/ui-core/bootstrap/carousel` (one subpath entry per part);
 - `styleImports()` emits that import in every front;
 - `styleInstall()` emits the install calls: the parts first, each with its `order`, then the scoped sheet.
 
@@ -139,9 +139,11 @@ export const bootstrapCarouselPage: BootstrapPart = { key: 'bootstrap-carousel',
 - `order: 23` is the index of `'carousel'` in `BOOTSTRAP_PARTIAL_ORDER`
   (`tools/scripts/lib/wc-codegen.mjs`), Bootstrap's own import order.
 
-There is **one module per part**, and `bootstrap/src/parts.ts` is only a re-export barrel. That matters for
-bundling (see [Forward](#forward-bundling-and-loading)). `_conformance/bootstrap-parts-scoping.spec.ts`
-checks that each part sits in its own module, with the right key and stock order.
+There is **one module and one subpath entry per part**: `bootstrap/<partial>/index.ts` re-exports
+`bootstrap/src/parts/<partial>.part.ts` and is published as `@mintplayer/ui-core/bootstrap/<partial>`. There
+is no barrel of parts; `@mintplayer/ui-core/bootstrap` holds only the install functions and the type. That
+matters for bundling (see [Forward](#forward-bundling-and-loading)). `_conformance/bootstrap-parts-scoping.spec.ts`
+checks that each part sits in its own module and entry, with the right key and stock order.
 
 ### 6. The CSS strings: `libs/mintplayer-ui-core/styles/parts/carousel.bootstrap.styles.ts` (generated)
 
@@ -209,8 +211,8 @@ The two sheets are **JS string constants**, so they are bundled wherever the cod
 3. The generated component imports `bootstrapCarousel` (→ `carousel.part.ts` → `carousel.bootstrap.styles.ts`)
    and `carouselScopedStyles`.
 4. The bundler (esbuild for Angular, Vite/Rolldown for React and Vue) puts those modules in **that route's
-   chunk**. ui-core is `"sideEffects": false` and each part is its own module, so importing one name from
-   the `@mintplayer/ui-core/bootstrap` barrel pulls in that one part and none of the other 26.
+   chunk**. ui-core is `"sideEffects": false` and each part is its own entry, so importing
+   `@mintplayer/ui-core/bootstrap/carousel` pulls in that one part and none of the other 25.
 
 So the carousel's CSS is downloaded only when a user visits a page with a carousel, and a consumer who never
 renders one bundles none of `.carousel`.
@@ -219,9 +221,16 @@ renders one bundles none of `.carousel`.
 module, the first chunk that needed any part (the app shell's) received every part's CSS: 390 KB in the
 React entry chunk. With one module per part, it is 265 KB, holding only the parts the shell renders.
 
+**Why one ENTRY per part, not a barrel of part modules:** Rollup (React, Vue) tree-shakes a barrel's
+re-exports per module, but esbuild (Angular's application builder) assigns modules to chunks by file-level
+reachability. The Angular machine entry imports the barrel for `useBootstrap`, the shell reaches the machine
+entry (the theme toggle), so every part the app used anywhere was reachable from the shell and landed in an
+initial chunk: the card, nav and navbar CSS were in the main bundle of a minimal SSR app (measured in the
+proof repo). With one entry per part and a part-free `@mintplayer/ui-core/bootstrap`, nothing the shell
+imports reaches a part it does not install.
+
 The published library keeps this property. `libs/mintplayer-ui-core/vite.config.mts` adds every
-`bootstrap/src/parts/*.part.ts` as its own build entry (`bootstrap/parts/<name>.mjs`), so the published
-`bootstrap/index.mjs` is a 3.5 KB file of re-exports from separate part chunks, not 354 KB of CSS.
+`bootstrap/<partial>/index.ts` as its own build entry and subpath export (`bootstrap/<partial>/index.mjs`).
 
 ### When it is loaded: at component creation, and in the server HTML
 

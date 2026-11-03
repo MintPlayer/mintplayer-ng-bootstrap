@@ -1,6 +1,6 @@
 import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap/modal';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';

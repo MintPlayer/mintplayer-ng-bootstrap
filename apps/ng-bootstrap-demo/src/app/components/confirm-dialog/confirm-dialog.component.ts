@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap/modal';
 import {
   BsModalHostComponent, BsModalDirective, BsModalHeaderDirective,
   BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective,

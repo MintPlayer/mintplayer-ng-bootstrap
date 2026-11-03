@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';

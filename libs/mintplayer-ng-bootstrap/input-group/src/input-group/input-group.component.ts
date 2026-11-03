@@ -1,4 +1,4 @@
-import { bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { ChangeDetectionStrategy, Component, HostAttributeToken, computed, inject, input } from '@angular/core';
 import { useBootstrap, useScopedStyles } from '@mintplayer/ng-bootstrap/machine';
 import {

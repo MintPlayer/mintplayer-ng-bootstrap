@@ -7,7 +7,8 @@ import {
   type CheckboxType,
   type ToggleButtonColor,
 } from '@mintplayer/ui-core/checkbox';
-import { bootstrapForms, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 import { reactProps } from '../../machine/src/react-props';
 
 type InputAttributes = Omit<

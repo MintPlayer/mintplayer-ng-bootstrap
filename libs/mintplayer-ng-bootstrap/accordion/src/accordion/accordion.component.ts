@@ -1,4 +1,4 @@
-import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapAccordion } from '@mintplayer/ui-core/bootstrap/accordion';
 import { NgTemplateOutlet } from '@angular/common';
 import {
   ChangeDetectionStrategy,

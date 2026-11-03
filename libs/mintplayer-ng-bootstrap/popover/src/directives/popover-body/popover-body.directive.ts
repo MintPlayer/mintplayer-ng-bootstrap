@@ -1,6 +1,6 @@
 import { Directive } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapPopover } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPopover } from '@mintplayer/ui-core/bootstrap/popover';
 
 @Directive({
   selector: '[bsPopoverBody]',

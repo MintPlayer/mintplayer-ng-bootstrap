@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapNavbar } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapNavbar } from '@mintplayer/ui-core/bootstrap/navbar';
 
 @Component({
   selector: 'bs-navbar-toggler',

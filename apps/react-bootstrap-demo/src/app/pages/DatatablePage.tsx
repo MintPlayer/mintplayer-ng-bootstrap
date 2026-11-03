@@ -16,7 +16,8 @@ import type {
   FilterContext,
   FilterOperator,
 } from '@mintplayer/react-bootstrap/datatable';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 import './DatatablePage.css';
 

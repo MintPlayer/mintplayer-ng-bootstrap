@@ -12,7 +12,8 @@ import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsCard, BsCardHeader, BsCardBody, BsCardText, BsCardFooter } from '@mintplayer/react-bootstrap/card';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { installBootstrap, bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 
 import './TimelinePage.css';
 

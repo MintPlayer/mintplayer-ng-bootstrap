@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapTables } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapTables } from '@mintplayer/ui-core/bootstrap/tables';
 
 @Component({
   selector: 'bs-table',

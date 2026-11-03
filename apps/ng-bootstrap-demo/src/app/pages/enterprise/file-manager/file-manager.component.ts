@@ -2,7 +2,9 @@
 
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapFormsPage, bootstrapAlertPage, bootstrapProgressPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
+import { bootstrapAlertPage } from '@mintplayer/ui-core/bootstrap/alert';
+import { bootstrapProgressPage } from '@mintplayer/ui-core/bootstrap/progress';
 import { FormsModule } from '@angular/forms';
 import {
   BsFileManagerComponent,

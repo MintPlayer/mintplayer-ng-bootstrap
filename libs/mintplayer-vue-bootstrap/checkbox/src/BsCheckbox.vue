@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapForms } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapForms } from '@mintplayer/ui-core/bootstrap/forms';
 /**
  * Checkbox, switch or toggle button: a native <input type=checkbox> in
  * Bootstrap's .form-check / .form-switch / .btn-check markup (#437), with the

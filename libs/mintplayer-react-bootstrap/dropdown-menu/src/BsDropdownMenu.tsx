@@ -1,4 +1,5 @@
-import { bootstrapDropdown, installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapDropdown } from '@mintplayer/ui-core/bootstrap/dropdown';
 import * as React from 'react';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { installLightStyles } from '@mintplayer/ui-core/scoped-styles';

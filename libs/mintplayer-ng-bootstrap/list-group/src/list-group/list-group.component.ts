@@ -1,6 +1,6 @@
 import { booleanAttribute, ChangeDetectionStrategy, Component, contentChildren, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapListGroup } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapListGroup } from '@mintplayer/ui-core/bootstrap/list-group';
 import { BsListGroupItemComponent } from '../list-group-item/list-group-item.component';
 
 @Component({

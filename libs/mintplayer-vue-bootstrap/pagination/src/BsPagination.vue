@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { installBootstrap, bootstrapPagination } from '@mintplayer/ui-core/bootstrap';
+import { installBootstrap } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapPagination } from '@mintplayer/ui-core/bootstrap/pagination';
 /**
  * Bootstrap's .pagination markup (#437) from @mintplayer/ui-core/pagination.
  * Pages are buttons; with hrefFor they are links and a plain click selects in

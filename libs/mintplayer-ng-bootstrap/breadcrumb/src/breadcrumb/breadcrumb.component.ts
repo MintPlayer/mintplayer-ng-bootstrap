@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapBreadcrumb } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapBreadcrumb } from '@mintplayer/ui-core/bootstrap/breadcrumb';
 
 @Component({
   selector: 'bs-breadcrumb',

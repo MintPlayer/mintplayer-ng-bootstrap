@@ -1,6 +1,6 @@
 import { afterNextRender, Directive, ElementRef, inject } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModal } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapModal } from '@mintplayer/ui-core/bootstrap/modal';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
 import { BsModalContextService } from '../../services/modal-context.service';
 

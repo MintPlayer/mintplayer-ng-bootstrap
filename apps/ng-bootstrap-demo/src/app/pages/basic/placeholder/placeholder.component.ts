@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapCardPage } from '@mintplayer/ui-core/bootstrap';
+import { bootstrapCardPage } from '@mintplayer/ui-core/bootstrap/card';
 import { FormsModule } from '@angular/forms';
 import { Color } from '@mintplayer/ng-bootstrap';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
