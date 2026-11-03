@@ -20,12 +20,13 @@ export class SpinnerComponent {
   colors: EnumItem[];
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-spinner [type]="'border'" [color]="colors.primary"></bs-spinner>
+    <bs-spinner type="border" color="primary"></bs-spinner>
+    <!-- Small, with your own status text for screen readers -->
+    <bs-spinner [small]="true" label="Saving…"></bs-spinner>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { Color } from '@mintplayer/ng-bootstrap';
     import { BsSpinnerComponent } from '@mintplayer/ng-bootstrap/spinner';
 
     @Component({
@@ -33,22 +34,20 @@ export class SpinnerComponent {
       templateUrl: './my-spinner-demo.component.html',
       imports: [BsSpinnerComponent],
     })
-    export class MySpinnerDemoComponent {
-      protected readonly colors = Color;
-    }
+    export class MySpinnerDemoComponent {}
   `;
 
   protected readonly snippetBorderHtml = dedent`
     <!-- Classic spinning ring -->
-    <bs-spinner [type]="'border'" [color]="colors.primary"></bs-spinner>
-    <bs-spinner [type]="'border'" [color]="colors.success"></bs-spinner>
-    <bs-spinner [type]="'border'" [color]="colors.danger"></bs-spinner>
+    <bs-spinner type="border" color="primary"></bs-spinner>
+    <bs-spinner type="border" color="success"></bs-spinner>
+    <bs-spinner type="border" color="danger"></bs-spinner>
   `;
 
   protected readonly snippetGrowHtml = dedent`
     <!-- Pulsing dot -->
-    <bs-spinner [type]="'grow'" [color]="colors.primary"></bs-spinner>
-    <bs-spinner [type]="'grow'" [color]="colors.success"></bs-spinner>
-    <bs-spinner [type]="'grow'" [color]="colors.danger"></bs-spinner>
+    <bs-spinner type="grow" color="primary"></bs-spinner>
+    <bs-spinner type="grow" color="success"></bs-spinner>
+    <bs-spinner type="grow" color="danger"></bs-spinner>
   `;
 }

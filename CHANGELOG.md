@@ -10,6 +10,16 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **Navbar links are Bootstrap `.nav-link`s (issue #452).** The navbar sheet no longer restates the
+  nav-link rules for `bs-navbar-item > a`; each front marks the item's link `.nav-link` instead, so
+  Bootstrap's own nav and navbar rules style it. **Angular:** import `BsNavbarLinkDirective` from
+  `@mintplayer/ng-bootstrap/navbar` with the navbar components, or the links render unstyled. React,
+  Vue and Lit need no change. A link inside a dropdown panel stays as it was.
+- **`bs-spinner` is generated from `@mintplayer/ui-core/spinner` (issue #452), and React, Vue and Lit
+  get one too** (`BsSpinner`, `mp-spinner`). `color` is now a theme colour name (`color="primary"`)
+  instead of the `Color` enum, and defaults to inheriting the text colour instead of `dark`. New
+  inputs: `small` (`spinner-border-sm` / `-grow-sm`) and `label`, the visually hidden status text
+  (default `Loading…`).
 - **Bootstrap's component partials ship per component (issue #452).** The global stylesheet
   (`@mintplayer/ng-bootstrap/bootstrap.scss`, `@mintplayer/ui-core/styles/bootstrap`) now holds only the
   page-level baseline: root, reboot, type, images, buttons, helpers and utilities. Each component installs
