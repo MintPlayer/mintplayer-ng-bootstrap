@@ -85,7 +85,7 @@ function exportsOf(file) {
 export function componentModels({ group, entry, corePackage, template, extension, literals = () => null, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
   const style = groupStyle(group, entry, corePackage);
-  const models = Object.entries(group.components).map(([element, manifest]) => {
+  const models = Object.entries(group.components ?? {}).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
     const { root, host } = rootElement(src);
     const where = `${entry}/${element}`;
@@ -176,8 +176,61 @@ export function componentModels({ group, entry, corePackage, template, extension
       wrapsContent: false,
     };
   });
-  return resolveContent(models, entry);
+  return [...resolveContent(models, entry), ...directiveModels({ group, entry, entryModule, style, literals })];
 }
+
+/**
+ * The group's directives (#458 §4.3): cores without a template, placed on an
+ * element the consumer renders. They share the component models' inputs,
+ * outputs, style and naming, and carry `kind: 'directive'`.
+ */
+function directiveModels({ group, entry, entryModule, style, literals }) {
+  return Object.entries(group.directives ?? {}).map(([name, manifest]) => {
+    const where = `${entry}/${name} (directive)`;
+    if (group.components?.[name]) throw new Error(`${where}: a component of the group has the same name`);
+    const unsupported = ['template', 'provides', 'content', 'methods'].filter((key) => key in manifest);
+    if (unsupported.length) throw new Error(`${where}: a directive has no ${unsupported.join(', ')}`);
+    const fields = manifest.inputs?.fields ?? {};
+    const inputs = Object.entries(fields).map(([input, field]) => {
+      if (field.model) throw new Error(`${where}: input "${input}" cannot be two-way on a directive`);
+      const kind = inputKind(field);
+      return { name: input, ...field, kind, values: kind === 'string' ? literals(manifest.inputs?.type, input) : null };
+    });
+    const names = manifest.names ?? {};
+    const base = pascal(name);
+    return {
+      kind: 'directive',
+      element: name,
+      entry,
+      entryModule,
+      group,
+      manifest,
+      doc: manifest.doc ?? null,
+      core: manifest.core,
+      inputs,
+      inputsType: manifest.inputs?.type ?? null,
+      outputs: Object.entries(manifest.outputs ?? {}).map(([output, field]) => ({ name: output, lower: output.toLowerCase(), react: `on${output[0].toUpperCase()}${output.slice(1)}`, ...field })),
+      methods: [],
+      methodsType: null,
+      slots: [],
+      content: [],
+      provides: null,
+      style,
+      names: {
+        angular: names.angular ?? `Bs${base}Directive`,
+        selector: names.selector ?? `[bs${base}]`,
+        react: names.react ?? `useBs${base}`,
+        vue: names.vue ?? `vBs${base}`,
+        lit: names.lit ?? `bs${base}`,
+        file: `${name}.directive`,
+      },
+      camel: camel(name),
+    };
+  });
+}
+
+/** The bag a directive's view returns, stamped with the group's scope: the element opts in to the group's sheets. */
+export const directiveBag = (model, props) => (model.style ? `({ ...${props}, 'data-mps': '${model.style.scope}' })` : props);
 
 /** Links each manifest `content` query to the group's element models it names. */
 function resolveContent(models, entry) {

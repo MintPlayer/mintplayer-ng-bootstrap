@@ -158,6 +158,17 @@ Each group meets #455 §4's definition of done:
 
 ### 4.3 `kind: 'directive'` in the compiler
 
+**As built (M2):** a group lists them under `directives: { row: {…} }` beside `components`, typed
+`DirectiveManifest` (no template, provides, content, methods or two-way inputs), so the compiler models
+carry `kind: 'directive'`. A directive core's `view` returns the element's bag itself. A group may hold
+directives only (`ui-core/grid`); it then needs no `templates/`. The runtimes:
+- Angular: the generated `@Directive` calls `useCore` with a `hostBag`;
+- React: `useBs<Name>(options)` returns props with a callback `ref`, and `mergeProps(ours, theirs)`
+  combines them with the consumer's;
+- Vue and Lit: `vueCoreDirective` / `coreDirective`, both over ui-core's imperative
+  `elementCore`, and Vue's `getSSRProps` over `directiveServerBag`.
+- The grid (`bsRow`, `[col]`, the breakpoint columns) is the pilot.
+
 A directive manifest describes:
 - a core whose bags apply to **the consumer's element** (the element opts in, so stamping `data-mps` and
   installing parts there is legitimate);

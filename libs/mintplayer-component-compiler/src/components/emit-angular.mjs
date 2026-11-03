@@ -7,7 +7,7 @@ import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall }
 
 const angularOutput = (output) => output.lower;
 
-function inputLine(model, input) {
+export function inputLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
   // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
   const transform =

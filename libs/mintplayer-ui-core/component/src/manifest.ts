@@ -136,11 +136,45 @@ export type BootstrapPartName =
   | 'list-group' | 'close' | 'toasts' | 'modal' | 'tooltip' | 'popover' | 'carousel' | 'spinners'
   | 'offcanvas' | 'placeholders';
 
+/** Per-front names of a directive, all derived from its name unless given. */
+export interface DirectiveNames {
+  /** Angular class; default `Bs<Pascal>Directive`. */
+  readonly angular?: string;
+  /** Angular selector; default `[bs<Pascal>]`. */
+  readonly selector?: string;
+  /** React hook; default `useBs<Pascal>`. */
+  readonly react?: string;
+  /** Vue directive; default `vBs<Pascal>` (used as `v-bs-<name>`). */
+  readonly vue?: string;
+  /** Lit element-part directive; default `bs<Pascal>`. */
+  readonly lit?: string;
+}
+
+/**
+ * A directive (#458 §4.3): a core without a template, placed on an element the
+ * consumer renders. Its core's `view` returns that element's bag; the fronts
+ * stamp it with the group's scope and install the group's sheets, so the
+ * element opts in to them. Angular: an attribute directive. React: a hook
+ * returning props (`mergeProps` combines them with the consumer's). Vue: a
+ * custom directive. Lit: an element-part directive.
+ */
+export interface DirectiveManifest {
+  /** The `ComponentCore` export; its `view` returns a `CoreBag`. */
+  readonly core: string;
+  readonly inputs?: ComponentManifest['inputs'];
+  /** DOM events on the element in Vue and Lit; Angular outputs; React `on<Name>` options. */
+  readonly outputs?: ComponentManifest['outputs'];
+  readonly names?: DirectiveNames;
+  readonly doc?: string;
+}
+
 export interface ComponentGroup {
   /** The entry point name; also the generated entry in every front lib. */
   readonly group: string;
   /** The sheet every component of the group installs, and the scope its templates are stamped with. */
   readonly style?: GroupStyle;
   /** Keyed by element name (`navbar`, `navbar-item`, …). */
-  readonly components: Readonly<Record<string, ComponentManifest>>;
+  readonly components?: Readonly<Record<string, ComponentManifest>>;
+  /** Keyed by directive name (`row`, `col`, …). */
+  readonly directives?: Readonly<Record<string, DirectiveManifest>>;
 }
