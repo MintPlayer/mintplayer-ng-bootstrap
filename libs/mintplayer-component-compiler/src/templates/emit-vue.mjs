@@ -3,14 +3,14 @@
 // `mp-attrs`), dropping React-only select seeds, and routing the consumer's
 // attributes to the `mp-attrs` element when that is not the root.
 import { basename } from 'node:path';
-import { ATTRS_MARKER, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
+import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, PROP, TemplateError, attrsTarget, componentTags, composedUse, isSelectSeed, partialNames, partialUse, rootElement, teleportTarget } from './source.mjs';
 
 const walk = (node, visit) => {
   visit(node);
   (node.children ?? []).forEach((child) => walk(child, visit));
 };
 
-export function emitVue(src, { generator = GENERATOR, partials, components } = {}) {
+export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue-bootstrap/machine', partials, components } = {}) {
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
   const text = src.sfcText;
   // AST offsets index the whole SFC; each edit replaces [start, end) of it.
@@ -39,9 +39,20 @@ export function emitVue(src, { generator = GENERATOR, partials, components } = {
 
   // A teleport renders nothing while its target is null (the server's case), as in the
   // other fronts; Vue's own <Teleport> would warn and mount nowhere.
+  let bodyTeleport = false;
   walk(src.root, (node) => {
     const to = teleportTarget(src, node);
     if (to === null) return;
+    if (to === BODY_TARGET) {
+      // The overlay form (#458 §4.4): a runtime component around Vue's <Teleport to="body">.
+      bodyTeleport = true;
+      const start = node.loc.start.offset + 1;
+      const toProp = node.props.find((p) => p.type === PROP.ATTRIBUTE && p.name === 'to');
+      edits.push({ start: toProp.loc.start.offset, end: toProp.loc.end.offset, text: '' });
+      edits.push({ start, end: start + node.tag.length, text: 'MpBodyTeleport' });
+      if (!node.isSelfClosing) edits.push({ start: node.loc.end.offset - node.tag.length - 1, end: node.loc.end.offset - 1, text: 'MpBodyTeleport' });
+      return;
+    }
     const at = node.loc.start.offset + 1 + node.tag.length;
     edits.push({ start: at, end: at, text: ` v-if="${to}"` });
   });
@@ -90,7 +101,7 @@ export function emitVue(src, { generator = GENERATOR, partials, components } = {
 
   const { root } = rootElement(src);
   const target = attrsTarget(src, root);
-  let script = composedImports;
+  let script = composedImports + (bodyTeleport ? `import { MpBodyTeleport } from '${runtime}';\n` : '');
   // A partial imports its generated sibling; one that calls itself imports itself, since
   // Vue would name it after its generated file.
   if (partialNames(src).has(src.name)) script += `import ${src.name} from './${basename(src.file).replace(/\.vue$/, '')}.generated.vue';\n`;

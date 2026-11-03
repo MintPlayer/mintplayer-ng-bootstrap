@@ -26,11 +26,20 @@ export function createBodyHost(doc: Document, id: string, from: Element | null):
   const host = doc.createElement('div');
   host.setAttribute(BODY_HOST_ATTRIBUTE, id);
   INHERITED_ATTRIBUTES.forEach((name) => {
-    const value = from?.closest(`[${name}]`)?.getAttribute(name);
+    const value = inherited(from, name);
     if (value) host.setAttribute(name, value);
   });
   doc.body.appendChild(host);
   return host;
+}
+
+/** The closest value of `name` from `from` up; a walk, not `closest()`, which a server DOM may lack. */
+function inherited(from: Element | null, name: string): string | null {
+  for (let el: Element | null = from; el; el = el.parentElement) {
+    const value = el.getAttribute(name);
+    if (value !== null) return value;
+  }
+  return null;
 }
 
 /** Remove the body host of overlay `id`, if there is one. */

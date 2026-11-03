@@ -1,0 +1,38 @@
+// No-JS styling helpers (#458 Q14). A core writes `data-mp-hydrated` on its
+// root once its behaviour is attached (`hydratedAttr()`, ui-core/store). The
+// server never renders it, so a rule gated on its absence holds exactly while
+// the page runs without script, or before hydration, and stops the moment the
+// core takes over: the same contract BsNoNoscript had, without a directive.
+//
+// Use from a scoped sheet; selectors are written in final form (pass them with
+// their `[data-mps=…]` stamps under `/*! @mps-global */` where the light
+// rewriter cannot reach them).
+
+/// Rules for the root (`&`) while it is not hydrated.
+@mixin before-hydration {
+  &:not([data-mp-hydrated]) {
+    @content;
+  }
+}
+
+/// Rules for the root (`&`) once it is hydrated.
+@mixin after-hydration {
+  &[data-mp-hydrated] {
+    @content;
+  }
+}
+
+/// The no-JS reveal: before hydration, `$panel` shows while focus is inside its
+/// `$item` (the item's link or toggle is focused, or anything in the panel), so
+/// a keyboard or touch user can still reach a submenu. With script the core
+/// owns the panel's visibility and this rule no longer matches.
+///
+/// @param $root    The core's root, the element that carries `data-mp-hydrated`.
+/// @param $item    The item that holds both the trigger and the panel.
+/// @param $panel   The panel, a child of `$item`.
+/// @param $display The panel's shown display value.
+@mixin focus-within-reveal($root, $item, $panel, $display: block) {
+  #{$root}:not([data-mp-hydrated]) #{$item}:focus-within > #{$panel} {
+    display: $display;
+  }
+}

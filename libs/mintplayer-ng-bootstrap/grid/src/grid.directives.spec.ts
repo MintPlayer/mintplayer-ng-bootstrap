@@ -29,6 +29,6 @@ describe('generated grid directives', () => {
 
     fixture.componentInstance.md.set(3);
     fixture.detectChanges();
-    expect(el('column').className).toBe('col-md-3 col-lg-4');
+    expect([...el('column').classList].sort()).toEqual(['col-lg-4', 'col-md-3']);
   });
 });

@@ -5,3 +5,4 @@ export * from './content';
 export * from './transfer-state';
 export * from './mark-links';
 export * from './directive';
+export * from './body-teleport';

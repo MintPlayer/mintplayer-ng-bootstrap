@@ -36,6 +36,21 @@ picks up these named exports:
 `.nav-link`; Angular does that with a directive on the link itself (`BsNavLinkDirective`,
 `BsNavbarLinkDirective`), as the old nav-link directive did.
 
+**Directives** (#458). A manifest's `directives:` map declares behaviour or class-only directives
+on a consumer's own element. Examples are the grid's `[bsRow]` / `[col]` / `[md]`, and later
+`[bsDropdown]`. A directive has a core whose view returns that element's bag. It has no template,
+slots, content or methods. The compiler adds the group's `data-mps` to the bag.
+
+| Front | Generated |
+|-|-|
+| Angular | `@Directive` with selector `[bs<Name>]`, which hosts the core through `useCore`'s `hostBag` |
+| React | a `useBs<Name>(options)` hook that returns props plus a callback ref. Combine them with the consumer's props using `mergeProps` |
+| Vue | a `vBs<Name>` object directive, through `vueCoreDirective`. `getSSRProps` server-renders the bag |
+| Lit | a `bs<Name>(inputs)` element-part directive, through `coreDirective` |
+
+Vue and Lit share ui-core's imperative `elementCore`. Names can be overridden per front with
+`names:` in the directive's manifest entry.
+
 ## Nx
 
 `./src/nx/plugin.cjs` infers two targets on every project that holds a `component-compiler.config.mjs`:
@@ -132,6 +147,19 @@ the template of every front. A template without a manifest is still compiled on 
   only: put `v-for` / `v-if` on a `<template>` around it. The target is a node the core owns and
   keeps for the content's lifetime (the dock's per-pane hosts). The core moves it around the DOM,
   and the content keeps its state in every front.
+- **`<teleport to="body">`** (static, #458) is the overlay form. Its content renders into a
+  `div[data-mp-overlay]` that the runtime appends to the end of `<body>`, outside every clipping
+  ancestor. The host copies `data-bs-theme`, `dir` and `lang` from the declaring position, and is
+  removed when the teleport unmounts.
+  - Angular: `<ng-template mpBodyTeleport>`, a detached view. It server-renders, and the client
+    replaces the server's host with its own copy without a hydration mismatch.
+  - React: `<BodyPortal>`, with `from={rootRef}` when the root has `ref="root"`.
+  - Vue: `MpBodyTeleport`, around `<Teleport>`.
+  - Lit: the `bodyTeleport()` directive.
+
+  React, Vue and Lit mount it on the client only, because an overlay cannot be opened without JS.
+  The overlay's core puts the host on `openOverlay` (ui-core `overlay`), which handles z-order,
+  focus trap and return, `inert`, and Escape and outside dismissal.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
 - **Elements.** Native elements, `<slot>`, partials and composed `mp-*` elements (below). Vue's

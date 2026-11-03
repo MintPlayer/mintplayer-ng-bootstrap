@@ -3,7 +3,7 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
@@ -35,7 +35,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
       '',
     );
   }
-  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps' || u === 'reactStyle').sort().join(', ');
+  const machine = [...ctx.uses].filter((u) => u === 'BodyPortal' || u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps' || u === 'reactStyle').sort().join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -108,6 +108,13 @@ function element(ctx, el, depth) {
 
 function bare(ctx, el, depth) {
   const to = teleportTarget(ctx.src, el);
+  if (to === BODY_TARGET) {
+    // A portal into a body host the runtime creates after mount: client only (#458 §4.4).
+    // The host inherits data-bs-theme / dir / lang from the root, when the template names it.
+    ctx.uses.add('BodyPortal');
+    const from = refName(rootElement(ctx.src).root) === 'root' ? ' from={rootRef}' : '';
+    return `${pad(depth)}<BodyPortal${from}>${fragment(ctx, children(ctx, el.children, depth + 1), depth)}</BodyPortal>\n`;
+  }
   if (to !== null) {
     // A portal: the content renders into the core's element, nothing where the tag sits.
     ctx.uses.add('createPortal');

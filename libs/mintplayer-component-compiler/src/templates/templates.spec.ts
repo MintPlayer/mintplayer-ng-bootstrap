@@ -166,9 +166,27 @@ describe('teleport', () => {
     expect(emitVue(src)).toContain('<teleport v-if="hosts[name]" :to="hosts[name]">');
   });
 
-  it('takes :to only, so Vue can guard it', () => {
-    expect(() => emitLit(read('<div v-bind="bag"><teleport v-if="label" :to="bag"></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
-    expect(() => emitLit(read('<div v-bind="bag"><teleport></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
+  it('takes :to or to="body" only, so Vue can guard it', () => {
+    const only = /takes :to="el" or to="body" only/;
+    expect(() => emitLit(read('<div v-bind="bag"><teleport v-if="label" :to="bag"></teleport></div>'), RUNTIME)).toThrow(only);
+    expect(() => emitLit(read('<div v-bind="bag"><teleport></teleport></div>'), RUNTIME)).toThrow(only);
+    expect(() => emitLit(read('<div v-bind="bag"><teleport to="#elsewhere"></teleport></div>'), RUNTIME)).toThrow(only);
+  });
+
+  it('to="body" renders into a body host in every front (#458 §4.4)', () => {
+    const body = read('<div ref="root" v-bind="bag"><teleport to="body"><p>{{ label }}</p></teleport></div>');
+    const angular = emitAngular(body);
+    expect(angular.text).toMatch(/<ng-template mpBodyTeleport>\s*<p>/);
+    expect(angular.uses).toContain('MpBodyTeleportDirective');
+    const react = emitReact(body, RUNTIME);
+    expect(react).toMatch(/import \{[^}]*BodyPortal[^}]*\} from '@test\/machine'/);
+    expect(react).toMatch(/<BodyPortal from=\{rootRef\}>[\s\S]*<p>[\s\S]*<\/BodyPortal>/);
+    const lit = emitLit(body, RUNTIME);
+    expect(lit).toContain("import { bodyTeleport, props } from '@test/machine'");
+    expect(lit).toContain('${bodyTeleport(html`');
+    const vue = emitVue(body, RUNTIME);
+    expect(vue).toMatch(/<MpBodyTeleport\s*><p>\{\{ label \}\}<\/p><\/MpBodyTeleport>/);
+    expect(vue).toContain("import { MpBodyTeleport } from '@test/machine';");
   });
 });
 

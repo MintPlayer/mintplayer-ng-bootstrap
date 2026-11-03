@@ -6,3 +6,4 @@ export * from './core';
 export * from './ssr';
 export * from './teleport.directive';
 export * from './trusted-html.pipe';
+export * from './body-teleport.directive';

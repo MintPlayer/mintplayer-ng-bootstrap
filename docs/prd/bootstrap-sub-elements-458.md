@@ -207,8 +207,8 @@ declaring position. It is removed on close or destroy.
 
 | Front | Render into the host | Server HTML |
 |---|---|---|
-| Angular | embedded view of the overlay template | at the end of the body, host `ngSkipHydration` |
-| Vue | `<Teleport to>` | at the end of the body |
+| Angular | detached embedded view of the overlay template (`mpBodyTeleport`) | at the end of the body; the client replaces it, no `ngSkipHydration` needed (measured, M2) |
+| Vue | `<Teleport to>` inside the runtime `MpBodyTeleport` | none (client-only since M2: no SSR teleport injection needed in apps) |
 | React | `createPortal` | none (client-only, documented exception) |
 | Lit | `render()` | at the end of the body (Lit SSR is out of scope, so client in practice) |
 

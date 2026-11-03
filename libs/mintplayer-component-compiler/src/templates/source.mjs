@@ -392,12 +392,24 @@ const camelCase = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
  * It takes `:to` only: loop or guard it from a `<template>` around it, since Vue
  * cannot combine the null guard it needs with a `v-for` on the same element.
  * Returns the `:to` expression, or null for any other element.
+ *
+ * `<teleport to="body">` (static, #458 §4.4) is the overlay form: its content
+ * renders into a body host, a `div` at the end of `<body>` outside every
+ * clipping ancestor, which copies the theme, `dir` and `lang` of where it is
+ * declared. For it this returns `BODY_TARGET`. Unlike `:to`, Angular and Vue
+ * server-render it (Angular as a detached view, Vue through `<Teleport>`);
+ * React and Lit render it on the client only.
  */
+export const BODY_TARGET = Symbol('teleport to body');
+
 export function teleportTarget(src, el) {
   if (el.type !== NODE.ELEMENT || el.tag.toLowerCase() !== 'teleport') return null;
-  const to = el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'to');
-  if (!to || el.props.length !== 1) throw new TemplateError(src.file, el, '<teleport> takes :to only (put v-if / v-for on a <template> around it)');
-  return to.exp.content;
+  const only = '<teleport> takes :to="el" or to="body" only (put v-if / v-for on a <template> around it)';
+  if (el.props.length !== 1) throw new TemplateError(src.file, el, only);
+  const [prop] = el.props;
+  if (prop.type === PROP.ATTRIBUTE && prop.name === 'to' && prop.value?.content === 'body') return BODY_TARGET;
+  if (prop.type !== PROP.DIRECTIVE || prop.name !== 'bind' || prop.arg?.content !== 'to') throw new TemplateError(src.file, el, only);
+  return prop.exp.content;
 }
 
 /** Every component tag (a partial or a composed element) in a template. */

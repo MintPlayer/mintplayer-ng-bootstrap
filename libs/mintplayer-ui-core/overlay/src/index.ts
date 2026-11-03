@@ -2,6 +2,8 @@ export type { OverlayOriginX, OverlayOriginY, OverlayPosition } from './types';
 export { choosePlacement, clampToViewport, fitsInViewport, isAnchorOffscreen, placeFor } from './placement';
 export type { AnchorBox, PanelSize, Placement, Viewport } from './placement';
 export { dismissStack } from './dismiss-stack';
+export { OVERLAY_Z_BASE, OVERLAY_Z_STEP, openOverlay, resetOverlayStackForTesting } from './overlay-stack';
+export type { OverlayDismissReason, OverlayHandle, OverlayOptions } from './overlay-stack';
 export { BODY_HOST_ATTRIBUTE, INHERITED_ATTRIBUTES, createBodyHost, removeBodyHost } from './body-host';
 export { measureOpenSide, openSide, trackOpenSide } from './open-side';
 export type { OpenSide, OpenSideTarget } from './open-side';

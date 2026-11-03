@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -123,6 +123,11 @@ function element(ctx, el, depth) {
 
 function bare(ctx, el, depth) {
   const to = teleportTarget(ctx.src, el);
+  if (to === BODY_TARGET) {
+    // A detached view in a body host: server-rendered, replaced by the client's copy (#458 §4.4).
+    ctx.uses.add('MpBodyTeleportDirective');
+    return `${pad(depth)}<ng-template mpBodyTeleport>\n${children(ctx, el.children, depth + 1)}${pad(depth)}</ng-template>\n`;
+  }
   if (to !== null) {
     // The directive renders the template into the core's element, nothing where it sits.
     ctx.uses.add('MpTeleportDirective');
