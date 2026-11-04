@@ -266,7 +266,13 @@ export function rootElement(src) {
   const roots = meaningful(src.root.children);
   const hostRoots = roots.filter((r) => r.type === NODE.ELEMENT && isHost(r));
   if (hostRoots.length && roots.length !== 1) throw new TemplateError(src.file, hostRoots[0], `${HOST_MARKER} needs a single root element`);
-  return { root: roots.length === 1 ? roots[0] : null, host: hostRoots.length === 1 };
+  if (roots.length === 1) return { root: roots[0], roots, host: hostRoots.length === 1 };
+  // A v-if / v-else chain that ends in v-else renders exactly one element: a
+  // single root, one per branch (#458 §4.5, the menu that is a <details> in a
+  // navbar). `root` is the first branch; `roots` lists them all.
+  const groups = groupChains(src, src.root.children);
+  const chain = groups.length === 1 && groups[0].chain && groups[0].chain[groups[0].chain.length - 1].cond === null ? groups[0].chain.map((c) => c.el) : null;
+  return chain ? { root: chain[0], roots: chain, host: false } : { root: null, roots: [], host: false };
 }
 
 export function checkElement(src, el) {
@@ -287,8 +293,8 @@ export function checkElement(src, el) {
   // consumer's own style lands on the root and the mp-attrs element, so those
   // two never take one.
   if (el.props.some((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'style')) {
-    const { root } = rootElement(src);
-    if (el === root || attribute(el, HOST_MARKER) || attribute(el, ATTRS_MARKER)) {
+    const { roots } = rootElement(src);
+    if (roots.includes(el) || attribute(el, HOST_MARKER) || attribute(el, ATTRS_MARKER)) {
       throw new TemplateError(src.file, el, ':style (a style bag) is not allowed on the root or the mp-attrs element');
     }
   }

@@ -148,7 +148,6 @@ const TARGETS: Record<string, string> = {
   BsNavItem: 'li.nav-item',
   BsNavbar: 'nav.navbar',
   BsNavbarNav: 'div.navbar-nav',
-  BsNavbarDropdown: 'details.dropdown',
   BsNavbarItem: 'div.nav-item',
   BsOtpInput: 'input',
   BsPagination: 'nav',

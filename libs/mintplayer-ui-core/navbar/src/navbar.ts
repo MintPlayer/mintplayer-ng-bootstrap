@@ -2,7 +2,7 @@ import { placePopover, trackPopovers } from '@mintplayer/ui-core/overlay';
 import type { OverlayPosition, PopoverPlacementOptions } from '@mintplayer/ui-core/overlay';
 import { rovingTarget } from '@mintplayer/ui-core/roving';
 import { hydratedAttr } from '@mintplayer/ui-core/store';
-import { connectDropdownMenu, dropdownItemControl, dropdownItemDisabled, dropdownMenuItems, syncDropdownMenu } from '@mintplayer/ui-core/dropdown-menu';
+import { dropdownItemControl, dropdownItemDisabled, dropdownMenuItems, syncDropdownMenu } from '@mintplayer/ui-core/dropdown-menu';
 
 /**
  * The navbar has no machine (PRD #437 §8, wave B): a native checkbox is the
@@ -22,11 +22,11 @@ import { connectDropdownMenu, dropdownItemControl, dropdownItemDisabled, dropdow
  *       <div class="navbar-collapse-inner">
  *         <div class="navbar-nav">                          (one per nav group, `nav-end` pushes right)
  *           <div class="nav-item"><a href>…</a></div>
- *           <details class="nav-item dropdown" name>
+ *           <details class="nav-item dropdown" name>        (a bs-dropdown-menu: the dropdown group)
  *             <summary class="nav-link dropdown-toggle">…label…</summary>
- *             <div class="dropdown-menu show">              (the dropdown-menu front's panel)
- *               <div class="dropdown-item"><a href>…</a></div>
- *               <details class="dropdown dropdown-submenu" name>
+ *             <div class="dropdown-menu show">
+ *               <div class="dropdown-item"><a href>…</a></div>   (bs-dropdown-item)
+ *               <details class="dropdown dropdown-submenu" name>   (a nested bs-dropdown-menu)
  *                 <summary class="dropdown-item dropdown-toggle">…</summary>
  *                 <div class="dropdown-menu show">…</div>
  *               </details>
@@ -171,60 +171,22 @@ export function connectNavbarBrand(): NavbarBag {
   return { class: 'navbar-brand' };
 }
 
-/** A front's own host element around a bar node, taken out of the layout. */
-export function connectNavbarContents(): NavbarBag {
-  return { class: 'navbar-contents' };
-}
 
 export interface NavbarItemOptions {
-  /** Inside a dropdown panel the item is a `.dropdown-item`, else a `.nav-item`. */
-  inMenu?: boolean;
   active?: boolean;
   disabled?: boolean;
 }
 
-/** The wrapper around one consumer link or button. */
+/**
+ * The `.nav-item` wrapper around one consumer link or button in a nav group.
+ * Inside a dropdown the entries are `bs-dropdown-item`s (the dropdown group).
+ */
 export function connectNavbarItem(options: NavbarItemOptions = {}): NavbarBag {
-  const { inMenu = false, active = false, disabled = false } = options;
+  const { active = false, disabled = false } = options;
   return {
-    class: classes(inMenu ? 'dropdown-item' : 'nav-item', active && 'active', disabled && 'disabled'),
+    class: classes('nav-item', active && 'active', disabled && 'disabled'),
     'aria-disabled': disabled ? 'true' : null,
-    'aria-current': active ? (inMenu ? 'true' : 'page') : null,
-  };
-}
-
-export interface NavbarDropdownOptions {
-  /** 0 for a dropdown in a nav group, 1+ for a submenu inside a panel. */
-  depth: number;
-  /** A descendant link's route is active. */
-  active?: boolean;
-  /**
-   * Script runs: a submenu's panel becomes a manual popover, which the
-   * attachment shows in the top layer next to its trigger, so the panel it
-   * sits in can scroll without clipping it.
-   */
-  hydrated?: boolean;
-}
-
-export interface NavbarDropdownView {
-  readonly details: NavbarBag;
-  readonly summary: NavbarBag;
-  readonly panel: NavbarBag;
-}
-
-export function connectNavbarDropdown(options: NavbarDropdownOptions): NavbarDropdownView {
-  const submenu = options.depth > 0;
-  const active = options.active ?? false;
-  return {
-    details: {
-      class: submenu ? 'dropdown dropdown-submenu' : 'nav-item dropdown',
-      name: `mp-navbar-${options.depth}`,
-    },
-    summary: {
-      class: classes(submenu ? 'dropdown-item' : 'nav-link', 'dropdown-toggle', active && 'active'),
-    },
-    // Navigation, not a menu: never role=menu, whatever the hydration state.
-    panel: { ...connectDropdownMenu({ hydrated: false }), popover: submenu && options.hydrated ? 'manual' : null },
+    'aria-current': active ? 'page' : null,
   };
 }
 
@@ -232,7 +194,8 @@ export function connectNavbarDropdown(options: NavbarDropdownOptions): NavbarDro
 /* DOM attachment                                                           */
 /* ------------------------------------------------------------------------ */
 
-const DETAILS = 'details.dropdown[data-mps=navbar]';
+/** A dropdown in the bar: a `bs-dropdown-menu` in navigation mode (the dropdown group's scope). */
+const DETAILS = 'details.dropdown[data-mps=dropdown]';
 
 /** Kept between a panel and the viewport's bottom. */
 const VIEWPORT_MARGIN = 8;

@@ -39,7 +39,7 @@ import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
 import { BsNav, BsNavItem } from '@mintplayer/react-bootstrap/nav';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
@@ -259,9 +259,9 @@ const CASES: Case[] = [
     render: (p) => <BsNav><BsNavItem {...p} /></BsNav>,
   },
   {
-    name: 'BsNavbarDropdown',
+    name: 'BsDropdownMenu in a navbar',
     target: 'details.dropdown',
-    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarDropdown label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
+    render: (p) => <BsNavbar><BsNavbarNav><BsDropdownMenu label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
@@ -416,7 +416,8 @@ describe('React wrapper attribute passthrough', () => {
   it('covers every Bs* component exported by any entry point', () => {
     const exported = Object.values(ENTRY_MODULES)
       .flatMap((mod) => Object.entries(mod).filter(isWrapperExport).map(([name]) => name));
-    const covered = new Set([...CASES.map((c) => c.name), ...DECLARATIONS]);
+    // A case name is the export, optionally followed by its context ("BsDropdownMenu in a navbar").
+    const covered = new Set([...CASES.map((c) => c.name.split(' ')[0]), ...DECLARATIONS]);
 
     expect(new Set(CASES.map((c) => c.name)).size, 'duplicate case names').toBe(CASES.length);
     expect(exported.filter((name) => !covered.has(name)), 'exported wrappers with no passthrough case').toEqual([]);

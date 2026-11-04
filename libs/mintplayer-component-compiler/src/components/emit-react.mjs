@@ -12,7 +12,7 @@ const SVG_TAGS = new Set(['svg', 'g', 'path', 'circle', 'rect', 'line', 'polylin
 
 export function emitReactComponent(model, { generator, runtime, extension, scopedStyles }) {
   const { names } = model;
-  const element = `HTMLElementTagNameMap['${model.rootTag}']`;
+  const element = model.rootType;
   const named = model.slots.filter((slot) => slot.name !== 'default');
   const slotNames = new Set(named.map((slot) => slot.name));
   // An input that is also a slot takes rich content in React: the node fills the slot.

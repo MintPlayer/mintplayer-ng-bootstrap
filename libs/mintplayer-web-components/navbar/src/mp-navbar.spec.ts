@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { MpDropdownItem, MpDropdownMenu } from '../../dropdown/src/generated';
 import { MpNavbar } from './generated';
-import { MpNavbarDropdown } from './generated';
 import { MpNavbarItem } from './generated';
 import { MpNavbarNav } from './generated';
 
 void MpNavbar; // force the side-effect registrations
-void MpNavbarDropdown;
+void MpDropdownMenu;
+void MpDropdownItem;
 void MpNavbarItem;
 void MpNavbarNav;
 
@@ -126,36 +127,40 @@ describe('mp-navbar-nav / mp-navbar-item', () => {
   });
 });
 
-describe('mp-navbar-dropdown', () => {
+describe('mp-dropdown-menu in a navbar group', () => {
   it('renders a native details whose summary is the label and whose panel holds the items', async () => {
     const nav = mount(
-      '<mp-navbar><mp-navbar-nav><mp-navbar-dropdown label="Products"><mp-navbar-item><a href="/w">W</a></mp-navbar-item></mp-navbar-dropdown></mp-navbar-nav></mp-navbar>',
+      '<mp-navbar><mp-navbar-nav><mp-dropdown-menu label="Products"><mp-dropdown-item><a href="/w">W</a></mp-dropdown-item></mp-dropdown-menu></mp-navbar-nav></mp-navbar>',
     );
     await settle(nav);
-    const dropdown = nav.querySelector('mp-navbar-dropdown') as MpNavbarDropdown;
-    await settle(dropdown);
-    const details = dropdown.querySelector('details') as HTMLDetailsElement;
+    const menu = nav.querySelector('mp-dropdown-menu') as MpDropdownMenu;
+    await settle(menu);
+    const details = menu.querySelector('details') as HTMLDetailsElement;
+    expect(details.classList.contains('nav-item')).toBe(true);
     expect(details.querySelector('summary')?.textContent?.trim()).toBe('Products');
     const panel = details.querySelector('.dropdown-menu') as HTMLElement;
-    expect(panel.querySelector('mp-navbar-item')).not.toBeNull();
+    const item = panel.querySelector('mp-dropdown-item') as MpDropdownItem;
+    await settle(item);
+    expect(item.classList.contains('dropdown-item')).toBe(true);
     // Disclosure navigation: never an ARIA menu.
     expect(panel.getAttribute('role')).toBeNull();
+    expect(item.getAttribute('role')).toBeNull();
   });
 
   it('a labelled slot wins over the label attribute', async () => {
-    const nav = mount('<mp-navbar><mp-navbar-dropdown label="Text"><b slot="labelTemplate">Markup</b></mp-navbar-dropdown></mp-navbar>');
+    const nav = mount('<mp-navbar><mp-navbar-nav><mp-dropdown-menu label="Text"><b slot="labelTemplate">Markup</b></mp-dropdown-menu></mp-navbar-nav></mp-navbar>');
     await settle(nav);
-    const dropdown = nav.querySelector('mp-navbar-dropdown') as MpNavbarDropdown;
-    await settle(dropdown);
-    expect(dropdown.querySelector('summary')?.textContent?.trim()).toBe('Markup');
+    const menu = nav.querySelector('mp-dropdown-menu') as MpDropdownMenu;
+    await settle(menu);
+    expect(menu.querySelector('summary')?.textContent?.trim()).toBe('Markup');
   });
 
-  it('nested dropdowns are submenus with their own exclusive group', async () => {
+  it('nested menus are submenus with their own exclusive group', async () => {
     const nav = mount(
-      '<mp-navbar><mp-navbar-dropdown label="A"><mp-navbar-dropdown label="B"></mp-navbar-dropdown></mp-navbar-dropdown></mp-navbar>',
+      '<mp-navbar><mp-navbar-nav><mp-dropdown-menu label="A"><mp-dropdown-menu label="B"></mp-dropdown-menu></mp-dropdown-menu></mp-navbar-nav></mp-navbar>',
     );
     await settle(nav);
-    const [outer, inner] = [...nav.querySelectorAll('mp-navbar-dropdown')] as MpNavbarDropdown[];
+    const [outer, inner] = [...nav.querySelectorAll('mp-dropdown-menu')] as MpDropdownMenu[];
     await settle(outer);
     await settle(inner);
     const outerDetails = outer.querySelector(':scope > details') as HTMLDetailsElement;

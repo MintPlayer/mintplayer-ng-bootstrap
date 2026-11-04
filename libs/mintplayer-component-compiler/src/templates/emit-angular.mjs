@@ -22,6 +22,9 @@ export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${na
   // through a call like `props().view.x`.
   const read = new Set();
   const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set(), partials, called: new Set(), components, composed: new Map() };
+  // Angular projects into ONE ng-content per selector, so a default slot written
+  // more than once (in two v-if branches) becomes one ng-template, outlet at each site.
+  ctx.sharedDefault = defaultSlots(src.root) > 1;
   const { root, host } = rootElement(src);
   // The inner mp-attrs node of a host-rooted template takes the host's forwarded attributes (useHostAttrs).
   const target = attrsTarget(src, root);
@@ -31,7 +34,8 @@ export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${na
   const definitions = [...ctx.called].map((name) => definePartial(ctx, name, defined)).join('');
   const lets = [...read].map((name) => `@let p_${name} = ${prop(name)};\n`).join('');
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
-  return { text: header + lets + body + definitions, uses: [...ctx.uses], partials: [...defined.values()], composed: [...ctx.composed.values()] };
+  const shared = ctx.sharedDefault ? `<ng-template #${DEFAULT_SLOT}><ng-content /></ng-template>\n` : '';
+  return { text: header + lets + body + definitions + shared, uses: [...ctx.uses], partials: [...defined.values()], composed: [...ctx.composed.values()] };
 }
 
 /** One partial's `<ng-template>`, then those it calls in turn; each once per template. */
@@ -198,11 +202,24 @@ function contentSlot(ctx, { query, name, index }, depth) {
   return `${pad(depth)}@if (contentSlots().${query}[${x(ctx, index)}]?.${name}; as ${local}) {\n${pad(depth + 1)}<ng-container [ngTemplateOutlet]="${local}" />\n${pad(depth)}}\n`;
 }
 
+const DEFAULT_SLOT = 'defaultSlot';
+
+/** How many parameterless default `<slot>`s a template writes. */
+function defaultSlots(node) {
+  const own = node.tag === 'slot' && slotName(node) === 'default' && slotArgs(node).every((a) => a.name === 'name') ? 1 : 0;
+  return own + (node.children ?? []).reduce((sum, child) => sum + defaultSlots(child), 0);
+}
+
 function slot(ctx, el, depth) {
   const name = slotName(el);
   const args = slotArgs(el).filter((a) => a.name !== 'name');
   const fallback = children(ctx, el.children, depth + 1);
   if (name === 'default' && args.length === 0) {
+    if (ctx.sharedDefault) {
+      if (fallback) throw new TemplateError(ctx.src.file, el, 'a default slot written more than once takes no fallback content');
+      ctx.uses.add('NgTemplateOutlet');
+      return `${pad(depth)}<ng-container [ngTemplateOutlet]="${DEFAULT_SLOT}" />\n`;
+    }
     // Angular projects the default slot; ng-content renders its own content when nothing is projected.
     return fallback ? `${pad(depth)}<ng-content>\n${fallback}${pad(depth)}</ng-content>\n` : `${pad(depth)}<ng-content />\n`;
   }

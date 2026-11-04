@@ -17,6 +17,7 @@ export default {
   components: {
     'dropdown-panel': {
       core: 'dropdownPanelCore',
+      provides: 'DROPDOWN_NESTING',
       doc: "The dropdown's positioned panel, as the dropdown directive renders it; not used on its own.",
       inputs: {
         type: 'DropdownPanelInputs',
@@ -31,15 +32,19 @@ export default {
     },
     'dropdown-menu': {
       core: 'dropdownMenuCore',
+      provides: 'DROPDOWN_NESTING',
       doc: [
         "Bootstrap's dropdown menu: an APG menu over its `dropdown-item`s (roving focus, arrow keys, Home / End,",
         'type-ahead free). Inside a dropdown its trigger names it; on its own give it a `label`.',
+        'In a navbar nav group it is the navbar dropdown instead: a native `<details>` disclosure with `label` as',
+        'its trigger text (or the `labelTemplate` slot), and a nested menu is a submenu.',
       ].join('\n'),
       inputs: {
         type: 'DropdownMenuInputs',
         fields: {
           maxHeight: { default: 'null', kind: 'number', doc: 'Pixel cap on the height; the menu scrolls beyond.' },
-          label: { default: 'null', kind: 'string', doc: "The menu's accessible name, when no trigger names it." },
+          label: { default: 'null', kind: 'string', doc: "The menu's accessible name, when no trigger names it; in a navbar, the trigger text." },
+          active: { default: 'false', reflect: true, doc: "In a navbar: a descendant link's route is active." },
         },
       },
       outputs: {

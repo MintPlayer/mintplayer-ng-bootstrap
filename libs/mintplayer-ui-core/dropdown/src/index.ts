@@ -1,7 +1,9 @@
 export {
   connectDropdown,
+  connectDropdownDisclosure,
   connectDropdownItem,
   connectDropdownPanel,
+  DROPDOWN_NESTING,
   DROPDOWN_OF_ATTR,
   dropdownCore,
   dropdownDividerCore,
@@ -9,11 +11,16 @@ export {
   dropdownItemCore,
   dropdownMenuCore,
   dropdownPanelCore,
+  NAVIGATION_NESTING,
 } from './dropdown.core';
 export type {
+  DropdownDisclosureOptions,
+  DropdownDisclosureView,
   DropdownInputs,
   DropdownItemInputs,
   DropdownMenuInputs,
+  DropdownMenuProps,
+  DropdownNesting,
   DropdownPanelInputs,
   DropdownPlacement,
   DropdownPopup,

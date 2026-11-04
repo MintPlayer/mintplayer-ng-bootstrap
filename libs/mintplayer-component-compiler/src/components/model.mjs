@@ -87,9 +87,9 @@ export function componentModels({ group, entry, corePackage, template, extension
   const style = groupStyle(group, entry, corePackage);
   const models = Object.entries(group.components ?? {}).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
-    const { root, host } = rootElement(src);
+    const { root, roots, host } = rootElement(src);
     const where = `${entry}/${element}`;
-    if (!root) throw new Error(`${where}: the template needs a single root element`);
+    if (!root) throw new Error(`${where}: the template needs a single root element (or a root v-if chain ending in v-else)`);
 
     let hostExpression = null;
     if (host) {
@@ -100,7 +100,7 @@ export function componentModels({ group, entry, corePackage, template, extension
       }
       hostExpression = expression;
     }
-    if (attribute(root, 'ref')?.value?.content !== 'root') throw new Error(`${where}: the template's root element needs ref="root"`);
+    if (roots.some((r) => attribute(r, 'ref')?.value?.content !== 'root')) throw new Error(`${where}: the template's root element needs ref="root"`);
 
     const fields = manifest.inputs?.fields ?? {};
     const inputs = Object.entries(fields).map(([name, field]) => {
@@ -144,6 +144,8 @@ export function componentModels({ group, entry, corePackage, template, extension
       templateBase: src.file.replace(/^.*[\\/]/, '').replace(/\.vue$/, ''),
       templateName: src.name,
       rootTag: root.tag,
+      // The root's DOM type: HTMLElement when the branches of a root v-if chain differ.
+      rootType: roots.every((r) => r.tag === root.tag) ? `HTMLElementTagNameMap['${root.tag}']` : 'HTMLElement',
       // The element the consumer's attributes land on (mp-attrs), which types the React props.
       attrsTag: attrsTarget(src, root).tag,
       // The host is the root but the role lives on an inner mp-attrs node: Angular forwards the host's aria-*/id/tabindex there.

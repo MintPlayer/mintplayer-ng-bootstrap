@@ -3,7 +3,8 @@ import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsDropdownItem, BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
 import { renderEl } from './harness';
@@ -174,13 +175,15 @@ describe('BsNavbarItem — markup from the headless core', () => {
     expect(item.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('becomes a dropdown item inside a BsNavbarDropdown', async () => {
+  it('a BsDropdownMenu in a BsNavbarNav is the navbar disclosure around BsDropdownItems', async () => {
     const details = await renderEl(
-      <BsNavbarDropdown label="More">
-        <BsNavbarItem active>
-          <a href="/x">X</a>
-        </BsNavbarItem>
-      </BsNavbarDropdown>,
+      <BsNavbarNav>
+        <BsDropdownMenu label="More">
+          <BsDropdownItem active>
+            <a href="/x">X</a>
+          </BsDropdownItem>
+        </BsDropdownMenu>
+      </BsNavbarNav>,
       'details',
     );
     const item = details.querySelector('.dropdown-menu > div')!;

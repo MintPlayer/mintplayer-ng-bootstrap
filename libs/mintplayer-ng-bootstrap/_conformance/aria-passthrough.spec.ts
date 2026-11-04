@@ -32,8 +32,8 @@ import { TestBed } from '@angular/core/testing';
  * distinguish "the wrapper does not forward" from "the harness cannot render this
  * wrapper at all". Two entries were in the second category and nobody knew:
  * `bs-tree-select` throws in its constructor unless nested in a `<bs-form>`, and
- * `bs-navbar-dropdown` has a `contentChild.required` label that fails NG0951 when
- * absent. Both looked like ordinary forwarding failures until the directive landed
+ * the since-deleted `bs-navbar-dropdown` had a `contentChild.required` label that
+ * failed NG0951 when absent. Both looked like ordinary forwarding failures until the directive landed
  * and they were the only two still red. Hence `wrap` and `needs` below: each
  * wrapper's real preconditions are now explicit, so a render error can never again
  * masquerade as an ARIA finding.

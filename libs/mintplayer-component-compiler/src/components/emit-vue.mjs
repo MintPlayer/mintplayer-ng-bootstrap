@@ -10,7 +10,11 @@ const RUNTIME_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' }
 export function propLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
   const runtime = RUNTIME_TYPES[input.kind];
-  const typed = runtime ? `${runtime} as PropType<${type}>` : `null as unknown as PropType<${type}>`;
+  // An opaque `unknown` input must stay `any` here: Vue infers `PropType<unknown>`
+  // from the prop's `default` (`undefined`), which then refuses every value.
+  const typed = runtime
+    ? `${runtime} as PropType<${type}>`
+    : `null as unknown as PropType<unknown extends ${type} ? any : ${type}>`;
   return `${jsdoc(input.doc, '  ')}  ${input.name}: { type: ${typed}, default: ${input.default ?? 'undefined'} },`;
 }
 

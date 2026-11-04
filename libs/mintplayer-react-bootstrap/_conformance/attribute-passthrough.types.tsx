@@ -7,7 +7,7 @@ import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
@@ -99,7 +99,9 @@ export const probes = [
     <BsNavbarNav role="none" id="nb" tabIndex={-1} />
   </BsNavbar>,
   <BsNavbar>
-    <BsNavbarDropdown label="Menu" role="none" id="nd" tabIndex={-1} />
+    <BsNavbarNav>
+      <BsDropdownMenu label="Menu" role="none" id="nd" tabIndex={-1} />
+    </BsNavbarNav>
   </BsNavbar>,
   <BsNavbar>
     <BsNavbarItem role="none" id="ni" tabIndex={-1} />

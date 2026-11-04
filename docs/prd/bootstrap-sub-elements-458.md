@@ -259,9 +259,34 @@ Angular `has-overlay` entry, the CDK overlay use and `dropdown-divider` entry ar
 
 | State | Open state | Reveal | Placement |
 |---|---|---|---|
-| No JS (server HTML, not hydrated) | `<details>`/`<summary>` | `<details open>` **and** `:focus-within`, gated on `:not([data-mp-hydrated])` | inline; nested submenus open inline inside their parent |
+| No JS (server HTML, not hydrated), in the navbar | `<details>`/`<summary>` | `<details open>` **and** `:focus-within`, gated on `:not([data-mp-hydrated])` | inline; nested submenus open inline inside their parent |
+| No JS, standalone (`[bsDropdown]`) | none: tier 2 (amended below) | none | the menu stays closed |
 | Hydrated, in the navbar | the core (`<details>` kept as the carrier) | the core only | inline when the navbar is collapsed; as today when wide |
 | Hydrated, standalone (`[bsDropdown]`) | the `[bsDropdown]` core | the core only | body overlay (§4.4) |
+
+**As built (M6, owner decisions 2026-11-04).**
+
+- **API: a menu with a label.** Inside a `bs-navbar-nav`, `<bs-dropdown-menu label="Products">` renders
+  `details.nav-item.dropdown > summary.nav-link.dropdown-toggle + div.dropdown-menu`. Its entries are
+  `bs-dropdown-item`s, and a nested `bs-dropdown-menu` is a `details.dropdown-submenu`. The trigger
+  takes markup through the `labelTemplate` slot (Angular `*bsDropdownMenuLabelTemplate`). Angular's
+  `RouterLinkActive` moved with it (`dropdown/src/dropdown-menu.angular.ts`; `active` input).
+  `bs-navbar-dropdown`, `NAVBAR_NESTING`, `connectNavbarDropdown` and `connectNavbarContents` are deleted.
+- **Mode by context.** `DROPDOWN_NESTING` (`{ mode: 'menu' | 'navigation', depth }`): `navbar-nav`
+  provides navigation mode, each `dropdown-menu` provides `depth + 1`, and `dropdown-panel` resets it to
+  menu mode. The reset is needed because framework context follows the declaration, not the body
+  teleport. A menu in navigation mode is disclosure navigation: no `menu`/`menuitem` roles, and items
+  state `aria-current` / `aria-disabled` on themselves. The navbar's `attachNavbar` drives the
+  `<details>`; the menu core attaches nothing there.
+- **Standalone no-JS stays tier 2.** Only the navbar is tier 1 (`<details>` plus the gated
+  `:focus-within`, in `navbar.scoped.scss` through `::details-content`). The standalone `[bsDropdown]`
+  menu is a tier-2 overlay: its trigger is a consumer button, so there is no native carrier to reveal
+  without JS. This deviates from Q14's "the standalone gets it too".
+- **Compiler additions this needed.** (1) A root `v-if`/`v-else` chain counts as a single root: every
+  branch carries `ref="root"`, React puts the root attributes on every branch, and a mixed-tag root ref
+  is typed `HTMLElement`. (2) Angular can project a default `<slot />` only once, so a template that uses
+  it more than once gets one shared `<ng-template #defaultSlot><ng-content /></ng-template>` plus an
+  outlet at each site. A fallback on such a slot is a compile error.
 
 ### 4.6 `calendar-month`
 
@@ -467,7 +492,8 @@ first task measures.
 (`navbar.scoped.scss:184`) and uses `<details>` for every dropdown. Nothing reveals on `:focus-within`
 today: the `data-js` gates went away with #437. Q14 adds one rule family, gated the same way:
 `:not([data-mp-hydrated]) .nav-item.dropdown:focus-within > .dropdown-menu`, with nested submenus shown
-inline. The unified `bs-dropdown-menu` carries it, so a standalone dropdown gets it too. The
+inline. ~~The unified `bs-dropdown-menu` carries it, so a standalone dropdown gets it too.~~ Amended
+in M6: only the navbar carries it, and a standalone dropdown is tier 2 (§4.5 "As built"). The
 `navbar-noscript.md` matrix becomes M6's e2e.
 
 **S8 Calendar (2026-11-03).** `@mintplayer/ng-bootstrap/calendar-month` is an orphan. It holds only a

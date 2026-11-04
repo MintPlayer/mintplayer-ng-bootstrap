@@ -6,10 +6,9 @@ import {
   BsNavbarNavComponent,
   BsNavbarItemComponent,
   BsNavbarBrandDirective,
-  BsNavbarDropdownComponent,
-  BsNavbarDropdownLabelTemplateDirective,
   BsNavbarLinkDirective,
 } from '@mintplayer/ng-bootstrap/navbar';
+import { BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown';
 import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 import { dedent } from 'ts-dedent';
 
@@ -22,8 +21,8 @@ import { dedent } from 'ts-dedent';
     BsNavbarNavComponent,
     BsNavbarItemComponent,
     BsNavbarBrandDirective,
-    BsNavbarDropdownComponent,
-    BsNavbarDropdownLabelTemplateDirective,
+    BsDropdownMenuComponent,
+    BsDropdownItemComponent,
     BsNavbarLinkDirective,
   ],
   templateUrl: './navbar.component.html',
@@ -49,12 +48,11 @@ export class NavbarComponent {
           <a routerLink="/about">About</a>
         </bs-navbar-item>
 
-        <bs-navbar-dropdown>
-          <span *bsNavbarDropdownLabelTemplate>Products</span>
-          <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
-          <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
-          <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>
-        </bs-navbar-dropdown>
+        <bs-dropdown-menu label="Products">
+          <bs-dropdown-item><a routerLink="/products/widgets">Widgets</a></bs-dropdown-item>
+          <bs-dropdown-item><a routerLink="/products/gadgets">Gadgets</a></bs-dropdown-item>
+          <bs-dropdown-item><a routerLink="/products/gizmos">Gizmos</a></bs-dropdown-item>
+        </bs-dropdown-menu>
       </bs-navbar-nav>
 
       <bs-navbar-nav align="end">
@@ -73,10 +71,9 @@ export class NavbarComponent {
       BsNavbarNavComponent,
       BsNavbarItemComponent,
       BsNavbarBrandDirective,
-      BsNavbarDropdownComponent,
-      BsNavbarDropdownLabelTemplateDirective,
       BsNavbarLinkDirective,
     } from '@mintplayer/ng-bootstrap/navbar';
+    import { BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown';
     import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 
     @Component({
@@ -88,8 +85,8 @@ export class NavbarComponent {
         BsNavbarNavComponent,
         BsNavbarItemComponent,
         BsNavbarBrandDirective,
-        BsNavbarDropdownComponent,
-        BsNavbarDropdownLabelTemplateDirective,
+        BsDropdownMenuComponent,
+        BsDropdownItemComponent,
         BsNavbarLinkDirective,
       ],
     })

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-// One entry around a consumer link: a .nav-item in a nav group, a
-// .dropdown-item in a dropdown panel. The glue supplies `bag` from connectNavbarItem().
+// One .nav-item around a consumer link in a nav group (inside a dropdown the
+// entries are bs-dropdown-items). The glue supplies `bag` from connectNavbarItem().
 import type { NavbarBag } from '@mintplayer/ui-core/navbar';
 
 defineProps<{ bag: NavbarBag }>();

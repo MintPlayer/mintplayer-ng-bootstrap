@@ -8,13 +8,27 @@ import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VO
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
 
+/** A ref on elements of different tags. */
+const MIXED = '*';
+
+/** Each ref name's element tags, over the whole template. */
+function refTags(node, map = new Map()) {
+  const ref = node.type === NODE.ELEMENT ? refName(node) : null;
+  if (ref) map.set(ref, (map.get(ref) ?? new Set()).add(node.tag));
+  (node.children ?? []).forEach((child) => refTags(child, map));
+  return map;
+}
+
 const eventProp = (name) => 'on' + name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 
 export function emitReact(src, { generator = GENERATOR, runtime, partials, components } = {}) {
   if (!runtime) throw new Error('emitReact: options.runtime must name the module that exports reactProps / reactFormProps');
   const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null, partials, imports: new Set(), components, composed: new Map() };
-  const { root } = rootElement(src);
+  const { root, roots } = rootElement(src);
   ctx.root = root;
+  // A root v-if / v-else chain: every branch is the root (className, attrs).
+  ctx.roots = roots;
+  ctx.refTags = refTags(src.root);
   ctx.attrsTarget = attrsTarget(src, root);
   const body = children(ctx, src.root.children);
   const name = `${src.name}Template`;
@@ -22,7 +36,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
   const slotMembers = src.slots.members
     .filter((s) => s.name !== 'default')
     .map((s) => `${s.name}?: React.ReactNode${s.paramType ? ` | ((args: ${s.paramType}) => React.ReactNode)` : ''};`);
-  const refMembers = [...ctx.refs].map(([r, tag]) => `${r}Ref?: React.Ref<HTMLElementTagNameMap['${tag}']>;`);
+  const refMembers = [...ctx.refs].map(([r, tag]) => `${r}Ref?: React.Ref<${tag === MIXED ? 'HTMLElement' : `HTMLElementTagNameMap['${tag}']`}>;`);
   const propNames = [...src.propNames];
   const destructure = [...propNames, 'slots = {}', ...(ctx.uses.has('contentSlots') ? ['contentSlots = {}'] : []), 'children', 'className', 'attrs', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
 
@@ -146,7 +160,7 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}<${use.partial.name}Template ${binds} slots={slots} />\n`;
   }
   checkElement(ctx.src, el);
-  const isRoot = el === ctx.root;
+  const isRoot = ctx.roots.includes(el);
   // A form control's bag seeds the DOM; script owns its state afterwards. An
   // option's selection is seeded by its select's `defaultValue` (React refuses
   // `selected` on an option), so its bag goes without it.
@@ -188,14 +202,16 @@ function bare(ctx, el, depth) {
   const ref = refName(el);
   if (ref && nodeProps.length) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
   if (ref) {
-    ctx.refs.set(ref, el.tag);
-    attrs.push(`ref={${ref}Ref}`);
+    // One ref on branches of different tags (a root chain) is typed HTMLElement.
+    const tag = ctx.refTags.get(ref).size > 1 ? MIXED : el.tag;
+    ctx.refs.set(ref, tag);
+    attrs.push(tag === MIXED ? `ref={${ref}Ref as React.Ref<HTMLElementTagNameMap['${el.tag}']>}` : `ref={${ref}Ref}`);
   }
   if (nodeProps.length) attrs.push(`ref={(node: ${el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>'} | null) => { if (node) { ${nodeProps.join(' ')} } }}`);
   // v-html: core-produced markup, never consumer input.
   const html = directive(el, 'html');
   if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);
-  if (el === ctx.attrsTarget) {
+  if (el === ctx.attrsTarget || (ctx.attrsTarget === ctx.root && isRoot)) {
     attrs.push('{...attrs}');
     // A role in the core's bag is its ARIA contract: a consumer role never replaces it.
     if (bagExpr) attrs.push(`role={(${bagExpr}['role'] as string | null | undefined) ?? (attrs?.['role'] as string | undefined)}`);

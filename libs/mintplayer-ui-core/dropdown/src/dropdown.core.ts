@@ -1,4 +1,4 @@
-import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
+import { defineContext, defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
 import { isRendered, isShown, OverlayPresence, placeBeside, trackBeside, type AnchorAlign, type OverlayPhase } from '@mintplayer/ui-core/overlay';
 import {
   activatedItem,
@@ -8,6 +8,7 @@ import {
   dropdownItemDisabled,
   dropdownMenuItems,
   type DropdownItemElement,
+  type DropdownMenuMode,
   type DropdownSelectEventDetail,
 } from '@mintplayer/ui-core/dropdown-menu';
 
@@ -25,8 +26,17 @@ import {
  *
  * The menu is a `div`, not a `ul`: in Angular and Lit an item's host is a
  * custom element, which a list may not contain. The menu also works on its
- * own, in place (its behaviour is `ui-core/dropdown-menu`, shared with the
- * navbar's `<details>` dropdowns).
+ * own, in place (its behaviour is `ui-core/dropdown-menu`).
+ *
+ * In a navbar nav group (`DROPDOWN_NESTING` in `navigation` mode) the same
+ * `bs-dropdown-menu` renders the navbar's dropdown instead, an APG
+ * disclosure-navigation `<details>` (no-JS tier 1, nested menus are submenus):
+ *
+ *   <details class="nav-item dropdown" name>                      (dropdown-menu, `label` is the trigger text)
+ *     <summary class="nav-link dropdown-toggle">…label…</summary>
+ *     <div class="dropdown-menu show">
+ *       <div class="dropdown-item" aria-current?><a href>…</a></div>   (dropdown-item)
+ *       <details class="dropdown dropdown-submenu" name>…</details>   (a nested dropdown-menu)
  *
  * The trigger is an APG menu button: a click (Enter and Space on a trigger that
  * is not natively focusable, which then becomes a focusable button) toggles
@@ -38,8 +48,10 @@ import {
  * is for content that is not a menu (a calendar, a form): the panel is then a
  * non-modal dialog and takes focus itself.
  *
- * No-JS tier 2: the trigger renders `aria-expanded="false"`; a standalone
- * dropdown does not open without JavaScript (the navbar's dropdowns do).
+ * No-JS tier 2 standalone: the trigger renders `aria-expanded="false"` and the
+ * dropdown does not open without JavaScript (an overlay, like the tooltip). The
+ * navbar's dropdowns are tier 1: native `<details>`, and before hydration a
+ * `:focus-within` reveal as well (the navbar sheet).
  */
 export type DropdownPlacement = 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 export type DropdownPopup = 'menu' | 'dialog';
@@ -85,8 +97,22 @@ export interface DropdownProps {
 export interface DropdownMenuInputs {
   /** Pixel cap on the menu height; it scrolls beyond. */
   maxHeight: number | null;
-  /** The menu's accessible name; inside a dropdown its trigger names it. */
+  /**
+   * A menu's accessible name (inside a dropdown its trigger names it); in a
+   * navbar, the trigger text (the `labelTemplate` slot replaces it).
+   */
   label: string | null;
+  /** In a navbar: a descendant link's route is active (Angular derives it from the router). */
+  active: boolean;
+}
+
+export interface DropdownMenuProps {
+  /** The menu's bag; unused in a navbar. */
+  readonly root: CoreBag;
+  /** The disclosure in a navbar; null for a menu. */
+  readonly nav: DropdownDisclosureView | null;
+  /** The navbar trigger's text. */
+  readonly label?: string;
 }
 
 export interface DropdownItemInputs {
@@ -95,6 +121,28 @@ export interface DropdownItemInputs {
   /** Opaque value carried in the menu's `select` detail. */
   value: unknown;
 }
+
+/**
+ * Where a `bs-dropdown-menu` sits: `navigation` inside a navbar nav group (it
+ * renders a `<details>` disclosure), `menu` anywhere else. `depth` counts the
+ * menus around it: -1 for none.
+ */
+export interface DropdownNesting {
+  readonly mode: DropdownMenuMode;
+  readonly depth: number;
+}
+
+export const DROPDOWN_NESTING = defineContext<DropdownNesting>('dropdown-nesting', { mode: 'menu', depth: -1 });
+
+/** What a navbar nav group provides. */
+export const NAVIGATION_NESTING: DropdownNesting = { mode: 'navigation', depth: -1 };
+
+const MENU_NESTING: DropdownNesting = { mode: 'menu', depth: -1 };
+
+/** The Angular / Lit host around a menu: out of the layout, so the navbar's flex and Bootstrap's child rules see the real node. */
+const CONTENTS: CoreBag = { class: 'dropdown-contents' };
+
+const classes = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(' ');
 
 /** The trigger names its panel's id here, so the core finds the body-hosted panel. */
 export const DROPDOWN_OF_ATTR = 'data-mp-dropdown';
@@ -145,12 +193,52 @@ export function connectDropdownPanel(inputs: DropdownPanelInputs): CoreBag {
 }
 
 /**
- * The item's bag: its classes only. The menu (`syncDropdownMenu`) writes the
- * role and `aria-disabled` on whichever node is the menuitem, the item or the
- * link / button it wraps; a presentational item must carry no ARIA of its own.
+ * The item's bag. In a menu, its classes only: the menu (`syncDropdownMenu`)
+ * writes the role and `aria-disabled` on whichever node is the menuitem, the
+ * item or the link / button it wraps, so a presentational item carries no ARIA
+ * of its own. In a navbar's disclosure panel nothing writes roles, so the item
+ * states its own `aria-current` and `aria-disabled`.
  */
-export function connectDropdownItem(inputs: DropdownItemInputs): CoreBag {
-  return { class: ['dropdown-item', inputs.active && 'active', inputs.disabled && 'disabled'].filter(Boolean).join(' ') };
+export function connectDropdownItem(inputs: DropdownItemInputs, mode: DropdownMenuMode = 'menu'): CoreBag {
+  const cls = classes('dropdown-item', inputs.active && 'active', inputs.disabled && 'disabled');
+  if (mode === 'menu') return { class: cls };
+  return { class: cls, 'aria-current': inputs.active ? 'true' : null, 'aria-disabled': inputs.disabled ? 'true' : null };
+}
+
+/** A `bs-dropdown-menu` in a navbar: a native `<details>` disclosure. */
+export interface DropdownDisclosureView {
+  readonly details: CoreBag;
+  readonly summary: CoreBag;
+  readonly panel: CoreBag;
+}
+
+export interface DropdownDisclosureOptions {
+  /** 0 for a dropdown in a nav group, 1+ for a submenu inside a panel. */
+  depth: number;
+  /** A descendant link's route is active. */
+  active?: boolean;
+  /**
+   * Script runs: a submenu's panel becomes a manual popover, which the navbar's
+   * attachment shows in the top layer next to its trigger, so the panel it sits
+   * in can scroll without clipping it.
+   */
+  hydrated?: boolean;
+}
+
+/**
+ * The APG disclosure-navigation dropdown (not a menu): the summary keeps its
+ * native role and state, and every link stays in the tab order. `name` makes
+ * the dropdowns of one level exclusive, natively; it is per depth, since a
+ * submenu sharing its parent's name would close the parent.
+ */
+export function connectDropdownDisclosure(options: DropdownDisclosureOptions): DropdownDisclosureView {
+  const submenu = options.depth > 0;
+  return {
+    details: { class: submenu ? 'dropdown dropdown-submenu' : 'nav-item dropdown', name: `mp-navbar-${options.depth}` },
+    summary: { class: classes(submenu ? 'dropdown-item' : 'nav-link', 'dropdown-toggle', options.active && 'active') },
+    // Navigation, not a menu: never role=menu, whatever the hydration state.
+    panel: { ...connectDropdownMenu({ hydrated: false }), popover: submenu && options.hydrated ? 'manual' : null },
+  };
 }
 
 type Api = CoreApi<DropdownInputs, DropdownState, Record<never, never>>;
@@ -248,32 +336,57 @@ export const dropdownCore = defineCore<DropdownInputs, DropdownState, DropdownPr
   },
 });
 
-/** The panel: a pure view of the inputs the directive hands it. */
-export const dropdownPanelCore = defineCore<DropdownPanelInputs, Record<string, never>, { root: CoreBag }>({
+/**
+ * The panel: a pure view of the inputs the directive hands it. It resets the
+ * nesting: a framework context follows the declaration, not the body teleport,
+ * so a `[bsDropdown]` inside a navbar would otherwise render its menu as a disclosure.
+ */
+export const dropdownPanelCore = defineCore<DropdownPanelInputs, Record<string, never>, { root: CoreBag }, Record<never, never>, undefined, DropdownNesting>({
   view: ({ inputs }) => ({ root: connectDropdownPanel(inputs) }),
+  provides: DROPDOWN_NESTING,
+  provide: () => MENU_NESTING,
 });
 
 // Zero is a cap like any other; only an unset value leaves the menu uncapped.
 const applyMaxHeight = (host: HTMLElement, maxHeight: number | null) =>
   maxHeight != null ? host.style.setProperty('--mp-dropdown-max-height', `${maxHeight}px`) : host.style.removeProperty('--mp-dropdown-max-height');
 
+/**
+ * In a navbar the disclosure is the navbar's: its attachment owns the keys,
+ * dismissal and the panel's height, so the menu attaches nothing there.
+ */
+const inNavbar = (host: HTMLElement) => host.localName === 'details';
+
 export const dropdownMenuCore = defineCore<
   DropdownMenuInputs,
   Record<string, never>,
-  { root: CoreBag },
-  { itemSelect: DropdownSelectEventDetail }
+  DropdownMenuProps,
+  { itemSelect: DropdownSelectEventDetail },
+  DropdownNesting,
+  DropdownNesting
 >({
-  view: ({ inputs, hydrated }) => ({ root: connectDropdownMenu({ hydrated, label: inputs.label }) }),
+  consume: DROPDOWN_NESTING,
+  provides: DROPDOWN_NESTING,
+  view: ({ inputs, hydrated, context, label }) =>
+    context.mode === 'navigation'
+      ? { root: {}, nav: connectDropdownDisclosure({ depth: context.depth + 1, active: inputs.active, hydrated }), label: inputs.label ?? undefined }
+      : { root: connectDropdownMenu({ hydrated, label: inputs.label ?? label }), nav: null },
+  provide: ({ context }) => ({ mode: context.mode, depth: context.depth + 1 }),
+  host: () => CONTENTS,
   attach: (api) => {
+    if (inNavbar(api.host)) return undefined;
     applyMaxHeight(api.host, api.inputs().maxHeight);
     return attachDropdownMenu(api.host, { onSelect: (detail) => api.emit('itemSelect', detail) });
   },
-  inputsChanged: (api) => applyMaxHeight(api.host, api.inputs().maxHeight),
+  inputsChanged: (api) => {
+    if (!inNavbar(api.host)) applyMaxHeight(api.host, api.inputs().maxHeight);
+  },
 });
 
 /** The item carries its opaque value as the `dropdownValue` property the menu reads. */
-export const dropdownItemCore = defineCore<DropdownItemInputs, Record<string, never>, { root: CoreBag }>({
-  view: ({ inputs }) => ({ root: connectDropdownItem(inputs) }),
+export const dropdownItemCore = defineCore<DropdownItemInputs, Record<string, never>, { root: CoreBag }, Record<never, never>, DropdownNesting>({
+  consume: DROPDOWN_NESTING,
+  view: ({ inputs, context }) => ({ root: connectDropdownItem(inputs, context.mode) }),
   attach: (api) => {
     (api.host as DropdownItemElement).dropdownValue = api.inputs().value;
   },

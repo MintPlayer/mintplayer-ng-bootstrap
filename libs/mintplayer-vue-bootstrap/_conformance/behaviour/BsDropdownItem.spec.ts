@@ -22,7 +22,7 @@ const Host = defineComponent({
   setup: () => () =>
     h(BsDropdownMenu, { onItemselect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
       // `value` is opaque (`kind: false`), so the generated prop type cannot name it.
-      h(BsDropdownItem, { value: value.value } as Record<string, unknown>, () => 'A'),
+      h(BsDropdownItem, { value: value.value }, () => 'A'),
     ),
 });
 

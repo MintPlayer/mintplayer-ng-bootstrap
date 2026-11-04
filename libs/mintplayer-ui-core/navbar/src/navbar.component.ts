@@ -8,7 +8,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 export default {
   group: 'navbar',
-  style: { scope: 'navbar', bootstrap: ['nav', 'navbar', 'dropdown'] },
+  style: { scope: 'navbar', bootstrap: ['nav', 'navbar'] },
   components: {
     navbar: {
       core: 'navbarCore',
@@ -37,19 +37,17 @@ export default {
     },
     'navbar-nav': {
       core: 'navbarNavCore',
-      doc: 'A group of navbar items; `align="end"` pushes it to the far side when the bar is wide.',
+      provides: 'DROPDOWN_NESTING',
+      doc: [
+        'A group of navbar items; `align="end"` pushes it to the far side when the bar is wide.',
+        'A `bs-dropdown-menu` in it is a navbar dropdown: a native `<details>`, so it opens with JavaScript off.',
+      ].join('\n'),
       inputs: { type: 'NavbarNavInputs', fields: { align: { default: "'start'", reflect: true } } },
     },
     'navbar-item': {
       core: 'navbarItemCore',
-      doc: 'One entry around a consumer link: a `.nav-item` in a nav group, a `.dropdown-item` in a dropdown.',
+      doc: 'One `.nav-item` around a consumer link in a nav group; inside a dropdown use `bs-dropdown-item`.',
       inputs: { type: 'NavbarItemInputs', fields: { active: { default: 'false', reflect: true }, disabled: { default: 'false', reflect: true } } },
-    },
-    'navbar-dropdown': {
-      core: 'navbarDropdownCore',
-      provides: 'NAVBAR_NESTING',
-      doc: 'A navbar dropdown, or a submenu when nested: a native `<details>`, so it opens with JavaScript off.',
-      inputs: { type: 'NavbarDropdownInputs', fields: { label: { kind: 'string' }, active: { default: 'false', reflect: true } } },
     },
   },
 } satisfies ComponentGroup;

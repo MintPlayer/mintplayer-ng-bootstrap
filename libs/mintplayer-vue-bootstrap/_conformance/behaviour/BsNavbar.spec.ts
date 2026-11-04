@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { h, nextTick } from 'vue';
 
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '../../navbar/src/generated';
+import { BsDropdownItem, BsDropdownMenu } from '../../dropdown/src/generated';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '../../navbar/src/generated';
 
 import { mountEl, mountWrapper } from './harness';
 
@@ -81,12 +82,13 @@ describe('BsNavbarItem — markup from the headless core', () => {
     expect(el.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('becomes a dropdown item inside a BsNavbarDropdown', () => {
-    const wrapper = mountWrapper(BsNavbarDropdown, {
-      props: { label: 'More' },
-      slots: { default: () => h(BsNavbarItem, { active: true }, () => h('a', { href: '/x' }, 'X')) },
+  it('a BsDropdownMenu in a BsNavbarNav is the navbar disclosure around BsDropdownItems', () => {
+    const wrapper = mountWrapper(BsNavbarNav, {
+      slots: {
+        default: () => h(BsDropdownMenu, { label: 'More' }, () => h(BsDropdownItem, { active: true }, () => h('a', { href: '/x' }, 'X'))),
+      },
     });
-    const details = wrapper.element as HTMLDetailsElement;
+    const details = wrapper.element.querySelector('details')!;
     expect(details.querySelector('summary')?.textContent).toBe('More');
     const item = details.querySelector('.dropdown-menu > div')!;
     expect([...item.classList]).toEqual(['dropdown-item', 'active']);
