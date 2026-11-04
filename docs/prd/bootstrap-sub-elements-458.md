@@ -723,8 +723,30 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
      `Directionality` is gone). A preset on an inline box is ignored instead of throwing. New
      `resized` output (a drag ended or a key moved an edge). The `[bsResizeGlyph]` directive and
      the `RESIZABLE` token are gone.
+   - **File upload.** A drop zone (`role="region"`) over a native file input stretched across it,
+     with a browse `<label>` button; rows use the list-group and progress parts. `files` is
+     two-way (`filesChange` for React), `filesDropped` reports each batch, and each batch is
+     announced (`announceToPage`). The `fileTemplate` slot replaces a row
+     (`bsFileUploadFileTemplate let-upload="upload"`, was `bsFileUploadTemplate`).
+     `BsFormatBytesPipe` became the `formatBytes` function (and an optional `formatSize` input);
+     `placeholder`/`ariaLabel` became `label`, `inputAriaLabel` became `inputLabel`; new `name`,
+     `accept`, `multiple`, `disabled`. With `name` the input submits with a form, no JS needed.
+   - **Color picker.** One D10 component instead of seven Angular ones: `bs-color-wheel`,
+     `bs-slider` and the four strips are gone as public API. The wheel is the only control
+     without a native element: a focusable `role="slider"` (`aria-roledescription`, hue as the
+     value, saturation in the value text) with pointer capture and the old key map. Brightness,
+     alpha, hue and saturation are native `type=range` sliders whose tracks are painted from
+     custom properties the core writes on an inner frame; the channel toggle is a Bootstrap
+     `form-switch` (forms part). `value` (hex), `alpha` and `channelSlidersVisible` are two-way;
+     hue and saturation are core state, so a grey keeps the hue the user picked. Accessible names
+     are a `labels` input (localizable). Tier 2: every control is disabled until hydrated.
+     `color-math` moved to `@mintplayer/ui-core/color-picker`. Angular keeps a CVA
+     (`color-picker.accessor.ts`) fed by the component's `valuechange`.
    - **Compiler.** A Vue prop with a function default on an opaque input is handed over through a
-     factory (Vue calls a function default of a prop not typed `Function`).
+     factory (Vue calls a function default of a prop not typed `Function`). In React, every
+     `.prop` value is read during render (so `v-if` narrowing holds), and `:value.prop` on an
+     input also writes `node.value` when it differs: `defaultValue` alone left a moved slider
+     deaf to later outside changes.
 8. **Cleanup.**
    - Delete `BsNoNoscript`, the Angular `a11y/overlay-*` services and every hand-written front.
    - Conformance import lists.

@@ -204,6 +204,11 @@ the template of every front. A template without a manifest is still compiled on 
   because it refuses `selected` on an `<option>`. The other fronts drop it and select through
   each option's `selected` bag key. A live `select.value` write would land before the options
   exist, and would turn a multiple select's array into a string that matches nothing.
+- **`:value.prop` on an `<input>` or `<textarea>`** is `defaultValue` in React (the server HTML)
+  plus a ref that writes `node.value` when it differs. Without that write, a slider the user has
+  moved would ignore a later outside change (a form reset, a "set red" button), because React
+  never touches a dirty input's value through `defaultValue`. Every `.prop` value is read during
+  render, so `v-if` narrowing holds for it; the ref only writes.
 - **`mp-attrs`.** Marks the element that receives the consumer's attributes (`aria-*`, `id`,
   `tabindex`, ...) when that is not the root, e.g. the `<select>` inside the select's wrapper.
   - React spreads `attrs` there and types the props for that element.

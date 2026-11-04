@@ -90,6 +90,7 @@ const TARGETS: Record<string, string> = {
   BsRating: 'div.rating',
   BsResizable: 'div.resizable',
   BsFileUpload: 'div.dropzone',
+  BsColorPicker: 'div.color-picker',
   BsParallax: 'div.parallax-host',
   BsModal: 'div.modal-host',
   BsOffcanvas: 'div.offcanvas-host',

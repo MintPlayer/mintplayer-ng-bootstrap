@@ -41,6 +41,7 @@ const SECTIONS = [
       { path: '/basic/checkbox', label: 'Checkbox' },
       { path: '/basic/radio', label: 'Radio' },
       { path: '/basic/rating', label: 'Rating' },
+      { path: '/basic/color-picker', label: 'Color picker' },
       { path: '/basic/toggle-button', label: 'Toggle button' },
       { path: '/basic/pagination', label: 'Pagination' },
       { path: '/basic/treeview', label: 'Treeview' },

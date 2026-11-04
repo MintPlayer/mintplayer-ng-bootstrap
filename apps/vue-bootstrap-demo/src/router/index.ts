@@ -65,6 +65,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/rating',        name: 'rating',        component: () => import('../views/RatingView.vue') },
+    { path: '/basic/color-picker',  name: 'color-picker',  component: () => import('../views/ColorPickerView.vue') },
     { path: '/basic/toggle-button', name: 'toggle-button', component: () => import('../views/ToggleButtonView.vue') },
     { path: '/basic/tab-control',   name: 'tab-control',   component: () => import('../views/TabControlView.vue') },
     { path: '/basic/treeview',      name: 'treeview',      component: () => import('../views/TreeviewView.vue') },

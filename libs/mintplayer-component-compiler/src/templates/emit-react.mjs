@@ -191,23 +191,32 @@ function bare(ctx, el, depth) {
       const isProp = p.modifiers.some((m) => (m.content ?? m) === 'prop');
       const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && isProp;
       if (isProp && !seed) {
-        nodeProps.push(`node.${p.arg.content} = ${exp};`);
+        nodeProps.push({ name: p.arg.content, exp });
         return [];
       }
+      // A seeded value also follows later changes (an outside write after the user moved it),
+      // except on a select (see the README) and on an element that carries a ref.
+      if (seed && el.tag !== 'select' && !refName(el)) nodeProps.push({ name: 'value', exp, sync: true });
       const name = seed ? 'defaultValue' : (RENAME[p.arg.content] ?? p.arg.content);
       return `${name}={${exp}}`;
     }
     return `${eventProp(p.arg.content)}={${exp}}`;
   });
   const ref = refName(el);
-  if (ref && nodeProps.length) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
+  if (ref && nodeProps.some((p) => !p.sync)) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
   if (ref) {
     // One ref on branches of different tags (a root chain) is typed HTMLElement.
     const tag = ctx.refTags.get(ref).size > 1 ? MIXED : el.tag;
     ctx.refs.set(ref, tag);
     attrs.push(tag === MIXED ? `ref={${ref}Ref as React.Ref<HTMLElementTagNameMap['${el.tag}']>}` : `ref={${ref}Ref}`);
   }
-  if (nodeProps.length) attrs.push(`ref={(node: ${el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>'} | null) => { if (node) { ${nodeProps.join(' ')} } }}`);
+  if (nodeProps.length) {
+    // The values are read during render, where the template's v-if narrowing still holds; the
+    // ref only writes them. A live value is written only when it differs, so a caret survives.
+    const node = el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>';
+    const writes = nodeProps.map((p, i) => (p.sync ? `if (node.value !== String(p${i})) node.value = String(p${i});` : `node.${p.name} = p${i};`));
+    attrs.push(`ref={((${nodeProps.map((_, i) => `p${i}`).join(', ')}) => (node: ${node} | null) => { if (node) { ${writes.join(' ')} } })(${nodeProps.map((p) => p.exp).join(', ')})}`);
+  }
   // v-html: core-produced markup, never consumer input.
   const html = directive(el, 'html');
   if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);

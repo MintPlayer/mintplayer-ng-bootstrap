@@ -46,6 +46,7 @@ const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'Co
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
 const RatingPage       = lazyNamed(() => import('./pages/RatingPage'),       'RatingPage');
+const ColorPickerPage  = lazyNamed(() => import('./pages/ColorPickerPage'),  'ColorPickerPage');
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
@@ -135,6 +136,7 @@ export function App() {
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
           <Route path="/basic/rating" element={<RatingPage />} />
+          <Route path="/basic/color-picker" element={<ColorPickerPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="/basic/tab-control" element={<TabControlPage />} />
           <Route path="/basic/treeview" element={<TreeviewPage />} />

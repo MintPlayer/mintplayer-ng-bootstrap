@@ -1,9 +1,15 @@
 <h1 class="text-center">Color picker</h1>
 
 <p>
-  <code>bs-color-picker</code> is a wheel-based RGB picker that integrates with
-  <code>FormsModule</code> via <code>[(ngModel)]</code> and optionally exposes
-  an alpha channel and a screenreader-friendly toggle.
+  <code>bs-color-picker</code> is a hue/saturation wheel over native brightness and alpha sliders. It
+  integrates with Angular forms (<code>[(ngModel)]</code>, <code>[formControl]</code>) on its hex value;
+  <code>[(alpha)]</code> runs from 0 to 1.
+</p>
+<p>
+  The wheel is a focusable slider: the left and right arrows turn the hue (Page Up/Down by 30°), up and
+  down change the saturation, Home and End jump to full and no saturation, and Shift makes each step finer.
+  The switch below the picker reveals plain hue and saturation sliders, so every channel has a
+  one-dimensional control; <code>[showAccessibilityToggle]="false"</code> hides it.
 </p>
 
 <h2>Basic usage</h2>
