@@ -34,17 +34,17 @@ export function computeOverflowOrder<T extends { priority: number | null }>(item
  */
 export const SUBPIXEL_TOLERANCE = 0.5;
 
-export interface OverflowLayout {
+export interface OverflowLayout<K = string> {
   /** Width of the visible strip. 0 means not measured yet. */
   stripWidth: number;
   /** Width of the More toggle. */
   moreWidth: number;
   /** The strip's column gap. */
   gap: number;
-  /** Measured width per item id. */
-  widths: ReadonlyMap<number, number>;
-  /** Item ids in overflow order (see computeOverflowOrder). */
-  order: readonly number[];
+  /** Measured width per item key. */
+  widths: ReadonlyMap<K, number>;
+  /** Item keys in overflow order (see computeOverflowOrder). */
+  order: readonly K[];
 }
 
 /**
@@ -53,7 +53,7 @@ export interface OverflowLayout {
  * strip holds N-K items plus the toggle, so N-K gaps. Items are kicked in overflow order until
  * the rest and the toggle fit.
  */
-export function computeOverflowIds({ stripWidth, moreWidth, gap, widths, order }: OverflowLayout): Set<number> {
+export function computeOverflowIds<K>({ stripWidth, moreWidth, gap, widths, order }: OverflowLayout<K>): Set<K> {
   if (stripWidth === 0 || widths.size === 0) return new Set();
 
   const sumWidths = [...widths.values()].reduce((a, b) => a + b, 0);
@@ -71,7 +71,7 @@ export function computeOverflowIds({ stripWidth, moreWidth, gap, widths, order }
         done: false,
       };
     },
-    { visibleSum: sumWidths, visibleCount: widths.size, ids: [] as number[], done: false },
+    { visibleSum: sumWidths, visibleCount: widths.size, ids: [] as K[], done: false },
   );
   return new Set(result.ids);
 }

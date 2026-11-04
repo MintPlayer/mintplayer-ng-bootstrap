@@ -79,6 +79,7 @@ const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPa
 const ScrollspyPage    = lazyNamed(() => import('./pages/advanced/ScrollspyPage'),   'ScrollspyPage');
 const ResizablePage    = lazyNamed(() => import('./pages/advanced/ResizablePage'),   'ResizablePage');
 const FileUploadPage   = lazyNamed(() => import('./pages/advanced/FileUploadPage'),  'FileUploadPage');
+const PriorityNavPage  = lazyNamed(() => import('./pages/advanced/PriorityNavPage'), 'PriorityNavPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
@@ -153,6 +154,7 @@ export function App() {
           <Route path="/advanced/scrollspy" element={<ScrollspyPage />} />
           <Route path="/advanced/resizable" element={<ResizablePage />} />
           <Route path="/advanced/file-upload" element={<FileUploadPage />} />
+          <Route path="/advanced/priority-nav" element={<PriorityNavPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/charts" element={<ChartsPage />} />

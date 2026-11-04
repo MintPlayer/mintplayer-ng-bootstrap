@@ -24,6 +24,7 @@ import { BsRating } from '@mintplayer/react-bootstrap/rating';
 import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
 import { BsFileUpload } from '@mintplayer/react-bootstrap/file-upload';
 import { BsColorPicker } from '@mintplayer/react-bootstrap/color-picker';
+import { BsPriorityNav } from '@mintplayer/react-bootstrap/priority-nav';
 import { BsModal } from '@mintplayer/react-bootstrap/modal';
 import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
@@ -133,6 +134,7 @@ export const everyWrapperProbes = [
   <BsResizable role="none" id="x" tabIndex={-1} />,
   <BsFileUpload role="none" id="x" tabIndex={-1} />,
   <BsColorPicker role="none" id="x" tabIndex={-1} />,
+  <BsPriorityNav role="none" id="x" tabIndex={-1} />,
   <BsModal role="none" id="x" tabIndex={-1} />,
   <BsOffcanvas role="none" id="x" tabIndex={-1} />,
   <BsParallax role="none" id="x" tabIndex={-1} />,

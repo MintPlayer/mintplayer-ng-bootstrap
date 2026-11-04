@@ -87,8 +87,10 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   // Slot directives.
   named.forEach((slot) => {
-    // The outlet passes the params both as `$implicit` (`let-args`) and spread (`let-x="x"`).
-    const context = slot.params ? `${slot.params} & { $implicit: ${slot.params} }` : 'unknown';
+    // The outlet passes the first param as `$implicit` (`*bsX="let item"`, as ngFor does) and every
+    // param by name (`let-x="x"`).
+    const first = slot.params && /^\{\s*([A-Za-z_$][\w$]*)\??:/.exec(slot.params)?.[1];
+    const context = slot.params ? `${slot.params} & { $implicit: ${first ? `${slot.params}['${first}']` : 'unknown'} }` : 'unknown';
     const directive = names.slotDirective(slot.name);
     lines.push(
       `/** The \`${slot.name}\` slot of \`<${names.selector}>\`: \`<ng-template ${names.slotSelector(slot.name)}>\` or \`*${names.slotSelector(slot.name)}\`. */`,

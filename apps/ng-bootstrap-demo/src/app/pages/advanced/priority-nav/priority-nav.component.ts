@@ -2,7 +2,7 @@ import { Component, ChangeDetectionStrategy, signal } from '@angular/core';
 import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
 import { bootstrapFormsPage } from '@mintplayer/ui-core/bootstrap/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsPriorityNavComponent, BsPriorityNavItemDirective } from '@mintplayer/ng-bootstrap/priority-nav';
+import { BsPriorityNavComponent, BsPriorityNavItemTemplateDirective, type PriorityNavItem } from '@mintplayer/ng-bootstrap/priority-nav';
 import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
 import { dedent } from 'ts-dedent';
 
@@ -13,7 +13,7 @@ import { dedent } from 'ts-dedent';
   imports: [
     BsCodeSnippetComponent,
     BsPriorityNavComponent,
-    BsPriorityNavItemDirective,
+    BsPriorityNavItemTemplateDirective,
     BsResizableComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -24,33 +24,31 @@ export class PriorityNavComponent {
     useBootstrap(bootstrapFormsPage);
   }
 
-  links = [
-    { label: 'Home',     priority: 1, hideBelow: 'sm' as const },
-    { label: 'Products', priority: 2, hideBelow: 'md' as const },
-    { label: 'Services', priority: 3, hideBelow: 'md' as const },
-    { label: 'Pricing',  priority: 4, hideBelow: 'lg' as const },
-    { label: 'Blog',     priority: 5, hideBelow: 'lg' as const },
-    { label: 'Careers',  priority: 6, hideBelow: 'xl' as const },
-    { label: 'Support',  priority: 7, hideBelow: 'xl' as const },
-    { label: 'Contact',  priority: 8, hideBelow: 'xl' as const },
+  readonly links: PriorityNavItem[] = [
+    { key: 'home',     label: 'Home',     href: '#', priority: 1, hideBelow: 'sm' },
+    { key: 'products', label: 'Products', href: '#', priority: 2, hideBelow: 'md' },
+    { key: 'services', label: 'Services', href: '#', priority: 3, hideBelow: 'md' },
+    { key: 'pricing',  label: 'Pricing',  href: '#', priority: 4, hideBelow: 'lg' },
+    { key: 'blog',     label: 'Blog',     href: '#', priority: 5, hideBelow: 'lg' },
+    { key: 'careers',  label: 'Careers',  href: '#', priority: 6, hideBelow: 'xl' },
+    { key: 'support',  label: 'Support',  href: '#', priority: 7, hideBelow: 'xl' },
+    { key: 'contact',  label: 'Contact',  href: '#', priority: 8, hideBelow: 'xl' },
   ];
 
-  actions = ['Edit', 'Duplicate', 'Delete'];
-  lastAction = signal<string | null>(null);
+  readonly actions = toItems(['Edit', 'Duplicate', 'Delete']);
+  readonly lastAction = signal<string | null>(null);
 
   // Labels whose fractional widths made a shrink-wrapped nav flip every frame in Firefox (#428).
-  headerActions = ['Refresh', 'Filter', 'Settings'];
-  barActions = ['Back', 'Edit', 'Delete'];
+  readonly headerActions = toItems(['Refresh', 'Filter', 'Settings']);
+  readonly barActions = toItems(['Back', 'Edit', 'Delete']);
 
   protected readonly snippetHeaderHtml = dedent`
     <!-- No sizing needed: the nav is an ordinary flex item. It is as wide as
          its items when there is room, and collapses into More when there is not. -->
     <div class="card-header d-flex align-items-center gap-2">
       <span class="me-auto">Sites</span>
-      <bs-priority-nav ariaLabel="Site actions">
-        @for (action of actions; track action) {
-          <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary">{{ action }}</button>
-        }
+      <bs-priority-nav label="Site actions" [items]="actions">
+        <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary">{{ item.label }}</button>
       </bs-priority-nav>
       <input type="search" class="form-control form-control-sm" aria-label="Search sites">
     </div>
@@ -59,22 +57,19 @@ export class PriorityNavComponent {
   protected readonly snippetActionsHtml = dedent`
     <!-- Nothing to configure: a click on a link or button in the More menu
          closes it. Menu triggers, form fields and disabled items keep it open. -->
-    <bs-priority-nav [collapseAt]="'sm'">
-      @for (action of actions; track action) {
-        <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="run(action)">{{ action }}</button>
-      }
+    <bs-priority-nav [collapseAt]="'sm'" [items]="actions">
+      <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary"
+              (click)="run(item.key)">{{ item.label }}</button>
     </bs-priority-nav>
   `;
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-priority-nav>
-      @for (link of links; track link.label) {
-        <a *bsPriorityNavItem="link.priority; hideBelow: link.hideBelow"
-           href="#">
-          {{ link.label }}
-        </a>
-      }
+    <!-- Without a template every item renders as a link from its label and href. -->
+    <bs-priority-nav [items]="links"></bs-priority-nav>
+
+    <!-- Or render each item yourself; the template is used in the strip and in More. -->
+    <bs-priority-nav [items]="links">
+      <a *bsPriorityNavItemTemplate="let item" class="nav-link" [routerLink]="item.href">{{ item.label }}</a>
     </bs-priority-nav>
   `;
 
@@ -82,20 +77,22 @@ export class PriorityNavComponent {
     import { Component } from '@angular/core';
     import {
       BsPriorityNavComponent,
-      BsPriorityNavItemDirective,
+      BsPriorityNavItemTemplateDirective,
+      type PriorityNavItem,
     } from '@mintplayer/ng-bootstrap/priority-nav';
 
     @Component({
       selector: 'my-priority-nav-demo',
       templateUrl: './my-priority-nav-demo.component.html',
-      imports: [BsPriorityNavComponent, BsPriorityNavItemDirective],
+      imports: [BsPriorityNavComponent, BsPriorityNavItemTemplateDirective],
     })
     export class MyPriorityNavDemoComponent {
-      protected readonly links = [
-        { label: 'Home',     priority: 1, hideBelow: 'sm' as const },
-        { label: 'Products', priority: 2, hideBelow: 'md' as const },
-        { label: 'Services', priority: 3, hideBelow: 'md' as const },
-        { label: 'Pricing',  priority: 4, hideBelow: 'lg' as const },
+      // A lower priority stays visible longer; hideBelow is the no-JS fallback.
+      protected readonly links: PriorityNavItem[] = [
+        { key: 'home',     label: 'Home',     href: '/',         priority: 1, hideBelow: 'sm' },
+        { key: 'products', label: 'Products', href: '/products', priority: 2, hideBelow: 'md' },
+        { key: 'services', label: 'Services', href: '/services', priority: 3, hideBelow: 'md' },
+        { key: 'pricing',  label: 'Pricing',  href: '/pricing',  priority: 4, hideBelow: 'lg' },
       ];
     }
   `;
@@ -103,10 +100,11 @@ export class PriorityNavComponent {
   protected readonly snippetCollapseAtHtml = dedent`
     <!-- [collapseAt]="'sm'" collapses the entire strip into the More menu
          at the sm breakpoint and below. -->
-    <bs-priority-nav [collapseAt]="'sm'">
-      @for (link of links; track link.label) {
-        <a *bsPriorityNavItem="link.priority" href="#">{{ link.label }}</a>
-      }
-    </bs-priority-nav>
+    <bs-priority-nav [collapseAt]="'sm'" [items]="links"></bs-priority-nav>
   `;
+}
+
+/** Equal-priority action items, keyed by their label. */
+function toItems(labels: string[]): PriorityNavItem[] {
+  return labels.map((label) => ({ key: label, label, priority: 1 }));
 }

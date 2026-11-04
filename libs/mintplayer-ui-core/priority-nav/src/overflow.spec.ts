@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { computeOverflowIds, computeOverflowOrder, SUBPIXEL_TOLERANCE } from './overflow';
 
 const item = (id: number, priority: number | null) => ({ id, priority });

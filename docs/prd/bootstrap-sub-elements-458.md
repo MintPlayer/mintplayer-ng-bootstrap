@@ -747,6 +747,18 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
      `.prop` value is read during render (so `v-if` narrowing holds), and `:value.prop` on an
      input also writes `node.value` when it differs: `defaultValue` alone left a moved slider
      deaf to later outside changes.
+   - **Priority nav.** Items are data now (owner decision): `items: PriorityNavItem[]` (`key`,
+     `priority`, `hideBelow`, `label`, `href`, plus any consumer fields), each rendered by the
+     `itemTemplate` slot (`<a *bsPriorityNavItemTemplate="let item">` in Angular) or a default
+     link. A projected child can be rendered once only, and the nav needs every item three times
+     (the inert measure strip, the strip, the overflow), so the old `*bsPriorityNavItem`
+     directive could not survive a framework-neutral template. More is a disclosure button
+     (`aria-expanded`, `aria-controls`), never a menu; Escape closes through `dismissStack`; the
+     no-JS tier keeps the checkbox + `hideBelow` media queries. `ariaLabel` became `label`, the
+     More content is the `moreTemplate` slot (`open` argument), `overflowChange` emits items.
+   - **Compiler.** An Angular slot context carries its first argument as `$implicit` too, so the
+     structural sugar `*bsXTemplate="let item"` binds it, as `ngFor` does; every argument stays
+     available by name (`let column = column`).
 8. **Cleanup.**
    - Delete `BsNoNoscript`, the Angular `a11y/overlay-*` services and every hand-written front.
    - Conformance import lists.

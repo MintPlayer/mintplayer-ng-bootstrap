@@ -222,6 +222,11 @@ the template of every front. A template without a manifest is still compiled on 
 - **Scoped slots in Lit.** A slot with parameters also gets a `<slot>Renderer` property on the Lit
   element, typed with the template's exported `<Name><Slot>SlotArgs`. It wins over `slot="…"`
   children. Angular's slot directives import the types named in the slot's parameters.
+- **Scoped slots in Angular.** The context carries every argument by name (`let-row="row"`) and
+  the FIRST argument as `$implicit`, as `ngFor` does, so the structural form reads
+  `<a *bsPriorityNavItemTemplate="let item">` and
+  `*bsDatatableCellTemplate="let row; let column = column"`. Order a slot's arguments with that in
+  mind.
 - **Lit attributes** are the kebab-case form of a camelCase input (`numberVisible` →
   `number-visible`). A string input typed in the core as a union of string literals (directly,
   through an alias, or as `Other['member']`) gets those literals in its converter: an attribute

@@ -2,7 +2,7 @@
 
 <p class="lead">
     A horizontal navigation that keeps as many items visible as fit. Lower-priority items
-    move into a "More" overlay when there isn't enough room. Works without JavaScript via
+    move into a "More" disclosure when there isn't enough room. Works without JavaScript via
     a checkbox + media-query fallback.
 </p>
 
@@ -15,14 +15,8 @@
 <p>Drag the handle on the right to shrink the container and watch items move into the More menu.</p>
 <bs-resizable [vertical]="false" [corners]="false">
     <div class="p-2 demo-box">
-        <bs-priority-nav>
-            @for (link of links; track link.label) {
-                <a *bsPriorityNavItem="link.priority; hideBelow: link.hideBelow"
-                   class="demo-link"
-                   href="#">
-                    {{ link.label }}
-                </a>
-            }
+        <bs-priority-nav [items]="links">
+            <a *bsPriorityNavItemTemplate="let item" class="demo-link" href="#">{{ item.label }}</a>
         </bs-priority-nav>
     </div>
 </bs-resizable>
@@ -31,12 +25,8 @@
 <p>At sm-and-below the entire strip collapses into the More menu.</p>
 
 <div class="p-2 demo-box">
-    <bs-priority-nav [collapseAt]="'sm'">
-        @for (link of links; track link.label) {
-            <a *bsPriorityNavItem="link.priority"
-               class="demo-link"
-               href="#">{{ link.label }}</a>
-        }
+    <bs-priority-nav [collapseAt]="'sm'" [items]="links">
+        <a *bsPriorityNavItemTemplate="let item" class="demo-link" href="#">{{ item.label }}</a>
     </bs-priority-nav>
 </div>
 
@@ -50,11 +40,9 @@
 </p>
 
 <div class="p-2 demo-box actions-demo">
-    <bs-priority-nav [collapseAt]="'sm'">
-        @for (action of actions; track action) {
-            <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary"
-                    (click)="lastAction.set(action)">{{ action }}</button>
-        }
+    <bs-priority-nav [collapseAt]="'sm'" [items]="actions">
+        <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary"
+                (click)="lastAction.set(item.label)">{{ item.label }}</button>
     </bs-priority-nav>
 </div>
 @if (lastAction(); as action) {
@@ -75,10 +63,8 @@
         <div class="header-demo-header d-flex align-items-center gap-2">
             <span aria-hidden="true">&#9776;</span>
             <span class="me-auto">Sites</span>
-            <bs-priority-nav ariaLabel="Site actions">
-                @for (action of headerActions; track action) {
-                    <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary">{{ action }}</button>
-                }
+            <bs-priority-nav label="Site actions" [items]="headerActions">
+                <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary">{{ item.label }}</button>
             </bs-priority-nav>
             <input type="search" class="form-control form-control-sm header-demo-search" placeholder="Search..." aria-label="Search sites">
         </div>
@@ -87,21 +73,26 @@
 
 <p class="mt-3">In a plain block container the items stay at the start.</p>
 <div class="p-2 demo-box action-bar-demo">
-    <bs-priority-nav ariaLabel="Record actions">
-        @for (action of barActions; track action) {
-            <button *bsPriorityNavItem="1" type="button" class="btn btn-sm btn-outline-secondary">{{ action }}</button>
-        }
+    <bs-priority-nav label="Record actions" [items]="barActions">
+        <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary">{{ item.label }}</button>
     </bs-priority-nav>
 </div>
 
 <bs-code-snippet [code]="snippetHeaderHtml" [language]="'html'"></bs-code-snippet>
+
+<h2 class="mt-4">Keyboard</h2>
+<ul>
+    <li><kbd>Tab</kbd> reaches every visible item, then More.</li>
+    <li><kbd>Enter</kbd> / <kbd>Space</kbd> on More opens or closes the overflow; <kbd>Tab</kbd> continues into it.</li>
+    <li><kbd>Escape</kbd> closes the overflow and returns focus to More.</li>
+</ul>
 
 <h2 class="mt-4">Noscript fallback</h2>
 <p>
     Open DevTools, disable JavaScript, and reload the page. The strip continues to work:
 </p>
 <ul>
-    <li>Items hide via CSS media queries based on each item's <code>hideBelow</code> input.</li>
+    <li>Items hide via CSS media queries based on each item's <code>hideBelow</code> breakpoint.</li>
     <li>The "More" toggle is a <code>&lt;label&gt;</code> tied to a hidden <code>&lt;input type="checkbox"&gt;</code>.</li>
     <li>The overflow menu shows via the <code>:checked</code> sibling selector — purely CSS.</li>
 </ul>

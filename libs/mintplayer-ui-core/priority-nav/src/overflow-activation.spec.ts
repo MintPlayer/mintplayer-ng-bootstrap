@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it } from 'vitest';
 import { isClosingActivation } from './overflow-activation';
 
 describe('isClosingActivation', () => {

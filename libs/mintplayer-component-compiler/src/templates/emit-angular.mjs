@@ -226,7 +226,7 @@ function slot(ctx, el, depth) {
   ctx.uses.add('NgTemplateOutlet');
   const local = `slot_${name.replace(/\W/g, '_')}`;
   const context = args.length
-    ? ` [ngTemplateOutletContext]="{ $implicit: { ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }, ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }"`
+    ? ` [ngTemplateOutletContext]="{ $implicit: ${x(ctx, args[0].exp)}, ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }"`
     : '';
   const outlet = `<ng-container [ngTemplateOutlet]="${local}"${context} />`;
   if (!fallback) return `${pad(depth)}@if (slots().${name}; as ${local}) {\n${pad(depth + 1)}${outlet}\n${pad(depth)}}\n`;

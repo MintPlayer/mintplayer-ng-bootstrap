@@ -91,6 +91,7 @@ const TARGETS: Record<string, string> = {
   BsResizable: 'div.resizable',
   BsFileUpload: 'div.dropzone',
   BsColorPicker: 'div.color-picker',
+  BsPriorityNav: 'nav.priority-nav',
   BsParallax: 'div.parallax-host',
   BsModal: 'div.modal-host',
   BsOffcanvas: 'div.offcanvas-host',
