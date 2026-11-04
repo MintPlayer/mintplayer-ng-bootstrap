@@ -1134,6 +1134,11 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Fixed
 
+- **Query builder: chips and same-group drag work again (issue #458).** In every front, Enter in a chip
+  editor (an `in`/`not-in` value on a field without options) added no chip, and typing there overwrote
+  the list with a single value: the input carried the plain value command instead of its own. A row
+  dragged down within its own group landed one row below the slot it was dropped on. The builder's root
+  now carries `data-mp-hydrated` once attached, like the other cores that attach behaviour.
 - **The Bootstrap baseline ships every Bootstrap utility again (issue #450).** `.w-25`, `.w-50`, `.w-75`, `.w-100`,
   `.text-wrap` and `.text-nowrap` were missing from `@mintplayer/ui-core/styles/bootstrap` since the #437 baseline:
   the width and white-space patches replaced Bootstrap's utility entries instead of extending them. The width

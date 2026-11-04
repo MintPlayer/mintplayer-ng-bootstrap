@@ -1,6 +1,7 @@
 # PRD + plan — one mechanism for every component: sub-elements styled by the import alone, every front generated (issue #458, absorbs #455)
 
-Status: **decisions locked (grill, 2026-11-03); spikes S1–S8 read (§5.1); next: M1.** Base: `master` after #456 (the #452 squash,
+Status: **M0–M8 done; M9 verification in PR #459** (CI green; see M9 for what ran and what remains).
+Decisions locked in the grill of 2026-11-03; spikes S1–S8 in §5.1. Base: `master` after #456 (the #452 squash,
 `54792702`).
 
 This PRD amends three documents:
@@ -776,6 +777,18 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
    - The ui-core, web-components, ng, react and vue unit suites.
    - The three demo e2e projects, with computed-style checks for §8.
    - **The full sweep takes far longer than a few minutes: get the owner's go-ahead before starting it.**
+   - **Coverage (2026-11-04).** Moving the fronts' logic into ui-core cores dropped the PR's line coverage
+     from 87.8% to 79.1%: the cores were exercised only through the fronts' specs, which Nx credits to
+     their own projects. Every core now has its own spec in ui-core, driven through
+     `_conformance/host-core.ts` with markup that mirrors its `.view.vue`, which brings the PR to 94.2%.
+     These specs found two query-builder bugs, both fixed: the chip input carried the `value` command (Enter
+     added nothing, typing overwrote the list), and a same-group drop counted slots before removing the
+     dragged row (one row too low). Both now have e2e coverage in the Angular demo, and the builder writes
+     `hydratedAttr()` so those tests can wait for it.
+   - **What ran.** CI on every push (the affected builds, unit suites, demo e2e and axe gates) is green.
+     `compile-components-check` (not a CI step), the full ui-core suite and the query-builder e2e file
+     (Chromium and Firefox) ran locally and pass. React and Vue demo e2e cover only the axe scan, so behaviour there rests on
+     the core specs plus the Angular e2e.
 
 ## 7. Risks
 
