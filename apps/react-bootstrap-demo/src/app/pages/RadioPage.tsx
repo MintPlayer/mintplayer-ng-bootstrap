@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { BsRadio } from '@mintplayer/react-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/react-bootstrap/radio';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 const SOURCE = `<BsRadioGroup name="color" aria-label="Color" value={color}
@@ -16,8 +15,8 @@ const SOURCE = `<BsRadioGroup name="color" aria-label="Color" value={color}
 // value per group; onValueChange fires for pointer and keyboard picks
 // alike, for the form-check and toggle_button variants both.
 export function RadioPage() {
-  const [color, setColor] = useState<string>('green');
-  const [size, setSize] = useState<string>('m');
+  const [color, setColor] = useState<string | null>('green');
+  const [size, setSize] = useState<string | null>('m');
 
   return (
     <div className="demo-page">

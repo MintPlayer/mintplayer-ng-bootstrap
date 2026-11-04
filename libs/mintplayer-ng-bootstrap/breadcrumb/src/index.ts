@@ -1,2 +1,2 @@
-export * from './breadcrumb/breadcrumb.component';
-export * from './breadcrumb-item/breadcrumb-item.component';
+// Generated from @mintplayer/ui-core/breadcrumb (#458 D10).
+export * from './generated';

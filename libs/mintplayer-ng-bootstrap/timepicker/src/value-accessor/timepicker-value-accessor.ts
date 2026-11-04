@@ -46,7 +46,7 @@ export class BsTimepickerValueAccessor implements ControlValueAccessor, Validato
   ngOnInit(): void {
     // The component is created after its host directives, so it is looked up here.
     const component = (this.component = this.injector.get(BsTimepickerComponent));
-    const sub = component.selectedtimechange.subscribe((value) => {
+    const sub = component.selectedTime.subscribe((value) => {
       if (!this.bound() || minutesOfDay(value) === minutesOfDay(this.viewValue())) return;
       this.viewValue.set(value);
       this.onChange(value);

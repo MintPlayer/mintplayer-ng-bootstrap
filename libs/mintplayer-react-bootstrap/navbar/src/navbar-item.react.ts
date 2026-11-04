@@ -1,13 +1,12 @@
-import { useContext, type ReactNode } from 'react';
-import { NAVBAR_NESTING } from '@mintplayer/ui-core/navbar';
-import { markLinks, reactCoreContext } from '../../machine/src/index';
+import type { ReactNode } from 'react';
+import { markLinks } from '../../machine/src/index';
 
 /*
  * The React extension of the generated `BsNavbarItem` (PRD #437 D10 escape
- * hatch): in the bar, the item's link becomes a `.nav-link` of the navbar
- * scope. In a dropdown panel the item itself is the `.dropdown-item`.
+ * hatch): the item's link becomes a `.nav-link` (the class only;
+ * consumer DOM is never stamped). (Inside
+ * a dropdown the entries are `BsDropdownItem`s, whose links stay plain.)
  */
 export function Children({ children }: { children?: ReactNode }) {
-  const { depth } = useContext(reactCoreContext(NAVBAR_NESTING));
-  return depth >= 0 ? children : markLinks(children, 'nav-link', 'navbar');
+  return markLinks(children, 'nav-link');
 }

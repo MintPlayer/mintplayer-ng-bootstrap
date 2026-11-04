@@ -84,10 +84,6 @@ export interface SavedQueryNameDetail {
 }
 
 export interface QueryBuilderEvents {
-  queryChange: Expression;
-  rootEntityChange: string;
-  selectedFieldsChange: string[];
-  sortByChange: SortDescriptor[];
   saveQuery: SaveQueryDetail;
   loadQuery: SavedQueryNameDetail;
   deleteQuery: SavedQueryNameDetail;
@@ -115,7 +111,7 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
     dragging: false,
     drafts: {},
   }),
-  view: ({ inputs, state, id, label }) => ({
+  view: ({ inputs, state, id, hydrated, label }) => ({
     view: connectQueryBuilder({
       id,
       tree: treeOf(id, state.query),
@@ -134,6 +130,7 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
       dragging: state.dragging,
       drafts: state.drafts,
       label,
+      hydrated,
       onValue: (nodeId, value) => valueCommands.get(id)?.(nodeId, value),
     }),
   }),
@@ -158,7 +155,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
 
     const mutate = (next: Expression, drafts: Readonly<Record<string, string>> = {}) => {
       api.setState({ query: next, drafts });
-      api.emit('queryChange', next);
     };
 
     // ── Focus after a rebuild, by node id ─────────────────────────────────
@@ -248,7 +244,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
 
     const emitSort = (next: SortDescriptor[]) => {
       api.setState({ sortBy: next });
-      api.emit('sortByChange', next);
     };
     const projectable = () => entityNamed(rootEntity())?.fields.filter((f) => f.type !== 'relation') ?? [];
 
@@ -269,7 +264,10 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
       if (!source || !target) return;
       // Across a sub-query boundary the fields change: moveNode resets what the target entity lacks.
       const targetSchema = target.qbRoot !== source.qbRoot ? entityOfNode(target.parentId) ?? undefined : undefined;
-      mutate(moveNode(tree(), source.id, target.parentId, target.index, targetSchema));
+      // Slots count the list with the source still in it; moveNode inserts after removing it.
+      const from = findParentGroup(tree(), source.id);
+      const index = from?.parent.id === target.parentId && from.index < target.index ? target.index - 1 : target.index;
+      mutate(moveNode(tree(), source.id, target.parentId, index, targetSchema));
     };
     const onCancel = () => {
       drag.cancel();
@@ -391,7 +389,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
         case 'entity':
           if (value === rootEntity()) return;
           api.setState({ rootEntity: value });
-          api.emit('rootEntityChange', value);
           return;
         case 'sort-field':
           emitSort(api.state().sortBy.map((s, k) => (k === index ? { ...s, field: value } : s)));
@@ -404,7 +401,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
           const current = api.state().selectedFields;
           const next = checked ? [...current.filter((f) => f !== value), value] : current.filter((f) => f !== value);
           api.setState({ selectedFields: next });
-          api.emit('selectedFieldsChange', next);
           return;
         }
       }

@@ -1,0 +1,7 @@
+.resizable-demo-stage {
+  height: 18rem;
+}
+
+.resizable-demo-box {
+  overflow-y: auto;
+}

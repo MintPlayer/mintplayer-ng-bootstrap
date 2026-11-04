@@ -34,6 +34,45 @@ export function applyHostProps(host: Element, previous: HostPropsState, bag: Att
   return { attrs, classes };
 }
 
+/** A host's forwarded attributes (`takeHostAttrs`), and the host they came from. */
+export interface HostAttrs {
+  readonly host: HTMLElement;
+  readonly attrs: Readonly<Record<string, string>>;
+}
+
+/**
+ * Host transparency for a compiled template whose role lives on an inner
+ * `mp-attrs` node (#458): the Lit twin of Angular's `useHostAttrs`. A
+ * consumer's `aria-*`, `id` and `tabindex` on the element belong on that node.
+ * `id` and `tabindex` are moved (no duplicate id, no dead tab stop on the
+ * host); `aria-*` are copied. Read once, before the first render. A consumer
+ * `role` is never taken: the inner node's role is the core's contract.
+ */
+export function takeHostAttrs(host: HTMLElement): HostAttrs {
+  const attrs: Record<string, string> = Object.fromEntries(
+    Array.from(host.attributes)
+      .filter(({ name }) => name.startsWith('aria-') || name === 'id' || name === 'tabindex')
+      .map(({ name, value }) => [name, value]),
+  );
+  ['id', 'tabindex'].filter((name) => name in attrs).forEach((name) => host.removeAttribute(name));
+  return { host, attrs };
+}
+
+/**
+ * The inner node's bag with the host's forwarded attributes written over it:
+ * the consumer's word wins. Except an `id` the bag sets itself, which the
+ * core's own references (a `label for`, an `aria-controls`) point at: then the
+ * consumer's id goes back to the host instead.
+ */
+export function forwardHostAttrs(bag: AttrBag | null | undefined, forwarded: HostAttrs | null | undefined): AttrBag {
+  const own = bag ?? {};
+  if (!forwarded) return own;
+  const { id, ...rest } = forwarded.attrs;
+  const ownId = own['id'] !== null && own['id'] !== undefined;
+  if (ownId && id && forwarded.host.id !== id) forwarded.host.id = id;
+  return { ...own, ...rest, ...(id && !ownId ? { id } : {}) };
+}
+
 /**
  * A top-level node a compiled template rendered into a light-DOM host: a
  * stamped native element, a composed child it marked `data-mp-owned`, or lit's

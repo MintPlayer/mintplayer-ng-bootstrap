@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
+import { BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 
 const SOURCE = `import { useState } from 'react';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
+import { BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 
 export function MyToggle() {
   const [on, setOn] = useState(false);
@@ -27,8 +27,8 @@ export function ToggleButtonPage() {
       <h1>Toggle button</h1>
       <p className="text-body-secondary">
         On/off button using Bootstrap&apos;s <code>btn-check</code> +{' '}
-        <code>label.btn</code> pattern, with <code>role=&quot;button&quot;</code> and{' '}
-        <code>aria-pressed</code>. <code>onCheckedChange</code> reports the pressed state.
+        <code>label.btn</code> pattern: a native checkbox that keeps its role, so its state
+        reads correctly with JavaScript off. <code>onCheckedChange</code> reports the pressed state.
       </p>
 
       <section>

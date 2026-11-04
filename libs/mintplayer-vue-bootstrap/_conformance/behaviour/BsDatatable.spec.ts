@@ -51,8 +51,8 @@ describe('BsDatatable', () => {
     el.querySelector<HTMLElement>('tbody tr[data-row-key="2"]')!.click();
     await settle();
     expect(wrapper.emitted('update:selectedIds')?.at(-1)).toEqual([['2']]);
-    expect(wrapper.emitted('selectionchanged')?.at(-1)).toEqual([{ selectedIds: ['2'], selectedRows: [ROWS[1]] }]);
-    expect(wrapper.emitted('rowclick')?.length).toBe(1);
+    expect(wrapper.emitted('selectionChanged')?.at(-1)).toEqual([{ selectedIds: ['2'], selectedRows: [ROWS[1]] }]);
+    expect(wrapper.emitted('rowClick')?.length).toBe(1);
     wrapper.unmount();
   });
 

@@ -1,5 +1,6 @@
 export {
   DROPDOWN_MENU_SCOPE,
+  activatedItem,
   attachDropdownMenu,
   connectDropdownMenu,
   dropdownItemControl,

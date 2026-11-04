@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { BsToggleButton } from '@mintplayer/vue-bootstrap/toggle-button';
+import { BsToggleButton } from '@mintplayer/vue-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const primary = ref(false);
@@ -8,13 +8,13 @@ const success = ref(true);
 
 const SOURCE = `<script setup lang="ts">
 import { ref } from 'vue';
-import { BsToggleButton } from '@mintplayer/vue-bootstrap/toggle-button';
+import { BsToggleButton } from '@mintplayer/vue-bootstrap/checkbox';
 
 const on = ref(false);
 <\\/script>
 
 <template>
-  <BsToggleButton v-model="on" color="primary">
+  <BsToggleButton v-model:checked="on" color="primary">
     {{ on ? 'On' : 'Off' }}
   </BsToggleButton>
 </template>`;
@@ -25,20 +25,20 @@ const on = ref(false);
     <h1>Toggle button</h1>
     <p class="text-body-secondary">
       On/off button using Bootstrap&apos;s <code>btn-check</code> +
-      <code>label.btn</code> pattern, with <code>role="button"</code> and
-      <code>aria-pressed</code>. <code>v-model</code> is the pressed state.
+      <code>label.btn</code> pattern: a native checkbox that keeps its role, so its
+      state reads correctly with JavaScript off. <code>v-model:checked</code> is the pressed state.
     </p>
 
     <section>
       <h2>Default</h2>
-      <BsToggleButton v-model="primary" color="primary">
+      <BsToggleButton v-model:checked="primary" color="primary">
         {{ primary ? 'On' : 'Off' }}
       </BsToggleButton>
     </section>
 
     <section>
       <h2>Colour variants</h2>
-      <BsToggleButton v-model="success" color="outline-success">
+      <BsToggleButton v-model:checked="success" color="outline-success">
         Outline success
       </BsToggleButton>
     </section>

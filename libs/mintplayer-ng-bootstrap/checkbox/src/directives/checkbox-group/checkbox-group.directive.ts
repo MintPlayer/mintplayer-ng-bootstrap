@@ -1,109 +1,54 @@
-import { contentChildren, Directive, effect, ElementRef, forwardRef, inject, input, signal } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { BsCheckboxComponent } from '../../component/checkbox.component';
+import { computed, Directive, ElementRef, inject, input, model } from '@angular/core';
+import { coreContextToken } from '@mintplayer/ng-bootstrap/machine';
+import { CHECKBOX_GROUP, type CheckboxGroupContext } from '@mintplayer/ui-core/checkbox';
+import { BsCheckboxGroupValueAccessor } from '../../checkbox-group.accessor';
+
+/** Hosts whose own role is load-bearing: a group role would destroy it. */
+const STRUCTURAL = new Set(['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'UL', 'OL', 'LI']);
 
 /**
- * Groups N `<bs-checkbox>` children into a multi-select FormControl whose
- * value is a `string[]` of every checked child's `value()`. The group's
- * `[name]` is the form-array name; the accessor appends the `[]` suffix
- * automatically on each child's inner `<input>` for traditional-form
- * submission. Per-instance `[name]` on each child is ignored when the
- * child resolves into a group.
+ * The attribute form of a checkbox group (Angular only, #458 M4): put it on a
+ * host you already have (a `<tbody>` whose rows each hold a checkbox, a `<div>`
+ * in a table cell). The `<bs-checkbox>` descendants take its name (`<name>[]`)
+ * and selection through DI, so the nearest group wins. Bind `[formControl]` /
+ * `[(ngModel)]` / `[(value)]` on the same element.
  *
- * Acts as its own `ControlValueAccessor` — bind `[formControl]` / `[(ngModel)]`
- * directly on the element carrying `[bsCheckboxGroup]`. Listens to bubbled
- * `change` events from the children to recompute the array on every toggle.
+ * It adds `role="group"` only on a host whose implicit role is generic and that
+ * has no role of its own. Use `<bs-checkbox-group>` for a standalone set.
  */
 @Directive({
   selector: '[bsCheckboxGroup]',
   exportAs: 'bsCheckboxGroup',
-  providers: [{
-    provide: NG_VALUE_ACCESSOR,
-    useExisting: forwardRef(() => BsCheckboxGroupDirective),
-    multi: true,
-  }],
+  hostDirectives: [BsCheckboxGroupValueAccessor],
+  providers: [{ provide: coreContextToken(CHECKBOX_GROUP), useFactory: () => inject(BsCheckboxGroupDirective).provided }],
   host: {
-    '(change)': 'onChildChange()',
-    // The inner inputs' focusout bubbles to the group host. The
-    // stored onTouched was never CALLED before, which kept every
-    // invalid-after-touched mirror dead (audit 4.9 prerequisite).
-    '(focusout)': 'onTouched?.()',
+    // CHECKBOX_GROUP_ATTR, literal for the AOT compiler: the checkboxes find their group by it.
+    '[attr.data-checkbox-group]': "''",
+    '[attr.aria-disabled]': "disabled() ? 'true' : null",
   },
 })
-export class BsCheckboxGroupDirective implements ControlValueAccessor {
+export class BsCheckboxGroupDirective {
+  private readonly accessor = inject(BsCheckboxGroupValueAccessor, { self: true });
 
-  private readonly host = inject(ElementRef).nativeElement as HTMLElement;
-
+  /** The group's name: its checkboxes submit as `<name>[]`. */
   readonly name = input<string | null>(null);
+  /** The selected checkboxes' values, when no form control is bound. */
+  readonly value = model<readonly string[]>([]);
 
-  /** Accessible name for the group (written as `aria-label`). A bare
-   *  `role="group"` is announced as nothing at all; the label is what makes
-   *  the grouping audible ("Toppings, group"). */
-  readonly label = input<string | null>(null);
-  // Wrap in forwardRef: BsCheckboxComponent imports this directive (for
-  // `inject(BsCheckboxGroupDirective, {...})`), so the two modules form a
-  // cycle. Whichever side webpack/vite evaluates first sees `undefined` for
-  // the other's exports at field-initialiser time, which makes the recorded
-  // query predicate null — ng-mocks' MockDirective then fails with "the
-  // query selector wasn't defined" on consumers that mock the group.
-  readonly checkboxes = contentChildren<BsCheckboxComponent>(forwardRef(() => BsCheckboxComponent), { descendants: true });
+  readonly disabled = computed(() => this.accessor.disabled());
 
-  /** Most-recently-written form value. An effect syncs each child's
-   *  `isToggled` whenever this OR the
-   *  `checkboxes()` set changes, so an initial `writeValue` that lands
-   *  before children register still applies once the `contentChildren`
-   *  query populates. */
-  private readonly currentValue = signal<readonly string[]>([]);
-
-  private onValueChange?: (value: string[]) => void;
-  // protected, not private: the focusout host binding compiles outside the
-  // class body under AOT and cannot reach a private member.
-  protected onTouched?: () => void;
+  /** What the checkboxes read. */
+  readonly provided = computed<CheckboxGroupContext>(() => ({
+    grouped: true,
+    name: this.name(),
+    value: this.accessor.bound() ? this.accessor.viewValue() : this.value(),
+    disabled: this.disabled(),
+  }));
 
   constructor() {
-    // role="group" so the checkboxes announce as one named cluster — but only
-    // on hosts whose implicit role is generic. Structural hosts (the tbody
-    // row-selection shape) have load-bearing native semantics that a group
-    // role would destroy, and a consumer-set role always wins.
-    const structural = ['TABLE', 'THEAD', 'TBODY', 'TFOOT', 'TR', 'UL', 'OL', 'LI'];
-    if (!this.host.hasAttribute('role') && !structural.includes(this.host.tagName)) {
-      this.host.setAttribute('role', 'group');
-    }
-    effect(() => {
-      const label = this.label();
-      if (label !== null) this.host.setAttribute('aria-label', label);
-    });
-    effect(() => {
-      const arr = this.currentValue();
-      this.checkboxes().map((cb) => {
-        const v = cb.value();
-        const isSelected = v != null && arr.includes(v);
-        cb.isToggled.set(isSelected);
-      });
-    });
-  }
-
-  onChildChange() {
-    if (!this.onValueChange) return;
-    const result = this.checkboxes()
-      .filter(cb => !!cb.isToggled() && cb.value() != null)
-      .map(cb => cb.value()!);
-    this.onValueChange(result);
-  }
-
-  registerOnChange(fn: (_: string[]) => void) {
-    this.onValueChange = fn;
-  }
-
-  registerOnTouched(fn: () => void) {
-    this.onTouched = fn;
-  }
-
-  writeValue(value: string[] | null) {
-    this.currentValue.set(Array.isArray(value) ? value : []);
-  }
-
-  setDisabledState(isDisabled: boolean) {
-    this.checkboxes().map((cb) => cb.formDisabled.set(isDisabled));
+    const host = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
+    if (!host.hasAttribute('role') && !STRUCTURAL.has(host.tagName)) host.setAttribute('role', 'group');
+    // Keep [(value)] honest: a toggle writes back.
+    this.accessor.onPick = (value) => this.value.set(value);
   }
 }

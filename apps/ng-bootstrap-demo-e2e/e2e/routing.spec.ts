@@ -9,10 +9,8 @@ test('navigates to /basic/alert via the navbar dropdown', async ({ page }) => {
     /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
   });
 
-  // `bs-navbar` is still the Angular host selector (it wraps `<mp-navbar>`), and
-  // the nav items / dropdown labels stay in its light DOM, so these locators
-  // resolve. "Basic" is now a `<span slot="label">` inside `bs-navbar-dropdown`;
-  // clicking it hits the shadow `.dropdown-toggle` anchor it is slotted into.
+  // "Basic" is the `label` of a `bs-dropdown-menu` in the nav group: the text of
+  // its `<summary class="dropdown-toggle">`.
   const navbar = page.locator('bs-navbar');
   const basicTrigger = navbar.getByText('Basic', { exact: true });
   await basicTrigger.click();

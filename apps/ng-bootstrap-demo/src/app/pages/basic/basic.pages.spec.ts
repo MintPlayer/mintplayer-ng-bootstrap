@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent, MockDirective } from 'ng-mocks';
-import { BsAlertCloseComponent, BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
@@ -30,12 +30,11 @@ import { BsDatepickerComponent } from '@mintplayer/ng-bootstrap/datepicker';
 import { BsFloatingLabelComponent } from '@mintplayer/ng-bootstrap/floating-labels';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import {
+  BsColFormLabelDirective,
   BsFormComponent,
   BsFormControlDirective,
-  BsFormGroupDirective,
-} from '@mintplayer/ng-bootstrap/form';
+  } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsColFormLabelDirective,
   BsGridColDirective,
   BsGridColumnDirective,
   BsGridComponent,
@@ -49,10 +48,7 @@ import {
 import { BsMarqueeComponent } from '@mintplayer/ng-bootstrap/marquee';
 import { BsMultiRangeComponent } from '@mintplayer/ng-bootstrap/multi-range';
 import { BsPaginationComponent } from '@mintplayer/ng-bootstrap/pagination';
-import {
-  BsPlaceholderComponent,
-  BsPlaceholderFieldDirective,
-} from '@mintplayer/ng-bootstrap/placeholder';
+import { BsPlaceholderComponent } from '@mintplayer/ng-bootstrap/placeholder';
 import { BsProgressBarComponent, BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
 import { BsRangeComponent } from '@mintplayer/ng-bootstrap/range';
 import { BsRatingComponent } from '@mintplayer/ng-bootstrap/rating';
@@ -112,8 +108,8 @@ const pages: {
     imports: () => [
       NoopAnimationsModule,
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
+      MockComponent(BsAlertComponent),
       MockComponent(BsInputGroupComponent),
       MockDirective(BsButtonTypeDirective),
       // Unit to test (standalone)
@@ -210,7 +206,7 @@ const pages: {
     name: 'FloatingLabelsComponent',
     component: FloatingLabelsComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsFloatingLabelComponent),
       FloatingLabelsComponent,
     ],
@@ -220,7 +216,7 @@ const pages: {
     component: ForDirectiveComponent,
     imports: () => [
       MockDirective(BsForDirective),
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       ForDirectiveComponent,
     ],
@@ -238,7 +234,7 @@ const pages: {
     component: IconComponent,
     imports: () => [
       NoopAnimationsModule,
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       MockComponent(BsCodeSnippetComponent),
       IconComponent,
     ],
@@ -247,7 +243,7 @@ const pages: {
     name: 'InputGroupComponent',
     component: InputGroupComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockDirective(BsButtonTypeDirective),
       MockComponent(BsInputGroupComponent),
       InputGroupComponent,
@@ -304,7 +300,7 @@ const pages: {
       MockComponent(BsCardComponent), MockComponent(BsCardHeaderComponent), MockComponent(BsCardBodyComponent),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(BsCheckboxComponent),
-      MockComponent(BsPlaceholderComponent), MockDirective(BsPlaceholderFieldDirective),
+      MockComponent(BsPlaceholderComponent),
       // Unit to test (standalone)
       PlaceholderComponent,
     ],
@@ -360,7 +356,7 @@ const pages: {
     name: 'TimepickerComponent',
     component: TimepickerComponent,
     imports: () => [
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(BsTimepickerComponent),
       TimepickerComponent,

@@ -5,32 +5,26 @@ import { TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockComponent, MockDirective, MockModule } from 'ng-mocks';
-import { BsAlertCloseComponent, BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import {
+  BsColFormLabelDirective,
   BsFormComponent,
   BsFormControlDirective,
-  BsFormGroupDirective,
-} from '@mintplayer/ng-bootstrap/form';
+  } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsColFormLabelDirective,
   BsGridColDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
 import {
-  BsModalBodyDirective,
-  BsModalCloseDirective,
   BsModalComponent,
-  BsModalDirective,
   BsModalFooterDirective,
   BsModalHeaderDirective,
-  BsModalHostComponent,
 } from '@mintplayer/ng-bootstrap/modal';
-import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
 import { CollapseComponent } from './collapse/collapse.component';
 import { DragDropComponent } from './drag-drop/drag-drop.component';
@@ -62,12 +56,11 @@ const pages: {
       NoopAnimationsModule,
       // Mock dependencies
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       MockDirective(BsButtonTypeDirective),
       MockComponent(BsCodeSnippetComponent),
       // Unit to test (standalone)
       CollapseComponent,
-      MockDirective(BsScrollspyDirective),
     ],
   },
   {
@@ -85,9 +78,9 @@ const pages: {
     component: FocusTrapComponent,
     imports: () => [
       MockDirective(BsForDirective),
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsModalComponent), MockComponent(BsModalHostComponent), MockDirective(BsModalDirective), MockDirective(BsModalHeaderDirective), MockDirective(BsModalBodyDirective), MockDirective(BsModalFooterDirective), MockDirective(BsModalCloseDirective),
+      MockComponent(BsModalComponent), MockDirective(BsModalHeaderDirective), MockDirective(BsModalFooterDirective),
       MockDirective(BsButtonTypeDirective),
       // Unit to test (standalone)
       FocusTrapComponent,
@@ -98,7 +91,7 @@ const pages: {
     component: QrCodeComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(LibQrCodeComponent),
       QrCodeComponent,

@@ -5,11 +5,11 @@ import { createRoot, type Root } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import type { MintTile, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
 import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
-import { BsTileManager, type BsTileManagerHandle } from '../../tile-manager/src/BsTileManager';
+import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 
 /**
- * The React front of the headless tile-manager core (#440). Wiring only: props reach the
- * machine, the JSX renders connect()'s bags, events come back out. The layout and ARIA rules
+ * The generated React front of the tile-manager group (#440, #458 M4). Wiring only: props
+ * reach the machine, the template renders connect()'s bags, events come back out. The layout and ARIA rules
  * themselves are pinned in ui-core's specs.
  */
 interface DemoTile extends MintTile {
@@ -24,7 +24,6 @@ const TILES: DemoTile[] = [
 
 let container: HTMLElement;
 let root: Root;
-let handle: BsTileManagerHandle | null;
 let changes: TileLayoutChange[];
 let current: () => TileLayouts;
 let setLayouts: (layouts: TileLayouts) => void;
@@ -38,9 +37,6 @@ function Host() {
   setDragMode = setMode;
   return (
     <BsTileManager
-      ref={(h) => {
-        handle = h;
-      }}
       aria-label="Dashboard"
       tiles={TILES}
       layouts={layouts}
@@ -48,8 +44,8 @@ function Host() {
       onLayoutChange={(c) => changes.push(c)}
       breakpoints={[{ minWidth: 0, columns: 2 }]}
       dragMode={dragMode}
-      renderHeader={(t) => <span className="head">{t.title}</span>}
-      renderContent={(t) => <p className="body">{t.id} body</p>}
+      header={({ tile: t }) => <span className="head">{(t as DemoTile).title}</span>}
+      content={({ tile: t }) => <p className="body">{t.id} body</p>}
     />
   );
 }
@@ -60,7 +56,8 @@ const key = async (id: string, k: string) => {
     tile(id).dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
   });
 };
-const machine = () => handle!.captureLayout();
+/** The rendered placement of a tile: what the machine committed. */
+const placed = (id: string) => `${tile(id).style.gridColumn} | ${tile(id).style.gridRow}`;
 
 // jsdom has no layout: a fake observer reports the width, and the frame runs at once.
 let observed: ((entries: unknown[]) => void) | null;
@@ -156,14 +153,14 @@ describe('BsTileManager (React front)', () => {
       await key('a', 'm');
       await key('a', 'ArrowDown');
       await key('a', 'Enter');
-      const committed = machine();
+      const committed = placed('a');
       await act(async () => setDragMode('tile'));
-      expect(machine()).toEqual(committed);
+      expect(placed('a')).toBe(committed);
     });
 
     it('a consumer write to layouts reaches the machine', async () => {
       await act(async () => setLayouts({ 2: [{ id: 'a', position: { colStart: 2, rowStart: 1, colSpan: 1, rowSpan: 1 } }] }));
-      expect(machine().layout.find((p) => p.id === 'a')?.position.colStart).toBe(2);
+      expect(tile('a').style.gridColumn).toMatch(/^2 /);
     });
 
     it('arrow keys move focus between tiles', async () => {
@@ -178,7 +175,7 @@ describe('BsTileManager (React front)', () => {
 describe('BsTileManager under SSR', () => {
   it('renders every tile with its content, no inline position, and the layout rules', () => {
     const html = renderToString(
-      <BsTileManager tiles={TILES} stackBelow={600} label="Dashboard" renderHeader={(t) => `${t.title} title`} renderContent={(t) => `${t.id} body`} />,
+      <BsTileManager tiles={TILES} stackBelow={600} label="Dashboard" header={({ tile: t }) => `${(t as DemoTile).title} title`} content={({ tile: t }) => `${t.id} body`} />,
     );
     expect(html).toMatch(/<div[^>]*role="region"/);
     expect(html).toContain('aria-label="Dashboard"');

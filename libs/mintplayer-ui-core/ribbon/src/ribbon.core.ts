@@ -235,8 +235,6 @@ export interface RibbonTabChangeEventDetail {
 }
 
 export interface RibbonEvents {
-  activeTabIdChange: string;
-  minimizedChange: boolean;
   tabChange: RibbonTabChangeEventDetail;
 }
 
@@ -290,14 +288,12 @@ function attachRibbon(api: RibbonApi): () => void {
     const previousTabId = activeTab();
     if (tabId === previousTabId && tabId === api.state().activeTabId) return;
     api.setState({ activeTabId: tabId });
-    api.emit('activeTabIdChange', tabId);
     api.emit('tabChange', { previousTabId, activeTabId: tabId });
     scheduleReflow();
   };
-  const setMinimized = (minimized: boolean, report: boolean) => {
+  const setMinimized = (minimized: boolean) => {
     if (minimized === api.state().minimized) return;
     api.setState({ minimized });
-    if (report) api.emit('minimizedChange', minimized);
     announcer.announce(minimized ? labels().minimized : labels().restored);
     scheduleReflow();
   };
@@ -307,7 +303,7 @@ function attachRibbon(api: RibbonApi): () => void {
     if (tab) selectTab(tab.getAttribute('data-ribbon-tab') ?? '');
   };
   const onDblClick = (event: MouseEvent) => {
-    if (targetOf(event, '[data-ribbon-tab]', ours)) setMinimized(!api.state().minimized, true);
+    if (targetOf(event, '[data-ribbon-tab]', ours)) setMinimized(!api.state().minimized);
   };
 
   /** Ctrl+Left/Right: the next group's current stop, skipping collapsed groups whose popup is shut. */
@@ -326,7 +322,7 @@ function attachRibbon(api: RibbonApi): () => void {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.ctrlKey && event.key === 'F1') {
       event.preventDefault();
-      setMinimized(!api.state().minimized, true);
+      setMinimized(!api.state().minimized);
       return;
     }
     const tab = targetOf(event, '[data-ribbon-tab]', ours);
@@ -580,7 +576,7 @@ function attachRibbon(api: RibbonApi): () => void {
     inputsChanged(prev) {
       const now = api.inputs();
       if (now.activeTabId !== prev.activeTabId && now.activeTabId !== undefined) api.setState({ activeTabId: now.activeTabId ?? '' });
-      if (now.minimized !== prev.minimized) setMinimized(!!now.minimized, false);
+      if (now.minimized !== prev.minimized) setMinimized(!!now.minimized);
       if (now.tabs !== prev.tabs) {
         const next = ribbonContextualSets(now.tabs);
         next.forEach((visible, label) => {
@@ -835,7 +831,6 @@ export const ribbonToggleButtonCore = defineCore<RibbonToggleButtonInputs, { pre
     onOwn(api, 'click', '[data-ribbon-control]', () => {
       const pressed = !api.state().pressed;
       api.setState({ pressed });
-      api.emit('pressedChange', pressed);
     }),
   inputsChanged: (api, prev) => {
     if (api.inputs().pressed !== prev.pressed) api.setState({ pressed: !!api.inputs().pressed });
@@ -853,7 +848,6 @@ export const ribbonCheckBoxCore = defineCore<RibbonCheckBoxInputs, { checked: bo
     onOwn(api, 'change', '[data-ribbon-control]', (el) => {
       const checked = (el as HTMLInputElement).checked;
       api.setState({ checked });
-      api.emit('checkedChange', checked);
     }),
   inputsChanged: (api, prev) => {
     if (api.inputs().checked !== prev.checked) api.setState({ checked: !!api.inputs().checked });
@@ -880,7 +874,6 @@ export const ribbonComboBoxCore = defineCore<
     onOwn(api, 'change', '[data-ribbon-control]', (el) => {
       const value = (el as HTMLSelectElement).value;
       api.setState({ value });
-      api.emit('valueChange', value);
     }),
   inputsChanged: (api, prev) => {
     if (api.inputs().value !== prev.value) api.setState({ value: api.inputs().value ?? '' });
@@ -898,7 +891,6 @@ export const ribbonColorPickerCore = defineCore<RibbonColorPickerInputs, { color
     onOwn(api, 'input', '[data-ribbon-control]', (el) => {
       const color = (el as HTMLInputElement).value;
       api.setState({ color });
-      api.emit('colorChange', color);
     }),
   inputsChanged: (api, prev) => {
     if (api.inputs().color !== prev.color) api.setState({ color: api.inputs().color || '#000000' });
@@ -926,7 +918,6 @@ export const ribbonGroupButtonCore = defineCore<
       const selectedValue = el.getAttribute('data-value') ?? '';
       if (selectedValue === api.state().selectedValue) return;
       api.setState({ selectedValue });
-      api.emit('selectedValueChange', selectedValue);
     }),
   inputsChanged: (api, prev) => {
     if (api.inputs().selectedValue !== prev.selectedValue) api.setState({ selectedValue: api.inputs().selectedValue ?? '' });
@@ -997,7 +988,6 @@ export interface RibbonMenuSelectEventDetail {
 }
 
 export interface RibbonMenuItemEvents {
-  checkedChange: boolean;
   menuSelect: RibbonMenuSelectEventDetail;
 }
 
@@ -1014,7 +1004,6 @@ export const ribbonMenuItemCore = defineCore<RibbonMenuItemInputs, { checked: bo
       const checked = kind === 'checkbox' ? !was : kind === 'radio' ? true : was;
       if (checked !== was) {
         api.setState({ checked });
-        api.emit('checkedChange', checked);
       }
       api.emit('menuSelect', { itemId: api.inputs().itemId ?? '', checked });
     };

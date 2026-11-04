@@ -34,9 +34,6 @@ export default {
           labels: { default: 'null', kind: false },
         },
       },
-      outputs: {
-        signatureChange: { type: 'Signature', doc: 'Every stroke point, typed character, undo and clear: the current signature.' },
-      },
       methods: {
         type: 'SignaturePadMethods',
         fields: {

@@ -316,7 +316,7 @@ describe('datatableCore server seed (#448)', () => {
       params: { search: 'm' },
       signal,
     });
-    const state = datatableCore.state(i, seed);
+    const state = datatableCore.state!(i, seed);
     expect(state.fetched).toEqual(page.data);
     expect(state.totalRecords).toBe(41);
     expect(state.fetching).toBe(false);
@@ -325,7 +325,7 @@ describe('datatableCore server seed (#448)', () => {
 
   it('adopts a seed delivered with a late fetch, and only for its own query (#449 review)', async () => {
     const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
-    const before = datatableCore.state(inputs({ fetch: null }), undefined);
+    const before = datatableCore.state!(inputs({ fetch: null }), undefined);
     expect(before.fetched).toBeNull();
     const late = inputs();
     const after = datatableCore.adopt!(before, late, seed);
@@ -341,7 +341,7 @@ describe('datatableCore server seed (#448)', () => {
     const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
     const run = async (swap: boolean) => {
       let current = inputs({ fetch: null });
-      let state = datatableCore.state(current, undefined);
+      let state = datatableCore.state!(current, undefined);
       const runtime = coreRuntime(datatableCore, {
         inputs: () => current,
         state: () => state,
@@ -377,7 +377,7 @@ describe('datatableCore server seed (#448)', () => {
 
   it('ignores a seed for another query, and renders loading instead', async () => {
     const seed = await datatableCore.prefetch!(inputs(), new AbortController().signal);
-    const state = datatableCore.state(inputs({ fetchParams: { search: 'q' } }), seed);
+    const state = datatableCore.state!(inputs({ fetchParams: { search: 'q' } }), seed);
     expect(state.fetched).toBeNull();
     expect(state.fetchedKey).toBeNull();
     expect(state.fetching).toBe(true);
@@ -403,7 +403,7 @@ describe('datatableCore pageLoad (#450)', () => {
   /** Hosts the core like a front: records every output it emits. */
   const host = (first: DatatableInputs, seed: unknown) => {
     let current = first;
-    let state = datatableCore.state(first, seed);
+    let state = datatableCore.state!(first, seed);
     const emitted: { name: string; detail: unknown }[] = [];
     const runtime = coreRuntime(datatableCore, {
       inputs: () => current,

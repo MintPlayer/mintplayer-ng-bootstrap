@@ -5,7 +5,7 @@ import { JsonPipe } from '@angular/common';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { dedent } from 'ts-dedent';
 import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+import { BsCheckboxComponent, BsCheckboxGroupComponent, BsCheckboxGroupDirective, BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 
 interface Row {
@@ -26,7 +26,9 @@ interface Row {
     BsGridColumnDirective,
     BsGridColDirective,
     BsCheckboxComponent,
+    BsCheckboxGroupComponent,
     BsCheckboxGroupDirective,
+    BsToggleButtonComponent,
     BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -123,11 +125,11 @@ export class CheckboxComponent {
   readonly toggleButtonTs = dedent`
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
-    import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
+    import { BsToggleButtonComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
     @Component({
       selector: 'app-toggle-button',
-      imports: [FormsModule, BsCheckboxComponent],
+      imports: [FormsModule, BsToggleButtonComponent],
       templateUrl: './toggle-button.component.html',
     })
     export class ToggleButtonComponent {
@@ -141,42 +143,42 @@ export class CheckboxComponent {
   readonly groupTemplateTs = dedent`
     import { Component, signal } from '@angular/core';
     import { FormsModule } from '@angular/forms';
-    import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+    import { BsCheckboxComponent, BsCheckboxGroupComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
     @Component({
       selector: 'app-checkbox-group',
-      imports: [FormsModule, BsCheckboxComponent, BsCheckboxGroupDirective],
+      imports: [FormsModule, BsCheckboxComponent, BsCheckboxGroupComponent],
       templateUrl: './checkbox-group.component.html',
     })
     export class CheckboxGroupComponent {
       readonly toppings = signal<string[]>([]);
     }`;
   readonly groupTemplateHtml = dedent`
-    <div bsCheckboxGroup name="toppings" label="Toppings" [(ngModel)]="toppings">
-      <bs-checkbox value="cheese">Cheese</bs-checkbox>
-      <bs-checkbox value="mushroom">Mushroom</bs-checkbox>
-      <bs-checkbox value="olive">Olive</bs-checkbox>
-    </div>`;
+    <bs-checkbox-group name="toppings" aria-label="Toppings" [(ngModel)]="toppings">
+      <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+      <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+      <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+    </bs-checkbox-group>`;
 
   readonly groupReactiveTs = dedent`
     import { Component } from '@angular/core';
     import { FormControl, ReactiveFormsModule } from '@angular/forms';
-    import { BsCheckboxComponent, BsCheckboxGroupDirective } from '@mintplayer/ng-bootstrap/checkbox';
+    import { BsCheckboxComponent, BsCheckboxGroupComponent } from '@mintplayer/ng-bootstrap/checkbox';
 
     @Component({
       selector: 'app-checkbox-group-reactive',
-      imports: [ReactiveFormsModule, BsCheckboxComponent, BsCheckboxGroupDirective],
+      imports: [ReactiveFormsModule, BsCheckboxComponent, BsCheckboxGroupComponent],
       templateUrl: './checkbox-group-reactive.component.html',
     })
     export class CheckboxGroupReactiveComponent {
       readonly toppings = new FormControl<string[]>([], { nonNullable: true });
     }`;
   readonly groupReactiveHtml = dedent`
-    <div bsCheckboxGroup name="toppings" label="Toppings" [formControl]="toppings">
-      <bs-checkbox value="cheese">Cheese</bs-checkbox>
-      <bs-checkbox value="mushroom">Mushroom</bs-checkbox>
-      <bs-checkbox value="olive">Olive</bs-checkbox>
-    </div>`;
+    <bs-checkbox-group name="toppings" aria-label="Toppings" [formControl]="toppings">
+      <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+      <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+      <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+    </bs-checkbox-group>`;
 
   readonly groupTableTs = dedent`
     import { Component, signal } from '@angular/core';
@@ -198,13 +200,11 @@ export class CheckboxComponent {
     }`;
   readonly groupTableHtml = dedent`
     <table>
-      <tbody bsCheckboxGroup name="rows"
-             #g="bsCheckboxGroup"
-             [(ngModel)]="selectedRows">
+      <tbody bsCheckboxGroup name="rows" [(ngModel)]="selectedRows">
         @for (row of rows(); track row.id) {
           <tr>
-            <td><bs-checkbox [group]="g" [value]="row.id"
-                             [attr.aria-label]="'Select ' + row.label" /></td>
+            <td><bs-checkbox [value]="row.id"
+                             [inputLabel]="'Select ' + row.label" /></td>
             <td>{{ row.label }}</td>
           </tr>
         }

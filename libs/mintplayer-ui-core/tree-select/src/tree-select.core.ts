@@ -73,7 +73,6 @@ export interface TreeSelectState {
 }
 
 export interface TreeSelectEvents {
-  valueChange: TreeSelectValue;
   /** What changed: the node added or removed, neither for a clear. */
   selectionChanged: TreeSelectChangeEventDetail;
   /** The panel opened (true) or closed (false). */
@@ -194,7 +193,6 @@ export const treeSelectCore = defineCore<
       announcer.announce(
         added ? fill(l.selected, { label: added.label }) : removed ? fill(l.removed, { label: removed.label }) : l.cleared,
       );
-      api.emit('valueChange', value);
       api.emit('selectionChanged', { value, ...(added ? { added } : {}), ...(removed ? { removed } : {}) });
     };
 
@@ -297,7 +295,6 @@ export const treeSelectCore = defineCore<
         const added = descendants(expansion.loadedChildren).filter((n) => !ids.has(n.id));
         if (!added.length) return;
         api.setState({ value: valueFor(modeOf(api), [...list(), ...added]) });
-        api.emit('valueChange', api.state().value);
       },
       loadFailed: (_node, error) => api.emit('loadError', { error }),
     });
@@ -410,13 +407,9 @@ export const treeSelectCore = defineCore<
     if (inputs.value !== prev.value && inputs.value !== api.state().value) {
       api.setState({ value: fitValue(mode, inputs.value) });
     } else if (inputs.mode !== prev.mode) {
-      const before = api.state().value;
-      const fitted = fitValue(mode, before);
-      api.setState({ value: fitted });
-      // Single mode keeps the first node; the shape (scalar or array) follows the mode either way.
-      if (valueList(fitted).length !== valueList(before).length || Array.isArray(fitted) !== Array.isArray(before)) {
-        api.emit('valueChange', fitted);
-      }
+      // Single mode keeps the first node; the shape (scalar or array) follows the mode either way,
+      // and the model writes the fitted value back.
+      api.setState({ value: fitValue(mode, api.state().value) });
     }
     if (inputs.provider !== prev.provider) {
       api.setState({ roots: [], rootsLoaded: false, rootsHasMore: false, results: null, query: '', tree: EMPTY_TREE_SLICE });

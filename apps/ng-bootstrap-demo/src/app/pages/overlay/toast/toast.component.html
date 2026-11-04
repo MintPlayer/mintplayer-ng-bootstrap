@@ -1,41 +1,38 @@
 <h1 class="text-center">Toast</h1>
 
 <p>
-  Toasts are transient, dismissible notifications. The
-  <code>BsToastService.pushToast(template, context)</code> call queues a toast
-  defined by an <code>&lt;ng-template&gt;</code>; the template receives
-  <code>isVisible</code> and <code>toastIndex</code> from the toast container
-  plus any properties from the context object. Inside, compose
-  <code>&lt;bs-toast&gt;</code> with <code>&lt;bs-toast-header&gt;</code> and
-  <code>&lt;bs-toast-body&gt;</code>, and dismiss with
-  <code>&lt;bs-close [index]="index"&gt;</code>.
+  Toasts are transient, dismissible notifications. A <code>ToastQueue</code> from
+  <code>&#64;mintplayer/ui-core/toast</code> holds them: <code>push(data)</code> queues one and
+  <code>close(id)</code> dismisses it. <code>&lt;bs-toaster [queue]&gt;</code> renders the queue in a fixed
+  corner, with its <code>bsToasterToast</code> template once per entry; compose
+  <code>&lt;bs-toast&gt;</code> with <code>&lt;bs-toast-header&gt;</code> and <code>&lt;bs-toast-body&gt;</code>
+  there. A toast announces its text when it shows, and hides itself after five seconds unless the pointer
+  or focus is on the toasts.
 </p>
 
 <h2>Basic usage</h2>
 
-<bs-form (submitted)="addToast(toastTemplate, itemToAdd())">
+<bs-form (submitted)="addToast(itemToAdd())">
     <bs-input-group>
         <input type="text" name="txtItem" #txtItem autofocus [(ngModel)]="itemToAdd">
         <button type="submit" [color]="colors.primary">Add notification</button>
     </bs-input-group>
 </bs-form>
 
-<!-- isVisible is received from the ToastService -->
-<!-- toastIndex is received from the ToastContainer -->
-<!-- Other properties come from the context passed to ToastService.pushToast -->
-<ng-template #toastTemplate let-message="message" let-index="toastIndex" let-isVisible="isVisible">
-    <bs-toast [isVisible]="isVisible">
-        <bs-toast-header>
-            <svg class="bd-placeholder-img rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false">
-                <rect width="100%" height="100%" fill="#007aff"/>
-            </svg>
-            <strong class="me-auto">Bootstrap</strong>
-            <small class="text-muted">11 mins ago</small>
-            <bs-close [index]="index"></bs-close>
-        </bs-toast-header>
-        <bs-toast-body>{{ message }}</bs-toast-body>
-    </bs-toast>
-</ng-template>
+<bs-toaster [queue]="toasts">
+    <ng-container *bsToasterToast="let toast">
+        <bs-toast [visible]="toast.visible" (visibleChange)="toasts.close(toast.id)">
+            <bs-toast-header>
+                <svg class="rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" aria-hidden="true">
+                    <rect width="100%" height="100%" fill="#007aff"/>
+                </svg>
+                <strong class="me-auto">Bootstrap</strong>
+                <small class="text-body-secondary">just now</small>
+            </bs-toast-header>
+            <bs-toast-body>{{ toast.data }}</bs-toast-body>
+        </bs-toast>
+    </ng-container>
+</bs-toaster>
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
 <bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>

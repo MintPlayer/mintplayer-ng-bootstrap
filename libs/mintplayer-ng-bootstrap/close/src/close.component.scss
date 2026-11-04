@@ -1,4 +1,0 @@
-// The close partial is installed by the component (#452, useBootstrap). It is
-// page-level CSS, so its dark-mode rules ([data-bs-theme="dark"] .btn-close)
-// match from <html> again: the :host-context workaround the old ng-deep copy
-// needed is gone.

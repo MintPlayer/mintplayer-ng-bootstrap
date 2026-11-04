@@ -1,0 +1,6 @@
+// The offcanvas's own rules (#458 M6); the offcanvas, close and transitions
+// partials are installed by the manifest. The declaring host renders nothing:
+// the panel lives in a body host.
+.offcanvas-host {
+  display: contents;
+}

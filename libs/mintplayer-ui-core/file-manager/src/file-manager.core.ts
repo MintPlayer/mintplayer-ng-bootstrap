@@ -104,11 +104,6 @@ export interface FileManagerEvents {
   operation: OperationEventDetail;
   errorReported: FileManagerErrorEventDetail;
   childrenLoaded: ChildrenLoadedEventDetail;
-  currentFolderIdChange: string | null;
-  selectedIdsChange: string[];
-  viewModeChange: FileManagerViewMode;
-  uploadsChange: UploadEntry[];
-  pendingChange: Record<string, OperationKind>;
 }
 
 export interface FileManagerMethods {
@@ -214,7 +209,6 @@ function attachFileManager(api: Api): () => void {
 
   const setSelection = (ids: readonly string[]) => {
     api.setState({ selectedIds: ids });
-    api.emit('selectedIdsChange', [...ids]);
     api.emit('selectionChanged', { selectedIds: [...ids] });
   };
 
@@ -232,11 +226,9 @@ function attachFileManager(api: Api): () => void {
     if (state().currentFolderId === folderId) return;
     const hadSelection = state().selectedIds.length > 0;
     api.setState({ currentFolderId: folderId, selectedIds: [], renameTarget: null, iconFocusId: null });
-    api.emit('currentFolderIdChange', folderId);
     api.emit('navigate', { folderId });
     // Selection is per folder: report the implicit clear like any other change.
     if (hadSelection) {
-      api.emit('selectedIdsChange', []);
       api.emit('selectionChanged', { selectedIds: [] });
     }
   };
@@ -360,7 +352,6 @@ function attachFileManager(api: Api): () => void {
     const added: UploadEntry[] = kept.map(({ file }) => ({ id: uploadId(), file, targetFolderId: target, progress: 0, status: 'pending' }));
     const uploads = [...state().uploads, ...added];
     api.setState({ uploads });
-    api.emit('uploadsChange', uploads);
     api.emit('uploadRequest', {
       files: kept.map((k) => k.file),
       targetFolderId: target,
@@ -410,7 +401,6 @@ function attachFileManager(api: Api): () => void {
   const setViewMode = (next: FileManagerViewMode) => {
     if (state().viewMode === next) return;
     api.setState({ viewMode: next, renameTarget: null });
-    api.emit('viewModeChange', next);
   };
 
   // ─── Context menu ─────────────────────────────────────────────────────────
@@ -715,12 +705,10 @@ function attachFileManager(api: Api): () => void {
 
 const writeUploads = (api: Api, uploads: UploadEntry[]) => {
   api.setState({ uploads });
-  api.emit('uploadsChange', uploads);
 };
 
 const writePending = (api: Api, pending: Record<string, OperationKind>) => {
   api.setState({ pending });
-  api.emit('pendingChange', pending);
 };
 
 export const fileManagerCore = defineCore<

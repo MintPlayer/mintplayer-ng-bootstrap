@@ -1,0 +1,36 @@
+// The placeholder's own rules (#458 M5); the placeholders partial (its
+// placeholder-glow keyframes) is installed by the manifest.
+.placeholder-region {
+  display: block;
+}
+
+// The fields are the consumer's elements, which this scope never stamps, so
+// these rules are authored in final form, anchored on the loading region this
+// component rendered. A field keeps its box but not its text: a skeleton bar
+// of at least one line, in Bootstrap's placeholder look.
+
+/*! @mps-global */
+.placeholder-glow[data-mps=placeholder] [data-placeholder-field] {
+  display: inline-block;
+  min-width: 5rem;
+  min-height: 1em;
+  vertical-align: middle;
+  cursor: wait;
+  color: transparent;
+  background-color: var(--bs-body-color);
+  opacity: 0.5;
+  border-radius: var(--bs-border-radius-sm);
+  animation: placeholder-glow 2s ease-in-out infinite;
+}
+
+/*! @mps-global */
+.placeholder-glow[data-mps=placeholder] [data-placeholder-field] * {
+  visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*! @mps-global */
+  .placeholder-glow[data-mps=placeholder] [data-placeholder-field] {
+    animation: none;
+  }
+}

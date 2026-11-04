@@ -1,4 +1,5 @@
 import type { CoreBag } from '@mintplayer/ui-core/component';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 import {
   DEFAULT_MESSAGES,
   operatorsForType,
@@ -227,6 +228,8 @@ export interface QueryBuilderOptions {
   /** Raw text of value inputs the user is typing in, by `inputKey`. */
   readonly drafts: Readonly<Record<string, string>>;
   readonly label: string | null;
+  /** Attached: the root carries data-mp-hydrated, which e2e waits on. */
+  readonly hydrated?: boolean;
   /** The `editor` slot's onChange for a condition. */
   readonly onValue: (nodeId: string, value: unknown) => void;
 }
@@ -460,14 +463,17 @@ function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): Qu
           disabled: o.disabled,
         },
       })),
-      chipAdd: act(parse, 0, {
-        type: 'text',
-        class: 'form-control form-control-sm qb-editor-chip-add',
-        placeholder: '+ add',
-        size: 8,
-        'aria-label': `${label} — add value`,
+      // Its own command: Enter adds a chip. As a 'value' input it would overwrite the list.
+      chipAdd: {
+        ...act(parse, 0, {
+          type: 'text',
+          class: 'form-control form-control-sm qb-editor-chip-add',
+          placeholder: '+ add',
+          size: 8,
+          'aria-label': `${label} — add value`,
+        }),
         'data-qb-act': 'chip-add',
-      }),
+      },
     };
   }
   if (field.type === 'enum' && options.length > 0) {
@@ -685,7 +691,7 @@ export function connectQueryBuilder(o: QueryBuilderOptions): QueryBuilderView {
   }
 
   return {
-    root: { class: 'query-builder', 'data-qb-instance': o.id, 'aria-label': o.label },
+    root: { class: 'query-builder', 'data-qb-instance': o.id, 'aria-label': o.label, ...hydratedAttr(o.hydrated ?? false) },
     text: m,
 
     toolbar,

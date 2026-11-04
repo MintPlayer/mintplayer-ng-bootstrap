@@ -41,7 +41,7 @@ function Layout() {
     <BsShell
       breakpoint="md"
       state={state}
-      onStatechange={({ open }) => setState(open ? 'show' : 'hide')}
+      onStateChange={({ open }) => setState(open ? 'show' : 'hide')}
       sidebar={<nav>…</nav>}
     >
       <main>…</main>
@@ -97,7 +97,7 @@ export function ShellPage() {
         <p>
           Leave <code>state</code> as <code>"auto"</code> for responsive
           behaviour, or drive it yourself and react to{' '}
-          <code>onStatechange</code> (its <code>open</code> is the
+          <code>onStateChange</code> (its <code>open</code> is the
           resolved visual state).
         </p>
         <BsCodeSnippet code={SNIPPET_STATE} language="tsx" />
@@ -160,7 +160,7 @@ export function ShellPage() {
               </td>
             </tr>
             <tr>
-              <td><code>onStatechange</code></td>
+              <td><code>onStateChange</code></td>
               <td><code>(change: {'{'} open: boolean {'}'}) =&gt; void</code></td>
               <td>—</td>
               <td>Fires when the toggle flips.</td>

@@ -116,7 +116,7 @@ export class HomeComponent {
     @Component({
       selector: 'app-root',
       template: \`
-        <bs-alert [type]="colors.info">
+        <bs-alert color="info">
           Current theme: <strong>{{ theme.effectiveMode() }}</strong>
         </bs-alert>
         <button [color]="colors.primary" (click)="theme.setMode('dark')">

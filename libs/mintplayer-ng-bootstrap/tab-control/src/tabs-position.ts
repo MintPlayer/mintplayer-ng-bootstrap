@@ -1,1 +1,0 @@
-export type BsTabsPosition = 'top' | 'bottom';

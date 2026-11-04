@@ -64,11 +64,6 @@ export default {
         },
       },
       outputs: {
-        sortColumnsChange: { type: 'SortColumn[]', doc: 'The sort, after the user changed it.' },
-        pageChange: { type: 'number', doc: 'The page, after the user changed it.' },
-        perPageChange: { type: 'number', doc: 'The page size, after the user changed it.' },
-        selectedIdsChange: { type: 'string[]', doc: 'The selected row keys, after the user changed them.' },
-        expandedIdsChange: { type: 'unknown[]', doc: 'The expanded row ids, after the user changed them.' },
         rowClick: { type: 'RowEventDetail', doc: 'A row was clicked, or opened with Enter.' },
         rowDblClick: { type: 'RowEventDetail', doc: 'A row was double-clicked.' },
         rowContextMenu: { type: 'RowEventDetail', doc: "A row's context menu; `originalEvent.preventDefault()` suppresses the browser's." },
@@ -77,7 +72,6 @@ export default {
         rowCollapse: { type: 'TreeRowExpandDetail', doc: 'A tree row collapsed.' },
         loadError: { type: 'DatatableLoadErrorDetail', doc: 'A `fetch` call rejected.' },
         pageLoad: { type: 'DatatablePageLoadDetail', doc: 'A response the table applied, or the page 1 it was seeded with on the server (`seeded: true`, `fetch` not called); carries the response `extra`.' },
-        filtersChange: { type: 'DatatableFilters', doc: 'The column filters, after the user changed them; `fetch` (or the consumer, over `data`) applies them.' },
       },
       methods: {
         type: 'DatatableMethods',

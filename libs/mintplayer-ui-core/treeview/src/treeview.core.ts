@@ -61,8 +61,6 @@ export interface TreeviewEvents {
   nodeExpand: TreeNodeExpandEventDetail;
   nodeCollapse: TreeNodeCollapseEventDetail;
   nodeLoadError: TreeNodeLoadErrorEventDetail;
-  selectedIdsChange: TreeviewIds;
-  expandedIdsChange: TreeviewIds;
 }
 
 type Api = CoreApi<TreeviewInputs, TreeviewState, TreeviewEvents>;
@@ -126,7 +124,6 @@ export const treeviewCore = defineCore<TreeviewInputs, TreeviewState, { view: Tr
             : [...before, node.id]
           : [node.id];
       api.setState({ selectedIds: next });
-      api.emit('selectedIdsChange', [...next]);
       api.emit('nodeSelect', { node, selectedIds: [...next] });
     };
 
@@ -142,7 +139,6 @@ export const treeviewCore = defineCore<TreeviewInputs, TreeviewState, { view: Tr
       announce: (text) => announcer.announce(text),
       select,
       expanded: (change) => {
-        api.emit('expandedIdsChange', [...change.expandedIds]);
         if (change.type === 'collapse') api.emit('nodeCollapse', { node: change.node, expandedIds: [...change.expandedIds] });
         else
           api.emit('nodeExpand', {
@@ -173,7 +169,6 @@ export const treeviewCore = defineCore<TreeviewInputs, TreeviewState, { view: Tr
       const fitted = fitSelection(state.selectedIds, m);
       if (fitted !== state.selectedIds) {
         api.setState({ selectedIds: fitted });
-        api.emit('selectedIdsChange', [...fitted]);
       }
     }
   },

@@ -26,6 +26,9 @@ export interface UseCoreOptions {
   readonly rootRef: RefObject<HTMLElement | null>;
   /** Calls the output prop for an event name; `undefined` when the consumer passed none. */
   readonly emit: (name: string, detail: unknown) => void;
+  /** Two-way inputs, written back through `writeModel` (the `on<Name>Change` props). */
+  readonly models?: readonly string[];
+  readonly writeModel?: (name: string, value: unknown) => void;
 }
 
 export interface CoreHandle<P, PC> {
@@ -67,8 +70,8 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
     if (ssr && transferKey && !ssr.server) ssr.store.remove(transferKey);
   }, [ssr, transferKey]);
 
-  const latest = useRef({ inputs, state, emit: options.emit });
-  latest.current = { inputs, state, emit: options.emit };
+  const latest = useRef({ inputs, state, emit: options.emit, writeModel: options.writeModel });
+  latest.current = { inputs, state, emit: options.emit, writeModel: options.writeModel };
   const [runtime] = useState(() =>
     coreRuntime(core, {
       inputs: () => latest.current.inputs,
@@ -78,6 +81,8 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
         setState(next);
       },
       emit: (name, detail) => latest.current.emit(name, detail),
+      models: options.models as never,
+      writeModel: (name, value) => latest.current.writeModel?.(name, value),
     }),
   );
   const rootRef = options.rootRef;

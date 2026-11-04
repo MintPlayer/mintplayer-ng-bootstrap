@@ -11,21 +11,21 @@
 <div bsUserAgent (detected)="userAgentDetected($event)">
     @if (detectedUserAgent) {
         @if (detectedUserAgent.os) {
-            <bs-alert [type]="colors.success">
+            <bs-alert color="success">
                 Your operating system is <b>{{ detectedUserAgent.os }}</b>
             </bs-alert>
         } @else {
-            <bs-alert [type]="colors.danger">
+            <bs-alert color="danger">
                 Your operating system is unknown
             </bs-alert>
         }
 
         @if (detectedUserAgent.webbrowser) {
-            <bs-alert [type]="colors.success">
+            <bs-alert color="success">
                 Your webbrowser is <b>{{ detectedUserAgent.webbrowser }}</b>
             </bs-alert>
         } @else {
-            <bs-alert [type]="colors.danger">
+            <bs-alert color="danger">
                 Your webbrowser is unknown
             </bs-alert>
         }

@@ -1,5 +1,8 @@
-export * from './resizable/resizable.component';
-export * from './resize-glyph/resize-glyph.directive';
-export * from './interfaces';
-export * from './providers';
-export * from './types';
+// Generated from @mintplayer/ui-core/resizable (#458 D10).
+export * from './generated';
+export type {
+  ResizableGeometry,
+  ResizableLabels,
+  ResizablePositioning,
+  ResizablePreset,
+} from '@mintplayer/ui-core/resizable';

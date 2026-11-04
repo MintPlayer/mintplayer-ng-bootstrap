@@ -1,5 +1,4 @@
 import { Component, ChangeDetectionStrategy} from '@angular/core';
-import { Color } from '@mintplayer/ng-bootstrap';
 import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
 import { dedent } from 'ts-dedent';
@@ -12,18 +11,15 @@ import { dedent } from 'ts-dedent';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BadgeComponent {
-  colors = Color;
-
   protected readonly snippetBasicHtml = dedent`
     <h2>
       Inbox
-      <bs-badge [type]="colors.primary">5</bs-badge>
+      <bs-badge color="primary" unit="unread messages">5</bs-badge>
     </h2>
   `;
 
   protected readonly snippetBasicTs = dedent`
     import { Component } from '@angular/core';
-    import { Color } from '@mintplayer/ng-bootstrap';
     import { BsBadgeComponent } from '@mintplayer/ng-bootstrap/badge';
 
     @Component({
@@ -31,8 +27,6 @@ export class BadgeComponent {
       templateUrl: './my-badge-demo.component.html',
       imports: [BsBadgeComponent],
     })
-    export class MyBadgeDemoComponent {
-      protected readonly colors = Color;
-    }
+    export class MyBadgeDemoComponent {}
   `;
 }

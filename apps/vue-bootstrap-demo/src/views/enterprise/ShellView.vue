@@ -38,13 +38,13 @@ installBootstrap(bootstrapTablesPage);
 
 // 'auto' is responsive; 'show'/'hide' force the sidebar open/closed.
 const state = ref<'auto' | 'show' | 'hide'>('auto');
-function onStatechange({ open }: ShellStateChange) {
+function onStateChange({ open }: ShellStateChange) {
   state.value = open ? 'show' : 'hide';
 }
 <\/script>
 
 <template>
-  <BsShell breakpoint="md" :state="state" @statechange="onStatechange">
+  <BsShell breakpoint="md" :state="state" @state-change="onStateChange">
     <template #sidebar><nav>…</nav></template>
     <main>…</main>
   </BsShell>
@@ -95,7 +95,7 @@ const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle 
       <h2>Controlled state</h2>
       <p>
         Leave <code>state</code> as <code>"auto"</code> for responsive behaviour,
-        or drive it yourself and react to <code>@statechange</code> (its
+        or drive it yourself and react to <code>@state-change</code> (its
         <code>open</code> is the resolved visual state).
       </p>
       <BsCodeSnippet :code="SNIPPET_STATE" language="html" />
@@ -158,7 +158,7 @@ const SNIPPET_EXTERNAL = `<!-- Hide the built-in hamburger and drive the toggle 
             </td>
           </tr>
           <tr>
-            <td><code>@statechange</code></td>
+            <td><code>@state-change</code></td>
             <td><code>(change: {'{'} open: boolean {'}'}) =&gt; void</code></td>
             <td>—</td>
             <td>Fires when the toggle flips.</td>

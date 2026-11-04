@@ -4,8 +4,6 @@ import type { TypeaheadState } from './types';
 /** An attribute bag. `null` means "attribute absent"; `true` means present and empty. */
 export type AttrBag = Record<string, string | boolean | null>;
 
-export const TYPEAHEAD_SCOPE = 'typeahead';
-
 export interface TypeaheadApi {
   /** The wrapper element. */
   root: AttrBag;
@@ -41,16 +39,14 @@ export function connect<T>(
   extra: { name?: string | null; /** The front has mounted on the client: writes the readiness mark. */ hydrated?: boolean } = {},
 ): TypeaheadApi {
   const ids = typeaheadIds(id);
-  const scope = { 'data-mps': TYPEAHEAD_SCOPE };
   const activeId = state.open && state.activeIndex >= 0 ? ids.option(state.activeIndex) : null;
   const hasError = !!state.errorText;
   const statusText = state.status === 'loading' ? state.labels.loading : state.status === 'ready' && state.items.length === 0 ? state.labels.noResults : null;
 
   return {
-    // Classes stay the front's business (Angular/Vue/React each manage `class`); the bag carries only the scope.
-    root: { ...scope, ...hydratedAttr(extra.hydrated ?? false) },
+    // Classes are the core view's business (typeahead.core.ts); the compiler stamps the scope (#458).
+    root: { ...hydratedAttr(extra.hydrated ?? false) },
     input: {
-      ...scope,
       role: 'combobox',
       'aria-autocomplete': 'list',
       'aria-haspopup': 'listbox',
@@ -67,22 +63,20 @@ export function connect<T>(
       value: state.term,
     },
     listbox: {
-      ...scope,
       id: ids.listbox,
       role: 'listbox',
       'aria-busy': state.status === 'loading' ? 'true' : null,
       'data-side': state.side,
       hidden: !state.open,
     },
-    status: statusText === null ? null : { attrs: { ...scope, role: 'presentation' }, text: statusText },
+    status: statusText === null ? null : { attrs: { role: 'presentation' }, text: statusText },
     option: (index) => ({
-      ...scope,
       id: ids.option(index),
       role: 'option',
       'aria-selected': String(index === state.activeIndex),
       'data-active': index === state.activeIndex ? true : null,
     }),
-    live: { attrs: { ...scope, role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: state.announcement },
-    error: hasError ? { attrs: { ...scope, id: ids.error }, text: state.errorText as string } : null,
+    live: { attrs: { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: state.announcement },
+    error: hasError ? { attrs: { id: ids.error }, text: state.errorText as string } : null,
   };
 }

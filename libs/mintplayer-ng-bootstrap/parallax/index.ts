@@ -1,1 +1,1 @@
-export * from './src/parallax.component';
+export * from './src';

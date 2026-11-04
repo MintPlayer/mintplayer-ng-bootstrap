@@ -56,7 +56,6 @@ export interface CarouselState {
 
 export interface CarouselEvents {
   slideChange: CarouselSlideChangeEventDetail;
-  pausedChange: boolean;
   slideStart: void;
   slideEnd: void;
 }
@@ -288,7 +287,6 @@ export const carouselCore = defineCore<
     const setPaused = (paused: boolean) => {
       if (paused === api.state().paused) return;
       api.setState({ paused });
-      api.emit('pausedChange', paused);
       syncAutoplay();
     };
 

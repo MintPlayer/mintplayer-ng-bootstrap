@@ -1,0 +1,21 @@
+// The card group's sheet (#458 M4). Bootstrap's card part supplies every
+// `.card*` rule; this only gives the parts a block box. In Angular and Lit
+// each part's root is its host element, a custom element that is inline by
+// default (#452 issue 2); in React and Vue the same rule meets a <div> that is
+// already a block. Bootstrap's !important display utilities (d-none) still win.
+
+.card-header,
+.card-body,
+.card-footer,
+.card-title,
+.card-subtitle,
+.card-text {
+  display: block;
+}
+
+// The image's box carries the position class, so its corners round with the
+// card's; clipping makes the <img> inside follow them.
+.card-img-box {
+  display: block;
+  overflow: hidden;
+}

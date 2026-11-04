@@ -1,0 +1,101 @@
+// The color picker (#458 M7). The core writes the geometry and the current colors as custom
+// properties on the frame; this sheet draws the wheel and paints the native sliders' tracks.
+// Bootstrap's forms part styles .form-range and .form-switch.
+
+$marker-size: 30px;
+$track-height: 0.5rem;
+
+.color-picker {
+  display: block;
+}
+
+.color-picker-frame {
+  width: var(--mp-color-picker-size, 150px);
+  max-width: 100%;
+}
+
+.color-picker-wheel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle closest-side, #fff, transparent),
+    conic-gradient(from 90deg, hsl(0 100% 50%), hsl(60 100% 50%), hsl(120 100% 50%), hsl(180 100% 50%), hsl(240 100% 50%), hsl(300 100% 50%), hsl(360 100% 50%));
+  cursor: crosshair;
+  // The pointer drags the marker, never the page.
+  touch-action: none;
+
+  &:focus-visible {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.5);
+  }
+
+  &[aria-disabled='true'] {
+    cursor: default;
+    opacity: 0.65;
+  }
+}
+
+.color-picker-darken {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #000;
+  opacity: var(--mp-color-picker-darken, 0);
+  pointer-events: none;
+}
+
+.color-picker-marker {
+  position: absolute;
+  left: var(--mp-color-picker-x, 50%);
+  top: var(--mp-color-picker-y, 50%);
+  width: $marker-size;
+  height: $marker-size;
+  margin: calc($marker-size / -2) 0 0 calc($marker-size / -2);
+  box-sizing: border-box;
+  border: 2px solid var(--bs-body-bg);
+  border-radius: 50%;
+  background: var(--mp-color-picker-color);
+  box-shadow: rgb(0 0 0 / 10%) 0 0 10px 5px;
+  pointer-events: none;
+}
+
+.color-picker-strip {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.color-picker-toggle {
+  margin-top: 0.5rem;
+}
+
+// One track painting per channel, for both engines' track pseudo-elements.
+@mixin track($background) {
+  &::-webkit-slider-runnable-track {
+    height: $track-height;
+    background: $background;
+  }
+  &::-moz-range-track {
+    height: $track-height;
+    background: $background;
+  }
+}
+
+$checkerboard: repeating-conic-gradient(#c0c0c0 0% 25%, #fff 0% 50%) 0 0 / 10px 10px;
+
+.color-picker-brightness {
+  @include track(linear-gradient(to right, #000, var(--mp-color-picker-peak)));
+}
+
+.color-picker-alpha {
+  @include track((linear-gradient(to right, transparent, var(--mp-color-picker-color)), $checkerboard));
+}
+
+.color-picker-hue {
+  @include track(linear-gradient(to right, hsl(0 100% 50%), hsl(60 100% 50%), hsl(120 100% 50%), hsl(180 100% 50%), hsl(240 100% 50%), hsl(300 100% 50%), hsl(360 100% 50%)));
+}
+
+.color-picker-saturation {
+  @include track(linear-gradient(to right, #fff, var(--mp-color-picker-hue-color)));
+}

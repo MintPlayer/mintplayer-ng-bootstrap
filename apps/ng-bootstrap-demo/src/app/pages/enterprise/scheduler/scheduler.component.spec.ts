@@ -6,7 +6,7 @@ import { DatePipe, JsonPipe } from '@angular/common';
 import { MockComponent, MockDirective } from 'ng-mocks';
 import { SchedulerComponent } from './scheduler.component';
 import { BsCardBodyComponent, BsCardComponent, BsCardHeaderComponent } from '@mintplayer/ng-bootstrap/card';
-import { BsFormComponent, BsFormGroupDirective, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsSchedulerComponent } from '@mintplayer/ng-bootstrap/scheduler';
 
@@ -18,7 +18,7 @@ describe('SchedulerComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         FormsModule,
-        MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+        MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
         MockComponent(BsSchedulerComponent),
         MockDirective(BsButtonTypeDirective),
         MockComponent(BsInputGroupComponent),

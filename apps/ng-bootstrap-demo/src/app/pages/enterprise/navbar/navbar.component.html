@@ -7,19 +7,21 @@
   <code>&lt;details&gt;</code>, so the bar works with JavaScript off. Mark the
   brand with <code>*bsNavbarBrand</code>, group entries in a
   <code>bs-navbar-nav</code> (<code>align="end"</code> pushes a group to the far
-  edge), and use <code>bs-navbar-item</code> for every entry — directly in a
-  group as a nav-link, or inside a <code>bs-navbar-dropdown</code> as a menu
-  item; the same element adapts to where it is authored. A dropdown's trigger is
-  the <code>*bsNavbarDropdownLabelTemplate</code> template — any HTML (give an
-  icon-only label an <code>aria-label</code>). A custom hamburger glyph is the
-  <code>*bsNavbarToggler</code> template. Toggling the collapse fires
-  <code>(expandedchange)</code>.
+  edge), and use <code>bs-navbar-item</code> for an entry in a group. A dropdown
+  is the same <code>bs-dropdown-menu</code> / <code>bs-dropdown-item</code> pair
+  a standalone dropdown uses: inside a nav group it renders the navbar's
+  <code>&lt;details&gt;</code> disclosure, nested menus become submenus, and its
+  <code>label</code> is the trigger text (the <code>*bsDropdownMenuLabelTemplate</code>
+  template takes any HTML; give an icon-only label an <code>aria-label</code>).
+  Without JavaScript a dropdown also opens while keyboard focus is inside it. A custom hamburger glyph is the
+  <code>*bsNavbarToggler</code> template. <code>expanded</code> is two-way:
+  <code>[(expanded)]</code> follows every toggle of the collapse.
 </p>
 
 <h2>Basic usage</h2>
 
 <div class="navbar-demo">
-  <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Demo navigation" (expandedchange)="onExpandedchange($event)">
+  <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Demo navigation" [(expanded)]="expanded">
     <a *bsNavbarBrand routerLink="/">MyApp</a>
 
     <bs-navbar-nav>
@@ -30,12 +32,11 @@
         <a routerLink="/about">About</a>
       </bs-navbar-item>
 
-      <bs-navbar-dropdown>
-        <span *bsNavbarDropdownLabelTemplate>Products</span>
-        <bs-navbar-item><a routerLink="/products/widgets">Widgets</a></bs-navbar-item>
-        <bs-navbar-item><a routerLink="/products/gadgets">Gadgets</a></bs-navbar-item>
-        <bs-navbar-item><a routerLink="/products/gizmos">Gizmos</a></bs-navbar-item>
-      </bs-navbar-dropdown>
+      <bs-dropdown-menu label="Products">
+        <bs-dropdown-item><a routerLink="/products/widgets">Widgets</a></bs-dropdown-item>
+        <bs-dropdown-item><a routerLink="/products/gadgets">Gadgets</a></bs-dropdown-item>
+        <bs-dropdown-item><a routerLink="/products/gizmos">Gizmos</a></bs-dropdown-item>
+      </bs-dropdown-menu>
     </bs-navbar-nav>
 
     <bs-navbar-nav align="end">

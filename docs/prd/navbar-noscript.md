@@ -1,5 +1,10 @@
 # PRD: Navbar Noscript / SSR Behavior
 
+> **#458 update.** The navbar is a D10 group now (no `<mp-navbar>` shadow root), and its dropdowns are the
+> unified `bs-dropdown-menu`. The pre-hydration `:focus-within` reveal is gated on
+> `:not([data-mp-hydrated])` (ui-core `hydratedAttr()`), which replaces `BsNoNoscript` / `.noscript`
+> everywhere. The behaviour matrix below is still the contract.
+
 **Status:** Implemented — and since re-implemented **inside the web component**. The behavior matrix
 below is still the contract; the mechanism moved out of the Angular `bs-navbar` template into
 `<mp-navbar>`'s shadow root. Everything the original document described in terms of

@@ -1,5 +1,8 @@
 # PRD — Angular-only components → headless cores + four fronts (issue #455)
 
+> **Superseded by #458** (`docs/prd/bootstrap-sub-elements-458.md`), which absorbed this work and built it.
+> Kept as a historical decision record; where it conflicts with #458 or CLAUDE.md, those win.
+
 Status: **draft** (2026-11-01). It depends on #452 (`docs/prd/per-component-styles-452.md`) and starts after
 #452 merges.
 

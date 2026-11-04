@@ -1,9 +1,12 @@
 <h1 class="text-center">Rating</h1>
 
 <p>
-    A star-rating widget with two-way binding via <code>[(value)]</code> and
-    a configurable <code>[maximum]</code>. Emits hover-preview updates via
-    <code>(starsChange)</code>.
+    A star rating as native radios in a radiogroup, with two-way binding via
+    <code>[(value)]</code> (0 for none) and a configurable <code>[maximum]</code>.
+    Arrow keys move between the stars, the value submits with a form under
+    <code>name</code>, and it works without JavaScript. <code>(previewChange)</code>
+    reports the star under the pointer (null when it leaves); <code>label</code> and
+    <code>starLabel</code> localise the names.
 </p>
 
 <h2>Basic usage</h2>
@@ -11,7 +14,7 @@
 <bs-grid>
     <div bsRow>
         <div [md]="12">
-            <bs-rating [maximum]="10" [(value)]="ratingValue" (starsChange)="previewValue.set($event)"></bs-rating>
+            <bs-rating [maximum]="10" [(value)]="ratingValue" (previewChange)="previewValue.set($event ?? ratingValue())"></bs-rating>
             <span>{{ previewValue() }}</span>
         </div>
     </div>

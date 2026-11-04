@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as React from 'react';
 import { act, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { BsTypeahead } from '../../typeahead/src/BsTypeahead';
+import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import type { TypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 
 /**
  * The React front of the headless typeahead core (#436): same machine, same
  * ARIA bags, React's own JSX. Covers the issue's four capabilities through the
- * React API: debounce, abortable provider, renderItem with the term, and a
+ * React API: debounce, abortable provider, the item slot with the term, and a
  * controlled value with onValueChange.
  */
 interface Item {
@@ -98,15 +98,15 @@ describe('BsTypeahead (React front)', () => {
     expect(options().map((o) => o.textContent)).toEqual(['Kruishoutem']);
   });
 
-  it('renderItem receives the item and the current term', async () => {
+  it('the item slot receives the item and the current term', async () => {
     await act(async () =>
       root.render(
-        <BsTypeahead<Item>
+        <BsTypeahead
           provider={provider}
           debounceMs={0}
-          renderItem={(item, term) => (
+          item={({ item, term }) => (
             <>
-              <b>{item.text}</b>|<i>{term}</i>
+              <b>{(item as Item).text}</b>|<i>{term}</i>
             </>
           )}
         />,
@@ -118,13 +118,13 @@ describe('BsTypeahead (React front)', () => {
     expect(options()[0].querySelector('i')!.textContent).toBe('kru');
   });
 
-  it('a controlled value follows typing and picks; onSelect gets the item; selection by keyboard', async () => {
+  it('a controlled value follows typing and picks; onItemSelect gets the item; selection by keyboard', async () => {
     const onSelect = vi.fn();
     function Host() {
       const [value, setValue] = useState('');
       return (
         <>
-          <BsTypeahead<Item> provider={provider} debounceMs={0} value={value} onValueChange={setValue} onSelect={onSelect} />
+          <BsTypeahead provider={provider} debounceMs={0} value={value} onValueChange={setValue} onItemSelect={onSelect} />
           <output>{value}</output>
         </>
       );
@@ -143,7 +143,7 @@ describe('BsTypeahead (React front)', () => {
     await act(async () => {
       input().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     });
-    expect(onSelect).toHaveBeenCalledWith({ text: 'Kerkhof' }, 'Kerkhof');
+    expect(onSelect).toHaveBeenCalledWith({ item: { text: 'Kerkhof' }, value: 'Kerkhof' });
     expect(container.querySelector('output')!.textContent).toBe('Kerkhof');
     expect(input().value).toBe('Kerkhof');
   });

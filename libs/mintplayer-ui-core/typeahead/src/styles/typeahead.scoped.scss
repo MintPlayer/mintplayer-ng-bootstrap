@@ -1,6 +1,6 @@
 // The typeahead's stylesheet, shared by all four fronts (#436 D8). Rescoped at
-// build time: every compound gains `[data-mps=typeahead]`, so only nodes a
-// front stamped are matched and nothing leaks to the page. Consumer-rendered
+// build time: every compound gains `[data-mps=typeahead]`, so only nodes the
+// compiler stamped are matched (in Angular and Lit the host IS .mp-typeahead) and nothing leaks to the page. Consumer-rendered
 // rows are never stamped and keep the page's styles.
 //
 // Bootstrap itself comes from the parts the fronts install (forms, dropdown;
@@ -14,13 +14,6 @@
 @import "node_modules/bootstrap/scss/variables-dark";
 @import "node_modules/bootstrap/scss/maps";
 @import "node_modules/bootstrap/scss/mixins";
-
-// The web-component host (other fronts have their own host); anchored on the
-// tag, so it still matches nothing outside the component.
-/*! @mps-global */
-mp-typeahead {
-  display: block;
-}
 
 .mp-typeahead {
   position: relative;

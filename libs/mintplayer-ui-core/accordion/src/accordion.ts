@@ -1,58 +1,46 @@
+import { defineContext, defineCore, type CoreBag } from '@mintplayer/ui-core/component';
+
 /**
- * The accordion has no machine (PRD #437 §8, wave A; spike S2): each tab is a
- * native `<details>` and its `open` IS the tab's state, so it works with
- * JavaScript off. Single-open is the platform's `<details name>` exclusivity,
- * scoped to one accordion by a name derived from the front's root id. What
- * the fronts share is the markup contract (ids, classes, ARIA), the keyboard
- * extras, and the one DOM handler that keeps a front's model in step.
+ * Accordion and accordion tab (#458 M4, one D10 group). Each tab is a native
+ * `<details>` and its `open` IS the tab's state, so it works with JavaScript
+ * off. Single-open is the platform's `<details name>` exclusivity, scoped to
+ * one accordion by the name the accordion hands its tabs.
  *
- * Markup (every front renders the same):
+ * Markup (every front renders the same; Angular and Lit add a tab host element
+ * around each `<details>`, taken out of the layout):
  *
- *   <div class="accordion" [data-highlight-active]>
- *     <details class="accordion-item" name=<id>-group open>
+ *   <div class="accordion" data-accordion>
+ *     <details class="accordion-item" name=<accordion id>-group open>
  *       <summary class="accordion-button collapsed" id aria-controls>…header…</summary>
  *       <div class="accordion-content" id role=region aria-labelledby>…body…</div>
  *     </details>
- *     …other content…
  *   </div>
  *
  * The summary keeps a static `collapsed` class so Bootstrap's own
  * `.accordion-button:not(.collapsed)` rules never fire: the open state is
- * styled from `details[open]` (spike 0.1b). A closed `<details>` takes its
- * content out of the tab order and the accessibility tree with no CSS.
+ * styled from `details[open]`. A closed `<details>` takes its content out of
+ * the tab order and the accessibility tree with no CSS.
  *
- * The `toggle` contract (spike 0.1a, all three engines): it does not bubble
- * (listen in the CAPTURE phase), it is asynchronous, and same-task flips are
- * coalesced into one event carrying the final state. A front's root listener
- * therefore also hears every nested accordion's rows, which
- * `accordionToggled` filters out.
+ * The `toggle` contract: it does not bubble (listen in the CAPTURE phase), it
+ * is asynchronous, and same-task flips are coalesced into one event carrying
+ * the final state. The accordion's root listener therefore also hears every
+ * nested accordion's rows, which `accordionToggled` filters out.
  */
 
-export type AccordionBag = Record<string, string | boolean | null>;
+/** Marks an accordion's root: a row belongs to the accordion whose root is its closest marked ancestor. */
+export const ACCORDION_ATTR = 'data-accordion';
 
-export const ACCORDION_SCOPE = 'accordion';
-
-export interface AccordionOptions {
-  /** Root id from the front, so server and client agree on every IDREF and on the group name. */
-  readonly id: string;
-  /** Allow several tabs open at once (no `name`, so no exclusivity). */
-  readonly multi?: boolean;
+/** What an accordion hands its tabs. */
+export interface AccordionContext {
+  /** The `<details name>` shared by the tabs; null when several may be open. */
+  readonly name: string | null;
   /** Paint the open header with Bootstrap's active background. */
-  readonly highlightActiveTab?: boolean;
+  readonly highlightActiveTab: boolean;
 }
 
-export interface AccordionTabState {
-  readonly disabled?: boolean;
-}
+export const ACCORDION = defineContext<AccordionContext>('accordion', { name: null, highlightActiveTab: false });
 
-export interface AccordionTabView {
-  /** The `<details>`. `open` is not in the bag: each front binds the live property (and the attribute, for SSR). */
-  readonly item: AccordionBag;
-  readonly summary: AccordionBag;
-  readonly content: AccordionBag;
-}
-
-/** Detail of a front's tab-toggle event. */
+/** Detail of the accordion's `tabToggle` output. */
 export interface AccordionTabToggle {
   /** Zero-based position of the tab that changed. */
   readonly index: number;
@@ -60,47 +48,16 @@ export interface AccordionTabToggle {
   readonly active: boolean;
 }
 
-const scope = { 'data-mps': ACCORDION_SCOPE };
+const ROW = 'details.accordion-item';
 
-export function accordionIds(rootId: string, index: number): { readonly header: string; readonly content: string } {
-  return { header: `${rootId}-h${index}`, content: `${rootId}-c${index}` };
-}
-
-export function connectAccordion(options: AccordionOptions): AccordionBag {
-  return {
-    ...scope,
-    class: 'accordion',
-    'data-highlight-active': options.highlightActiveTab ? '' : null,
-  };
-}
-
-export function connectAccordionTab(options: AccordionOptions, index: number, tab: AccordionTabState = {}): AccordionTabView {
-  const ids = accordionIds(options.id, index);
-  const disabled = tab.disabled ?? false;
-  return {
-    item: { ...scope, class: 'accordion-item', name: options.multi ? null : `${options.id}-group` },
-    summary: {
-      ...scope,
-      id: ids.header,
-      class: 'accordion-button collapsed',
-      'aria-controls': ids.content,
-      'aria-disabled': disabled ? 'true' : null,
-      tabindex: disabled ? '-1' : null,
-    },
-    content: { ...scope, id: ids.content, class: 'accordion-content', role: 'region', 'aria-labelledby': ids.header },
-  };
-}
-
-/** The accordion's own rows: direct children only, never a nested accordion's. */
+/** The accordion's own rows, in document order: never a nested accordion's. */
 export function accordionRows(root: Element): HTMLDetailsElement[] {
-  return Array.from(root.children).filter(
-    (child): child is HTMLDetailsElement => child.localName === 'details' && child.matches('.accordion-item[data-mps=accordion]'),
-  );
+  return [...root.querySelectorAll<HTMLDetailsElement>(ROW)].filter((row) => row.parentElement?.closest(`[${ACCORDION_ATTR}]`) === root);
 }
 
-/** A row's own header. Walks children rather than `:scope >`, which jsdom's selector engine misses inside a shadow root. */
+/** A row's own header. Walks children rather than `:scope >`, which jsdom's selector engine can miss. */
 function rowSummary(row: HTMLDetailsElement): HTMLElement | undefined {
-  return Array.from(row.children).find((child): child is HTMLElement => child.localName === 'summary');
+  return [...row.children].find((child): child is HTMLElement => child.localName === 'summary');
 }
 
 function isDisabledRow(row: HTMLDetailsElement): boolean {
@@ -109,21 +66,20 @@ function isDisabledRow(row: HTMLDetailsElement): boolean {
 
 /**
  * Closes every accordion row inside a closing row, at any depth, so a
- * collapsed branch never hides expanded descendants. Each nested front hears
- * its own rows' `toggle` and updates its model.
+ * collapsed branch never hides expanded descendants. Each nested tab hears its
+ * own `toggle` and updates its model.
  */
 export function closeNestedAccordions(row: Element): void {
-  row.querySelectorAll<HTMLDetailsElement>('details.accordion-item[data-mps=accordion][open]').forEach((nested) => {
+  row.querySelectorAll<HTMLDetailsElement>(`${ROW}[open]`).forEach((nested) => {
     nested.open = false;
   });
 }
 
 /**
- * The root's capture-phase `toggle` handler. Returns the change to apply to the
- * front's model, or `null` when the event belongs to a nested accordion.
- * Single-open is also enforced here from the DOM, so engines without `name`
- * support (and jsdom) behave the same; the siblings it closes report through
- * their own `toggle`.
+ * The root's capture-phase `toggle` handler. Returns the change, or `null` when
+ * the event belongs to a nested accordion. Single-open is also enforced here
+ * from the DOM, so engines without `name` support (and jsdom) behave the same;
+ * the siblings it closes report through their own `toggle`.
  */
 export function accordionToggled(root: Element, event: Event, multi: boolean): AccordionTabToggle | null {
   const rows = accordionRows(root);
@@ -157,31 +113,6 @@ export function accordionKeyTarget(key: string, index: number, count: number): n
   }
 }
 
-/**
- * A summary's keydown: blocks activating a disabled tab (`toggle` cannot be
- * cancelled, but keydown can, before the UA acts) and moves focus between
- * headers. Returns whether the key was consumed.
- */
-export function accordionKeydown(root: Element, event: KeyboardEvent, index: number, disabled: boolean): boolean {
-  if (disabled && (event.key === 'Enter' || event.key === ' ')) {
-    event.preventDefault();
-    return true;
-  }
-  const rows = accordionRows(root);
-  const target = accordionKeyTarget(event.key, index, rows.length);
-  if (target === null) return false;
-  event.preventDefault();
-  (rows[target] && rowSummary(rows[target]))?.focus();
-  return true;
-}
-
-/** A disabled summary also ignores a synthesized click (the sheet blocks the pointer). */
-export function accordionSummaryClick(event: Event, disabled: boolean): void {
-  if (!disabled) return;
-  event.preventDefault();
-  event.stopPropagation();
-}
-
 /** Closes every open row, and with it every nested accordion. */
 export function closeAccordion(root: Element): void {
   accordionRows(root)
@@ -191,3 +122,166 @@ export function closeAccordion(root: Element): void {
       closeNestedAccordions(row);
     });
 }
+
+// ---------------------------------------------------------------- accordion
+
+export interface AccordionInputs {
+  /** Allow several tabs open at once (no `name`, so no exclusivity). */
+  multi: boolean;
+  /** Paint the open header with Bootstrap's active background. */
+  highlightActiveTab: boolean;
+}
+
+export interface AccordionMethods {
+  /** Close every open tab, and every accordion nested inside them. */
+  closeAll(): void;
+}
+
+export function connectAccordion(): CoreBag {
+  return { class: 'accordion', [ACCORDION_ATTR]: '' };
+}
+
+export const accordionCore = defineCore<
+  AccordionInputs,
+  undefined,
+  { root: CoreBag },
+  { tabToggle: AccordionTabToggle },
+  undefined,
+  AccordionContext,
+  AccordionMethods
+>({
+  provides: ACCORDION,
+  view: () => ({ root: connectAccordion() }),
+  provide: ({ inputs, id }) => ({
+    name: inputs.multi ? null : `${id}-group`,
+    highlightActiveTab: !!inputs.highlightActiveTab,
+  }),
+  attach: (api) => {
+    // `toggle` does not bubble: one capture-phase listener on the root hears every row.
+    const onToggle = (event: Event) => {
+      const change = accordionToggled(api.host, event, !!api.inputs().multi);
+      if (change) api.emit('tabToggle', change);
+    };
+    api.host.addEventListener('toggle', onToggle, { capture: true });
+    return () => api.host.removeEventListener('toggle', onToggle, { capture: true });
+  },
+  methods: {
+    closeAll: (api) => closeAccordion(api.host),
+  },
+});
+
+// ---------------------------------------------------------------- accordion tab
+
+export interface AccordionTabInputs {
+  /** Whether the tab is open. Two-way. */
+  open: boolean;
+  /** A disabled tab neither opens nor closes, and leaves the tab order. */
+  disabled: boolean;
+}
+
+export interface AccordionTabView {
+  /** The `<details>`; `open` is its attribute, which the property reflects. */
+  readonly item: CoreBag;
+  readonly summary: CoreBag;
+  readonly content: CoreBag;
+}
+
+export function connectAccordionTab(id: string, accordion: AccordionContext, open: boolean, disabled: boolean): AccordionTabView {
+  const header = `${id}-header`;
+  const content = `${id}-content`;
+  return {
+    item: {
+      class: 'accordion-item',
+      name: accordion.name,
+      open,
+      'data-highlight-active': accordion.highlightActiveTab ? '' : null,
+    },
+    summary: {
+      id: header,
+      class: 'accordion-button collapsed',
+      'aria-controls': content,
+      'aria-disabled': disabled ? 'true' : null,
+      tabindex: disabled ? '-1' : null,
+    },
+    content: { id: content, class: 'accordion-content', role: 'region', 'aria-labelledby': header },
+  };
+}
+
+export interface AccordionTabMethods {
+  /**
+   * Open or close the tab through its `<details>`, so single-open exclusivity
+   * and the nested-accordion collapse both apply.
+   */
+  setOpen(open: boolean): void;
+}
+
+function tabDetails(host: HTMLElement): HTMLDetailsElement | null {
+  return host.localName === 'details' ? (host as HTMLDetailsElement) : host.querySelector<HTMLDetailsElement>(`:scope > ${ROW}`);
+}
+
+export const accordionTabCore = defineCore<
+  AccordionTabInputs,
+  { open: boolean },
+  { view: AccordionTabView },
+  { openChange: boolean },
+  AccordionContext,
+  undefined,
+  AccordionTabMethods
+>({
+  consume: ACCORDION,
+  host: () => ({ class: 'accordion-tab' }),
+  state: (inputs) => ({ open: !!inputs.open }),
+  view: ({ inputs, state, id, context }) => ({ view: connectAccordionTab(id, context, state.open, !!inputs.disabled) }),
+  attach: (api) => {
+    const row = tabDetails(api.host);
+    const summary = row && rowSummary(row);
+    if (!row || !summary) return;
+    const onToggle = (event: Event) => {
+      if (event.target !== row || row.open === api.state().open) return;
+      api.setState({ open: row.open });
+    };
+    // A disabled summary ignores a synthesized click (the sheet blocks the pointer).
+    const onClick = (event: Event) => {
+      if (!api.inputs().disabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    // Blocks activating a disabled tab (`toggle` cannot be cancelled, keydown
+    // can, before the UA acts) and moves focus between the accordion's headers.
+    const onKeydown = (event: KeyboardEvent) => {
+      if (api.inputs().disabled && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault();
+        return;
+      }
+      const root = row.parentElement?.closest(`[${ACCORDION_ATTR}]`);
+      if (!root) return;
+      const rows = accordionRows(root);
+      const target = accordionKeyTarget(event.key, rows.indexOf(row), rows.length);
+      if (target === null) return;
+      event.preventDefault();
+      (rows[target] && rowSummary(rows[target]))?.focus();
+    };
+    row.addEventListener('toggle', onToggle);
+    summary.addEventListener('click', onClick);
+    summary.addEventListener('keydown', onKeydown);
+    return () => {
+      row.removeEventListener('toggle', onToggle);
+      summary.removeEventListener('click', onClick);
+      summary.removeEventListener('keydown', onKeydown);
+    };
+  },
+  inputsChanged: (api, prev) => {
+    const open = !!api.inputs().open;
+    if (open === !!prev.open) return;
+    // Through the <details>, so exclusivity and the nested collapse apply; its toggle reports back.
+    const row = tabDetails(api.host);
+    if (row) row.open = open;
+    api.setState({ open });
+  },
+  methods: {
+    setOpen: (api, open) => {
+      const row = tabDetails(api.host);
+      if (row) row.open = open;
+    },
+  },
+});

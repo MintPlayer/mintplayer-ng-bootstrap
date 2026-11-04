@@ -1,0 +1,29 @@
+// The tooltip's own rules (#458 M6); the tooltip and transitions partials are
+// installed by the manifest. Bootstrap positions a tooltip with Popper's inline
+// styles; here the core writes the position as custom properties, and the panel
+// is centred on its trigger, so the arrow sits in the middle of its edge.
+.tooltip {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-anchored-left, 0);
+  top: var(--mp-anchored-top, 0);
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow,
+.tooltip.bs-tooltip-bottom .tooltip-arrow {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tooltip.bs-tooltip-start .tooltip-arrow,
+.tooltip.bs-tooltip-end .tooltip-arrow {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip.fade {
+    transition: none;
+  }
+}

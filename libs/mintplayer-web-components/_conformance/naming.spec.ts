@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import '@mintplayer/web-components/select';
 import '@mintplayer/web-components/checkbox';
 import '@mintplayer/web-components/radio';
-import '@mintplayer/web-components/toggle-button';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/timepicker';
 import '@mintplayer/web-components/datetime-picker';

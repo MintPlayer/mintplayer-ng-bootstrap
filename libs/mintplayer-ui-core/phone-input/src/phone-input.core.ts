@@ -67,10 +67,6 @@ export interface PhoneInputState {
 }
 
 export interface PhoneInputEvents {
-  /** The E.164 value changed (null while empty). */
-  valueChange: string | null;
-  /** The user picked a country, or typed a `+XX` that switched it. */
-  countryChange: string;
   /** Every edit, pick and rules load: the value with its parts and validity. */
   phoneChange: PhoneChangeEventDetail;
 }
@@ -187,7 +183,6 @@ function publish(api: Api) {
   const value = phoneValue(rules, country, dialCode, digits);
   if (value !== api.state().value) {
     api.setState({ value });
-    api.emit('valueChange', value);
   }
   api.emit('phoneChange', { value, country, dialCode, nationalNumber: digits, valid: phoneValid(rules, country, digits) });
 }
@@ -214,12 +209,11 @@ function wantRules(api: Api) {
   loadRules(api, countryOf(api));
 }
 
-function setCountry(api: Api, iso2: string, fromUser: boolean) {
+function setCountry(api: Api, iso2: string) {
   if (!iso2 || iso2 === countryOf(api)) return;
   api.setState({ country: iso2, rules: rulesFor(api.state().rules, iso2) });
   if (runtime(api).rulesWanted) loadRules(api, iso2);
   show(api);
-  if (fromUser) api.emit('countryChange', iso2);
 }
 
 /** Rule 1: place the caret after the same DIGIT COUNT in the new formatting. */
@@ -242,7 +236,7 @@ function commitRaw(api: Api, input: HTMLInputElement, raw: string, caretRaw: num
   // code compatible with the current country never switches it (D5a).
   const match = countryForDialString(raw, only ?? undefined);
   if (match) {
-    if (match.dialCode !== dialCodeOf(api)) setCountry(api, match.country.iso2, true);
+    if (match.dialCode !== dialCodeOf(api)) setCountry(api, match.country.iso2);
     wantRules(api);
     commitDigits(api, input, match.nationalNumber, digitsOf(match.nationalNumber).length);
     return;
@@ -282,7 +276,7 @@ function commitRaw(api: Api, input: HTMLInputElement, raw: string, caretRaw: num
 function writeValue(api: Api, next: string | null) {
   const { digits, country } = parse(next, allowed(api.inputs()));
   api.setState({ digits });
-  if (country) setCountry(api, country, false);
+  if (country) setCountry(api, country);
   if (digits) wantRules(api);
   const { rules } = api.state();
   const iso2 = countryOf(api);
@@ -365,7 +359,7 @@ export const phoneInputCore = defineCore<PhoneInputInputs, PhoneInputState, { vi
     const onPick = () => {
       const iso2 = select.value;
       if (!iso2) return;
-      setCountry(api, iso2, true);
+      setCountry(api, iso2);
       wantRules(api);
       // D9: focus moves to the number field after choosing a country.
       input.focus();
@@ -396,7 +390,7 @@ export const phoneInputCore = defineCore<PhoneInputInputs, PhoneInputState, { vi
 
     // A country picked before hydration, then text typed (or restored on back-navigation): the user's.
     const picked = select.value;
-    if (picked && picked !== countryOf(api)) setCountry(api, picked, true);
+    if (picked && picked !== countryOf(api)) setCountry(api, picked);
     if (digitsOf(input.value) !== api.state().digits) commitRaw(api, input, input.value, input.value.length);
     else show(api);
     if (api.state().digits) wantRules(api);
@@ -418,7 +412,7 @@ export const phoneInputCore = defineCore<PhoneInputInputs, PhoneInputState, { vi
     const inputs = api.inputs();
     if (inputs.value !== prev.value && (inputs.value?.trim() || null) !== api.state().value) writeValue(api, inputs.value);
     const country = inputs.country?.trim().toLowerCase();
-    if (country && inputs.country !== prev.country) setCountry(api, country, false);
+    if (country && inputs.country !== prev.country) setCountry(api, country);
     else if (inputs.defaultCountry !== prev.defaultCountry || inputs.allowedCountries !== prev.allowedCountries) show(api);
   },
   methods: {

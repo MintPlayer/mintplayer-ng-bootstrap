@@ -13,6 +13,7 @@ test('modal opens and closes via the close button', async ({ page }) => {
   const title = page.getByText('Modal title', { exact: true });
   await expect(title).toBeVisible();
 
-  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  // The header's × button is named "Close" too: click the footer's.
+  await page.locator('.modal-footer').getByRole('button', { name: 'Close', exact: true }).click();
   await expect(title).not.toBeVisible();
 });

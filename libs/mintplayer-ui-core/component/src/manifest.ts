@@ -38,6 +38,11 @@ export interface InputField {
    * React stays controlled through the matching `<name>Change` output.
    */
   readonly model?: boolean;
+  /**
+   * Angular only: the input's public name. A structural directive's inputs are named after its selector
+   * (`*bsPopover="'top'; title: 'Hi'"` sets `bsPopover` and `bsPopoverTitle`).
+   */
+  readonly alias?: string;
   readonly doc?: string;
 }
 
@@ -68,7 +73,7 @@ export interface ComponentNames {
 
 /** A content query: every `component` in the content, in document order. */
 export interface ContentQuery {
-  /** The queried element of the same group (`ribbon-tab`). */
+  /** The queried element of the same group (`ribbon-tab`), or a declaration (`tab-page`). */
   readonly component: string;
   /** An element of the same group that may wrap it; its inputs ride along as `within`. */
   readonly within?: string;
@@ -136,11 +141,77 @@ export type BootstrapPartName =
   | 'list-group' | 'close' | 'toasts' | 'modal' | 'tooltip' | 'popover' | 'carousel' | 'spinners'
   | 'offcanvas' | 'placeholders';
 
+/** Per-front names of a directive, all derived from its name unless given. */
+export interface DirectiveNames {
+  /** Angular class; default `Bs<Pascal>Directive`. */
+  readonly angular?: string;
+  /** Angular selector; default `[bs<Pascal>]`. */
+  readonly selector?: string;
+  /** React hook; default `useBs<Pascal>`. */
+  readonly react?: string;
+  /** Vue directive; default `vBs<Pascal>` (used as `v-bs-<name>`). */
+  readonly vue?: string;
+  /** Lit element-part directive; default `bs<Pascal>`. */
+  readonly lit?: string;
+}
+
+/**
+ * A directive (#458 §4.3): a core without a template, placed on an element the
+ * consumer renders. Its core's `view` returns that element's bag; the fronts
+ * stamp it with the group's scope and install the group's sheets, so the
+ * element opts in to them. Angular: an attribute directive. React: a hook
+ * returning props (`mergeProps` combines them with the consumer's). Vue: a
+ * custom directive. Lit: an element-part directive.
+ */
+export interface DirectiveManifest {
+  /** The `ComponentCore` export; its `view` returns a `CoreBag`. */
+  readonly core: string;
+  readonly inputs?: ComponentManifest['inputs'];
+  /** DOM events on the element in Vue and Lit; Angular outputs; React `on<Name>` options. */
+  readonly outputs?: ComponentManifest['outputs'];
+  /**
+   * An overlay directive (#458 M6, tooltip and popover): the component of the group its content renders
+   * in. The core's view returns `{ anchor, overlay }`: `anchor` is the element's bag (not scoped: the
+   * element is the consumer's, and only the panel is styled), `overlay` the panel's inputs while it
+   * renders, else null. Every front renders that component into a body host with the consumer's
+   * content as its default slot. Angular: a structural directive (`*bsTooltip`), its template the
+   * content. React: the hook returns `[props, overlay]`, the content an option. Vue: a renderless
+   * component whose default slot receives `{ props }`, the content its `content` slot. Lit: the
+   * directive's second argument, a function returning the content.
+   */
+  readonly overlay?: string;
+  readonly names?: DirectiveNames;
+  readonly doc?: string;
+}
+
+/**
+ * A declaration (#458 Q15): an element with inputs and slots but no core and no
+ * markup of its own. A parent of the group queries it (`content`) and renders
+ * its slots inside the parent's markup with `<content-slot>`, so rich consumer
+ * content lands where the parent's structure needs it (a tab page's header in
+ * the tab strip, its body in the pane), on the server too. Angular: a hidden
+ * component lending its slots as TemplateRefs (named slots are structural
+ * directives, `*bsTabPageHeader`). React: a component rendering null whose slot
+ * props the parent reads. Vue: a component rendering nothing whose slots the
+ * parent reads. Lit: a hidden element whose `slot=` children the parent moves.
+ */
+export interface DeclarationManifest {
+  readonly inputs?: ComponentManifest['inputs'];
+  /** Named slots, besides the default slot every declaration lends. */
+  readonly slots?: Readonly<Record<string, { readonly doc?: string }>>;
+  readonly names?: ComponentNames;
+  readonly doc?: string;
+}
+
 export interface ComponentGroup {
   /** The entry point name; also the generated entry in every front lib. */
   readonly group: string;
   /** The sheet every component of the group installs, and the scope its templates are stamped with. */
   readonly style?: GroupStyle;
   /** Keyed by element name (`navbar`, `navbar-item`, …). */
-  readonly components: Readonly<Record<string, ComponentManifest>>;
+  readonly components?: Readonly<Record<string, ComponentManifest>>;
+  /** Keyed by directive name (`row`, `col`, …). */
+  readonly directives?: Readonly<Record<string, DirectiveManifest>>;
+  /** Keyed by element name (`tab-page`); a component's content query collects them. */
+  readonly declarations?: Readonly<Record<string, DeclarationManifest>>;
 }

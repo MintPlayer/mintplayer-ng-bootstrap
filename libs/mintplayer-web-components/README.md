@@ -16,10 +16,10 @@ The `mp-*` custom elements are the Lit front of the framework-neutral TypeScript
 `@mintplayer/ui-core`, for apps without a framework. The Angular, React and Vue libraries do **not**
 use these elements; they render their own HTML from the same cores.
 
-- **Generated elements** (every component with a D10 manifest) render in the light DOM. Their CSS is
-  scoped onto a `data-mps` attribute and installed once per page, together with the Bootstrap partial
-  their markup uses. Load only the page-level Bootstrap baseline globally.
-- **A few hand-written, slot-based elements** (checkbox, toggle button, tab control, pagination, shell…)
-  keep a shadow root and take your content through native `<slot>`s.
+- **Every element is generated** from a D10 source and renders in the light DOM. Its CSS is scoped
+  onto a `data-mps` attribute and installed once per page, together with the Bootstrap partials its
+  markup uses. Load only the page-level Bootstrap baseline globally.
+- Consumer content is passed with `slot="…"` children or, for a slot that takes arguments, a
+  `<slot>Renderer` property.
 
 See **Styling and encapsulation** in the [workspace README](../../README.md).

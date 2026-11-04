@@ -1,0 +1,5 @@
+// The floating label (#458 M5). Bootstrap's forms part styles .form-floating
+// and the control and label inside it; the host only needs a block box.
+.form-floating {
+  display: block;
+}

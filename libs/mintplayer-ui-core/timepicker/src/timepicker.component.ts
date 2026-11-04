@@ -30,9 +30,6 @@ export default {
           labels: { default: 'null', kind: false },
         },
       },
-      outputs: {
-        selectedTimeChange: { type: 'Date', doc: 'A slot chosen by click, Enter or Space.' },
-      },
       methods: { type: 'TimeListMethods', fields: { focusList: { doc: 'Focus the roving slot.' } } },
     },
     timepicker: {
@@ -64,7 +61,6 @@ export default {
         },
       },
       outputs: {
-        selectedTimeChange: { type: 'Date', doc: 'A slot picked in the list, or a time typed into the field before hydration.' },
         openChange: { type: 'boolean', doc: 'The popup opened (true) or closed (false).' },
       },
       methods: {

@@ -1,7 +1,7 @@
 <h1 class="text-center">Checkbox</h1>
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <h2>Single, template-driven</h2>
             <p class="text-muted">Boolean toggle via <code>[(ngModel)]</code>.</p>
         </div>
@@ -15,14 +15,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="singleTemplateTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="singleTemplateHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Single, reactive</h2>
             <p class="text-muted">Boolean toggle via <code>[formControl]</code>.</p>
         </div>
@@ -36,14 +36,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="singleReactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="singleReactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Switch variant</h2>
             <p class="text-muted">Same form contract as <code>'checkbox'</code>; only the visual differs.</p>
         </div>
@@ -57,14 +57,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="switchTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="switchHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Toggle-button variant</h2>
             <p class="text-muted">Checkbox-style button-toggle (standalone, single boolean).</p>
         </div>
@@ -78,66 +78,66 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="toggleButtonTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="toggleButtonHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), adjacent, template-driven</h2>
             <p class="text-muted"><code>string[]</code> form value. The group's <code>[name]</code> wins; per-instance <code>[name]</code> on the children is ignored.</p>
         </div>
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" label="Toppings" [(ngModel)]="toppings">
-                <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
-                <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
-                <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>
-            </div>
+            <bs-checkbox-group name="toppings" aria-label="Toppings" [(ngModel)]="toppings">
+                <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+                <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+                <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+            </bs-checkbox-group>
         </div>
         <div [md]="6">
             <span>Value: {{ toppings() | json }}</span>
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTemplateTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTemplateHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), adjacent, reactive</h2>
             <p class="text-muted">Same shape via <code>[formControl]</code> bound on the group element.</p>
         </div>
     </div>
     <div bsRow>
         <div [md]="6">
-            <div bsCheckboxGroup name="toppings" label="Toppings" [formControl]="toppingsReactive">
-                <bs-checkbox value="cheese" class="me-3">Cheese</bs-checkbox>
-                <bs-checkbox value="mushroom" class="me-3">Mushroom</bs-checkbox>
-                <bs-checkbox value="olive" class="me-3">Olive</bs-checkbox>
-            </div>
+            <bs-checkbox-group name="toppings" aria-label="Toppings" [formControl]="toppingsReactive">
+                <bs-checkbox value="cheese" class="form-check-inline">Cheese</bs-checkbox>
+                <bs-checkbox value="mushroom" class="form-check-inline">Mushroom</bs-checkbox>
+                <bs-checkbox value="olive" class="form-check-inline">Olive</bs-checkbox>
+            </bs-checkbox-group>
         </div>
         <div [md]="6">
             <span>Value: {{ toppingsReactive.value | json }}</span>
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupReactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupReactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group (multi-mode), non-adjacent (table row pattern)</h2>
-            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one checkbox. The group lives on <code>&lt;tbody&gt;</code> and each child uses <code>[group]="g"</code> for explicit wiring.</p>
+            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one checkbox. The attribute form <code>bsCheckboxGroup</code> lives on <code>&lt;tbody&gt;</code>; every checkbox below it joins the nearest group.</p>
         </div>
     </div>
     <div bsRow>
@@ -149,10 +149,10 @@
                         <th scope="col">Label</th>
                     </tr>
                 </thead>
-                <tbody bsCheckboxGroup name="rows" #g="bsCheckboxGroup" [(ngModel)]="selectedRows">
+                <tbody bsCheckboxGroup name="rows" [(ngModel)]="selectedRows">
                     @for (row of rows(); track row.id) {
                         <tr>
-                            <td><bs-checkbox [group]="g" [value]="row.id" [attr.aria-label]="'Select ' + row.label" /></td>
+                            <td><bs-checkbox [value]="row.id" [inputLabel]="'Select ' + row.label" /></td>
                             <td>{{ row.label }}</td>
                         </tr>
                     }
@@ -164,7 +164,7 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTableTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTableHtml" [language]="'html'"></bs-code-snippet>
         </div>

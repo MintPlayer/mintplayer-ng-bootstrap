@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { BsRadio } from '@mintplayer/vue-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/vue-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/vue-bootstrap/radio';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 // <BsRadioGroup> renders a div with role="radiogroup" and hands its

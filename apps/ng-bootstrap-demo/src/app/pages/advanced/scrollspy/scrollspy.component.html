@@ -2,7 +2,7 @@
 
 <p>
     <code>bs-scrollspy</code> wraps content with headings marked
-    <code>bsScrollspy</code> and surfaces the currently visible section. Useful for sticky
+    <code>data-scrollspy</code> and surfaces the currently visible section. Useful for sticky
     in-page navigation, table-of-contents highlights, or modal overlays.
 </p>
 
@@ -20,57 +20,50 @@
 </p>
 
 <bs-scrollspy style="padding-top:50px">
-    <h2 bsScrollspy>Scrollspy inside a modal</h2>
+    <h2 data-scrollspy>Scrollspy inside a modal</h2>
     <button [color]="colors.primary" (click)="isModalOpen.set(!isModalOpen())">Open modal</button>
-    <h2 bsScrollspy>Some colors</h2>
-    <h3 bsScrollspy>Primary</h3>
+    <h2 data-scrollspy>Some colors</h2>
+    <h3 data-scrollspy>Primary</h3>
     <div class="container bg-primary"></div>
-    <h3 bsScrollspy>Secondary</h3>
+    <h3 data-scrollspy>Secondary</h3>
     <div class="container bg-secondary"></div>
-    <h3 bsScrollspy>Success</h3>
+    <h3 data-scrollspy>Success</h3>
     <div class="container bg-success"></div>
-    <h3 bsScrollspy>Danger</h3>
+    <h3 data-scrollspy>Danger</h3>
     <div class="container bg-danger"></div>
-    <h2 bsScrollspy>Some more colors</h2>
-    <h3 bsScrollspy>Warning</h3>
+    <h2 data-scrollspy>Some more colors</h2>
+    <h3 data-scrollspy>Warning</h3>
     <div class="container bg-warning"></div>
-    <h3 bsScrollspy>Info</h3>
+    <h3 data-scrollspy>Info</h3>
     <div class="container bg-info"></div>
-    <h3 bsScrollspy>Light</h3>
+    <h3 data-scrollspy>Light</h3>
     <div class="container bg-light"></div>
-    <h3 bsScrollspy>Dark</h3>
+    <h3 data-scrollspy>Dark</h3>
     <div class="container bg-dark"></div>
 </bs-scrollspy>
 
-<bs-modal [(isOpen)]="isModalOpen" [scrollable]="true">
-    <div *bsModal>
-        <div bsModalHeader>
-            <h5 class="modal-title flex-grow-1">Scrollspy in modal</h5>
-            <bs-close bsModalClose></bs-close>
-        </div>
-        <div bsModalBody>
+<bs-modal [(open)]="isModalOpen" [scrollable]="true">
+    <span *bsModalHeader>Scrollspy in modal</span>
             <bs-scrollspy>
                 <h2>Modal</h2>
-                <h3 bsScrollspy>Primary</h3>
+                <h3 data-scrollspy>Primary</h3>
                 <div class="container compact bg-primary"></div>
-                <h3 bsScrollspy>Secondary</h3>
+                <h3 data-scrollspy>Secondary</h3>
                 <div class="container compact bg-secondary"></div>
-                <h3 bsScrollspy>Success</h3>
+                <h3 data-scrollspy>Success</h3>
                 <div class="container compact bg-success"></div>
-                <h3 bsScrollspy>Danger</h3>
+                <h3 data-scrollspy>Danger</h3>
                 <div class="container compact bg-danger"></div>
-                <h2 bsScrollspy>Some more colors</h2>
-                <h3 bsScrollspy>Warning</h3>
+                <h2 data-scrollspy>Some more colors</h2>
+                <h3 data-scrollspy>Warning</h3>
                 <div class="container compact bg-warning"></div>
-                <h3 bsScrollspy>Info</h3>
+                <h3 data-scrollspy>Info</h3>
                 <div class="container compact bg-info"></div>
-                <h3 bsScrollspy>Light</h3>
+                <h3 data-scrollspy>Light</h3>
                 <div class="container compact bg-light"></div>
-                <h3 bsScrollspy>Dark</h3>
+                <h3 data-scrollspy>Dark</h3>
                 <div class="container compact bg-dark"></div>
             </bs-scrollspy>
-        </div>
-    </div>
 </bs-modal>
 
 <bs-code-snippet [code]="snippetModalHtml" [language]="'html'"></bs-code-snippet>

@@ -2,35 +2,59 @@ import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import * as React from 'react';
 
-import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/react-bootstrap/accordion';
 import { BsCarousel } from '@mintplayer/react-bootstrap/carousel';
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
-import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
+import { BsAlert } from '@mintplayer/react-bootstrap/alert';
+import { BsBadge } from '@mintplayer/react-bootstrap/badge';
+import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
+import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsGrid } from '@mintplayer/react-bootstrap/grid';
+import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsPlaylistToggler } from '@mintplayer/react-bootstrap/playlist-toggler';
+import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
+import { BsRating } from '@mintplayer/react-bootstrap/rating';
+import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
+import { BsFileUpload } from '@mintplayer/react-bootstrap/file-upload';
+import { BsColorPicker } from '@mintplayer/react-bootstrap/color-picker';
+import { BsPriorityNav } from '@mintplayer/react-bootstrap/priority-nav';
+import { BsModal } from '@mintplayer/react-bootstrap/modal';
+import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
+import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
+import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
+import { BsForm } from '@mintplayer/react-bootstrap/form';
+import { BsFloatingLabel } from '@mintplayer/react-bootstrap/floating-labels';
+import { BsRange } from '@mintplayer/react-bootstrap/range';
+import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
+import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
+import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
+import { BsButtonGroup } from '@mintplayer/react-bootstrap/button-group';
+import { BsClose } from '@mintplayer/react-bootstrap/close';
 import {
   BsCard, BsCardBody, BsCardFooter, BsCardGroup, BsCardHeader, BsCardImg, BsCardLink, BsCardSubtitle,
   BsCardText, BsCardTitle,
 } from '@mintplayer/react-bootstrap/card';
-import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsCheckbox, BsCheckboxGroup, BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
 import { BsDatetimePicker } from '@mintplayer/react-bootstrap/datetime-picker';
 import { BsDockManager } from '@mintplayer/react-bootstrap/dock';
-import { BsDropdownDivider, BsDropdownHeader, BsDropdownItem } from '@mintplayer/react-bootstrap/dropdown-menu';
+import { BsDropdownDivider, BsDropdownHeader, BsDropdownItem, BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown';
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
-import { BsRadio } from '@mintplayer/react-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/react-bootstrap/radio';
 import {
   BsQuickAccessToolbar, BsRibbon, BsRibbonButton, BsRibbonCheckBox, BsRibbonColorPicker, BsRibbonComboBox,
   BsRibbonContextualTabSet, BsRibbonDropdownButton, BsRibbonGallery, BsRibbonGalleryItem, BsRibbonGroup,
@@ -41,10 +65,9 @@ import { BsScheduler } from '@mintplayer/react-bootstrap/scheduler';
 import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
 import { BsSplitter } from '@mintplayer/react-bootstrap/splitter';
-import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
+import { BsTabControl } from '@mintplayer/react-bootstrap/tab-control';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
 import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
@@ -71,7 +94,7 @@ export const probes = [
   <BsPhoneInput role="none" id="pi" tabIndex={-1} />,
   <BsAccordion role="none" id="a" tabIndex={-1} />,
   <BsAccordion>
-    <BsAccordionItem header="H" role="none" id="ai" tabIndex={-1} />
+    <BsAccordionTab header="H" role="none" id="ai" tabIndex={-1} />
   </BsAccordion>,
   <BsCarousel role="none" id="c" tabIndex={-1} />,
   <BsDropdownMenu role="none" id="dm" tabIndex={-1} />,
@@ -83,7 +106,9 @@ export const probes = [
     <BsNavbarNav role="none" id="nb" tabIndex={-1} />
   </BsNavbar>,
   <BsNavbar>
-    <BsNavbarDropdown label="Menu" role="none" id="nd" tabIndex={-1} />
+    <BsNavbarNav>
+      <BsDropdownMenu label="Menu" role="none" id="nd" tabIndex={-1} />
+    </BsNavbarNav>
   </BsNavbar>,
   <BsNavbar>
     <BsNavbarItem role="none" id="ni" tabIndex={-1} />
@@ -98,6 +123,35 @@ export const probes = [
  * plain-element card and dropdown helpers. The runtime half lists the same set.
  */
 export const everyWrapperProbes = [
+  <BsAlert role="none" id="x" tabIndex={-1} />,
+  <BsBadge role="none" id="x" tabIndex={-1} />,
+  <BsPlaceholder role="none" id="x" tabIndex={-1} />,
+  <BsTable role="none" id="x" tabIndex={-1} />,
+  <BsGrid role="none" id="x" tabIndex={-1} />,
+  <BsNavbarToggler role="none" id="x" tabIndex={-1} />,
+  <BsPlaylistToggler role="none" id="x" tabIndex={-1} />,
+  <BsMarquee role="none" id="x" tabIndex={-1} />,
+  <BsScrollspy role="none" id="x" tabIndex={-1} />,
+  <BsRating role="none" id="x" tabIndex={-1} />,
+  <BsResizable role="none" id="x" tabIndex={-1} />,
+  <BsFileUpload role="none" id="x" tabIndex={-1} />,
+  <BsColorPicker role="none" id="x" tabIndex={-1} />,
+  <BsPriorityNav role="none" id="x" tabIndex={-1} />,
+  <BsModal role="none" id="x" tabIndex={-1} />,
+  <BsOffcanvas role="none" id="x" tabIndex={-1} />,
+  <BsParallax role="none" id="x" tabIndex={-1} />,
+  <BsStickyFooter role="none" id="x" tabIndex={-1} />,
+  <BsForm role="none" id="x" tabIndex={-1} />,
+  <BsFloatingLabel role="none" id="x" tabIndex={-1} />,
+  <BsRange role="none" id="x" tabIndex={-1} />,
+  <BsListGroup role="none" id="x" tabIndex={-1} />,
+  <BsListGroupItem role="none" id="x" tabIndex={-1} />,
+  <BsProgress role="none" id="x" tabIndex={-1} />,
+  <BsProgressBar role="none" id="x" tabIndex={-1} />,
+  <BsBreadcrumb role="none" id="x" tabIndex={-1} />,
+  <BsBreadcrumbItem role="none" id="x" tabIndex={-1} />,
+  <BsButtonGroup role="none" id="x" tabIndex={-1} />,
+  <BsClose role="none" id="x" tabIndex={-1} />,
   <BsCalendar role="none" id="x" tabIndex={-1} />,
   <BsCard role="none" id="x" tabIndex={-1} />,
   <BsCardBody role="none" id="x" tabIndex={-1} />,
@@ -110,6 +164,7 @@ export const everyWrapperProbes = [
   <BsCardText role="none" id="x" tabIndex={-1} />,
   <BsCardTitle role="none" id="x" tabIndex={-1} />,
   <BsCheckbox id="x" tabIndex={-1} />,
+  <BsCheckboxGroup role="none" id="x" tabIndex={-1} />,
   <BsCodeSnippet role="none" id="x" tabIndex={-1} />,
   <BsDatatable role="none" id="x" tabIndex={-1} />,
   <BsDatepicker role="none" id="x" tabIndex={-1} />,
@@ -148,7 +203,6 @@ export const everyWrapperProbes = [
   <BsSignaturePad role="none" id="x" tabIndex={-1} />,
   <BsSplitter role="none" id="x" tabIndex={-1} />,
   <BsTabControl role="none" id="x" tabIndex={-1} />,
-  <BsTabPage role="none" id="x" tabIndex={-1} />,
   <BsTileManager tiles={[]} id="x" tabIndex={-1} />,
   <BsTimelineItem role="none" id="x" tabIndex={-1} />,
   <BsTimeList role="none" id="x" tabIndex={-1} />,
@@ -163,11 +217,6 @@ export const everyWrapperProbes = [
   // The board is a region by contract (#440).
   // @ts-expect-error role is not an accepted prop
   <BsTileManager tiles={[]} role="none" />,
-  // A native checkbox keeps its own role: role="button" on it hides the only state AT can read.
-  // @ts-expect-error role is not an accepted prop
-  <BsCheckbox role="none" />,
-  // @ts-expect-error role is not an accepted prop
-  <BsToggleButton role="none" />,
 ];
 
 /**

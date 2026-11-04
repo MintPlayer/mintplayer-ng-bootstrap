@@ -29,7 +29,7 @@ const SOURCE = `<BsTreeview
 
 export function TreeviewPage() {
   const [items] = useState<TreeNode[]>(NODES);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedIds, setSelectedIds] = useState<readonly string[]>([]);
 
   return (
     <div className="demo-page">

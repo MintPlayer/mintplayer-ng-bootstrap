@@ -1,11 +1,9 @@
-import { Component, inject, ChangeDetectionStrategy} from '@angular/core';
-import { useBootstrap } from '@mintplayer/ng-bootstrap/machine';
-import { bootstrapModalPage } from '@mintplayer/ui-core/bootstrap/modal';
+import { Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import { Color } from '@mintplayer/ng-bootstrap';
-import { BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
+import { BsColFormLabelDirective, BsFormComponent, BsFormControlDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective } from '@mintplayer/ng-bootstrap/modal';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsModalComponent, BsModalFooterDirective, BsModalHeaderDirective } from '@mintplayer/ng-bootstrap/modal';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { FocusOnLoadDirective } from '@mintplayer/ng-focus-on-load';
 import { GIT_REPO } from '../../../providers/git-repo.provider';
@@ -15,67 +13,41 @@ import { dedent } from 'ts-dedent';
   selector: 'demo-modal',
   templateUrl: './modal.component.html',
   styleUrls: ['./modal.component.scss'],
-  imports: [BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalHostComponent, BsModalDirective, BsModalHeaderDirective, BsModalBodyDirective, BsModalFooterDirective, BsModalCloseDirective, BsButtonTypeDirective, FocusOnLoadDirective],
+  imports: [BsCodeSnippetComponent, BsFormComponent, BsFormControlDirective, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective, BsModalComponent, BsModalHeaderDirective, BsModalFooterDirective, BsButtonTypeDirective, FocusOnLoadDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {
-  constructor() {
-    // Raw Bootstrap markup on this page: it installs the verbatim parts itself, never globally (#452).
-    useBootstrap(bootstrapModalPage);
-  }
-
   gitRepo = inject(GIT_REPO);
 
-  isOpen = false;
+  readonly isOpen = signal(false);
   colors = Color;
 
   protected readonly snippetBasicHtml = dedent`
-    <button [color]="colors.primary" (click)="isOpen = true">Open modal</button>
+    <button [color]="colors.primary" (click)="isOpen.set(true)">Open modal</button>
 
-    <bs-modal [(isOpen)]="isOpen">
-      <div *bsModal>
-        <div bsModalHeader>
-          <h5 class="modal-title">Modal title</h5>
-        </div>
-        <div bsModalBody>
-          Place any content here — forms, lists, embedded components.
-        </div>
-        <div bsModalFooter>
-          <button type="button" bsModalClose [color]="colors.secondary">Close</button>
-        </div>
-      </div>
+    <bs-modal [(open)]="isOpen">
+      <span *bsModalHeader>Modal title</span>
+      Place any content here — forms, lists, embedded components.
+      <ng-container *bsModalFooter>
+        <button type="button" data-bs-dismiss="modal" [color]="colors.secondary">Close</button>
+      </ng-container>
     </bs-modal>
   `;
 
   protected readonly snippetBasicTs = dedent`
-    import { Component } from '@angular/core';
+    import { Component, signal } from '@angular/core';
     import { Color } from '@mintplayer/ng-bootstrap';
-    import {
-      BsModalHostComponent,
-      BsModalDirective,
-      BsModalHeaderDirective,
-      BsModalBodyDirective,
-      BsModalFooterDirective,
-      BsModalCloseDirective,
-    } from '@mintplayer/ng-bootstrap/modal';
+    import { BsModalComponent, BsModalFooterDirective, BsModalHeaderDirective } from '@mintplayer/ng-bootstrap/modal';
     import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 
     @Component({
       selector: 'my-modal-demo',
       templateUrl: './my-modal-demo.component.html',
-      imports: [
-        BsModalHostComponent,
-        BsModalDirective,
-        BsModalHeaderDirective,
-        BsModalBodyDirective,
-        BsModalFooterDirective,
-        BsModalCloseDirective,
-        BsButtonTypeDirective,
-      ],
+      imports: [BsModalComponent, BsModalHeaderDirective, BsModalFooterDirective, BsButtonTypeDirective],
     })
     export class MyModalDemoComponent {
       protected readonly colors = Color;
-      protected isOpen = false;
+      protected readonly isOpen = signal(false);
     }
   `;
 }

@@ -1,13 +1,13 @@
 <h1 class="text-center">Popover</h1>
 
 <p>
-  The <code>[bsPopover]</code> structural directive on an
-  <code>&lt;ng-template&gt;</code> attaches a rich popover (title + body) to its
-  host element. The directive input takes a placement — <code>'top'</code>,
-  <code>'bottom'</code>, <code>'start'</code>, or <code>'end'</code> — and
-  <code>[updatePosition]="true"</code> keeps the popover anchored as the host moves
-  or scrolls. The header and body are tagged with <code>bsPopoverHeader</code> and
-  <code>bsPopoverBody</code>. The demo below shows all four positions.
+  The <code>bsPopover</code> structural directive on an <code>&lt;ng-template&gt;</code> inside an element
+  turns that element into a popover trigger: a click (or Enter / Space) toggles a non-modal dialog beside
+  it, rendered at the end of <code>&lt;body&gt;</code> so no <code>overflow: hidden</code> ancestor clips it.
+  The directive's value is the side — <code>top</code>, <code>bottom</code>, <code>start</code> or
+  <code>end</code> — and it flips when there is no room. <code>bsPopoverTitle</code> is the heading that
+  names the dialog; the template is its body. Escape (focus returns to the trigger), a click outside or
+  tabbing out closes it. The demo below shows all four positions.
 </p>
 
 <h2>Basic usage</h2>
@@ -21,23 +21,17 @@
         <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Left
-                <ng-template [bsPopover]="'start'" [updatePosition]="true">
-                    <h3 bsPopoverHeader>Popover title</h3>
-                    <div bsPopoverBody>
-                        And here's some amazing content. It's very engaging. Right?
-                    </div>
-                </ng-template>
+                <ng-container *bsPopover="'start'; title: 'Popover title'">
+                    And here's some amazing content. It's very engaging. Right?
+                </ng-container>
             </button>
         </div>
         <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Top
-                <ng-template [bsPopover]="'top'" [updatePosition]="true">
-                    <h3 bsPopoverHeader>Popover title</h3>
-                    <div bsPopoverBody>
-                        And here's some amazing content. It's very engaging. Right?
-                    </div>
-                </ng-template>
+                <ng-container *bsPopover="'top'; title: 'Popover title'">
+                    And here's some amazing content. It's very engaging. Right?
+                </ng-container>
             </button>
         </div>
     </div>
@@ -45,23 +39,17 @@
         <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Bottom
-                <ng-template [bsPopover]="'bottom'" [updatePosition]="true">
-                    <h3 bsPopoverHeader>Popover title</h3>
-                    <div bsPopoverBody>
-                        And here's some amazing content. It's very engaging. Right?
-                    </div>
-                </ng-template>
+                <ng-container *bsPopover="'bottom'; title: 'Popover title'">
+                    And here's some amazing content. It's very engaging. Right?
+                </ng-container>
             </button>
         </div>
         <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Right
-                <ng-template [bsPopover]="'end'" [updatePosition]="true">
-                    <h3 bsPopoverHeader>Popover title</h3>
-                    <div bsPopoverBody>
-                        And here's some amazing content. It's very engaging. Right?
-                    </div>
-                </ng-template>
+                <ng-container *bsPopover="'end'; title: 'Popover title'">
+                    And here's some amazing content. It's very engaging. Right?
+                </ng-container>
             </button>
         </div>
     </div>

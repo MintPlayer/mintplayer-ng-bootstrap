@@ -4,7 +4,7 @@
 // A `mp-host` root is the component's host: only its children are emitted, and
 // the component applies the root bag to its host itself.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, attrsTarget, checkElement, directive, groupChains, parseFor, refName, renderedProps, rootElement, composedUse, contentSlotUse, instanceStyleUse, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/</g, '&lt;').replace(/@/g, '&#64;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;');
 const escapeAttr = (text) => text.replace(/&(?![a-z#0-9]+;)/gi, '&amp;').replace(/"/g, '&quot;');
@@ -22,13 +22,20 @@ export function emitAngular(src, { generator = GENERATOR, prop = (name) => `${na
   // through a call like `props().view.x`.
   const read = new Set();
   const ctx = { src, prop: letProps ? (name) => (read.add(name), `p_${name}`) : prop, locals: new Set(), uses: new Set(), partials, called: new Set(), components, composed: new Map() };
+  // Angular projects into ONE ng-content per selector, so a default slot written
+  // more than once (in two v-if branches) becomes one ng-template, outlet at each site.
+  ctx.sharedDefault = defaultSlots(src.root) > 1;
   const { root, host } = rootElement(src);
+  // The inner mp-attrs node of a host-rooted template takes the host's forwarded attributes (useHostAttrs).
+  const target = attrsTarget(src, root);
+  ctx.forwardTarget = host && target !== root ? target : null;
   const body = host ? children(ctx, root.children, 0) : children(ctx, src.root.children, 0);
   const defined = new Map();
   const definitions = [...ctx.called].map((name) => definePartial(ctx, name, defined)).join('');
   const lets = [...read].map((name) => `@let p_${name} = ${prop(name)};\n`).join('');
   const header = `<!-- GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit. -->\n`;
-  return { text: header + lets + body + definitions, uses: [...ctx.uses], partials: [...defined.values()], composed: [...ctx.composed.values()] };
+  const shared = ctx.sharedDefault ? `<ng-template #${DEFAULT_SLOT}><ng-content /></ng-template>\n` : '';
+  return { text: header + lets + body + definitions + shared, uses: [...ctx.uses], partials: [...defined.values()], composed: [...ctx.composed.values()] };
 }
 
 /** One partial's `<ng-template>`, then those it calls in turn; each once per template. */
@@ -59,7 +66,7 @@ function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag,
     // A static input stays an attribute: Angular binds it as a string, through the input's transform.
     ...inputs.map((i) => (i.value !== undefined ? `${i.name}="${escapeAttr(i.value)}"` : `[${i.name}]="${escapeAttr(x(ctx, i.exp))}"`)),
     ...models.flatMap((m) => [`[${m.name}]="${escapeAttr(x(ctx, m.exp))}.value"`, `(${m.name}Change)="${escapeAttr(x(ctx, m.exp))}.set($event)"`]),
-    ...outputs.map((o) => `(${o.output.lower})="${escapeAttr(x(ctx, o.exp))}($event)"`),
+    ...outputs.map((o) => `(${o.output.name})="${escapeAttr(x(ctx, o.exp))}($event)"`),
   ];
   const named = slots.map((slot) => {
     used.slots.add(slot.name);
@@ -123,12 +130,25 @@ function element(ctx, el, depth) {
 
 function bare(ctx, el, depth) {
   const to = teleportTarget(ctx.src, el);
+  if (to === BODY_TARGET) {
+    // A detached view in a body host: server-rendered, replaced by the client's copy (#458 §4.4).
+    ctx.uses.add('MpBodyTeleportDirective');
+    return `${pad(depth)}<ng-template mpBodyTeleport>\n${children(ctx, el.children, depth + 1)}${pad(depth)}</ng-template>\n`;
+  }
   if (to !== null) {
     // The directive renders the template into the core's element, nothing where it sits.
     ctx.uses.add('MpTeleportDirective');
     return `${pad(depth)}<ng-template [mpTeleport]="${escapeAttr(x(ctx, to))}">\n${children(ctx, el.children, depth + 1)}${pad(depth)}</ng-template>\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) return contentSlot(ctx, lent, depth);
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    // A template cannot hold a <style> in Angular: the directive writes the sheet into the head.
+    ctx.uses.add('MpInstanceStyleDirective');
+    return `${pad(depth)}<ng-container [mpInstanceStyle]="${escapeAttr(x(ctx, sheet.css))}" [mpInstanceStyleName]="${escapeAttr(x(ctx, sheet.name))}" />\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const use = partialUse(ctx.src, el, ctx.partials);
@@ -163,6 +183,10 @@ function bare(ctx, el, depth) {
     ctx.uses.add('MpTrustedHtmlPipe');
     attrs.push(`[innerHTML]="${escapeAttr(x(ctx, html.exp.content))} | mpTrustedHtml"`);
   }
+  if (el === ctx.forwardTarget) {
+    ctx.uses.add('MpPropsDirective');
+    attrs.push('[mpHostAttrs]="hostAttrs"');
+  }
   const ref = refName(el);
   if (ref) attrs.push(`#${ref}`);
   const open = `<${el.tag}${attrs.length ? ' ' + attrs.join(' ') : ''}>`;
@@ -171,18 +195,38 @@ function bare(ctx, el, depth) {
   return inner ? `${pad(depth)}${open}\n${inner}${pad(depth)}</${el.tag}>\n` : `${pad(depth)}${open}</${el.tag}>\n`;
 }
 
+/** A queried child's lent slot: the TemplateRef the component collects in `contentSlots()`. */
+function contentSlot(ctx, { query, name, index }, depth) {
+  ctx.uses.add('NgTemplateOutlet');
+  const local = `lent_${query}_${name}`;
+  return `${pad(depth)}@if (contentSlots().${query}[${x(ctx, index)}]?.${name}; as ${local}) {\n${pad(depth + 1)}<ng-container [ngTemplateOutlet]="${local}" />\n${pad(depth)}}\n`;
+}
+
+const DEFAULT_SLOT = 'defaultSlot';
+
+/** How many parameterless default `<slot>`s a template writes. */
+function defaultSlots(node) {
+  const own = node.tag === 'slot' && slotName(node) === 'default' && slotArgs(node).every((a) => a.name === 'name') ? 1 : 0;
+  return own + (node.children ?? []).reduce((sum, child) => sum + defaultSlots(child), 0);
+}
+
 function slot(ctx, el, depth) {
   const name = slotName(el);
   const args = slotArgs(el).filter((a) => a.name !== 'name');
   const fallback = children(ctx, el.children, depth + 1);
   if (name === 'default' && args.length === 0) {
+    if (ctx.sharedDefault) {
+      if (fallback) throw new TemplateError(ctx.src.file, el, 'a default slot written more than once takes no fallback content');
+      ctx.uses.add('NgTemplateOutlet');
+      return `${pad(depth)}<ng-container [ngTemplateOutlet]="${DEFAULT_SLOT}" />\n`;
+    }
     // Angular projects the default slot; ng-content renders its own content when nothing is projected.
     return fallback ? `${pad(depth)}<ng-content>\n${fallback}${pad(depth)}</ng-content>\n` : `${pad(depth)}<ng-content />\n`;
   }
   ctx.uses.add('NgTemplateOutlet');
   const local = `slot_${name.replace(/\W/g, '_')}`;
   const context = args.length
-    ? ` [ngTemplateOutletContext]="{ $implicit: { ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }, ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }"`
+    ? ` [ngTemplateOutletContext]="{ $implicit: ${x(ctx, args[0].exp)}, ${args.map((a) => `${a.name}: ${x(ctx, a.exp)}`).join(', ')} }"`
     : '';
   const outlet = `<ng-container [ngTemplateOutlet]="${local}"${context} />`;
   if (!fallback) return `${pad(depth)}@if (slots().${name}; as ${local}) {\n${pad(depth + 1)}${outlet}\n${pad(depth)}}\n`;

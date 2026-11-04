@@ -65,7 +65,7 @@ export class PhoneInputComponent {
     <bs-form>
       <bs-phone-input [(ngModel)]="phone" name="phone"
                       defaultCountry="be"
-                      (phonechange)="onPhoneChange($event)" />
+                      (phoneChange)="onPhoneChange($event)" />
     </bs-form>
   `;
 

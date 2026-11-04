@@ -3,7 +3,7 @@ import * as React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { act } from 'react';
 
-import { BsAccordion, BsAccordionItem } from '@mintplayer/react-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/react-bootstrap/accordion';
 import { BsCalendar } from '@mintplayer/react-bootstrap/calendar';
 import {
   BsCard,
@@ -21,7 +21,7 @@ import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel
 import { BsHierarchyChart } from '@mintplayer/react-bootstrap/charts/hierarchy';
 import { BsSparkline } from '@mintplayer/react-bootstrap/charts/sparkline';
 import { BsTrendChart } from '@mintplayer/react-bootstrap/charts/trend';
-import { BsCheckbox } from '@mintplayer/react-bootstrap/checkbox';
+import { BsCheckbox, BsCheckboxGroup, BsToggleButton } from '@mintplayer/react-bootstrap/checkbox';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsDatatable } from '@mintplayer/react-bootstrap/datatable';
 import { BsDatepicker } from '@mintplayer/react-bootstrap/datepicker';
@@ -32,18 +32,19 @@ import {
   BsDropdownHeader,
   BsDropdownItem,
   BsDropdownMenu,
-} from '@mintplayer/react-bootstrap/dropdown-menu';
+  BsDropdownPanel,
+} from '@mintplayer/react-bootstrap/dropdown';
+import { BsContextMenuPanel } from '@mintplayer/react-bootstrap/context-menu';
 import { BsFileManager } from '@mintplayer/react-bootstrap/file-manager';
 import { BsInputGroup } from '@mintplayer/react-bootstrap/input-group';
 import { BsMultiRange } from '@mintplayer/react-bootstrap/multi-range';
 import { BsNav, BsNavItem } from '@mintplayer/react-bootstrap/nav';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsOtpInput } from '@mintplayer/react-bootstrap/otp-input';
 import { BsPagination } from '@mintplayer/react-bootstrap/pagination';
 import { BsPhoneInput } from '@mintplayer/react-bootstrap/phone-input';
 import { BsQueryBuilder } from '@mintplayer/react-bootstrap/query-builder';
-import { BsRadio } from '@mintplayer/react-bootstrap/radio';
-import { BsRadioGroup } from '@mintplayer/react-bootstrap/radio-group';
+import { BsRadio, BsRadioGroup } from '@mintplayer/react-bootstrap/radio';
 import {
   BsQuickAccessToolbar,
   BsRibbon,
@@ -69,13 +70,41 @@ import { BsSelect } from '@mintplayer/react-bootstrap/select';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 import { BsSignaturePad } from '@mintplayer/react-bootstrap/signature-pad';
 import { BsSpinner } from '@mintplayer/react-bootstrap/spinner';
+import { BsAlert } from '@mintplayer/react-bootstrap/alert';
+import { BsBadge } from '@mintplayer/react-bootstrap/badge';
+import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
+import { BsTable } from '@mintplayer/react-bootstrap/table';
+import { BsGrid } from '@mintplayer/react-bootstrap/grid';
+import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsPlaylistToggler } from '@mintplayer/react-bootstrap/playlist-toggler';
+import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
+import { BsRating } from '@mintplayer/react-bootstrap/rating';
+import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
+import { BsFileUpload } from '@mintplayer/react-bootstrap/file-upload';
+import { BsColorPicker } from '@mintplayer/react-bootstrap/color-picker';
+import { BsPriorityNav } from '@mintplayer/react-bootstrap/priority-nav';
+import { BsModal } from '@mintplayer/react-bootstrap/modal';
+import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
+import { BsPopoverPanel } from '@mintplayer/react-bootstrap/popover';
+import { BsTooltipPanel } from '@mintplayer/react-bootstrap/tooltip';
+import { BsToast, BsToastBody, BsToaster, BsToastHeader } from '@mintplayer/react-bootstrap/toast';
+import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
+import { BsStickyFooter } from '@mintplayer/react-bootstrap/sticky-footer';
+import { BsForm } from '@mintplayer/react-bootstrap/form';
+import { BsFloatingLabel } from '@mintplayer/react-bootstrap/floating-labels';
+import { BsRange } from '@mintplayer/react-bootstrap/range';
+import { BsListGroup, BsListGroupItem } from '@mintplayer/react-bootstrap/list-group';
+import { BsProgress, BsProgressBar } from '@mintplayer/react-bootstrap/progress-bar';
+import { BsBreadcrumb, BsBreadcrumbItem } from '@mintplayer/react-bootstrap/breadcrumb';
+import { BsButtonGroup } from '@mintplayer/react-bootstrap/button-group';
+import { BsClose } from '@mintplayer/react-bootstrap/close';
 import { BsSplitter, BsSplitterPanel } from '@mintplayer/react-bootstrap/splitter';
-import { BsTabControl, BsTabPage } from '@mintplayer/react-bootstrap/tab-control';
+import { BsTabControl } from '@mintplayer/react-bootstrap/tab-control';
 import { BsThemeToggle } from '@mintplayer/react-bootstrap/theming';
 import { BsTileManager } from '@mintplayer/react-bootstrap/tile-manager';
 import { BsTimeline, BsTimelineItem } from '@mintplayer/react-bootstrap/timeline';
 import { BsTimeList, BsTimepicker } from '@mintplayer/react-bootstrap/timepicker';
-import { BsToggleButton } from '@mintplayer/react-bootstrap/toggle-button';
 import { BsTreeSelect } from '@mintplayer/react-bootstrap/tree-select';
 import { BsTypeahead } from '@mintplayer/react-bootstrap/typeahead';
 import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
@@ -118,7 +147,7 @@ import { BsTreeview } from '@mintplayer/react-bootstrap/treeview';
  * by construction, but "by construction" is exactly the claim the audit got wrong
  * for `BsTimeline` and `BsAccordionItem`, so each one is now rendered and read
  * back. The plain-element helpers (`BsCard*`, `BsDropdownItem/Header/Divider`) are
- * included too: they render a light-DOM `div`/`li`/`img`/`a` rather than an `mp-*`
+ * included too: they render a light-DOM `div`/`img`/`a` rather than an `mp-*`
  * element, and the same rule applies to that element. The completeness check at
  * the bottom enumerates the published entry points, so a new wrapper without a
  * case here fails rather than going unguarded.
@@ -140,7 +169,7 @@ interface Case {
   fixedRole?: string;
   /**
    * Set when the target is a box around the role-bearing node, which is what
-   * `aria-label` names: the sparkline's sized span holds a role=img svg.
+   * `aria-label` names.
    */
   labelTarget?: string;
 }
@@ -156,14 +185,50 @@ const bare = (name: string, target: string, Component: React.ElementType): Case 
 const CASES: Case[] = [
   bare('BsAccordion', 'div.accordion', BsAccordion),
   {
-    name: 'BsAccordionItem',
-    target: 'details.accordion-item',
+    name: 'BsAccordionTab',
+    // The header is the tab's interactive node, so the summary is its role node (mp-attrs).
+    target: 'summary.accordion-button',
     render: (p) => (
       <BsAccordion>
-        <BsAccordionItem header="Header" {...p} />
+        <BsAccordionTab header="Header" {...p} />
       </BsAccordion>
     ),
   },
+  bare('BsAlert', 'div.alert', BsAlert),
+  bare('BsBadge', 'span.badge', BsBadge),
+  bare('BsPlaceholder', 'div.placeholder-region', BsPlaceholder),
+  bare('BsTable', 'table.table', BsTable),
+  bare('BsGrid', 'div.grid-host', BsGrid),
+  bare('BsNavbarToggler', 'button.navbar-toggler', BsNavbarToggler),
+  bare('BsPlaylistToggler', 'button.playlist-toggler', BsPlaylistToggler),
+  { ...bare('BsMarquee', 'span.marquee', BsMarquee), fixedRole: 'marquee' },
+  bare('BsScrollspy', 'nav.spy', BsScrollspy),
+  { ...bare('BsRating', 'div.rating', BsRating), fixedRole: 'radiogroup' },
+  bare('BsResizable', 'div.resizable', BsResizable),
+  { ...bare('BsFileUpload', 'div.dropzone', BsFileUpload), fixedRole: 'region' },
+  { ...bare('BsColorPicker', 'div.color-picker', BsColorPicker), fixedRole: 'group' },
+  bare('BsPriorityNav', 'nav.priority-nav', BsPriorityNav),
+  bare('BsParallax', 'div.parallax-host', BsParallax),
+  bare('BsModal', 'div.modal-host', BsModal),
+  bare('BsOffcanvas', 'div.offcanvas-host', BsOffcanvas),
+  { ...bare('BsPopoverPanel', 'div.popover', BsPopoverPanel), fixedRole: 'dialog' },
+  { ...bare('BsTooltipPanel', 'div.tooltip', BsTooltipPanel), fixedRole: 'tooltip' },
+  bare('BsToast', 'div.toast', BsToast),
+  bare('BsToastHeader', 'div.toast-header', BsToastHeader),
+  bare('BsToastBody', 'div.toast-body', BsToastBody),
+  bare('BsToaster', 'div.toast-container', BsToaster),
+  bare('BsStickyFooter', 'footer', BsStickyFooter),
+  bare('BsForm', 'form', BsForm),
+  bare('BsFloatingLabel', 'div.form-floating', BsFloatingLabel),
+  bare('BsRange', 'input.form-range', BsRange),
+  { ...bare('BsListGroup', 'div.list-group', BsListGroup), fixedRole: 'list' },
+  { ...bare('BsListGroupItem', 'div.list-group-item', BsListGroupItem), fixedRole: 'listitem' },
+  bare('BsProgress', 'div.progress-host', BsProgress),
+  { ...bare('BsProgressBar', 'div.progress-bar', BsProgressBar), fixedRole: 'progressbar' },
+  bare('BsBreadcrumb', 'nav', BsBreadcrumb),
+  { ...bare('BsBreadcrumbItem', 'li.breadcrumb-item', BsBreadcrumbItem), fixedRole: 'listitem' },
+  { ...bare('BsButtonGroup', 'div.btn-group', BsButtonGroup), fixedRole: 'group' },
+  bare('BsClose', 'button.btn-close', BsClose),
   bare('BsCalendar', 'div.mp-calendar', BsCalendar),
   bare('BsCard', 'div.card', BsCard),
   bare('BsCardBody', 'div.card-body', BsCardBody),
@@ -174,26 +239,29 @@ const CASES: Case[] = [
   bare('BsCardLink', 'a.card-link', BsCardLink),
   bare('BsCardSubtitle', 'div.card-subtitle', BsCardSubtitle),
   bare('BsCardText', 'div.card-text', BsCardText),
-  bare('BsCardTitle', 'div.card-title', BsCardTitle),
+  { ...bare('BsCardTitle', 'div.card-title', BsCardTitle), fixedRole: 'heading' },
   { ...bare('BsCarousel', 'div.carousel', BsCarousel), fixedRole: 'region' },
   { ...bare('BsCarouselItem', 'div.carousel-item', BsCarouselItem), fixedRole: 'group' },
   bare('BsHierarchyChart', 'div.hierarchy-chart', BsHierarchyChart),
   // No points, no svg: the probe needs data for its labelled node to exist.
-  { name: 'BsSparkline', target: 'span.sparkline', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, labelTarget: 'svg[role=img]' },
+  { name: 'BsSparkline', target: 'svg', render: (p) => <BsSparkline {...p} points={[1, 3, 2]} />, fixedRole: 'img' },
   bare('BsTrendChart', 'div.trend-chart', BsTrendChart),
   bare('BsCheckbox', 'input[type=checkbox]', BsCheckbox),
+  { ...bare('BsCheckboxGroup', 'div', BsCheckboxGroup), fixedRole: 'group' },
   bare('BsCodeSnippet', 'div.code-snippet', BsCodeSnippet),
   { ...bare('BsDatatable', 'div.datatable', BsDatatable), labelTarget: 'table' },
   bare('BsDatepicker', 'div.mp-datepicker', BsDatepicker),
   bare('BsDatetimePicker', 'div.mp-datetime-picker', BsDatetimePicker),
   { ...bare('BsDockManager', 'div.dock', BsDockManager), fixedRole: 'region' },
-  bare('BsDropdownMenu', 'ul.dropdown-menu', BsDropdownMenu),
+  { ...bare('BsDropdownMenu', 'div.dropdown-menu', BsDropdownMenu), fixedRole: 'menu' },
+  bare('BsDropdownPanel', 'div.dropdown-panel', BsDropdownPanel),
+  bare('BsContextMenuPanel', 'div.context-menu-panel', BsContextMenuPanel),
   /* Rendered outside a menu on purpose: inside one, the hydrated menu assigns
      the item roles itself (`menuitem`, `separator`), which would overwrite the
      probe's `role` and test the menu instead of the wrapper's rest-spread. */
-  bare('BsDropdownItem', 'li.dropdown-item', BsDropdownItem),
-  bare('BsDropdownHeader', 'li.dropdown-header', BsDropdownHeader),
-  bare('BsDropdownDivider', 'li.dropdown-divider', BsDropdownDivider),
+  bare('BsDropdownItem', 'div.dropdown-item', BsDropdownItem),
+  bare('BsDropdownHeader', 'div.dropdown-header', BsDropdownHeader),
+  bare('BsDropdownDivider', 'div.dropdown-divider', BsDropdownDivider),
   { ...bare('BsFileManager', 'div.file-manager', BsFileManager), fixedRole: 'region' },
   bare('BsInputGroup', 'div.input-group', BsInputGroup),
   { ...bare('BsMultiRange', 'div.mp-multi-range', BsMultiRange), fixedRole: 'group' },
@@ -205,9 +273,9 @@ const CASES: Case[] = [
     render: (p) => <BsNav><BsNavItem {...p} /></BsNav>,
   },
   {
-    name: 'BsNavbarDropdown',
+    name: 'BsDropdownMenu in a navbar',
     target: 'details.dropdown',
-    render: (p) => <BsNavbar><BsNavbarNav><BsNavbarDropdown label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
+    render: (p) => <BsNavbar><BsNavbarNav><BsDropdownMenu label="Menu" {...p} /></BsNavbarNav></BsNavbar>,
   },
   {
     name: 'BsNavbarItem',
@@ -247,13 +315,6 @@ const CASES: Case[] = [
   bare('BsSplitter', 'div.splitter', BsSplitter),
   bare('BsSplitterPanel', 'div.splitter-panel', BsSplitterPanel),
   bare('BsTabControl', 'div.tab-control', BsTabControl),
-  {
-    // A marker: BsTabControl renders its pane and forwards the page's attributes there.
-    name: 'BsTabPage',
-    target: 'div.tab-pane',
-    render: (p) => <BsTabControl><BsTabPage header="Tab" {...p} /></BsTabControl>,
-    fixedRole: 'tabpanel',
-  },
   bare('BsThemeToggle', 'span.theme-toggle', BsThemeToggle),
   {
     name: 'BsTileManager',
@@ -285,6 +346,13 @@ const ENTRY_MODULES = import.meta.glob<Record<string, unknown>>(
   ['../*/src/index.ts', '../*/*/src/index.ts'],
   { eager: true },
 );
+
+/**
+ * Declarations (#458 Q15): data the parent reads, rendering nothing themselves. A
+ * page's header and body render inside the parent's own nodes, so the page has no
+ * element of its own for an attribute to land on.
+ */
+const DECLARATIONS = ['BsTabPage'];
 
 /** A `Bs*` export that React can render: a function or a forwardRef/memo object. */
 const isWrapperExport = ([name, value]: [string, unknown]): boolean =>
@@ -362,7 +430,8 @@ describe('React wrapper attribute passthrough', () => {
   it('covers every Bs* component exported by any entry point', () => {
     const exported = Object.values(ENTRY_MODULES)
       .flatMap((mod) => Object.entries(mod).filter(isWrapperExport).map(([name]) => name));
-    const covered = new Set(CASES.map((c) => c.name));
+    // A case name is the export, optionally followed by its context ("BsDropdownMenu in a navbar").
+    const covered = new Set([...CASES.map((c) => c.name.split(' ')[0]), ...DECLARATIONS]);
 
     expect(new Set(CASES.map((c) => c.name)).size, 'duplicate case names').toBe(CASES.length);
     expect(exported.filter((name) => !covered.has(name)), 'exported wrappers with no passthrough case').toEqual([]);

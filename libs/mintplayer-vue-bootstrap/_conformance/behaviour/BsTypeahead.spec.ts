@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, nextTick, ref } from 'vue';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import BsTypeahead from '../../typeahead/src/BsTypeahead.vue';
+import { BsTypeahead } from '@mintplayer/vue-bootstrap/typeahead';
 import type { TypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 
 /**
@@ -101,7 +101,7 @@ describe('BsTypeahead (Vue front)', () => {
     expect(wrapper.find('li[role=option] i').text()).toBe('kru');
   });
 
-  it('v-model follows typing and picks; select emits the item; keyboard picks', async () => {
+  it('v-model follows typing and picks; itemselect emits the item; keyboard picks', async () => {
     const { provider, answers } = setup();
     const model = ref('');
     const onSelect = vi.fn();
@@ -109,9 +109,9 @@ describe('BsTypeahead (Vue front)', () => {
       h(BsTypeahead, {
         provider,
         debounceMs: 0,
-        modelValue: model.value,
-        'onUpdate:modelValue': (v: string) => (model.value = v),
-        onSelect,
+        value: model.value,
+        'onUpdate:value': (v: string) => (model.value = v),
+        onItemSelect: onSelect,
       }),
     );
     await type(wrapper, 'ker');
@@ -123,14 +123,14 @@ describe('BsTypeahead (Vue front)', () => {
     await input.trigger('keydown', { key: 'ArrowDown' });
     expect(input.attributes('aria-activedescendant')).toBe(wrapper.findAll('li[role=option]')[1].attributes('id'));
     await input.trigger('keydown', { key: 'Enter' });
-    expect(onSelect).toHaveBeenCalledWith({ text: 'Kerkhof' }, 'Kerkhof');
+    expect(onSelect).toHaveBeenCalledWith({ item: { text: 'Kerkhof' }, value: 'Kerkhof' });
     expect(model.value).toBe('Kerkhof');
   });
 
   it('a v-model write sets the text without querying', async () => {
     const { provider, calls } = setup();
     const model = ref('');
-    const wrapper = mountHost(() => h(BsTypeahead, { provider, debounceMs: 0, modelValue: model.value }));
+    const wrapper = mountHost(() => h(BsTypeahead, { provider, debounceMs: 0, value: model.value }));
     model.value = 'Molenstraat';
     await nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Molenstraat');

@@ -70,8 +70,9 @@ test.describe('priority-nav in a flex header', () => {
     await page.goto('/advanced/priority-nav');
     await expect(page.locator(`${nav} .priority-nav-strip`)).toBeVisible();
     // The strip is visible in the server HTML already; count mutations only once the client has
-    // taken over (it drops `noscript`), or the one-shot hydration swap reads as a flip-flop.
-    await expect(page.locator(`${nav} nav.priority-nav.noscript`)).toHaveCount(0);
+    // taken over (data-mp-hydrated, never in server HTML), or the one-shot hydration swap reads
+    // as a flip-flop.
+    await expect(page.locator(`${nav}[data-mp-hydrated]`)).toHaveCount(1);
   });
 
   for (const width of [1280, 600, 400]) {

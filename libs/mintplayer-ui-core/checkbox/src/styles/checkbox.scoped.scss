@@ -1,0 +1,9 @@
+// The checkbox group's sheet (#458 M4). Bootstrap's `forms` part styles the
+// canonical markup (div.form-check > input.form-check-input + label, and
+// input.btn-check + label.btn); this sheet only takes a toggle button's root
+// out of the layout, so the input and its label sit in the flow of whatever
+// holds the button (a button group, a toolbar).
+
+.checkbox-toggle {
+  display: contents;
+}

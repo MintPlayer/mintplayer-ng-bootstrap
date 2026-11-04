@@ -51,6 +51,19 @@ describe('mp-select', () => {
     expect(el.hasAttribute('role')).toBe(false);
   });
 
+  it("forwards a consumer's tabindex and aria-* from the host to the select (#458)", async () => {
+    const el = await mount('<mp-select id="fruit" tabindex="2" aria-label="Fruit" aria-describedby="hint"></mp-select>');
+    const select = inner(el);
+    expect(select.getAttribute('tabindex')).toBe('2');
+    expect(select.getAttribute('aria-label')).toBe('Fruit');
+    expect(select.getAttribute('aria-describedby')).toBe('hint');
+    expect(el.hasAttribute('tabindex')).toBe(false);
+    expect(el.getAttribute('role')).toBeNull();
+    // The select's own id is the core's (its label points at it): the consumer's stays on the host.
+    expect(select.id).not.toBe('fruit');
+    expect(el.id).toBe('fruit');
+  });
+
   it('renders the options property, groups included, with disabled options', async () => {
     const el = await mount('<mp-select></mp-select>');
     el.options = [{ value: 'x', label: 'X' }, { label: 'Fruit', options: FRUIT }];
@@ -87,7 +100,7 @@ describe('mp-select', () => {
     el.addEventListener('valuechange', (e) => details.push((e as CustomEvent).detail));
     el.addEventListener('change', () => changes++);
     pick(el, 'b');
-    expect(details).toEqual([{ value: 'b', values: ['b'] }]);
+    expect(details).toEqual(['b']);
     expect(el.value).toBe('b');
     expect(changes).toBe(1);
   });

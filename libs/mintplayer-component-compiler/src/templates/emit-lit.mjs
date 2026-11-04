@@ -4,7 +4,7 @@
 // `mp-host` root is the element itself: only its children are emitted, and the
 // element applies the root bag to itself with hostProps().
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, attrsTarget, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, composedUse, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, isSelectSeed, contentSlotUse, instanceStyleUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const escapeText = (text) => text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${').replace(/</g, '&lt;');
 const escapeAttr = (text) => escapeText(text).replace(/"/g, '&quot;');
@@ -21,6 +21,9 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
   if (!runtime) throw new Error('emitLit: options.runtime must name the module that exports the props() directive');
   const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['html']), partials, imports: new Set(), components, composed: new Map() };
   const { root, host } = rootElement(src);
+  // The inner mp-attrs node of a host-rooted template takes the host's forwarded attributes (takeHostAttrs).
+  const target = host ? attrsTarget(src, root) : null;
+  ctx.forwardTarget = host && target !== root ? target : null;
   const body = host ? children(ctx, root.children, 2) : children(ctx, src.root.children, 2);
   const name = templateFunction(src);
   const type = `${src.name}TemplateProps`;
@@ -34,12 +37,12 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
   if (ctx.uses.has('ref')) directives.push("import { ref, type Ref } from 'lit/directives/ref.js';");
   if (ctx.uses.has('unsafeHTML')) directives.push("import { unsafeHTML } from 'lit/directives/unsafe-html.js';");
   if (ctx.uses.has('styleMap')) directives.push("import { styleMap } from 'lit/directives/style-map.js';");
-  const runtimeDirectives = ['props', 'teleport'].filter((u) => ctx.uses.has(u));
+  const runtimeDirectives = ['bodyTeleport', 'forwardHostAttrs', 'instanceStyle', 'props', 'teleport', 'type HostAttrs'].filter((u) => ctx.uses.has(u) || (u === 'type HostAttrs' && ctx.uses.has('forwardHostAttrs')));
   if (runtimeDirectives.length) directives.push(`import { ${runtimeDirectives.join(', ')} } from '${runtime}';`);
   const helpers = ctx.uses.has('renderSlot')
     ? ["function renderSlot<A>(slot: unknown, args: A): unknown {", "  return typeof slot === 'function' ? (slot as (args: A) => unknown)(args) : slot;", '}', '']
     : [];
-  const destructure = [...src.propNames, 'slots = {}', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
+  const destructure = [...src.propNames, 'slots = {}', ...(ctx.uses.has('contentSlots') ? ['contentSlots = {}'] : []), ...(ctx.forwardTarget ? ['hostAttrs'] : []), ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -54,6 +57,8 @@ export function emitLit(src, { generator = GENERATOR, runtime, partials, compone
     ...src.slots.members.filter((s) => s.paramType).map((s) => `export type ${slotArgsType(src, s.name)} = ${s.paramType};`),
     `export type ${type} = ${src.props.text} & {`,
     `  slots?: { ${slotMembers.join(' ')} };`,
+    ...(ctx.uses.has('contentSlots') ? ["  /** Each content query's children's lent slots, by query and position (<content-slot>). */", '  contentSlots?: Partial<Record<string, ReadonlyArray<Partial<Record<string, unknown>>>>>;'] : []),
+    ...(ctx.forwardTarget ? ["  /** The element's forwarded aria-* / id / tabindex (takeHostAttrs), for its mp-attrs node. */", '  hostAttrs?: HostAttrs | null;'] : []),
     ...[...ctx.refs].map(([r, tag]) => `  ${r}Ref?: Ref<HTMLElementTagNameMap['${tag}']>;`),
     '};',
     '',
@@ -115,12 +120,30 @@ function element(ctx, el, depth) {
 
 function bare(ctx, el, depth) {
   const to = teleportTarget(ctx.src, el);
+  if (to === BODY_TARGET) {
+    // The overlay form (#458 §4.4): rendered into a body host while connected.
+    ctx.uses.add('bodyTeleport');
+    return `${pad(depth)}\${bodyTeleport(${sub(ctx, children(ctx, el.children, depth + 1), depth)})}\n`;
+  }
   if (to !== null) {
     // The directive renders the content into the core's element, nothing where it sits.
     ctx.uses.add('teleport');
     return `${pad(depth)}\${teleport(${x(ctx, to)}, ${sub(ctx, children(ctx, el.children, depth + 1), depth)})}\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) {
+    // A queried child's lent slot: the `slot=` children its element captured, moved here.
+    ctx.uses.add('contentSlots');
+    ctx.uses.add('nothing');
+    return `${pad(depth)}\${contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? nothing}\n`;
+  }
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    // A binding inside a lit <style> is not supported: the directive renders the element.
+    ctx.uses.add('instanceStyle');
+    return `${pad(depth)}\${instanceStyle(${x(ctx, sheet.css)})}\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const composed = composedUse(ctx.src, el, ctx.components);
@@ -139,7 +162,9 @@ function bare(ctx, el, depth) {
     const exp = x(ctx, p.exp.content);
     if (p.name === 'bind' && !p.arg) {
       ctx.uses.add('props');
-      return `\${props(${exp})}`;
+      if (el !== ctx.forwardTarget) return `\${props(${exp})}`;
+      ctx.uses.add('forwardHostAttrs');
+      return `\${props(forwardHostAttrs(${exp}, hostAttrs))}`;
     }
     if (p.name === 'bind') {
       if (p.modifiers.some((m) => (m.content ?? m) === 'prop')) return `.${p.arg.content}=\${${exp}}`;
@@ -152,6 +177,12 @@ function bare(ctx, el, depth) {
     }
     return `@${p.arg.content}=\${${exp}}`;
   });
+  if (el === ctx.forwardTarget && !ctx.uses.has('forwardHostAttrs')) {
+    // An mp-attrs node without a bag of its own still takes the host's attributes.
+    ctx.uses.add('props');
+    ctx.uses.add('forwardHostAttrs');
+    attrs.push('${props(forwardHostAttrs(null, hostAttrs))}');
+  }
   const ref = refName(el);
   if (ref) {
     ctx.refs.set(ref, el.tag);

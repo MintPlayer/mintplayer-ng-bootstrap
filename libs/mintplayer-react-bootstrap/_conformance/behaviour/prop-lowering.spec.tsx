@@ -3,8 +3,8 @@ import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
 import { BsCarousel, BsCarouselItem } from '@mintplayer/react-bootstrap/carousel';
-import { BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown-menu';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '@mintplayer/react-bootstrap/navbar';
+import { BsDropdownItem, BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 import { BsShell } from '@mintplayer/react-bootstrap/shell';
 
 import { renderEl } from './harness';
@@ -81,7 +81,7 @@ describe('BsShell — lowering onto the shell markup', () => {
   it('lowers breakpoint and size', async () => {
     const el = await renderEl(<BsShell breakpoint="lg" size="15rem" />, 'div.shell');
     expect(el.getAttribute('data-breakpoint')).toBe('lg');
-    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
+    expect(el.querySelector<HTMLElement>('.sidebar-root')!.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
   it('lowers state onto the initial checks (checked means revealed)', async () => {
@@ -94,9 +94,9 @@ describe('BsShell — lowering onto the shell markup', () => {
     expect(show.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
   });
 
-  it('routes a toggle flip to onStatechange as { open }', async () => {
+  it('routes a toggle flip to onStateChange as { open }', async () => {
     const seen: { open: boolean }[] = [];
-    const el = await renderEl(<BsShell onStatechange={(change) => seen.push(change)} />, 'div.shell');
+    const el = await renderEl(<BsShell onStateChange={(change) => seen.push(change)} />, 'div.shell');
 
     await act(async () => {
       el.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.click();
@@ -106,41 +106,7 @@ describe('BsShell — lowering onto the shell markup', () => {
   });
 });
 
-describe('BsDropdownMenu — markup from the headless core', () => {
-  it('renders the scoped .dropdown-menu list with no height cap by default', async () => {
-    const ul = await renderEl(<BsDropdownMenu />, 'ul');
-    expect(ul.classList).toContain('dropdown-menu');
-    expect(ul.getAttribute('data-mps')).toBe('dropdown-menu');
-    expect(ul.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
-  });
-
-  // Zero is a legitimate cap and must not be dropped the way an unset value is.
-  it('writes maxHeight as the height-cap custom property, zero included', async () => {
-    const capped = await renderEl(<BsDropdownMenu maxHeight={240} />, 'ul');
-    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
-    const zero = await renderEl(<BsDropdownMenu maxHeight={0} />, 'ul');
-    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
-  });
-
-  // Renamed on purpose: React's own `onSelect` is a text-selection event, so
-  // the menu's item selection takes the name and the native one is dropped
-  // from the props type.
-  it('reports an item activation to onSelect', async () => {
-    const seen: unknown[] = [];
-    const ul = await renderEl(
-      <BsDropdownMenu onSelect={({ value }) => seen.push(value)}>
-        <li className="dropdown-item" data-value="a">A</li>
-      </BsDropdownMenu>,
-      'ul',
-    );
-
-    await act(async () => {
-      ul.querySelector<HTMLElement>('li')!.click();
-    });
-
-    expect(seen).toEqual(['a']);
-  });
-});
+// BsDropdownMenu: see BsDropdownItem.spec.tsx (the dropdown group, #458 M6).
 
 describe('BsNavbar — markup from the headless core', () => {
   const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;
@@ -179,7 +145,7 @@ describe('BsNavbar — markup from the headless core', () => {
       toggle(nav).click();
     });
 
-    expect(seen).toEqual([{ expanded: true }]);
+    expect(seen).toEqual([true]);
     expect(toggle(nav).getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -209,13 +175,15 @@ describe('BsNavbarItem — markup from the headless core', () => {
     expect(item.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('becomes a dropdown item inside a BsNavbarDropdown', async () => {
+  it('a BsDropdownMenu in a BsNavbarNav is the navbar disclosure around BsDropdownItems', async () => {
     const details = await renderEl(
-      <BsNavbarDropdown label="More">
-        <BsNavbarItem active>
-          <a href="/x">X</a>
-        </BsNavbarItem>
-      </BsNavbarDropdown>,
+      <BsNavbarNav>
+        <BsDropdownMenu label="More">
+          <BsDropdownItem active>
+            <a href="/x">X</a>
+          </BsDropdownItem>
+        </BsDropdownMenu>
+      </BsNavbarNav>,
       'details',
     );
     const item = details.querySelector('.dropdown-menu > div')!;

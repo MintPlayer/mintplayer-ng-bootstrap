@@ -1,71 +1,79 @@
-import { Component, signal, ChangeDetectionStrategy} from '@angular/core';
-import { Color } from '@mintplayer/ng-bootstrap';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal, type WritableSignal } from '@angular/core';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsFileUploadComponent, BsFileUploadTemplateDirective, BsFormatBytesPipe, FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@mintplayer/ng-bootstrap/grid';
-import { BsProgressComponent, BsProgressBarComponent } from '@mintplayer/ng-bootstrap/progress-bar';
+import { BsFileUploadComponent, BsFileUploadFileTemplateDirective, type FileUpload } from '@mintplayer/ng-bootstrap/file-upload';
 import { dedent } from 'ts-dedent';
 
 @Component({
   selector: 'demo-file-upload',
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss'],
-  imports: [BsCodeSnippetComponent, BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsFileUploadComponent, BsFileUploadTemplateDirective, BsFormatBytesPipe, BsProgressComponent, BsProgressBarComponent],
+  imports: [BsCodeSnippetComponent, BsFileUploadComponent, BsFileUploadFileTemplateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FileUploadComponent {
+  protected readonly files = signal<FileUpload[]>([]);
+  protected readonly customFiles = signal<FileUpload[]>([]);
+  private readonly timers = new Set<ReturnType<typeof setInterval>>();
 
-  files = signal<FileUpload[]>([]);
-  colors = Color;
-
-  logFilesForUpload(files: FileUpload[]) {
-    console.log('Now we must upload following files to the server', files);
-    files.forEach((upload) => {
-      this.incrementProgress(upload);
-    });
+  constructor() {
+    inject(DestroyRef).onDestroy(() => [...this.timers].map((timer) => clearInterval(timer)));
   }
 
-  incrementProgress(file: FileUpload) {
-    if (file.progress < file.file.size) {
-      file.progress += 10;
-      setTimeout(() => {
-        this.incrementProgress(file);
-      }, 1000);
-    }
+  /** Simulates an upload: a tenth of each new file every half second. */
+  protected upload(added: FileUpload[], list: WritableSignal<FileUpload[]> = this.files) {
+    const indices = new Set(added.map((upload) => upload.index));
+    const timer = setInterval(() => {
+      list.update((files) => files.map((upload) => indices.has(upload.index)
+        ? { ...upload, progress: Math.min(upload.file.size, upload.progress + Math.max(1, upload.file.size / 10)) }
+        : upload));
+      if (list().filter((upload) => indices.has(upload.index)).every((upload) => upload.progress >= upload.file.size)) {
+        clearInterval(timer);
+        this.timers.delete(timer);
+      }
+    }, 500);
+    this.timers.add(timer);
   }
 
-  removeFile(file: FileUpload) {
-    this.files.update(list => list.filter(f => f !== file));
+  protected remove(list: WritableSignal<FileUpload[]>, upload: FileUpload) {
+    list.update((files) => files.filter((f) => f !== upload));
   }
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-file-upload (filesDropped)="onFiles($event)">
-      <div *bsFileUploadTemplate="let upload of files()">
+    <bs-file-upload [(files)]="files" (filesDropped)="upload($event)"></bs-file-upload>
+  `;
+
+  protected readonly snippetCustomHtml = dedent`
+    <bs-file-upload [(files)]="files" (filesDropped)="upload($event)">
+      <ng-container *bsFileUploadFileTemplate="let upload">
         <span>{{ upload.file.name }}</span>
-        <span>{{ upload.file.size | bsFormatBytes }}</span>
-      </div>
+        <button type="button" (click)="remove(upload)">Remove</button>
+      </ng-container>
     </bs-file-upload>
   `;
 
-  protected readonly snippetBasicTs = dedent`
+  protected readonly snippetTs = dedent`
     import { Component, signal } from '@angular/core';
     import {
       BsFileUploadComponent,
-      BsFileUploadTemplateDirective,
-      BsFormatBytesPipe,
+      BsFileUploadFileTemplateDirective,
       FileUpload,
     } from '@mintplayer/ng-bootstrap/file-upload';
 
     @Component({
       selector: 'my-file-upload-demo',
       templateUrl: './my-file-upload-demo.component.html',
-      imports: [BsFileUploadComponent, BsFileUploadTemplateDirective, BsFormatBytesPipe],
+      imports: [BsFileUploadComponent, BsFileUploadFileTemplateDirective],
     })
     export class MyFileUploadDemoComponent {
       protected files = signal<FileUpload[]>([]);
 
-      onFiles(uploads: FileUpload[]) {
-        this.files.update(list => [...list, ...uploads]);
+      upload(added: FileUpload[]) {
+        // Send the files; write progress back immutably:
+        // this.files.update(list => list.map(f => f.index === i ? { ...f, progress } : f));
+      }
+
+      remove(upload: FileUpload) {
+        this.files.update(list => list.filter(f => f !== upload));
       }
     }
   `;

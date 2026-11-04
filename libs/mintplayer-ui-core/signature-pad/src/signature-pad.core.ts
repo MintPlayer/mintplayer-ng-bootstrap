@@ -47,8 +47,6 @@ export interface SignaturePadState {
 }
 
 export interface SignaturePadEvents {
-  /** Every stroke point, typed character, undo and clear: the current signature. */
-  signatureChange: Signature;
 }
 
 export interface SignaturePadMethods {
@@ -104,7 +102,6 @@ function commit(api: Api, signature: Signature, paint: boolean) {
   api.setState({ signature });
   if (paint) redraw(api);
   syncTyped(api);
-  api.emit('signatureChange', signature);
 }
 
 function undo(api: Api) {

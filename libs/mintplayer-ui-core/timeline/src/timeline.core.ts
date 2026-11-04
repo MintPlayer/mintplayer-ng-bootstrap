@@ -53,7 +53,6 @@ export interface TimelineState {
 export interface TimelineEvents {
   itemClick: TimelineItemClickDetail;
   selectionChanged: TimelineSelectionChangeDetail;
-  selectedIdsChange: TimelineKeys;
 }
 
 type Api = CoreApi<TimelineInputs, TimelineState, TimelineEvents>;
@@ -136,7 +135,6 @@ function select(api: Api, rows: HTMLElement[], row: HTMLElement, opts: { toggle:
       const r = rows.find((el) => keyOf(el) === k);
       return r ? [modelOf(api, r)] : [];
     });
-  api.emit('selectedIdsChange', next);
   api.emit('selectionChanged', { selected: models(next), added: models(added), removed: models(removed) });
 }
 

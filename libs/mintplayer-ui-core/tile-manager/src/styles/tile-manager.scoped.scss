@@ -1,16 +1,11 @@
 // The tile manager's stylesheet, shared by all four fronts (#440, PRD §5.2). Rescoped at
 // build time: every compound gains `[data-mps=tile-manager]`, so only nodes a front
 // stamped are matched. Header and content templates are the consumer's and are never
-// stamped. The Lit front adopts this sheet into its shadow root, where no page CSS
-// reaches, so nothing here may rely on a global utility (`visually-hidden` included).
+// stamped. Every front renders in the light DOM (#458), but nothing here relies on a
+// global utility (`visually-hidden` included): the sheet stays self-contained.
 //
-// The board's inline style carries the inputs as custom properties:
+// The container's inline style carries the inputs as custom properties:
 // --mp-tile-min-column, --mp-tile-gap and --mp-tile-row-height (connect()).
-
-/*! @mps-global */
-mp-tile-manager {
-  display: block;
-}
 
 .mp-tile-manager {
   --bs-tile-radius: 0.5rem;
@@ -24,14 +19,15 @@ mp-tile-manager {
   display: block;
   box-sizing: border-box;
   inline-size: 100%;
-  // One column, on the uncontained board: a shrink-to-fit parent cannot collapse it to 0 (D14, S4).
-  min-inline-size: var(--mp-tile-min-column, 200px);
 }
 
 // The container, never the board or the grid: the grid must sit inside it for the
 // `breakpointCss` rules to reach its track template (D14).
 .tile-container {
   container-type: inline-size;
+  // One column: size containment gives the container no intrinsic width, so a
+  // shrink-to-fit parent would collapse the board to 0 without this floor (D14, S4).
+  min-inline-size: var(--mp-tile-min-column, 200px);
 }
 
 .tile-grid {

@@ -10,14 +10,14 @@
 
 <h2>Basic usage</h2>
 
-<bs-alert [type]="colors.info">
+<bs-alert color="info">
   This page demonstrates anchor scrolling with the navbar. When in mobile/small mode, clicking a link with an anchor fragment
   will first collapse the navbar, wait for the animation to complete, then scroll to the correct position.
 </bs-alert>
 
 <section id="section1" class="anchor-section">
   <h2>Section 1</h2>
-  <bs-alert [type]="colors.primary">
+  <bs-alert color="primary">
     This is section 1. The navbar should properly scroll to this section even when collapsed in small mode.
   </bs-alert>
   <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
@@ -26,7 +26,7 @@
 
 <section id="section2" class="anchor-section">
   <h2>Section 2</h2>
-  <bs-alert [type]="colors.success">
+  <bs-alert color="success">
     This is section 2. Try resizing the browser to small mode and clicking the navbar links.
   </bs-alert>
   <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.</p>
@@ -35,7 +35,7 @@
 
 <section id="section3" class="anchor-section">
   <h2>Section 3</h2>
-  <bs-alert [type]="colors.warning">
+  <bs-alert color="warning">
     This is section 3. The fix ensures the scroll position is correct after the navbar animation completes.
   </bs-alert>
   <p>Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.</p>
@@ -44,7 +44,7 @@
 
 <section id="section4" class="anchor-section">
   <h2>Section 4</h2>
-  <bs-alert [type]="colors.danger">
+  <bs-alert color="danger">
     This is section 4. Without the fix, the scroll position would be incorrect because the navbar height changes during animation.
   </bs-alert>
   <p>Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur.</p>
@@ -53,7 +53,7 @@
 
 <section id="section5" class="anchor-section">
   <h2>Section 5</h2>
-  <bs-alert [type]="colors.info">
+  <bs-alert color="info">
     This is section 5. The solution waits 300ms (the animation duration) before scrolling to the anchor.
   </bs-alert>
   <p>Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.</p>

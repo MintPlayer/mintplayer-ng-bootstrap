@@ -11,39 +11,23 @@ import {
 } from '@mintplayer/ng-bootstrap/accordion';
 import { BsButtonGroupComponent } from '@mintplayer/ng-bootstrap/button-group';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
+import { BsDropdownDirective } from '@mintplayer/ng-bootstrap/dropdown';
 import {
-  BsDropdownDirective,
-  BsDropdownMenuDirective,
-  BsDropdownToggleDirective,
-} from '@mintplayer/ng-bootstrap/dropdown';
-import {
-  BsColFormLabelDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
-import { BsHasOverlayComponent } from '@mintplayer/ng-bootstrap/has-overlay';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsModalBodyDirective,
-  BsModalCloseDirective,
   BsModalComponent,
-  BsModalDirective,
   BsModalFooterDirective,
   BsModalHeaderDirective,
-  BsModalHostComponent,
 } from '@mintplayer/ng-bootstrap/modal';
 import {
   BsOffcanvasComponent,
-  BsOffcanvasHostComponent,
-  OffcanvasBodyComponent,
-  OffcanvasHeaderComponent,
+  BsOffcanvasHeaderDirective,
 } from '@mintplayer/ng-bootstrap/offcanvas';
-import {
-  BsPopoverBodyDirective,
-  BsPopoverComponent,
-  BsPopoverDirective,
-  BsPopoverHeaderDirective,
-} from '@mintplayer/ng-bootstrap/popover';
+import { BsPopoverDirective } from '@mintplayer/ng-bootstrap/popover';
 import { BsRadioComponent, BsRadioGroupDirective } from '@mintplayer/ng-bootstrap/radio';
 import { BsTooltipDirective } from '@mintplayer/ng-bootstrap/tooltip';
 import { BsTypeaheadComponent } from '@mintplayer/ng-bootstrap/typeahead';
@@ -78,16 +62,13 @@ const pages: {
   {
     name: 'ContextMenuComponent',
     component: ContextMenuComponent,
-    imports: () => [
-      MockComponent(BsHasOverlayComponent),
-      ContextMenuComponent,
-    ],
+    imports: () => [ContextMenuComponent],
   },
   {
     name: 'DropdownComponent',
     component: DropdownComponent,
     imports: () => [
-      MockDirective(BsDropdownDirective), MockDirective(BsDropdownMenuDirective), MockDirective(BsDropdownToggleDirective),
+      MockDirective(BsDropdownDirective),
       MockDirective(BsButtonTypeDirective),
       DropdownComponent,
     ],
@@ -97,7 +78,7 @@ const pages: {
     component: ModalComponent,
     imports: () => [
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsModalComponent), MockComponent(BsModalHostComponent), MockDirective(BsModalDirective), MockDirective(BsModalHeaderDirective), MockDirective(BsModalBodyDirective), MockDirective(BsModalFooterDirective), MockDirective(BsModalCloseDirective),
+      MockComponent(BsModalComponent), MockDirective(BsModalHeaderDirective), MockDirective(BsModalFooterDirective),
       MockDirective(BsButtonTypeDirective),
       // Unit to test (standalone)
       ModalComponent,
@@ -114,7 +95,7 @@ const pages: {
       NoopAnimationsModule,
       RouterTestingModule,
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsOffcanvasComponent), MockComponent(OffcanvasHeaderComponent), MockComponent(OffcanvasBodyComponent), MockComponent(BsOffcanvasHostComponent),
+      MockComponent(BsOffcanvasComponent), MockDirective(BsOffcanvasHeaderDirective),
       MockDirective(BsButtonTypeDirective),
       MockComponent(BsButtonGroupComponent),
       // Unit to test (standalone)
@@ -129,7 +110,7 @@ const pages: {
     component: PopoverComponent,
     imports: () => [
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsPopoverComponent), MockDirective(BsPopoverDirective), MockDirective(BsPopoverBodyDirective), MockDirective(BsPopoverHeaderDirective),
+      MockDirective(BsPopoverDirective),
       MockDirective(BsButtonTypeDirective),
       PopoverComponent,
     ],

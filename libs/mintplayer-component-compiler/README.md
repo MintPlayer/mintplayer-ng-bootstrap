@@ -19,9 +19,12 @@ The compiler writes a complete component, plus an `index.ts` barrel, into each f
 | Vue | `Bs<El>.generated.vue`: runtime props, `defineEmits` (+ `update:x` for models), `defineExpose` |
 | Lit | `mp-<el>.generated.ts`: a light-DOM `LitElement` with `CoreController` and `LightChildren` |
 
-Outputs are keyed camelCase in the manifest. Angular, Vue and Lit expose them lowercased (`expandedchange`),
-React as `on<Pascal>`. A two-way input (`model: true`) is the core state key of the same name, written back
-when the core changes it. React stays controlled through the matching output.
+Outputs are keyed camelCase in the manifest, and each front names them by its own convention: Angular
+`(itemSelect)`, Vue `itemSelect` (`@item-select` in a template), React `onItemSelect`, and Lit a lowercase
+DOM event `itemselect`. A two-way input (`model: true`) is the core state key of the same name, written back
+when the core changes it, and it is its own change channel: Angular's `model()` (`(xChange)`), Vue
+`update:x`, React `onXChange`, Lit an `xchange` event. A manifest output `xChange` beside a model `x` is an
+error.
 
 **Escape hatch.** Put a front-only need in `<front lib>/<group>/src/<element>.<front>.ts`. The generator
 picks up these named exports:
@@ -31,10 +34,25 @@ picks up these named exports:
 - React: `useExtendInputs(inputs, { children })` (a hook; the declared children let it read what the server render must know, like a carousel's slide count), `Children` (a component wrapped around the default slot's content)
 - Lit: `children(nodes, host)` (called with the default slot's captured nodes before every render)
 
-`navbar-dropdown.angular.ts` (router-active state) is the example. `nav-item` and `navbar-item` use
+`dropdown-menu.angular.ts` (router-active state) is the example. `nav-item` and `navbar-item` use
 `Children` / `children` with each lib's `markLinks` (`machine` entry) to mark the consumer's link a
 `.nav-link`; Angular does that with a directive on the link itself (`BsNavLinkDirective`,
 `BsNavbarLinkDirective`), as the old nav-link directive did.
+
+**Directives** (#458). A manifest's `directives:` map declares behaviour or class-only directives
+on a consumer's own element. Examples are the grid's `[bsRow]` / `[col]` / `[md]`, and later
+`[bsDropdown]`. A directive has a core whose view returns that element's bag. It has no template,
+slots, content or methods. The compiler adds the group's `data-mps` to the bag.
+
+| Front | Generated |
+|-|-|
+| Angular | `@Directive` with selector `[bs<Name>]`, which hosts the core through `useCore`'s `hostBag` |
+| React | a `useBs<Name>(options)` hook that returns props plus a callback ref. Combine them with the consumer's props using `mergeProps` |
+| Vue | a `vBs<Name>` object directive, through `vueCoreDirective`. `getSSRProps` server-renders the bag |
+| Lit | a `bs<Name>(inputs)` element-part directive, through `coreDirective` |
+
+Vue and Lit share ui-core's imperative `elementCore`. Names can be overridden per front with
+`names:` in the directive's manifest entry.
 
 ## Nx
 
@@ -132,6 +150,26 @@ the template of every front. A template without a manifest is still compiled on 
   only: put `v-for` / `v-if` on a `<template>` around it. The target is a node the core owns and
   keeps for the content's lifetime (the dock's per-pane hosts). The core moves it around the DOM,
   and the content keeps its state in every front.
+- **`<teleport to="body">`** (static, #458) is the overlay form. Its content renders into a
+  `div[data-mp-overlay]` that the runtime appends to the end of `<body>`, outside every clipping
+  ancestor. The host copies `data-bs-theme`, `dir` and `lang` from the declaring position, and is
+  removed when the teleport unmounts.
+  - Angular: `<ng-template mpBodyTeleport>`, a detached view. It server-renders, and the client
+    replaces the server's host with its own copy without a hydration mismatch.
+  - React: `<BodyPortal>`, with `from={rootRef}` when the root has `ref="root"`.
+  - Vue: `MpBodyTeleport`, around `<Teleport>`.
+  - Lit: the `bodyTeleport()` directive.
+
+  React, Vue and Lit mount it on the client only, because an overlay cannot be opened without JS.
+- **`<instance-style :name="key" :css="text" />`** (#458 M4) renders one instance's own sheet,
+  such as the tile manager's server layout rules. It takes `:name` (unique per instance) and
+  `:css` (the text, or null for none) and nothing else. Angular strips `<style>` from templates,
+  so `MpInstanceStyleDirective` writes it into the head under `name`, on the server too, and
+  removes it when `css` turns null or the component is destroyed. React and Vue render a
+  `<style>` in place; Lit the `instanceStyle()` directive. Not for a component's own sheet:
+  that is the scoped sheet, installed once per page.
+  The overlay's core puts the host on `openOverlay` (ui-core `overlay`), which handles z-order,
+  focus trap and return, `inert`, and Escape and outside dismissal.
 - **Expressions.** They may read props, loop locals and `$slots`, and nothing else. Functions
   and arrow functions are refused, so all logic stays in the core.
 - **Elements.** Native elements, `<slot>`, partials and composed `mp-*` elements (below). Vue's
@@ -163,12 +201,17 @@ the template of every front. A template without a manifest is still compiled on 
   - A template may compose its own element (recursion ends with the data under `v-if` / `v-for`).
     A cycle between groups is an error, and so is a tag claimed by two manifests.
 - **Output names.** An output whose lowercase name is a native DOM event (`change`, `select`,
-  `toggle`, `animationend`, ...) is refused. On a composed child, the native event would also reach
-  the listener.
+  `toggle`, `animationend`, ...) is refused: the Lit element dispatches it under that name, so the
+  native event would also reach the listener.
 - **`:value.prop` on a `<select>`** is a seed for React only: React emits it as `defaultValue`
   because it refuses `selected` on an `<option>`. The other fronts drop it and select through
   each option's `selected` bag key. A live `select.value` write would land before the options
   exist, and would turn a multiple select's array into a string that matches nothing.
+- **`:value.prop` on an `<input>` or `<textarea>`** is `defaultValue` in React (the server HTML)
+  plus a ref that writes `node.value` when it differs. Without that write, a slider the user has
+  moved would ignore a later outside change (a form reset, a "set red" button), because React
+  never touches a dirty input's value through `defaultValue`. Every `.prop` value is read during
+  render, so `v-if` narrowing holds for it; the ref only writes.
 - **`mp-attrs`.** Marks the element that receives the consumer's attributes (`aria-*`, `id`,
   `tabindex`, ...) when that is not the root, e.g. the `<select>` inside the select's wrapper.
   - React spreads `attrs` there and types the props for that element.
@@ -182,6 +225,11 @@ the template of every front. A template without a manifest is still compiled on 
 - **Scoped slots in Lit.** A slot with parameters also gets a `<slot>Renderer` property on the Lit
   element, typed with the template's exported `<Name><Slot>SlotArgs`. It wins over `slot="…"`
   children. Angular's slot directives import the types named in the slot's parameters.
+- **Scoped slots in Angular.** The context carries every argument by name (`let-row="row"`) and
+  the FIRST argument as `$implicit`, as `ngFor` does, so the structural form reads
+  `<a *bsPriorityNavItemTemplate="let item">` and
+  `*bsDatatableCellTemplate="let row; let column = column"`. Order a slot's arguments with that in
+  mind.
 - **Lit attributes** are the kebab-case form of a camelCase input (`numberVisible` →
   `number-visible`). A string input typed in the core as a union of string literals (directly,
   through an alias, or as `Other['member']`) gets those literals in its converter: an attribute
@@ -201,6 +249,18 @@ the template of every front. A template without a manifest is still compiled on 
   - The inputs are as written: an omitted input is missing rather than defaulted, and Vue's
     boolean shorthand arrives as `''`. Normalise in the core.
   - The query name may not also be a manifest input, and both elements must be in the group.
+- **Declarations** (the manifest's `declarations: { 'tab-page': { inputs, slots } }`, #458 Q15)
+  are queried children that render nothing: inputs and slots, no core, no template. The parent
+  renders their slots with `<content-slot query="pages" name="header" :index="i" />`: `query` is
+  a content query over a declaration, `name` one of its slots (omitted: the default content) and
+  `:index` the child's position. It takes no other attribute and no content, and a partial may
+  not use it. A declaration may not be a query's `within`.
+  - Angular: the declaration lends `TemplateRef`s (`contentSlots`); the parent renders them
+    with `ngTemplateOutlet`, and a declaration belongs to its nearest parent (`contentParent`).
+  - React: the child element's `children` and slot props; Vue: the child vnode's slot
+    functions, forwarded as `content:<query>:<i>:<slot>` slots.
+  - Lit: the declaration is `hidden` and lends its light children by `slot=`; the parent moves
+    them into place. A child whose nearest parent host is another instance is not queried.
 - **`mp-host`.** Marking the root element `mp-host` makes it the front's host element in
   Angular and Lit:
   - Those two fronts emit only its children. The component applies the root's bag to itself

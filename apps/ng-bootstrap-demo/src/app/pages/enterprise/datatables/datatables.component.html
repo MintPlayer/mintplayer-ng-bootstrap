@@ -48,16 +48,16 @@
   [rowKey]="rowKey"
   [(selectedIds)]="selection">
 
-  <ng-template bsDatatableRow let-artist="row">
+  <ng-container *bsDatatableRow="let artist">
     <td class="text-nowrap">
       {{ $any(artist).name }}
-      <bs-badge [type]="$any(artist).yearQuit ? colors.secondary : colors.success">
+      <bs-badge [color]="$any(artist).yearQuit ? 'secondary' : 'success'">
         {{ $any(artist).yearQuit ? 'ended' : 'active' }}
       </bs-badge>
     </td>
     <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
     <td class="text-nowrap">{{ $any(artist).yearQuit }}</td>
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 @if (selection().length) {
@@ -89,15 +89,15 @@
   pagination
   [perPage]="10">
 
-  <ng-template bsDatatableHeader let-column="column">
+  <ng-container *bsDatatableHeader="let column">
     @if (column.name === 'actions') {
       <span aria-hidden="true">&#8943;</span>
     } @else {
       {{ column.label }}
     }
-  </ng-template>
+  </ng-container>
 
-  <ng-template bsDatatableRow let-artist="row">
+  <ng-container *bsDatatableRow="let artist">
     <td class="text-nowrap">{{ $any(artist).name }}</td>
     <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
     <td>
@@ -105,7 +105,7 @@
               [attr.aria-label]="'Details for ' + $any(artist).name"
               (click)="inspectedArtist.set($any(artist))">Details</button>
     </td>
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 @if (inspectedArtist(); as artist) {
@@ -124,10 +124,10 @@
 
 <div class="fill-parent flex-shrink-0 border rounded">
   <bs-datatable fill pagination [columns]="twoColumns" [fetch]="fetchArtists">
-    <ng-template bsDatatableRow let-artist="row">
+    <ng-container *bsDatatableRow="let artist">
       <td class="text-nowrap">{{ $any(artist).name }}</td>
       <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
-    </ng-template>
+    </ng-container>
   </bs-datatable>
 </div>
 
@@ -141,10 +141,10 @@
 <div class="fill-parent flex-shrink-0 border rounded">
   <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [columns]="twoColumns"
     [fetch]="fetchArtists" [perPage]="25" [rowKey]="rowKey">
-    <ng-template bsDatatableRow let-artist="row">
+    <ng-container *bsDatatableRow="let artist">
       <td class="text-nowrap">{{ $any(artist).name }}</td>
       <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
-    </ng-template>
+    </ng-container>
   </bs-datatable>
 </div>
 
@@ -155,7 +155,7 @@
 <p>
   Two selection styles. In the default <code>multiple</code> mode a row click
   selects (<kbd>Ctrl</kbd>+click toggles, <kbd>Shift</kbd>+click selects a
-  range) and then emits <code>(rowclick)</code>, which is what the
+  range) and then emits <code>(rowClick)</code>, which is what the
   <em>Basic usage</em> table above does. In <code>checkbox</code> mode, below, a
   row click only <em>opens</em> the row: selecting happens in the checkbox cell
   alone, anywhere inside it.
@@ -187,13 +187,13 @@
   [rowKey]="rowKey"
   [rowLabel]="rowLabel"
   [(selectedIds)]="checkboxSelection"
-  (rowclick)="openedArtist.set($any($event.row))">
+  (rowClick)="openedArtist.set($any($event.row))">
 
-  <ng-template bsDatatableRow let-artist="row">
+  <ng-container *bsDatatableRow="let artist">
     <td class="text-nowrap">{{ $any(artist).name }}</td>
     <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
     <td class="text-nowrap">{{ $any(artist).yearQuit }}</td>
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 <p class="small text-muted">
@@ -229,11 +229,11 @@
   [perPage]="25"
   [rowKey]="rowKey">
 
-  <ng-template bsDatatableRow let-artist="row">
+  <ng-container *bsDatatableRow="let artist">
     <td class="text-nowrap">{{ $any(artist).name }}</td>
     <td class="text-nowrap">{{ $any(artist).yearStarted }}</td>
     <td class="text-nowrap">{{ $any(artist).yearQuit }}</td>
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 <bs-code-snippet [code]="snippetWindowedHtml" [language]="'html'"></bs-code-snippet>
@@ -268,13 +268,13 @@
   selectionStrategy="cascading"
   [(selectedIds)]="treeSelection">
 
-  <ng-template bsDatatableCell let-row="row" let-column="column">
+  <ng-container *bsDatatableCell="let row; let column = column">
     @if (column.name === 'code') {
       <span class="font-monospace small">{{ $any(row).code }}</span>
     } @else {
       {{ $any(row)[column.name] }}
     }
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 @if (treeSelection().length) {
@@ -351,9 +351,9 @@
   Because the browser skips <code>fetch</code> for that first page, anything
   else your <code>fetch</code> reads off its response (the columns a server
   query decides, say) belongs in the response's <code>extra</code>, which must be
-  JSON. <code>(pageload)</code> hands it back for every page the table applies,
+  JSON. <code>(pageLoad)</code> hands it back for every page the table applies,
   with <code>seeded: true</code> for the page that came from the server. Record
-  it in <code>fetch</code> too: <code>(pageload)</code> fires in the browser only.
+  it in <code>fetch</code> too: <code>(pageLoad)</code> fires in the browser only.
 </p>
 <p class="text-muted small">
   <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;
@@ -412,7 +412,7 @@
        column with filterMode 'custom'. Its markup is the page's own, so the
        page styles it (see the .demo-filter-* rules); its commands write the
        same filters model the built-in panels do. -->
-  <ng-template bsDatatableFilter let-ctx="ctx">
+  <ng-container *bsDatatableFilter="let ctx = ctx">
     <div class="demo-filter-panel">
       <button type="button" class="btn btn-sm btn-outline-primary" (click)="ctx.apply(benelux, false)">Benelux</button>
       @for (country of countries; track country.value) {
@@ -420,7 +420,7 @@
       }
       <button type="button" class="btn btn-sm btn-link" (click)="ctx.clear()">Everywhere</button>
     </div>
-  </ng-template>
+  </ng-container>
 </bs-datatable>
 
 <small class="text-muted">

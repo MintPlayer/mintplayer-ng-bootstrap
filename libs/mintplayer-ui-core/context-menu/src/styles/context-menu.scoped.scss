@@ -1,0 +1,24 @@
+// The context menu's panel (#458 M6): the core writes the pointer position as
+// custom properties (placeAtPoint). The menu inside brings its own styles.
+.context-menu-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-anchored-left, 0);
+  top: var(--mp-anchored-top, 0);
+}
+
+// A closing panel takes no clicks.
+.context-menu-panel:not(.show) {
+  pointer-events: none;
+}
+
+// The panel takes focus only when it holds no item; no ring for a pointer.
+.context-menu-panel:focus {
+  outline: none;
+}
+
+.context-menu-panel:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, rgba(13, 110, 253, 0.25));
+  outline-offset: 2px;
+}

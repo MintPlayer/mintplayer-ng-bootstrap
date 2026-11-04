@@ -1,4 +1,5 @@
 import { firstEnabledIndex, rovingTarget } from '@mintplayer/ui-core/roving';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 
 /**
  * The tab control has no machine (PRD #437 §8, wave A): one native radio per
@@ -36,8 +37,6 @@ import { firstEnabledIndex, rovingTarget } from '@mintplayer/ui-core/roving';
 
 export type TabControlBag = Record<string, string | boolean | null>;
 
-export const TAB_CONTROL_SCOPE = 'tab-control';
-
 export type TabsPosition = 'top' | 'bottom';
 
 export interface TabControlOptions {
@@ -70,8 +69,6 @@ export interface TabControlView {
   readonly tabs: readonly TabView[];
 }
 
-const scope = { 'data-mps': TAB_CONTROL_SCOPE };
-
 export function tabControlIds(rootId: string, index: number): { readonly radio: string; readonly tab: string; readonly pane: string } {
   return { radio: `${rootId}-r${index}`, tab: `${rootId}-t${index}`, pane: `${rootId}-p${index}` };
 }
@@ -92,23 +89,19 @@ export function connectTabControl(options: TabControlOptions, tabs: readonly Tab
   const bottom = options.tabsPosition === 'bottom';
   const border = options.border ?? true;
   return {
-    root: { ...scope, class: 'tab-control', 'data-tabs-position': bottom ? 'bottom' : null },
-    strip: { ...scope, class: bottom ? 'tsc bottom-tabs' : 'tsc' },
+    root: { class: 'tab-control', 'data-tabs-position': bottom ? 'bottom' : null, ...hydratedAttr(enhanced) },
+    strip: { class: bottom ? 'tsc bottom-tabs' : 'tsc' },
     // Not enhanced, the strip (which scrolls when the tabs overflow) holds only
     // labels: a tab stop of its own is the keyboard's way to scroll it.
-    list: { ...scope, class: 'nav nav-tabs', role: enhanced ? 'tablist' : null, tabindex: enhanced ? null : '0' },
-    item: { ...scope, class: 'nav-item', role: enhanced ? 'presentation' : null },
-    content: {
-      ...scope,
-      class: `tab-content${border ? (active === null ? ' border-top' : ' border') : ''}`,
-    },
+    list: { class: 'nav nav-tabs', role: enhanced ? 'tablist' : null, tabindex: enhanced ? null : '0' },
+    item: { class: 'nav-item', role: enhanced ? 'presentation' : null },
+    content: { class: `tab-content${border ? (active === null ? ' border-top' : ' border') : ''}` },
     tabs: tabs.map((tab, index) => {
       const ids = tabControlIds(options.id, index);
       const disabled = tab.disabled ?? false;
       const selected = index === active;
       return {
         radio: {
-          ...scope,
           type: 'radio',
           class: 'tab-radio',
           name: `${options.id}-group`,
@@ -118,7 +111,6 @@ export function connectTabControl(options: TabControlOptions, tabs: readonly Tab
           'aria-controls': enhanced ? null : ids.pane,
         },
         tab: {
-          ...scope,
           id: ids.tab,
           for: ids.radio,
           class: `nav-link text-nowrap${disabled ? ' disabled' : ''}`,
@@ -129,7 +121,6 @@ export function connectTabControl(options: TabControlOptions, tabs: readonly Tab
           'aria-disabled': enhanced && disabled ? 'true' : null,
         },
         pane: {
-          ...scope,
           id: ids.pane,
           class: 'tab-pane',
           role: enhanced ? 'tabpanel' : 'region',

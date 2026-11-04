@@ -1,2 +1,2 @@
-export * from './placeholder/placeholder.component';
-export * from './placeholder-field/placeholder-field.directive';
+// Generated from @mintplayer/ui-core/placeholder (#458 D10).
+export * from './generated';

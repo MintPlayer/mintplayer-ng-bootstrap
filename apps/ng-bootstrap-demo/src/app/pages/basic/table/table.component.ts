@@ -17,7 +17,7 @@ import { dedent } from 'ts-dedent';
 export class TableComponent {
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-table [isResponsive]="true">
+    <bs-table [responsive]="true">
       <thead>
         <tr>
           <th>#</th>

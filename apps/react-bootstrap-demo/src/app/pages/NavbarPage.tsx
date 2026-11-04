@@ -1,5 +1,6 @@
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
+import { BsDropdownItem, BsDropdownMenu } from '@mintplayer/react-bootstrap/dropdown';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '@mintplayer/react-bootstrap/navbar';
 
 const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Demo navigation"
   brand={<a href="/">MintPlayer</a>}>
@@ -8,11 +9,11 @@ const NAVBAR_SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-labe
     <BsNavbarItem><a href="/features">Features</a></BsNavbarItem>
     <BsNavbarItem disabled><a href="/pricing">Pricing</a></BsNavbarItem>
 
-    <BsNavbarDropdown label="Products">
-      <BsNavbarItem><a href="/products/web">Web components</a></BsNavbarItem>
-      <BsNavbarItem><a href="/products/angular">Angular bootstrap</a></BsNavbarItem>
-      <BsNavbarItem><a href="/products/react">React bootstrap</a></BsNavbarItem>
-    </BsNavbarDropdown>
+    <BsDropdownMenu label="Products">
+      <BsDropdownItem><a href="/products/web">Web components</a></BsDropdownItem>
+      <BsDropdownItem><a href="/products/angular">Angular bootstrap</a></BsDropdownItem>
+      <BsDropdownItem><a href="/products/react">React bootstrap</a></BsDropdownItem>
+    </BsDropdownMenu>
   </BsNavbarNav>
 
   <BsNavbarNav align="end">
@@ -30,8 +31,9 @@ export function NavbarPage() {
         collapse is a checkbox and every dropdown a native <code>&lt;details&gt;</code>, so the
         bar works with JavaScript off. Pass the brand as the <code>brand</code> prop, group
         entries in a <code>BsNavbarNav</code> (<code>align="end"</code> pushes a group to the far
-        edge), and use <code>BsNavbarItem</code> for every entry — a nav-link in a group, a menu
-        item inside a <code>BsNavbarDropdown</code>.
+        edge), and use <code>BsNavbarItem</code> for an entry in a group. A dropdown is the same{' '}
+        <code>BsDropdownMenu</code> / <code>BsDropdownItem</code> pair a standalone dropdown uses: in a
+        nav group it renders the navbar's disclosure, with <code>label</code> as its trigger text.
       </p>
 
       <section data-demo="navbar">
@@ -48,17 +50,17 @@ export function NavbarPage() {
               <a href="/pricing">Pricing</a>
             </BsNavbarItem>
 
-            <BsNavbarDropdown label="Products">
-              <BsNavbarItem>
+            <BsDropdownMenu label="Products">
+              <BsDropdownItem>
                 <a href="/products/web">Web components</a>
-              </BsNavbarItem>
-              <BsNavbarItem>
+              </BsDropdownItem>
+              <BsDropdownItem>
                 <a href="/products/angular">Angular bootstrap</a>
-              </BsNavbarItem>
-              <BsNavbarItem>
+              </BsDropdownItem>
+              <BsDropdownItem>
                 <a href="/products/react">React bootstrap</a>
-              </BsNavbarItem>
-            </BsNavbarDropdown>
+              </BsDropdownItem>
+            </BsDropdownMenu>
           </BsNavbarNav>
 
           <BsNavbarNav align="end">

@@ -2,13 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSSRApp, defineComponent, h, nextTick, ref } from 'vue';
 import { renderToString } from '@vue/server-renderer';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import type { MintTile, TileLayoutChange, TileLayouts } from '@mintplayer/ui-core/tile-manager';
+import type { MintTile, TileLayoutChange, TileLayouts, TileManagerMethods } from '@mintplayer/ui-core/tile-manager';
 import { tileManagerDomMismatches } from '@mintplayer/ui-core/_conformance/tile-manager-dom';
-import BsTileManager from '../../tile-manager/src/BsTileManager.vue';
-import type { BsTileManagerExposed } from '../../tile-manager/src/types';
+import { BsTileManager } from '@mintplayer/vue-bootstrap/tile-manager';
 
 /**
- * The Vue front of the headless tile-manager core (#440). Wiring only: props reach the
+ * The generated Vue front of the tile-manager group (#440, #458 M4). Wiring only: props reach the
  * machine, the template renders connect()'s bags, events come back out. The layout and ARIA
  * rules themselves are pinned in ui-core's specs.
  */
@@ -26,7 +25,7 @@ let wrapper: VueWrapper;
 let changes: TileLayoutChange[];
 const layouts = ref<TileLayouts>({});
 const dragMode = ref<'header' | 'tile' | 'off'>('header');
-const exposed = ref<BsTileManagerExposed | null>(null);
+const exposed = ref<TileManagerMethods | null>(null);
 
 const Host = defineComponent({
   setup: () => () =>

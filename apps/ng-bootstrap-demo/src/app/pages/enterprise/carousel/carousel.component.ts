@@ -1,8 +1,8 @@
 import { Component, model, ChangeDetectionStrategy} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
-import { BsFormComponent } from '@mintplayer/ng-bootstrap/form';
-import { BsGridComponent, BsGridRowDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective, BsFormComponent } from '@mintplayer/ng-bootstrap/form';
+import { BsGridComponent, BsGridRowDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 import { BsCarouselComponent, BsCarouselItemComponent } from '@mintplayer/ng-bootstrap/carousel';
 import { dedent } from 'ts-dedent';

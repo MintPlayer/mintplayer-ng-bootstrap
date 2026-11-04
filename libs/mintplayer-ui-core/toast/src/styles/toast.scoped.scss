@@ -1,0 +1,18 @@
+// The toast's own rules (#458 M6); the toasts, close and transitions partials
+// are installed by the manifest. The Angular and Lit hosts are custom elements
+// (inline by default), and this layer beats Bootstrap's, so the toast's display
+// is set only while it shows: Bootstrap's `.toast:not(.show)` hides it.
+.toast.show,
+.toast-body {
+  display: block;
+}
+
+// The toaster is a fixed overlay corner: its padding must not swallow clicks
+// on the page beneath it. The toasts take them again.
+.toast-container {
+  pointer-events: none;
+
+  > .toast {
+    pointer-events: auto;
+  }
+}

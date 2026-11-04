@@ -48,11 +48,6 @@ export default {
         operation: { type: 'OperationEventDetail', doc: 'Rename, delete, new folder or paste: the consumer applies it.' },
         errorReported: { type: 'FileManagerErrorEventDetail', doc: '`reportError()` was called.' },
         childrenLoaded: { type: 'ChildrenLoadedEventDetail', doc: "A lazy folder's children arrived." },
-        currentFolderIdChange: { type: 'string | null', doc: 'The open folder, after the user changed it.' },
-        selectedIdsChange: { type: 'string[]', doc: 'The selected node ids, after the user changed them.' },
-        viewModeChange: { type: 'FileManagerViewMode', doc: 'The view, after the user switched it.' },
-        uploadsChange: { type: 'UploadEntry[]', doc: 'The tracked uploads, after a change.' },
-        pendingChange: { type: 'Record<string, OperationKind>', doc: 'The nodes with an operation in flight, after a change.' },
       },
       methods: {
         type: 'FileManagerMethods',

@@ -42,8 +42,6 @@ export interface TimeListState {
 }
 
 export interface TimeListEvents {
-  /** A slot chosen by click, Enter or Space. */
-  selectedTimeChange: Date;
 }
 
 export interface TimeListMethods {
@@ -85,7 +83,6 @@ export const timeListCore = defineCore<TimeListInputs, TimeListState, { view: Ti
       listHost(api, (minutes) => {
         const time = withTimeOfDay(api.state().selectedTime, minutes);
         api.setState({ selectedTime: time });
-        api.emit('selectedTimeChange', time);
       }),
     ),
   inputsChanged: (api, prev) => {
@@ -130,8 +127,6 @@ export interface TimepickerState {
 }
 
 export interface TimepickerEvents {
-  /** A slot picked in the list, or a time typed into the field before hydration. */
-  selectedTimeChange: Date;
   /** The popup opened (true) or closed (false). */
   openChange: boolean;
 }
@@ -166,7 +161,6 @@ const pickerListHost = (api: PickerApi): TimeListHost => ({
     const time = withTimeOfDay(api.state().selectedTime, minutes);
     api.setState({ selectedTime: time });
     syncField(api);
-    api.emit('selectedTimeChange', time);
     popupOf(api)?.hidePopover?.();
     api.host.querySelector<HTMLElement>('.timepicker-trigger')?.focus();
   },
@@ -204,7 +198,6 @@ export const timepickerCore = defineCore<TimepickerInputs, TimepickerState, { vi
     if (typed !== null && typed !== minutesOfDay(api.state().selectedTime)) {
       const time = withTimeOfDay(api.state().selectedTime, typed);
       api.setState({ selectedTime: time });
-      api.emit('selectedTimeChange', time);
     }
     // The field becomes the readonly display now: a time field cannot hold the
     // formatted text, and its dirty value would survive the type change.

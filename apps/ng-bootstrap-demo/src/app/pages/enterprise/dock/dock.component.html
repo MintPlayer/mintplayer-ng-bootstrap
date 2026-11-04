@@ -28,10 +28,10 @@
   <bs-dock-manager
     [(layout)]="layout"
     [debugLayoutIntegrity]="isDevMode"
-    (layoutchange)="liveLayout.set($event)"
+    (layoutChange)="liveLayout.set($event)"
     class="dock-demo__surface"
     >
-    <ng-template bsDockManagerPane let-pane="pane">
+    <ng-container *bsDockManagerPane="let pane">
       @switch (pane) {
         @case ('panel-1') {
           <div class="p-3">
@@ -48,7 +48,7 @@
         @case ('panel-3') {
           <div class="p-3">
             <h3 class="mb-2">Panel 3</h3>
-            <bs-badge [type]="Color.info">Headless core powered</bs-badge>
+            <bs-badge color="info">Headless core powered</bs-badge>
           </div>
         }
         @case ('panel-4') {
@@ -70,7 +70,7 @@
           </div>
         }
       }
-    </ng-template>
+    </ng-container>
   </bs-dock-manager>
 
   <div class="dock-demo__actions">

@@ -34,13 +34,13 @@ export class BsMultiRangeValueAccessor implements ControlValueAccessor, OnInit {
     // Its outputs fire for the user's moves only: a written or normalised value
     // (a null form value shown as [min, max]) never reaches the form as a change.
     const component = this.injector.get(BsMultiRangeComponent);
-    const report = (value: number[]) => {
-      if (!this.bound() || same(value, this.viewValue())) return;
+    const report = (value: number[] | null) => {
+      if (!value || !this.bound() || same(value, this.viewValue())) return;
       this.viewValue.set([...value]);
       this.onChange([...value]);
     };
-    const subs = [component.valueinput.subscribe(report), component.valuechange.subscribe(report)];
-    this.destroyRef.onDestroy(() => subs.forEach((sub) => sub.unsubscribe()));
+    const sub = component.value.subscribe(report);
+    this.destroyRef.onDestroy(() => sub.unsubscribe());
   }
 
   registerOnChange(fn: (value: number[]) => void): void {

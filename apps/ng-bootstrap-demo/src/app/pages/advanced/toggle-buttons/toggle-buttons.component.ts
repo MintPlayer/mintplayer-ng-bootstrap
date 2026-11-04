@@ -15,9 +15,7 @@ export class ToggleButtonsComponent {
   state = model(false);
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-navbar-toggler [(state)]="state"
-                       class="cursor-pointer d-inline-block">
-    </bs-navbar-toggler>
+    <bs-navbar-toggler [(open)]="open" label="Show the menu"></bs-navbar-toggler>
   `;
 
   protected readonly snippetBasicTs = dedent`
@@ -30,13 +28,11 @@ export class ToggleButtonsComponent {
       imports: [BsNavbarTogglerComponent],
     })
     export class MyToggleButtonsDemoComponent {
-      protected readonly state = model(false);
+      protected readonly open = model(false);
     }
   `;
 
   protected readonly snippetPlaylistHtml = dedent`
-    <bs-playlist-toggler [(state)]="state"
-                         class="cursor-pointer d-inline-block">
-    </bs-playlist-toggler>
+    <bs-playlist-toggler [(open)]="open" label="Show the playlist"></bs-playlist-toggler>
   `;
 }

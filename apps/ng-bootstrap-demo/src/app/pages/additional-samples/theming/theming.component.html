@@ -8,7 +8,7 @@
   signal-based service change it.
 </p>
 
-<bs-alert [type]="colors.info" class="d-block mb-4">
+<bs-alert color="info" class="d-block mb-4">
   <strong>Three steps, all in your app shell.</strong>
   <ul class="mb-0">
     <li>Add the <a [routerLink]="[]" fragment="head">head tags</a>: the colour-scheme metas, the optional default-mode meta and the pre-boot script.</li>
@@ -135,7 +135,7 @@
 </p>
 <bs-code-snippet [code]="sepiaToggleSnippet" [language]="'ts'"></bs-code-snippet>
 
-<bs-alert [type]="colors.warning" class="d-block mb-4">
+<bs-alert color="warning" class="d-block mb-4">
   <strong>More than three modes? Consider a menu.</strong>
   A cycling button makes the user click through every mode to reach the one they
   want, and they cannot see the choices up front. Past about three modes, a menu or
@@ -177,7 +177,7 @@
 </p>
 <p><code>{{ cookieExample() }}</code></p>
 
-<bs-table [isResponsive]="true">
+<bs-table [responsive]="true">
   <thead>
     <tr>
       <th>Attribute</th>
@@ -247,7 +247,7 @@
 
 <bs-code-snippet [code]="ssrProvidersSnippet" [language]="'ts'"></bs-code-snippet>
 
-<bs-alert [type]="colors.warning" class="d-block mb-3">
+<bs-alert color="warning" class="d-block mb-3">
   <strong>Send <code>Vary: Cookie</code> with rendered HTML.</strong>
   The HTML now differs per cookie. Without the header, a CDN or reverse proxy that
   caches the page serves one user's theme to everyone.
@@ -268,7 +268,7 @@
 
 <bs-code-snippet [code]="customVariantSnippet" [language]="'scss'"></bs-code-snippet>
 
-<bs-alert [type]="colors.info" class="d-block mb-3">
+<bs-alert color="info" class="d-block mb-3">
   <strong>Every custom variant must declare <code>--mp-color-mode</code>.</strong>
   Set it to <code>light</code> or <code>dark</code>. The library's web components
   cannot see Bootstrap's <code>[data-bs-theme=dark]</code> rules through their
@@ -276,7 +276,7 @@
   select caret, the switch knob). Without it they fall back to light.
 </bs-alert>
 
-<bs-alert [type]="colors.info" class="d-block mb-3">
+<bs-alert color="info" class="d-block mb-3">
   <strong>Browser support.</strong> Those icons switch through a CSS style query
   (<code>&#64;container style(--mp-color-mode: dark)</code>), measured working in
   Chromium 151, Firefox 153 and WebKit 26.5. An engine without custom-property style
@@ -284,7 +284,7 @@
   borders, backgrounds) follows the theme regardless.
 </bs-alert>
 
-<bs-alert [type]="colors.warning" class="d-block mb-4">
+<bs-alert color="warning" class="d-block mb-4">
   <strong><code>auto</code> only resolves to light or dark.</strong>
   <code>prefers-color-scheme</code> doesn't know about custom variants, so they
   must be set explicitly. Switching to <em>auto</em> while the user is on a custom
@@ -340,14 +340,14 @@
   </div>
   <button type="button" class="btn btn-primary">btn-primary</button>
   <button type="button" class="btn btn-outline-primary">outline-primary</button>
-  <bs-badge [type]="colors.primary">badge</bs-badge>
+  <bs-badge color="primary">badge</bs-badge>
   <a href="javascript:void(0)" class="link-primary">link-primary</a>
   <div class="demo-bar flex-grow-1"><div class="demo-bar-fill"></div></div>
 </div>
 
 <bs-code-snippet [code]="runtimeCssVarSnippet" [language]="'ts'"></bs-code-snippet>
 
-<bs-alert [type]="colors.info" class="d-block mb-3">
+<bs-alert color="info" class="d-block mb-3">
   <strong>Note about <code>.btn-primary</code> and <code>.btn-outline-primary</code>.</strong>
   Vanilla Bootstrap 5.3 bakes literal color values into each button variant's
   scoped <code>--bs-btn-*</code> variables, so mutating <code>--bs-primary</code>
@@ -367,7 +367,7 @@
   global palette. A few common ones:
 </p>
 
-<bs-table [isResponsive]="true">
+<bs-table [responsive]="true">
   <thead>
     <tr>
       <th>Component</th>
@@ -434,7 +434,7 @@
   and are re-exported, so one import is enough.
 </p>
 
-<bs-table [isResponsive]="true">
+<bs-table [responsive]="true">
   <thead>
     <tr>
       <th>Export</th>

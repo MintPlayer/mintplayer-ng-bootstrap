@@ -11,7 +11,7 @@ export const HOST_MARKER = 'mp-host';
 /** Named in every generated file's header. */
 export const GENERATOR = '@mintplayer/nx-component-compiler';
 
-export const NODE = { ROOT: 0, ELEMENT: 1, TEXT: 2, COMMENT: 3, INTERPOLATION: 5 };
+export const NODE = { ROOT: 0, ELEMENT: 1, TEXT: 2, COMMENT: 3, INTERPOLATION: 5, ATTRIBUTE: 6 };
 export const PROP = { ATTRIBUTE: 6, DIRECTIVE: 7 };
 export const TAG = { ELEMENT: 0, COMPONENT: 1, SLOT: 2, TEMPLATE: 3 };
 
@@ -71,6 +71,21 @@ function markNativeTags(node) {
   (node.children ?? []).forEach(markNativeTags);
 }
 
+/**
+ * Every `<slot>` the template renders must be declared in `defineSlots<…>()`: the
+ * Lit and React fronts type their `slots` from that declaration, so an undeclared
+ * slot compiles here and fails the front's type-check far from its cause.
+ */
+function checkSlotsDeclared(file, node, slots) {
+  if (node.type === NODE.ELEMENT && node.tag === 'slot') {
+    const name = node.props.find((p) => p.type === NODE.ATTRIBUTE && p.name === 'name')?.value?.content ?? 'default';
+    if (!slots.members.some((m) => m.name === name)) {
+      throw new TemplateError(file, node, `<slot${name === 'default' ? '' : ` name="${name}"`}> is not declared: add "${name}" to defineSlots<…>()`);
+    }
+  }
+  (node.children ?? []).forEach((child) => checkSlotsDeclared(file, child, slots));
+}
+
 export function readSource(file, text) {
   const { descriptor, errors } = parseSfc(text, { filename: file });
   if (errors.length) throw new Error(`${file}: ${errors[0].message ?? errors[0]}`);
@@ -108,6 +123,7 @@ export function readSource(file, text) {
   markNativeTags(descriptor.template.ast);
   const props = typeMembers(scriptText, ast, 'defineProps');
   const slots = typeMembers(scriptText, ast, 'defineSlots');
+  checkSlotsDeclared(file, descriptor.template.ast, slots);
   return {
     file,
     name: pascalName(file),
@@ -250,7 +266,13 @@ export function rootElement(src) {
   const roots = meaningful(src.root.children);
   const hostRoots = roots.filter((r) => r.type === NODE.ELEMENT && isHost(r));
   if (hostRoots.length && roots.length !== 1) throw new TemplateError(src.file, hostRoots[0], `${HOST_MARKER} needs a single root element`);
-  return { root: roots.length === 1 ? roots[0] : null, host: hostRoots.length === 1 };
+  if (roots.length === 1) return { root: roots[0], roots, host: hostRoots.length === 1 };
+  // A v-if / v-else chain that ends in v-else renders exactly one element: a
+  // single root, one per branch (#458 §4.5, the menu that is a <details> in a
+  // navbar). `root` is the first branch; `roots` lists them all.
+  const groups = groupChains(src, src.root.children);
+  const chain = groups.length === 1 && groups[0].chain && groups[0].chain[groups[0].chain.length - 1].cond === null ? groups[0].chain.map((c) => c.el) : null;
+  return chain ? { root: chain[0], roots: chain, host: false } : { root: null, roots: [], host: false };
 }
 
 export function checkElement(src, el) {
@@ -271,8 +293,8 @@ export function checkElement(src, el) {
   // consumer's own style lands on the root and the mp-attrs element, so those
   // two never take one.
   if (el.props.some((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'style')) {
-    const { root } = rootElement(src);
-    if (el === root || attribute(el, HOST_MARKER) || attribute(el, ATTRS_MARKER)) {
+    const { roots } = rootElement(src);
+    if (roots.includes(el) || attribute(el, HOST_MARKER) || attribute(el, ATTRS_MARKER)) {
       throw new TemplateError(src.file, el, ':style (a style bag) is not allowed on the root or the mp-attrs element');
     }
   }
@@ -346,8 +368,9 @@ export function composedUse(src, el, components) {
     if (p.name === 'model') {
       const input = inputNamed(p.arg?.content ?? '');
       if (!input?.model) throw new TemplateError(src.file, el, `v-model:${p.arg?.content} needs a model input of <${el.tag}>`);
-      const output = child.outputs.find((o) => o.name === `${input.name}Change`);
-      if (!output) throw new TemplateError(src.file, el, `v-model:${input.name} needs a ${input.name}Change output on <${el.tag}>`);
+      // The model's own change channel (model.mjs `changes`), named per front.
+      const output = child.changes.find((c) => c.input === input.name);
+      if (!output) throw new TemplateError(src.file, el, `v-model:${input.name}: <${el.tag}> derives no change channel for "${input.name}"`);
       if (!isMemberPath(p.exp.content)) throw new TemplateError(src.file, el, `v-model:${input.name} takes a ModelBinding path (view.x)`);
       use.models.push({ name: input.name, output, exp: p.exp.content.trim() });
       return;
@@ -392,19 +415,87 @@ const camelCase = (name) => name.replace(/-(\w)/g, (_, c) => c.toUpperCase());
  * It takes `:to` only: loop or guard it from a `<template>` around it, since Vue
  * cannot combine the null guard it needs with a `v-for` on the same element.
  * Returns the `:to` expression, or null for any other element.
+ *
+ * `<teleport to="body">` (static, #458 §4.4) is the overlay form: its content
+ * renders into a body host, a `div` at the end of `<body>` outside every
+ * clipping ancestor, which copies the theme, `dir` and `lang` of where it is
+ * declared. For it this returns `BODY_TARGET`. Unlike `:to`, Angular and Vue
+ * server-render it (Angular as a detached view, Vue through `<Teleport>`);
+ * React and Lit render it on the client only.
  */
+export const BODY_TARGET = Symbol('teleport to body');
+
 export function teleportTarget(src, el) {
   if (el.type !== NODE.ELEMENT || el.tag.toLowerCase() !== 'teleport') return null;
-  const to = el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'to');
-  if (!to || el.props.length !== 1) throw new TemplateError(src.file, el, '<teleport> takes :to only (put v-if / v-for on a <template> around it)');
-  return to.exp.content;
+  const only = '<teleport> takes :to="el" or to="body" only (put v-if / v-for on a <template> around it)';
+  if (el.props.length !== 1) throw new TemplateError(src.file, el, only);
+  const [prop] = el.props;
+  if (prop.type === PROP.ATTRIBUTE && prop.name === 'to' && prop.value?.content === 'body') return BODY_TARGET;
+  if (prop.type !== PROP.DIRECTIVE || prop.name !== 'bind' || prop.arg?.content !== 'to') throw new TemplateError(src.file, el, only);
+  return prop.exp.content;
+}
+
+/**
+ * `<content-slot query="pages" name="header" :index="i" />` (#458 Q15): renders
+ * the `name` slot (default: the default slot) of the `index`-th child that the
+ * component's content query `query` collected. The child is a manifest
+ * declaration: it renders nothing itself and lends its slots to the parent, so
+ * the parent places rich consumer content (a tab's header, a page's body) inside
+ * its own markup, on the server too. Angular renders the child's TemplateRef,
+ * React its prop node, Vue its slot function and Lit its `slot=` children.
+ * Returns null for any other element.
+ */
+export const CONTENT_SLOT_TAG = 'content-slot';
+
+export function contentSlotUse(src, el) {
+  if (el.type !== NODE.ELEMENT || el.tag !== CONTENT_SLOT_TAG) return null;
+  const usage = `<${CONTENT_SLOT_TAG}> takes query="<content query>", :index="<expression>" and an optional name="<slot>" (put v-if / v-for on a <template> around it)`;
+  const query = attribute(el, 'query')?.value?.content;
+  const named = attribute(el, 'name');
+  const name = named?.value?.content ?? 'default';
+  const index = el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === 'index')?.exp?.content;
+  if (!query || !index || el.props.length !== (named ? 3 : 2)) throw new TemplateError(src.file, el, usage);
+  if (![query, name].every((id) => /^[A-Za-z_$][\w$]*$/.test(id))) throw new TemplateError(src.file, el, usage);
+  if (meaningful(el.children).length) throw new TemplateError(src.file, el, `<${CONTENT_SLOT_TAG}> takes no content`);
+  return { query, name, index };
+}
+
+/**
+ * `<instance-style :name="key" :css="text" />` (#458 M4): a style sheet of this
+ * instance's own, computed by the core (the tile manager's server layout rules).
+ * `css` null renders nothing. React, Vue and Lit render a `<style>` where the tag
+ * sits; Angular strips `<style>` from templates, so it writes the sheet into the
+ * document head under `name`, server and client alike.
+ */
+export const INSTANCE_STYLE_TAG = 'instance-style';
+
+export function instanceStyleUse(src, el) {
+  if (el.type !== NODE.ELEMENT || el.tag !== INSTANCE_STYLE_TAG) return null;
+  const bound = (arg) => el.props.find((p) => p.type === PROP.DIRECTIVE && p.name === 'bind' && p.arg?.content === arg)?.exp?.content;
+  const name = bound('name');
+  const css = bound('css');
+  if (!name || !css || el.props.length !== 2) throw new TemplateError(src.file, el, `<${INSTANCE_STYLE_TAG}> takes :name="<unique key>" and :css="<text or null>" only (put v-if / v-for on a <template> around it)`);
+  if (meaningful(el.children).length) throw new TemplateError(src.file, el, `<${INSTANCE_STYLE_TAG}> takes no content`);
+  return { name, css };
+}
+
+/** Every `<content-slot>` a template renders. */
+export function contentSlotUses(src) {
+  const uses = [];
+  const walk = (node) => {
+    const use = node.type === NODE.ELEMENT ? contentSlotUse(src, node) : null;
+    if (use) uses.push(use);
+    (node.children ?? []).forEach(walk);
+  };
+  walk(src.root);
+  return uses;
 }
 
 /** Every component tag (a partial or a composed element) in a template. */
 export function componentTags(src) {
   const tags = [];
   const walk = (node) => {
-    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport') tags.push(node);
+    if (node.type === NODE.ELEMENT && node.tagType === TAG.COMPONENT && node.tag.toLowerCase() !== 'teleport' && node.tag !== CONTENT_SLOT_TAG && node.tag !== INSTANCE_STYLE_TAG) tags.push(node);
     (node.children ?? []).forEach(walk);
   };
   walk(src.root);
@@ -479,6 +570,7 @@ export function groupPartials(sources, components) {
   });
   partials.forEach((src) => {
     if (src.slots.members.some((s) => s.name === 'default')) throw new Error(`${src.file}: a partial takes named slots only`);
+    if (contentSlotUses(src).length) throw new Error(`${src.file}: a partial cannot render a <${CONTENT_SLOT_TAG}>; render it from the component's own template`);
     const marked = [];
     const walk = (node) => {
       if (node.type === NODE.ELEMENT && [HOST_MARKER, ATTRS_MARKER, 'ref'].some((name) => attribute(node, name))) marked.push(node);

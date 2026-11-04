@@ -5,20 +5,34 @@
 import { emitAngular, partialGuard } from '../templates/emit-angular.mjs';
 import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall } from './model.mjs';
 
-const angularOutput = (output) => output.lower;
+// Angular's convention: an output keeps the manifest's camelCase name (`itemSelect`, as `xChange` of a model()).
+const angularOutput = (output) => output.name;
 
-function inputLine(model, input) {
+export function inputLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
+  const value = input.default ?? 'undefined';
+  // The input aliased to the directive's own selector is its primary: a bare `*bsDropdown` (or
+  // `<span bsDropdown>`) binds the empty string, which means "the default".
+  const primary = input.kind !== 'boolean' && input.kind !== 'number' && !input.model && input.alias !== undefined
+    && model.names?.selector === `[${input.alias}]`;
   // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
   const transform =
-    input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? `(v: unknown) => numberAttribute(v) as ${type}` : null;
-  const value = input.default ?? 'undefined';
+    input.kind === 'boolean'
+      ? 'booleanAttribute'
+      : input.kind === 'number'
+        ? `(v: unknown) => numberAttribute(v) as ${type}`
+        : primary
+          ? `(v: ${type} | '') => (v === '' ? ${value} : v)`
+          : null;
+  const writeType = primary ? `${type} | ''` : 'unknown';
+  const alias = input.alias ? `alias: '${input.alias}'` : null;
+  const opts = (...entries) => (entries.filter(Boolean).length ? `, { ${entries.filter(Boolean).join(', ')} }` : '');
   const call = input.model
-    ? `model<${type}>(${value})`
+    ? `model<${type}>(${value}${opts(alias)})`
     : transform
-    ? `input<${type}, unknown>(${value}, { transform: ${transform} })`
-    : input.default !== undefined
-      ? `input<${type}>(${value})`
+    ? `input<${type}, ${writeType}>(${value}${opts(`transform: ${transform}`, alias)})`
+    : input.default !== undefined || alias
+      ? `input<${type}>(${value}${opts(alias)})`
       : `input<${type}>()`;
   return `${jsdoc(input.doc, '  ')}  readonly ${input.name} = ${call};`;
 }
@@ -44,7 +58,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (named.length) ['contentChild', 'Directive', 'TemplateRef'].forEach((n) => angularImports.add(n));
   // Content queries: a parent reads each queried child's `contentChild`, which carries its wrapper's `contentInputs`.
   if (model.content.length) angularImports.add('contentChildren');
-  if (model.queried || model.wrapsContent) angularImports.add('computed');
+  if (model.queried || model.wrapsContent || model.content.some((c) => c.lends)) angularImports.add('computed');
   const contentImports = [...model.content.map(({ child }) => child), ...(model.queried?.within ? [model.queried.within] : [])].filter(
     (other, i, all) => other !== model && all.indexOf(other) === i,
   );
@@ -52,7 +66,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   // A template whose only bag is the host's never binds [mpProps]: importing it anyway is NG8113.
   const template = emitAngular(model.src, { partials: model.partials, components: model.components, letProps: true });
   const usesOutlet = template.uses.includes('NgTemplateOutlet');
-  const directives = ['MpPropsDirective', 'MpTeleportDirective', 'MpTrustedHtmlPipe'].filter((d) => template.uses.includes(d));
+  const directives = ['MpBodyTeleportDirective', 'MpInstanceStyleDirective', 'MpPropsDirective', 'MpTeleportDirective', 'MpTrustedHtmlPipe'].filter((d) => template.uses.includes(d));
   const guards = template.partials.map((partial) => ({ partial, ...partialGuard(partial) }));
   // Composed children and the slot directives their content uses. A standalone
   // component is in its own template's scope, so composing itself imports nothing.
@@ -60,7 +74,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
     .filter(({ child }) => child.names.angular !== names.angular)
     .map(({ child, slots }) => ({ module: child.module.angular, names: [child.names.angular, ...[...slots].map((slot) => child.names.slotDirective(slot))] }));
   if (guards.length) angularImports.add('Directive');
-  const machine = [...directives, 'useCore', 'useScopedStyles'];
+  const machine = [...directives, 'useCore', 'useScopedStyles', ...(model.forwardsHost ? ['useHostAttrs'] : [])];
   const provides = model.provides;
   if (provides) machine.push('provideCoreContext');
 
@@ -85,8 +99,10 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   // Slot directives.
   named.forEach((slot) => {
-    // The outlet passes the params both as `$implicit` (`let-args`) and spread (`let-x="x"`).
-    const context = slot.params ? `${slot.params} & { $implicit: ${slot.params} }` : 'unknown';
+    // The outlet passes the first param as `$implicit` (`*bsX="let item"`, as ngFor does) and every
+    // param by name (`let-x="x"`).
+    const first = slot.params && /^\{\s*([A-Za-z_$][\w$]*)\??:/.exec(slot.params)?.[1];
+    const context = slot.params ? `${slot.params} & { $implicit: ${first ? `${slot.params}['${first}']` : 'unknown'} }` : 'unknown';
     const directive = names.slotDirective(slot.name);
     lines.push(
       `/** The \`${slot.name}\` slot of \`<${names.selector}>\`: \`<ng-template ${names.slotSelector(slot.name)}>\` or \`*${names.slotSelector(slot.name)}\`. */`,
@@ -125,6 +141,7 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
 
   lines.push(jsdoc(model.doc).trimEnd(), `@Component({`, ...meta, `})`, `export class ${names.angular} {`);
   lines.push(`  /** The host element. */`, `  readonly elementRef = inject<ElementRef<HTMLElement>>(ElementRef);`, '');
+  if (model.forwardsHost) lines.push(`  /** The consumer's aria-*, id and tabindex on the host, for the role-bearing node. */`, `  protected readonly hostAttrs = useHostAttrs();`, '');
   model.inputs.forEach((input) => lines.push(inputLine(model, input)));
   model.outputs.forEach((output) =>
     lines.push(`${jsdoc(output.doc, '  ')}  readonly ${angularOutput(output)} = output<${output.type}>();`),
@@ -151,7 +168,23 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
       `  readonly contentChild = computed(() => ({ inputs: ${ownInputs}, within: ${within ? 'this.#contentWithin?.contentInputs() ?? null' : 'null'} }));`,
     );
   }
-  model.content.forEach(({ input, child }) => lines.push(`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`));
+  model.content.forEach(({ input, child, lends }) =>
+    lines.push(
+      ...(lends
+        ? [
+            // A declaration in a nested control of the same kind is that control's.
+            `  private readonly query_${input} = contentChildren(${child.names.angular}, { descendants: true });`,
+            `  private readonly content_${input} = computed(() => this.query_${input}().filter((c) => c.contentParent === this));`,
+          ]
+        : [`  private readonly content_${input} = contentChildren(${child.names.angular}, { descendants: true });`]),
+    ),
+  );
+  const lent = model.content.filter((c) => c.lends);
+  if (lent.length) {
+    // `| undefined`: the template reads `contentSlots().<query>[i]?.<slot>`.
+    const entries = lent.map(({ input, child }) => `${input}: this.content_${input}().map((c): ReturnType<${child.names.angular}['contentSlots']> | undefined => c.contentSlots())`);
+    lines.push(`  /** The slots each content query's declarations lend the template (<content-slot>). */`, `  protected readonly contentSlots = computed(() => ({ ${entries.join(', ')} }));`);
+  }
   const inputEntries = [
     ...model.inputs.map((i) => `${i.name}: this.${i.name}()`),
     ...model.content.map(({ input }) => `${input}: this.content_${input}().map((c) => c.contentChild())`),

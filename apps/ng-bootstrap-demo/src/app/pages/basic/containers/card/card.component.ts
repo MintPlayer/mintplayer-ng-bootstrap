@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
-import { Color } from '@mintplayer/ng-bootstrap';
 import { BsNavComponent, BsNavItemComponent, BsNavLinkDirective } from '@mintplayer/ng-bootstrap/nav';
 import {
   BsCardBodyComponent,
@@ -12,6 +11,7 @@ import {
   BsCardSubtitleComponent,
   BsCardTextComponent,
   BsCardTitleComponent,
+  CARD_COLORS,
 } from '@mintplayer/ng-bootstrap/card';
 import {
   BsGridComponent,
@@ -65,20 +65,7 @@ function makePlaceholder(width: number, height: number, label: string): string {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CardComponent {
-  readonly colors = Color;
-  readonly colorKeys: ReadonlyArray<keyof typeof Color> = [
-    'primary',
-    'secondary',
-    'success',
-    'danger',
-    'warning',
-    'info',
-    'light',
-    'dark',
-    'body',
-    'white',
-    'transparent',
-  ];
+  readonly colorKeys = CARD_COLORS;
 
   readonly placeholderTopBottom = makePlaceholder(320, 180, 'Image');
   readonly placeholderOverlay = makePlaceholder(320, 200, 'Background');
@@ -207,7 +194,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorFilledHtml = dedent`
-    <bs-card[color]="colors.primary">
+    <bs-card color="primary">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>text-bg-primary applied to the host.</bs-card-text>
@@ -216,7 +203,7 @@ export class CardComponent {
   `;
 
   protected readonly snippetColorOutlineHtml = dedent`
-    <bs-card[color]="colors.primary" [outline]="true">
+    <bs-card color="primary" [outline]="true">
       <bs-card-body>
         <bs-card-title>primary</bs-card-title>
         <bs-card-text>border border-primary bg-transparent applied to the host.</bs-card-text>
@@ -226,11 +213,11 @@ export class CardComponent {
 
   protected readonly snippetIndependentColorsHtml = dedent`
     <bs-card>
-      <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
+      <bs-card-header color="dark">Dark header</bs-card-header>
       <bs-card-body>
         <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
       </bs-card-body>
-      <bs-card-footer [color]="colors.success">Success footer</bs-card-footer>
+      <bs-card-footer color="success">Success footer</bs-card-footer>
     </bs-card>
   `;
 

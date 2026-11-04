@@ -1,2 +1,2 @@
-export * from './progress/progress.component';
-export * from './progress-bar/progress-bar.component';
+// Generated from @mintplayer/ui-core/progress-bar (#458 D10).
+export * from './generated';

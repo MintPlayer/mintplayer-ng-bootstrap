@@ -1,17 +1,14 @@
-import { defineContext, defineCore } from '@mintplayer/ui-core/component';
+import { defineCore } from '@mintplayer/ui-core/component';
+import { DROPDOWN_NESTING, NAVIGATION_NESTING, type DropdownNesting } from '@mintplayer/ui-core/dropdown';
 import {
   attachNavbar,
   connectNavbar,
   connectNavbarBrand,
-  connectNavbarContents,
-  connectNavbarDropdown,
   connectNavbarItem,
   connectNavbarNav,
   setNavbarExpanded,
   type NavbarBag,
   type NavbarBreakpoint,
-  type NavbarDropdownView,
-  type NavbarExpandedChangeEventDetail,
   type NavbarLabels,
   type NavbarView,
 } from './navbar';
@@ -19,19 +16,16 @@ import {
 /**
  * The navbar group's cores (PRD #437 D10): what the generated Angular, React,
  * Vue and Lit components host. `navbar.component.ts` is their manifest and
- * `templates/` their markup.
+ * `templates/` their markup. A dropdown in the bar is a `bs-dropdown-menu`
+ * (the dropdown group, #458 §4.5): a nav group provides `DROPDOWN_NESTING` in
+ * navigation mode, so the menu renders the navbar's `<details>` disclosure.
  */
 
-/** How many dropdowns a node is authored inside: -1 for none. */
-export interface NavbarNesting {
-  readonly depth: number;
-}
-
-export const NAVBAR_NESTING = defineContext<NavbarNesting>('navbar-nesting', { depth: -1 });
+// The manifest's `provides` names it from this module.
+export { DROPDOWN_NESTING };
 
 const BREAKPOINTS = new Set<string>(['xs', 'sm', 'md', 'lg', 'xl', 'xxl']);
 const BRAND = connectNavbarBrand();
-const CONTENTS = connectNavbarContents();
 
 export interface NavbarInputs {
   /** Bootstrap breakpoint the navbar expands at (`xs`…`xxl`); it collapses below it. */
@@ -52,7 +46,6 @@ export interface NavbarState {
 }
 
 export interface NavbarEvents {
-  expandedChange: NavbarExpandedChangeEventDetail;
 }
 
 export interface NavbarProps {
@@ -83,7 +76,6 @@ export const navbarCore = defineCore<NavbarInputs, NavbarState, NavbarProps, Nav
     attachNavbar(api.host, {
       onExpandedChange: (expanded) => {
         api.setState({ expanded });
-        api.emit('expandedChange', { expanded });
       },
     }),
   // The bag only seeds the checkbox; a changed input must also reach one the
@@ -98,7 +90,6 @@ export const navbarCore = defineCore<NavbarInputs, NavbarState, NavbarProps, Nav
       const next = force ?? !api.state().expanded;
       if (setNavbarExpanded(api.host, next) === null) return;
       api.setState({ expanded: next });
-      api.emit('expandedChange', { expanded: next });
     },
   },
 });
@@ -108,8 +99,10 @@ export interface NavbarNavInputs {
   align: 'start' | 'end';
 }
 
-export const navbarNavCore = defineCore<NavbarNavInputs, object, { bag: NavbarBag }>({
+export const navbarNavCore = defineCore<NavbarNavInputs, object, { bag: NavbarBag }, Record<never, never>, undefined, DropdownNesting>({
   view: ({ inputs }) => ({ bag: connectNavbarNav(inputs.align) }),
+  provides: DROPDOWN_NESTING,
+  provide: () => NAVIGATION_NESTING,
 });
 
 export interface NavbarItemInputs {
@@ -118,35 +111,6 @@ export interface NavbarItemInputs {
   disabled: boolean;
 }
 
-export const navbarItemCore = defineCore<NavbarItemInputs, object, { bag: NavbarBag }, Record<never, never>, NavbarNesting>({
-  consume: NAVBAR_NESTING,
-  view: ({ inputs, context }) => ({
-    bag: connectNavbarItem({ inMenu: context.depth >= 0, active: inputs.active, disabled: inputs.disabled }),
-  }),
-});
-
-export interface NavbarDropdownInputs {
-  /** The trigger text; the `label` slot replaces it with rich content. */
-  label?: string | null;
-  /** A descendant link's route is active (Angular derives it from the router). */
-  active: boolean;
-}
-
-export const navbarDropdownCore = defineCore<
-  NavbarDropdownInputs,
-  object,
-  { view: NavbarDropdownView; label?: string },
-  Record<never, never>,
-  NavbarNesting,
-  NavbarNesting
->({
-  consume: NAVBAR_NESTING,
-  provides: NAVBAR_NESTING,
-  view: ({ inputs, context, hydrated }) => ({
-    view: connectNavbarDropdown({ depth: context.depth + 1, active: inputs.active, hydrated }),
-    label: inputs.label ?? undefined,
-  }),
-  // Angular's and Lit's own host element sits around the <details>: out of the layout.
-  host: () => CONTENTS,
-  provide: ({ context }) => ({ depth: context.depth + 1 }),
+export const navbarItemCore = defineCore<NavbarItemInputs, object, { bag: NavbarBag }>({
+  view: ({ inputs }) => ({ bag: connectNavbarItem({ active: inputs.active, disabled: inputs.disabled }) }),
 });

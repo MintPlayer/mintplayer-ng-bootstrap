@@ -1,0 +1,69 @@
+// The scrollspy (#458 M7): the content, with the section list in a sticky column
+// beside it from md up. Every element here is the group's own (stamped).
+$indent: 20px;
+
+.scrollspy {
+  display: block;
+}
+
+.spy > ul {
+  list-style-type: none;
+  padding-inline-start: 0;
+}
+
+.spy > ul > li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spy > ul > li > button:hover {
+  color: var(--bs-emphasis-color);
+}
+
+.spy > ul > li > button:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, currentColor);
+  outline-offset: 2px;
+}
+
+@for $level from 3 through 6 {
+  .scrollspy-level-#{$level} {
+    margin-inline-start: ($level - 2) * $indent;
+  }
+}
+
+@media (min-width: 768px) {
+  .scrollspy {
+    display: grid;
+    grid-template-areas: "content toc";
+    grid-template-columns: minmax(0, 1fr) 200px;
+    gap: inherit;
+  }
+
+  .scrollspy-content {
+    grid-area: content;
+  }
+
+  .spy {
+    position: sticky;
+    top: 5rem;
+    z-index: 2;
+    // How long the list stays stuck.
+    height: calc(100vh - 7rem);
+    overflow-y: auto;
+    grid-area: toc;
+  }
+
+  .spy > ul {
+    padding-inline-start: 2rem;
+  }
+
+  // Inside a scroll container (a scrollable modal body) the list sticks to the
+  // container's top. Its height stays auto: a sticky box that fills its
+  // containing block can never stick.
+  .scrollspy[data-contained] > .spy {
+    top: 0;
+    height: auto;
+    max-height: 100%;
+  }
+}

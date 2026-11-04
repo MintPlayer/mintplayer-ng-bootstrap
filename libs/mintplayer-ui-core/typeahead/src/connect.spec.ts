@@ -30,14 +30,13 @@ describe('connect()', () => {
       disabled: false,
       name: 'q',
       value: 'kru',
-      'data-mps': 'typeahead',
     });
     expect(api.input['aria-invalid']).toBeNull();
     expect(api.listbox).toMatchObject({ id: 'ta-listbox', role: 'listbox', hidden: false, 'aria-busy': null });
     expect(api.option(1)).toMatchObject({ id: 'ta-opt-1', role: 'option', 'aria-selected': 'true', 'data-active': true });
     expect(api.option(0)).toMatchObject({ 'aria-selected': 'false', 'data-active': null });
     expect(api.status).toBeNull();
-    expect(api.live).toEqual({ attrs: { 'data-mps': 'typeahead', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: '2 results found' });
+    expect(api.live).toEqual({ attrs: { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: '2 results found' });
     expect(api.error).toBeNull();
   });
 
@@ -50,7 +49,7 @@ describe('connect()', () => {
   });
 
   it('loading and no-results status rows; aria-busy while loading', () => {
-    expect(connect({ ...base, status: 'loading', items: [] }, 'ta').status).toEqual({ attrs: { 'data-mps': 'typeahead', role: 'presentation' }, text: 'Loading…' });
+    expect(connect({ ...base, status: 'loading', items: [] }, 'ta').status).toEqual({ attrs: { role: 'presentation' }, text: 'Loading…' });
     expect(connect({ ...base, status: 'loading', items: [] }, 'ta').listbox['aria-busy']).toBe('true');
     expect(connect({ ...base, status: 'ready', items: [] }, 'ta').status?.text).toBe('No suggestions found');
     expect(connect({ ...base, status: 'error', items: [] }, 'ta').status).toBeNull();
@@ -61,7 +60,7 @@ describe('connect()', () => {
     expect(api.input['aria-describedby']).toBe('ta-error');
     expect(api.input['aria-errormessage']).toBe('ta-error');
     expect(api.input['aria-invalid']).toBe('true');
-    expect(api.error).toEqual({ attrs: { 'data-mps': 'typeahead', id: 'ta-error' }, text: 'Pick a street' });
+    expect(api.error).toEqual({ attrs: { id: 'ta-error' }, text: 'Pick a street' });
   });
 
   it('writes the readiness mark on the root only once the front has hydrated', () => {

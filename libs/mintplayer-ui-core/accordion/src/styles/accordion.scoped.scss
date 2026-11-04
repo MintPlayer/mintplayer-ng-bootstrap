@@ -16,6 +16,26 @@
   interpolate-size: allow-keywords;
 }
 
+// Angular and Lit render each tab's <details> inside a tab host element
+// (`.accordion-tab`); React and Vue render the rows as siblings. The host is
+// out of the layout, and since every row is then the first and last of its
+// type, Bootstrap's `:first-of-type` / `:last-of-type` joining is restated
+// on the hosts: the rows of one accordion share their borders.
+.accordion-tab {
+  display: contents;
+}
+
+.accordion-tab:not(:first-of-type) > .accordion-item {
+  border-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.accordion-tab:not(:last-of-type) > .accordion-item {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
 // The consumer owns body spacing: every existing consumer passes its own
 // padding utilities, and Bootstrap's 1rem would compound at each nesting level.
 .accordion-content {
@@ -95,7 +115,7 @@ summary.accordion-button:focus-visible {
 
 // `highlightActiveTab` is opt-in: without it an open header keeps the resting
 // background.
-.accordion:not([data-highlight-active]) > details[open] > summary.accordion-button {
+details[open]:not([data-highlight-active]) > summary.accordion-button {
   background-color: unset;
   color: inherit;
 }

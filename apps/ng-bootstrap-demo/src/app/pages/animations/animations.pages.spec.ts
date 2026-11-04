@@ -6,11 +6,11 @@ import { MockComponent, MockDirective } from 'ng-mocks';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import {
-  BsColFormLabelDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
 } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import { ColorTransitionComponent } from './color-transition/color-transition.component';
 import { FadeInOutComponent } from './fade-in-out/fade-in-out.component';
 import { SlideUpDownComponent } from './slide-up-down/slide-up-down.component';

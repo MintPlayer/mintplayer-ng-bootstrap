@@ -53,8 +53,7 @@ core plus four fronts that each render their own template** (see "Headless core 
 - **`@mintplayer/react-bootstrap`** (`libs/mintplayer-react-bootstrap`) — the React fronts.
 - **`@mintplayer/vue-bootstrap`** (`libs/mintplayer-vue-bootstrap`) — the Vue fronts.
 - **`@mintplayer/web-components`** (`libs/mintplayer-web-components`) — the **Lit** fronts (`mp-*` custom
-  elements), for consumers without a framework. Most are generated; a few slot-based ones (checkbox, toggle
-  button, tab control, pagination, shell…) are hand-written shadow-root elements.
+  elements), for consumers without a framework, generated like the other three (light DOM, no shadow root).
 - `libs/mintplayer-component-compiler` — the component compiler (PRD D10) and its Nx plugin.
 - Demo apps: `apps/{ng,react,vue}-bootstrap-demo` (+ `-e2e` Playwright projects).
 - Backend for data-driven demos: `apps/api` (ASP.NET Core + EF Core).
@@ -62,142 +61,93 @@ core plus four fronts that each render their own template** (see "Headless core 
 **A framework front never renders an `<mp-*>` element.** Angular SSR runs on domino (no `customElements`), so a
 wrapper around a custom element server-renders an empty tag; every front renders real HTML instead.
 
-## Hand-written Lit elements (`@mintplayer/web-components`)
+## Lit fronts (`@mintplayer/web-components`)
 
-This section applies to the hand-written `mp-*` elements. A component with a D10 manifest has its Lit front
-generated into `<name>/src/generated/` — never hand-write or edit it. Each hand-written WC lives at
-`libs/mintplayer-web-components/<name>/` with this shape:
+Since #458 every `mp-*` element is **generated** from a D10 source into `<name>/src/generated/` — never
+hand-write or edit one. A generated element is light DOM (`createRenderRoot()` returns `this`), so the
+page's CSS, Bootstrap's utilities and a consumer's own component styles reach everything it renders; its
+group sheet and its Bootstrap parts install through the shared registry like every other front's.
+`<name>/src/index.ts` re-exports `./generated` plus the core's public types. No hand-written element is
+left (the last, `mp-dropdown-menu`, became a D10 group in #458 M6).
 
-```
-<name>/
-  index.ts                       → export * from './src'
-  (no ng-package.js — the WC lib builds with Vite; the 5 stray ng-package.js files in older WC dirs are inert)
-  src/
-    index.ts                     → public API barrel
-    components/<el>.ts           → the LitElement (calls customElements.define at the bottom)
-    styles/<name>.styles.scss    → hand-written styles  ──┐ codegen input
-    styles/<name>.styles.ts      → GENERATED, do not edit ◄┘ (exports `<camelName>Styles`)
-    types/ , providers/ , ...
-```
+**History.** Until #458 (2026-11) a dozen elements were hand-written: shadow-root, slot-based elements
+(accordion, card, checkbox, pagination, shell, tab control, …) that re-declared Bootstrap from
+`web-components/_styles`, and "light tier" elements (`scopedHtml`, `.light.scss`, `adoptLightStyles`
+mirrors into any shadow host that nested one). #458 M4 generated the last of them and deleted the
+`_styles` copies and the light-styles-nesting rule. The PRDs under
+`docs/prd/` record that era; the rules below are the ones that outlive it.
 
-Some larger components instead use `<el>.element.html` + `<el>.element.scss` → a GENERATED `<el>.element.template.ts` (exports `template` + `styles`). Either pattern is fine; inline `html\`\`` in `render()` suits dynamic templates, the `.element.html` pattern suits mostly-static structure.
+### Document-level CSS and scoped sheets
 
-### SCSS / template codegen (important)
-
-`.styles.scss` and `.element.html`/`.element.scss` are **compiled into TypeScript** by `tools/scripts/build-web-components.mjs`. The element imports the *generated* `.ts`, never the `.scss` directly. So:
-
-- **After editing any `.styles.scss`, `.element.scss`, or `.element.html`, re-run codegen or the change is invisible:**
-  ```bash
-  npx nx run mintplayer-web-components:codegen-wc
-  # watch mode:
-  npx nx run mintplayer-web-components:codegen-wc-watch
-  ```
-- `nx build mintplayer-web-components` runs `codegen-wc` + `cem` (custom-elements manifest) automatically as `dependsOn`.
-- Generated files (`*.styles.ts`, `*.element.template.ts`, `custom-elements.json`) are **gitignored build artifacts** (`.gitignore`: `libs/**/*.styles.ts` etc.) — never stage or hand-edit them; only the `.scss`/`.html` sources are tracked.
-
-### Light tier — emulated encapsulation, no shadow DOM
-
-A component that mounts **consumer-authored DOM** (a render callback like `rowRenderer` /
-`cellRenderer` / `nodeRenderer`, or a direct `appendChild` of a consumer element) must render in the
-**light DOM**. Inside a shadow root that content is starved: the page's stylesheets — the consumer's
-own Angular/React/Vue component CSS *and* Bootstrap's global utilities — cannot cross the boundary,
-so a `<bs-badge>` in a datatable row renders as bare text and `me-2` does nothing (issue #408).
-Every D10-generated front is light DOM by construction (the host is the render root and the core's bags
-carry `data-mps`), so these rules now bite only a **hand-written** element; `mp-typeahead` is the remaining
-hand-written light-tier reference.
-
-**The admission rule is mechanical:** mounts consumer DOM ⇒ light tier. Takes content only through
-real `<slot>`s ⇒ keep the shadow root (slotted nodes never leave the light DOM, so they are already
-fine). Do not convert a slot-based component.
-
-Encapsulation is preserved at build time instead of by the boundary, the way Angular's
-`ViewEncapsulation.Emulated` does it:
-
-- `<name>.light.scss` → codegen emits `<name>.light.styles.ts` with the CSS **rescoped**: `:host`
-  becomes the tag name, every other compound gains `[data-mps=<scope>]`. `::slotted` /
-  `:host-context` / `:root` / `html` / `body` subjects are hard codegen errors. A rule that must
-  ship verbatim is preceded by `/*! @mps-global */` and authored in FINAL form.
-- The element uses `scopedHtml('<scope>')` — **never lit's bare `html`**; an unstamped element is an
-  unstyled element. `unsafeHTML` output and imperative DOM need `stampScope` — and **`stampScope`
-  recurses, so call it BEFORE consumer content is appended**, never after. Stamping a subtree that
-  already holds a consumer's node brands their DOM with your scope and lets your rules (a bare
-  `button[data-mps=…]`, say) match their content. The decoy suite cannot catch this: it only tests
-  UNSTAMPED elements. `_conformance/consumer-dom-boundary.spec.ts` pins it.
-- `createRenderRoot()` returns `this`; `installLightStyles('<scope>', sheet)` runs right before
-  `customElements.define`. The SSR guard checks `document.head`, not `typeof document` — Angular's
-  SSR DOM shim provides a `document` with no usable head.
-- `_conformance/light-styles-scoping.spec.ts` enforces the no-leak property on every build: each
-  compound must carry its own scope, and no selector may match a decoy tree of elements sharing our
-  class names. Exemptions are listed explicitly in that file, never added silently.
-
-**Two rules that are easy to get wrong, both found by measurement:**
-
-- **Nesting.** A light-tier component's sheet is installed at DOCUMENT level, and document CSS does
-  not cross a shadow boundary — so a component that KEEPS its shadow root but renders a light-tier
-  component inside it starves it (issue #408 again, one level up). Any such host must mirror the
-  registry: `adoptLightStyles(this.renderRoot)` in `connectedCallback`, disposing on disconnect.
-  `mp-accordion` and `mp-shell` do it. `_conformance/light-styles-nesting.spec.ts` enforces it.
-- **Do not `@import` a Bootstrap partial into a light-tier `.light.scss` / scoped sheet** (C4 under
-  "Bootstrap layering" below): the light rewriter would produce `.btn[data-mps=…]`, which raises
-  specificity and breaks Bootstrap's ordering. The component installs the compiled PART instead
-  (`bootstrap<Partial>`, scoped with `:where([data-mps])`, specificity unchanged) — never by moving it
-  into the page baseline. Only a shadow-root element, which the page's CSS cannot reach, re-declares what
-  it needs (the `_styles/*.styles.scss` partial copies).
-- **Every document-level sheet goes through `installLightStyles` — light tier or not.** A slot-based
-  component that needs document CSS for its slotted content (`mp-card`: `::slotted()` cannot reach
-  `.card-title` inside a body, nor out-rank Bootstrap's `.card-header`) installs it through the
-  registry too, with every rule anchored on its host tag (`mp-card > .card-header`). Issue #432: the
-  card appended its own `<style>` instead, no spec saw it, and its unanchored `.text-bg-*` copy —
-  with a Sass-printed `RGBA(#hex, var(…))` that computes to transparent — blanked every badge on the
-  page. `_conformance/document-style-writers.spec.ts` enforces the single writer,
-  `light-styles-scoping.spec.ts` checks every REGISTERED sheet (not a filename glob), and
-  `no-invalid-css-values.spec.ts` rejects hex inside a colour function in sheets and in the dist.
-
-Styling DOM the rewriter cannot stamp (`unsafeHTML` output, a consumer's node, another component's
-rendered content) is done by anchoring on a scoped ANCESTOR, marked `/*! @mps-global */` and
-authored in final form — `.treeview-icon[data-mps=treeview] svg`, not `.treeview-icon svg`. The
-match still requires an element we stamped, so nothing outside can be hit. Prefer this over having
-one component stamp another's scope, which would couple it to that component's internals.
-
-Consequences to design around:
-
-- **Encapsulation is one-directional.** Page CSS now reaches the component's internals — the same
-  property `ViewEncapsulation.Emulated` has everywhere else. Accepted deliberately; document it
-  rather than fighting it.
-- `::part()` and `::slotted()` no longer apply to a converted component. Its `part=` hooks, if any,
-  are removed; consumers style it with ordinary CSS.
-- Queries move from `shadowRoot` to `renderRoot`, and focus reads from `document.activeElement`
-  rather than a shadow root's `activeElement` — under a shadow root, `document.activeElement` was
-  the *host* because focus is retargeted at the boundary.
+- **Every document-level sheet goes through the registry** (`installScopedStyles` /
+  `installLightStyles`). Issue #432: the card appended its own `<style>` instead, no spec saw it, and its
+  unanchored `.text-bg-*` copy — with a Sass-printed `RGBA(#hex, var(…))` that computes to transparent —
+  blanked every badge on the page. `_conformance/document-style-writers.spec.ts` enforces the single
+  writer (the `<instance-style>` directive is its one listed exemption), `light-styles-scoping.spec.ts`
+  checks every REGISTERED sheet (not a filename glob), and `no-invalid-css-values.spec.ts` rejects hex
+  inside a colour function in sheets and in the dist.
+- **Styling DOM the rewriter cannot stamp** (`v-html` output, a consumer's node, another component's
+  rendered content) is done by anchoring on a scoped ANCESTOR, marked `/*! @mps-global */` and authored
+  in final form — `.treeview-icon[data-mps=treeview] svg`, not `.treeview-icon svg`. The match still
+  requires an element we stamped, so nothing outside can be hit. Prefer this over having one component
+  stamp another's scope, which would couple it to that component's internals.
+- **Encapsulation is one-directional.** Page CSS reaches a component's internals — the same property
+  `ViewEncapsulation.Emulated` has everywhere else. Accepted deliberately; document it rather than
+  fighting it. There are no `::part()` hooks; consumers style a component with ordinary CSS.
 - **Lit in the light DOM is safe for nodes passed as binding values** (measured): a keyed dynamic
   template survives re-render, reorder, whole-page key replacement, template *shape* change and
   zero-rows recovery with node identity intact. The trap is different — it bites *pre-existing light
-  children the host owns but lit does not manage*.
-- `@extend` from `:host` does not unify into compounds; restate such rules as `:host(...)`.
-- Converting a component breaks its specs in four predictable ways, and each has a faithful
-  translation rather than a weakening: `el.shadowRoot` → `el.renderRoot`; `shadowRoot.activeElement`
-  → `document.activeElement`; `document.activeElement === host` →
-  `host.contains(document.activeElement)` (the equality was asserting shadow focus RETARGETING, not
-  focus location); and any helper that walks `el.shadowRoot` to settle or search descendants must
-  use `el.shadowRoot ?? el` **and filter to custom elements** — in the light DOM that walk covers the
-  whole rendered tree, which took one suite from ~8s to 18-22s per test.
+  children the host owns but lit does not manage* (the generated `LightChildren` capture handles them).
+- A spec that walks an element's descendants to settle or search them covers the whole rendered tree in
+  the light DOM: **filter to custom elements**, or one suite goes from ~8s to 18-22s per test.
 
-### WC gotchas
+### Lit and CSS gotchas (measured)
 
-- `static get observedAttributes()` must be a **static getter** (spread `super.observedAttributes`), not a static array.
-- **Do not shadow read-only DOM properties.** `HTMLElement` already defines `scrollHeight`, `title`, `lang`, etc. as typed members — defining a same-named accessor fails to compile (`TS2416`). Pick a non-clashing name (e.g. `panelScrollHeight` with attribute `scroll-height`).
-- **Bootstrap utility classes do not cross the shadow boundary.** `p-0`, `d-flex`, reboot defaults — none reach inside a WC's shadow root. Re-declare every rule you need in the component's own SCSS.
-- Per-component templates that vary per row must be **render-callback functions** (see `mp-treeview.nodeRenderer`), not slots — slots can't be per-node in a dynamic tree.
-- Composition over reinvention: reuse `OverlayController` (`libs/.../overlay`) for popups and `mp-treeview` for trees.
-- **No backticks inside a comment inside ANY tagged template** — `css\`\`` *and* `html\`\`` (an HTML comment is still inside the JS template literal, so a backtick there terminates it and the build fails somewhere confusing). Use bare names in both.
-- **Every dynamic `import()` specifier in lib source must be a static string literal.** A computed one (`` import(`./x/${k}.js`) ``, even with `/* @vite-ignore */`) survives into the published `.mjs` and then either hard-fails an esbuild consumer's build **or — worse, silently — globs the whole target directory into their bundle**. Generate a static loader map instead (`flags/src/flag-loaders.generated.ts` is the pattern).
-- **Styling a slotted `mp-*` control from an outer WC: `::slotted()` is the weakest link in the cascade.** Measured order for one slotted element: `::slotted()` normal **<** the control's `:host` normal **<** the tree the element lives in (page CSS / the composing element) **<** `::slotted()` `!important`. So a container cannot restyle a slotted control's geometry with a plain rule when the page already sets that property (Bootstrap's `.form-control { border-radius }`, `width: 100%`) — the selector matches while the declaration silently loses. Mark container geometry `!important`, let a control size itself from `:host`, and reach *inside* a control only through inherited custom properties.
-- **A container query can reach into a shadow root; a media query cannot see a narrow host.** `container-type: inline-size` on a WC's `:host` is matched by `@container` rules authored **inside a nested WC's own shadow root** — container-query ancestor lookup crosses shadow boundaries (measured, 3 engines). Use it instead of `@media` whenever a component can be narrow inside a wide viewport (sidebar, modal, grid cell). The container must be the host, never the flex container you are styling — an element cannot be its own container. **`container-type` no longer establishes a containing block** (that was an acknowledged spec mistake, removed in Chromium 129 and matched since): measured byte-identical geometry for a top-layer `::picker(select)` under containment. Note `getComputedStyle().contain` reports `none` while `containerType` reports `inline-size`, so assert on the latter.
-- **In flex, `min-width: 0` cannot prevent wrapping** — line-breaking uses each item's *hypothetical main size* and shrinking happens only after the line is chosen. An intrinsically wide item (a native `<select>` sizes to its **widest option**) takes a whole line no matter what its `min-width` says; only `flex-wrap: nowrap` or a real `flex-basis` (`flex: 1 1 0`, not `1 1 auto`) changes that. And `nowrap` alone can be *worse* than the wrap it fixes: if a sibling cannot shrink, the overflow moves to the page (measured: a 26px-wide input and 131px of horizontal page scroll). Constrain the wide item's basis first. **The corollary is the useful tool:** because `min-width` *clamps* the hypothetical main size, a non-zero floor is how you get "shrink to readable, then wrap" — `flex: 1 1 auto; width: 1%; min-width: 6rem` holds a 6-control toolbar on one row at 1280px and wraps it to 107px controls at 390px, where Bootstrap's literal `min-width: 0` crushes it to 27px controls on a single line at every width (measured, `mp-input-group`).
-- **A `::slotted(mp-foo)` selector is dead whenever a framework wrapper is what gets slotted.** Angular wrappers render `<mp-foo>` *inside their own template*, so `<bs-input-group><bs-select/></bs-input-group>` assigns `<bs-select>` to the slot and the `mp-*` element sits one level deeper. React (`@lit/react` roots at the tag) and Vue (no host element) slot the element directly — so a tag-named rule works in two frameworks out of three and its absence is invisible in the third. This shipped a control collapsed to 0px wide. **Never address slotted children by `mp-*` tag name**: select on what they are *not* (`::slotted(:not(.addon):not(button))`), or use the inherited-custom-property channel, which cannot care what an element is called. Same trap for JS that walks `this.children`: `'BS-SELECT'.includes('-')` is true, and an attribute written on a wrapper host reaches nothing, because an Angular signal input does not observe a runtime `setAttribute`.
-- **A host with `container-type: inline-size` contributes ZERO intrinsic inline size, so it can never size itself from its own content.** Inline-axis size containment means max-content resolves to 0, so the moment such a component lands in a shrink-to-fit context (an un-flexed flex item, a float, `width: fit-content`) it collapses to 0px wide rather than merely being narrow — measured across 3 engines, and the *amplifier* that turned a missed flex rule into an invisible control. Any WC that declares `container-type` must be given an inline size by its context; when one renders at zero width, suspect containment before the obvious sizing bug. `display: contents` on an interposed wrapper does **not** rescue it (it also stops `::slotted()` matching anything).
-- **A nested WC's own container query silently outranks an enclosing container's pairing.** Where a contract offers both a specific and a general custom property (`--x-top-start` before `--x-start` in a `var()` fallback chain), an `@container` rule inside the inner component that sets the *specific* one defeats the outer component's *general* one — the enclosing container's value is still inherited and still correct, and loses anyway with no diagnostic. Check the fallback order before assuming an inherited channel reached its consumer.
-- **`input[type=tel|url|email]` is UA-forced to `direction: ltr`, even inside `dir="rtl"`.** A logical property on such an input resolves against *its* direction, not its container's, so `border-start-*` / `margin-inline-*` land on the wrong side. Use physical properties under `:host(:dir())` guards when styling one from a container. (Elements whose whole chain inherits `rtl` — a slotted `<select>`, an overlay in your own shadow root — keep logical properties.)
+- **Do not shadow read-only DOM properties.** `HTMLElement` already defines `scrollHeight`, `title`,
+  `lang`, etc. as typed members — an input of that name fails to compile (`TS2416`). Pick a non-clashing
+  name (e.g. `panelScrollHeight` with attribute `scroll-height`).
+- **No backticks inside a comment inside ANY tagged template** — `css\`\`` *and* `html\`\`` (an HTML
+  comment is still inside the JS template literal, so a backtick there terminates it and the build fails
+  somewhere confusing). Use bare names in both.
+- **Every dynamic `import()` specifier in lib source must be a static string literal.** A computed one
+  (`` import(`./x/${k}.js`) ``, even with `/* @vite-ignore */`) survives into the published `.mjs` and then
+  either hard-fails an esbuild consumer's build **or — worse, silently — globs the whole target directory
+  into their bundle**. Generate a static loader map instead (`flags/src/flag-loaders.generated.ts` is the
+  pattern).
+- **A media query cannot see a narrow host; a container query can.** Use `container-type: inline-size` on
+  the host and `@container` instead of `@media` whenever a component can be narrow inside a wide viewport
+  (sidebar, modal, grid cell). The container must be the host, never the flex container you are styling
+  — an element cannot be its own container. **`container-type` no longer establishes a containing block**
+  (an acknowledged spec mistake, removed in Chromium 129 and matched since). `getComputedStyle().contain`
+  reports `none` while `containerType` reports `inline-size`, so assert on the latter.
+- **A host with `container-type: inline-size` contributes ZERO intrinsic inline size**, so it can never
+  size itself from its own content: in a shrink-to-fit context (an un-flexed flex item, a float,
+  `width: fit-content`) it collapses to 0px wide (measured across 3 engines). Give such a component an
+  inline size from its context; when one renders at zero width, suspect containment before the obvious
+  sizing bug. `display: contents` on an interposed wrapper does **not** rescue it.
+- **A nested component's own container query silently outranks an enclosing container's pairing.** Where
+  a contract offers both a specific and a general custom property (`--x-top-start` before `--x-start` in
+  a `var()` fallback chain), an `@container` rule inside the inner component that sets the *specific* one
+  defeats the outer component's *general* one, with no diagnostic. Check the fallback order before
+  assuming an inherited channel reached its consumer.
+- **In flex, `min-width: 0` cannot prevent wrapping** — line-breaking uses each item's *hypothetical main
+  size* and shrinking happens only after the line is chosen. An intrinsically wide item (a native
+  `<select>` sizes to its **widest option**) takes a whole line no matter what its `min-width` says; only
+  `flex-wrap: nowrap` or a real `flex-basis` (`flex: 1 1 0`, not `1 1 auto`) changes that, and `nowrap`
+  alone can move the overflow to the page. **The corollary is the useful tool:** because `min-width`
+  *clamps* the hypothetical main size, `flex: 1 1 auto; width: 1%; min-width: 6rem` gives "shrink to
+  readable, then wrap" (measured on the input group: one row at 1280px, 107px controls at 390px, where
+  Bootstrap's literal `min-width: 0` crushes them to 27px on one line at every width).
+- **Never address a composed child by its `mp-*` tag name in CSS or JS.** Angular renders `<bs-foo>`,
+  React and Vue no host at all, Lit `<mp-foo>`: a tag-named rule works in one front and is invisibly
+  absent in the others (this once shipped a control collapsed to 0px wide). Select on a class the core's
+  bag writes, or use an inherited custom property. In JS, `'BS-SELECT'.includes('-')` is true too.
+- **`input[type=tel|url|email]` is UA-forced to `direction: ltr`, even inside `dir="rtl"`.** A logical
+  property on such an input resolves against *its* direction, not its container's, so `border-start-*` /
+  `margin-inline-*` land on the wrong side. Use physical properties under `:dir()` guards when styling one
+  from a container.
+- Composition over reinvention: reuse the overlay (`ui-core/overlay`) for popups and the treeview core for
+  trees.
 
 ### Module resolution
 
@@ -231,9 +181,7 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   host, so a D10 core's bags carry **no** `data-mps` (`_conformance/no-scope-in-compiled-bags.spec.ts`), and a
   template may not write one. A group that renders another core's markup `@use`s that core's sheet with its own
   scope (`tree-select` → treeview, `navbar` → dropdown-menu, `datepicker` → calendar); a reusable sheet takes
-  `$scope: <name> !default` for its final-form selectors. Hand-written fronts (accordion, input-group, shell,
-  tab-control, tile-manager, typeahead, sparkline, dropdown-menu, and every Angular-only component) stamp
-  their own scope. The Bootstrap partials a group's markup uses are listed in the manifest
+  `$scope: <name> !default` for its final-form selectors. The Bootstrap partials a group's markup uses are listed in the manifest
   (`style: { scope, bootstrap: ['card', 'nav'] }`); the compiler emits their install in every front.
 - **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
   a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
@@ -243,25 +191,46 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   `mintplayer-ui-core:compile-components` (`-check` fails on stale output). Never hand-write a front for a
   component that has a manifest; a front-specific need goes in an extension file next to the entry
   (`<element>.angular.ts`: `hostDirectives` / `providers` / `extendInputs`; React `useExtendInputs`). Two-way
-  inputs are `model: true` (Angular `model()`, Vue `update:x`, Lit property write-back). Scaffold a new group
+  inputs are `model: true` (Angular `model()`, Vue `update:x`, React `onXChange`, Lit property write-back + `xchange`). Scaffold a new group
   with `nx g ./libs/mintplayer-component-compiler:component <name>`. The template subset is in the lib's
   README; the navbar is the reference.
+- **Directives** (`kind: 'directive'`, PRD #458 §4.3): a group lists them under `directives: {…}` beside
+  `components`. A directive core's `view` returns the bag for **the consumer's element** (it opted in, so
+  stamping `data-mps` there is legitimate). Fronts: an Angular `@Directive`, a React `useBs<Name>()` hook
+  returning mergeable props, a Vue custom directive (with `getSSRProps`), a Lit element-part directive.
+  `overlay: '<panel component>'` renders that panel into a body host while `props.overlay` is non-null
+  (tooltip, popover, `[bsDropdown]`). No hand-written directive path remains.
 - **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
   identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
+  **Overlays are the exception** (#458 §4.4): modal, offcanvas, tooltip, popover and dropdown panels render
+  into a body host, a `div` at the end of `<body>` (copying `data-bs-theme`, `dir`, `lang`), so no
+  clipping ancestor can cut them. Angular renders a detached embedded view there (the client replaces the
+  server's host), Vue `<Teleport>` and React `createPortal` only on the client, Lit `render()`. Without
+  JS a closed overlay cannot open, so nothing depends on its server copy.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node
-  whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this).
+  whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this). Where a
+  host-rooted template's role lives on an inner `mp-attrs` node, Angular (`useHostAttrs` + `[mpHostAttrs]`)
+  and Lit (`takeHostAttrs` + `forwardHostAttrs`) move `id` / `tabindex` and copy `aria-*` onto it; an `id`
+  the core writes there itself wins, and the consumer's goes back to the host.
 
 ### What a generated front looks like (and how to test it)
 
 - **The root bag lands on the host in Angular and Lit** (`bs-foo` / `mp-foo` carries `class="foo"`,
   `data-mps`, the role); React and Vue render it on a `div.foo`. In a spec, query the host itself, not
   `.foo` inside it.
-- **Outputs are lowercased** everywhere: Angular `(layoutchange)`, Vue `@layoutchange`, Lit a
-  `layoutchange` CustomEvent; React `onLayoutChange` receives the payload, not an event. **Angular outputs
+- **Outputs follow each framework's own casing** (manifests name them camelCase): Angular
+  `(itemSelect)`, Vue `@item-select` (emitted as `itemSelect`, so a render-function prop is
+  `onItemSelect`), React `onItemSelect` receiving the payload, not an event, and Lit an `itemselect`
+  CustomEvent (a DOM event name is lowercase). **Angular outputs
   are `output()`s, not DOM events** — an e2e cannot listen for them; observe the committed DOM instead
   (expose `data-*` hooks in the core's bags, as the scheduler's `data-start` / `data-end` do).
 - **Two-way models** (`model: true`) write back only when the core calls `api.setState(patch)` with the
-  model's own key; `api.emit` dispatches an output and nothing else.
+  model's own key; `api.emit` dispatches an output and nothing else. **A model is its own change channel**
+  (#458): Angular `[(x)]` / `(xChange)` (the `model()`), Vue `v-model:x` / `@update:x`, React an `onXChange`
+  prop typed by the core's state, Lit an `xchange` CustomEvent after the property write. A manifest never
+  declares an `xChange` output beside a model `x` (the compiler refuses it), and a core never emits one: an
+  event about the same value (a commit, a payload with more than the value) gets its own name
+  (`valueCommit`, `phoneChange`).
 - **Readiness:** a core that attaches behaviour writes `hydratedAttr()` (`data-mp-hydrated`, from
   `ui-core/store`) on its root. It is never in server HTML, so e2e waits on it rather than on markup the
   server already rendered.
@@ -296,6 +265,12 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   compiler for D10 groups, by hand elsewhere), never projected consumer content. Raw Bootstrap markup on a
   consumer's page installs the verbatim `bootstrap<Partial>Page` from that page; it replaces the scoped
   copy under the same registry key, so a page never holds two copies.
+  **The anchored guard** (#458 §4.1): a partial's ROOT classes stay strict (`.table:where([data-mps])`),
+  but a SUB class (documented content: `.table-active`, `.modal-title`, `.form-label`, `.nav-link`)
+  matches when it is stamped itself OR sits inside a stamped root of its partial —
+  `.modal-title:where([data-mps], .modal-content[data-mps] *)`. So consumer content projected into a
+  component gets Bootstrap's sub-class styling without being stamped. One classification table per
+  partial (root / sub / anchors) is fail-closed: an owned class in neither list is a codegen error.
 - **C2. The page baseline** `@mintplayer/ui-core/styles/bootstrap.scss` holds only the PAGE-LEVEL partials:
   root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
   workspace patches (`styles/baseline/*`). Angular's `_bootstrap.scss` re-exports it; React and Vue apps
@@ -313,11 +288,10 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   (`details[open] > .dropdown-menu`), component parts, host `display`, focus rings, reduced motion — and
   **never imports a Bootstrap partial** (functions, variables and mixins only): the part ships it.
   `ui-core/_conformance/no-bootstrap-partials-in-scoped.spec.ts` enforces it.
-- **C5. No front has a shadow root**, so no front `@import`s partials anywhere, and no Angular component
-  has a `:host ::ng-deep` partial sheet. (The hand-written shadow-root Lit elements are the exception and
-  re-declare what they use from `web-components/_styles`.)
-- **C6. Dark mode is page-level**: `[data-bs-theme]` on `<html>` reaches every front. `@container
-  style(--mp-color-mode)` queries exist only for shadow-root elements.
+- **C5. No front has a shadow root** — the Lit elements included, since #458 — so no front `@import`s
+  partials anywhere, and no Angular component has a `:host ::ng-deep` partial sheet.
+- **C6. Dark mode is page-level**: `[data-bs-theme]` on `<html>` reaches every front. The baseline still
+  publishes `--mp-color-mode` for a consumer's own shadow roots; no front queries it.
 
 ## Accessibility
 
@@ -375,14 +349,15 @@ code path remembers it.
 
 ### No-JS: two tiers, and the rules differ
 
-Declare which tier a component targets, in the element's class comment.
+Declare which tier a component targets, in the core's doc comment.
 
 **Tier 1 — CSS `:checked` state machine (interactive with no JS).** The `<input>` *is* the state, so
 it MUST keep its native role — `role="button"` on a checkbox suppresses the only state AT can read.
 It MUST carry `aria-controls` naming the region it reveals, MUST be named by a `<label for>` or
 `aria-label` that reads correctly in both positions, and `checked` MUST mean *revealed* with no
 viewport- or mode-dependent inversion. Reference implementation:
-`libs/mintplayer-web-components/accordion/src/components/mp-accordion.ts` (native `<details name>` rows).
+the accordion, `libs/mintplayer-ui-core/accordion/src/templates/accordion.view.vue` (native
+`<details name>` rows).
 
 **Tier 2 — server-rendered, inert until hydrated (visible with no JS).** The server renders the same
 tree the client hydrates. So: a role whose ARIA contract only holds once JS runs (a `tablist` with a

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { NoopAnimationsModule, provideNoopAnimations } from '@angular/platform-browser/animations';
 import { provideRouter, withRouterConfig } from '@angular/router';
 import { MockComponent, MockDirective, MockModule, MockPipe, MockPipes } from 'ng-mocks';
-import { BsAlertCloseComponent, BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
+import { BsAlertComponent } from '@mintplayer/ng-bootstrap/alert';
 import { BsButtonTypeDirective } from '@mintplayer/ng-bootstrap/button-type';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import { BsCodeSnippetComponent } from '@mintplayer/ng-bootstrap/code-snippet';
@@ -12,16 +12,15 @@ import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import {
   BsFileUploadComponent,
-  BsFileUploadTemplateDirective,
+  BsFileUploadFileTemplateDirective,
 } from '@mintplayer/ng-bootstrap/file-upload';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import {
+  BsColFormLabelDirective,
   BsFormComponent,
   BsFormControlDirective,
-  BsFormGroupDirective,
-} from '@mintplayer/ng-bootstrap/form';
+  } from '@mintplayer/ng-bootstrap/form';
 import {
-  BsColFormLabelDirective,
   BsGridColumnDirective,
   BsGridComponent,
   BsGridRowDirective,
@@ -48,16 +47,13 @@ import { BsNavbarTogglerComponent } from '@mintplayer/ng-bootstrap/navbar-toggle
 import { BsNavigationLockDirective } from '@mintplayer/ng-bootstrap/navigation-lock';
 import {
   BsOffcanvasComponent,
-  BsOffcanvasHostComponent,
-  OffcanvasBodyComponent,
-  OffcanvasHeaderComponent,
+  BsOffcanvasHeaderDirective,
 } from '@mintplayer/ng-bootstrap/offcanvas';
 import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
 import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
 import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
-import { BsProgressBarComponent, BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
-import { BsResizableComponent, BsResizeGlyphDirective } from '@mintplayer/ng-bootstrap/resizable';
-import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
+import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
+import { BsScrollspyComponent } from '@mintplayer/ng-bootstrap/scrollspy';
 import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
 import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
 import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
@@ -122,7 +118,7 @@ const pages: {
     component: AsyncHostBindingComponent,
     imports: () => [
       NoopAnimationsModule,
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       MockComponent(BsCodeSnippetComponent),
       MockComponent(HelloComponent),
       MockComponent(RxjsHostComponent),
@@ -171,7 +167,7 @@ const pages: {
     component: CopyComponent,
     imports: () => [
       MockDirective(BsCopyDirective),
-      MockComponent(BsOffcanvasComponent), MockComponent(OffcanvasHeaderComponent), MockComponent(OffcanvasBodyComponent), MockComponent(BsOffcanvasHostComponent),
+      MockComponent(BsOffcanvasComponent), MockDirective(BsOffcanvasHeaderDirective),
       MockComponent(BsCodeSnippetComponent),
       // Unit to test (standalone)
       CopyComponent,
@@ -182,8 +178,7 @@ const pages: {
     component: FileUploadComponent,
     imports: () => [
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsFileUploadComponent), MockDirective(BsFileUploadTemplateDirective),
-      MockComponent(BsProgressComponent), MockComponent(BsProgressBarComponent),
+      MockComponent(BsFileUploadComponent), MockDirective(BsFileUploadFileTemplateDirective),
       FileUploadComponent,
     ],
   },
@@ -231,7 +226,7 @@ const pages: {
     component: LazyLoadedComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       LazyLoadedComponent,
     ],
   },
@@ -248,7 +243,7 @@ const pages: {
     component: LinifyComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipe(BsLinifyPipe),
       MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
@@ -263,7 +258,7 @@ const pages: {
     component: MarkdownComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipes(BsBoldPipe, BsItalicPipe, BsStrikethroughPipe, BsUnderlinePipe),
       MarkdownComponent,
@@ -299,7 +294,7 @@ const pages: {
     component: OrdinalNumberComponent,
     imports: () => [
       MockModule(FormsModule),
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsOrdinalNumberPipe),
       OrdinalNumberComponent,
     ],
@@ -316,7 +311,7 @@ const pages: {
     name: 'ResizableComponent',
     component: ResizableComponent,
     imports: () => [
-      MockComponent(BsResizableComponent), MockDirective(BsResizeGlyphDirective),
+      MockComponent(BsResizableComponent),
       ResizableComponent,
     ],
   },
@@ -324,7 +319,7 @@ const pages: {
     name: 'ScrollspyComponent',
     component: ScrollspyComponent,
     imports: () => [
-      MockComponent(BsScrollspyComponent), MockDirective(BsScrollspyDirective),
+      MockComponent(BsScrollspyComponent),
       ScrollspyComponent,
     ],
   },
@@ -341,7 +336,7 @@ const pages: {
     component: SlugifyComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsSlugifyPipe),
       SlugifyComponent,
     ],
@@ -352,7 +347,7 @@ const pages: {
     imports: () => [
       // Mock dependencies
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockComponent(BsListGroupComponent), MockComponent(BsListGroupItemComponent),
       MockPipe(BsSplitStringPipe),
@@ -385,7 +380,7 @@ const pages: {
     component: TrustHtmlComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
       MockPipe(BsTrustHtmlPipe),
       TrustHtmlComponent,
@@ -395,7 +390,7 @@ const pages: {
     name: 'UserAgentComponent',
     component: UserAgentComponent,
     imports: () => [
-      MockComponent(BsAlertComponent), MockComponent(BsAlertCloseComponent),
+      MockComponent(BsAlertComponent),
       UserAgentComponent,
     ],
   },
@@ -404,7 +399,7 @@ const pages: {
     component: WordCountComponent,
     imports: () => [
       FormsModule,
-      MockComponent(BsFormComponent), MockDirective(BsFormGroupDirective), MockDirective(BsFormControlDirective),
+      MockComponent(BsFormComponent), MockDirective(BsFormControlDirective),
       MockPipe(BsWordCountPipe),
       WordCountComponent,
     ],

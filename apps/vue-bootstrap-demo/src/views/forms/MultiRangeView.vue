@@ -14,7 +14,7 @@ const SOURCE = `<BsMultiRange
   :min="0"
   :max="100"
   :format-value="(v) => '$' + v.toFixed(2)"
-  @valuechange="committed = $event"
+  @value-commit="committed = $event"
 />`;
 </script>
 
@@ -25,7 +25,7 @@ const SOURCE = `<BsMultiRange
       A slider with several thumbs; each thumb is a native range input, so the
       keyboard, RTL and form submission are the browser's own. Thumbs cannot
       cross their neighbours. <code>v-model:value</code> follows every move;
-      <code>valuechange</code> fires when a move is committed.
+      <code>valuecommit</code> fires when a move is committed.
     </p>
 
     <section>
@@ -36,7 +36,7 @@ const SOURCE = `<BsMultiRange
         :min="0"
         :max="100"
         :format-value="currency"
-        @valuechange="committed = $event"
+        @value-commit="committed = $event"
       />
       <p class="text-body-secondary mt-2">
         Live: <code>[{{ value?.join(', ') }}]</code> · Committed: <code>[{{ committed.join(', ') }}]</code>

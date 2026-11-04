@@ -10,12 +10,11 @@ import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective } from '@min
 import { BsSelectComponent, BsSelectOption } from '@mintplayer/ng-bootstrap/select';
 import { BsCheckboxComponent } from '@mintplayer/ng-bootstrap/checkbox';
 import {
-  BsTileColumnCountChange,
-  BsTileContentDirective,
-  BsTileDirective,
-  BsTileHeaderDirective,
   BsTileManagerComponent,
+  BsTileManagerContentDirective,
+  BsTileManagerHeaderDirective,
   MintTile,
+  TileColumnCountChange,
   TileGestureBlocked,
   TileDragMode,
   TileLayouts,
@@ -54,9 +53,8 @@ const PANELS: readonly DemoTile[] = [
     BsSelectOption,
     BsCheckboxComponent,
     BsTileManagerComponent,
-    BsTileDirective,
-    BsTileHeaderDirective,
-    BsTileContentDirective,
+    BsTileManagerHeaderDirective,
+    BsTileManagerContentDirective,
     BsCodeSnippetComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -107,7 +105,12 @@ export class TileManagerComponent {
     });
   }
 
-  onColumnCountChange(change: BsTileColumnCountChange): void {
+  /** The slots receive the tile as the board saw it: the panel object passed in `tiles`. */
+  panel(tile: MintTile): DemoTile {
+    return tile as DemoTile;
+  }
+
+  onColumnCountChange(change: TileColumnCountChange): void {
     this.columnCount.set(change.columnCount);
   }
 
@@ -121,14 +124,13 @@ export class TileManagerComponent {
 
   protected readonly snippetHtml = dedent`
     <bs-tile-manager
+      [tiles]="tiles()"
       [(layouts)]="layouts"
       [stackBelow]="576"
       [gap]="12"
       label="Dashboard">
-      <ng-container *bsTile="let tile of tiles()">
-        <span *bsTileHeader>{{ tile.title }}</span>
-        <div *bsTileContent class="tile-body">{{ tile.body }}</div>
-      </ng-container>
+      <span *bsTileManagerHeader="let tile = tile">{{ panel(tile).title }}</span>
+      <div *bsTileManagerContent="let tile = tile" class="tile-body">{{ panel(tile).body }}</div>
     </bs-tile-manager>
   `;
 
@@ -136,9 +138,8 @@ export class TileManagerComponent {
     import { Component, effect, signal } from '@angular/core';
     import {
       BsTileManagerComponent,
-      BsTileDirective,
-      BsTileHeaderDirective,
-      BsTileContentDirective,
+      BsTileManagerContentDirective,
+      BsTileManagerHeaderDirective,
       MintTile,
       TileLayouts,
     } from '@mintplayer/ng-bootstrap/tile-manager';
@@ -151,7 +152,7 @@ export class TileManagerComponent {
     @Component({
       selector: 'my-dashboard',
       templateUrl: './my-dashboard.component.html',
-      imports: [BsTileManagerComponent, BsTileDirective, BsTileHeaderDirective, BsTileContentDirective],
+      imports: [BsTileManagerComponent, BsTileManagerHeaderDirective, BsTileManagerContentDirective],
     })
     export class MyDashboardComponent {
       readonly tiles = signal<DashboardTile[]>([
@@ -160,6 +161,11 @@ export class TileManagerComponent {
       ]);
       // One layout per column count; a commit writes the full next record.
       readonly layouts = signal<TileLayouts>(JSON.parse(localStorage.getItem('dashboard') ?? '{}'));
+
+      // The slots receive the tile object passed in tiles.
+      panel(tile: MintTile): DashboardTile {
+        return tile as DashboardTile;
+      }
 
       constructor() {
         effect(() => localStorage.setItem('dashboard', JSON.stringify(this.layouts())));

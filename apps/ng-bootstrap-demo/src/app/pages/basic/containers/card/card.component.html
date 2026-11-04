@@ -111,7 +111,7 @@
 <h2>Colour variants &mdash; filled</h2>
 
 @for (color of colorKeys; track color) {
-    <bs-card class="mb-2" [color]="colors[color]">
+    <bs-card class="mb-2" [color]="color">
         <bs-card-body>
             <bs-card-title>{{ color }}</bs-card-title>
             <bs-card-text>text-bg-{{ color }} applied to the host.</bs-card-text>
@@ -124,7 +124,7 @@
 <h2>Colour variants &mdash; outline</h2>
 
 @for (color of colorKeys; track color) {
-    <bs-card class="mb-2" [color]="colors[color]" [outline]="true">
+    <bs-card class="mb-2" [color]="color" [outline]="true">
         <bs-card-body>
             <bs-card-title>{{ color }}</bs-card-title>
             <bs-card-text>border border-{{ color }} bg-transparent applied to the host.</bs-card-text>
@@ -137,11 +137,11 @@
 <h2>Header / footer colours independent of the root</h2>
 
 <bs-card class="mb-3">
-    <bs-card-header [color]="colors.dark">Dark header</bs-card-header>
+    <bs-card-header color="dark">Dark header</bs-card-header>
     <bs-card-body>
         <bs-card-text>Card root has no colour; header and footer each carry their own.</bs-card-text>
     </bs-card-body>
-    <bs-card-footer [color]="colors.success">Success footer</bs-card-footer>
+    <bs-card-footer color="success">Success footer</bs-card-footer>
 </bs-card>
 
 <bs-code-snippet [code]="snippetIndependentColorsHtml" [language]="'html'"></bs-code-snippet>

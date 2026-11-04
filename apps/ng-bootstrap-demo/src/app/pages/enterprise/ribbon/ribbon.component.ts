@@ -161,11 +161,11 @@ export class RibbonComponent {
                          dialogLauncher="Clipboard Dialog">
           <bs-ribbon-button itemId="paste" label="Paste" icon="📋"
                             size="large" tooltip="Paste (Ctrl+V)"
-                            (itemclick)="onPaste($event)"></bs-ribbon-button>
+                            (itemClick)="onPaste($event)"></bs-ribbon-button>
           <bs-ribbon-button itemId="cut"  label="Cut"  icon="✂️" size="small"
-                            (itemclick)="onCut($event)"></bs-ribbon-button>
+                            (itemClick)="onCut($event)"></bs-ribbon-button>
           <bs-ribbon-button itemId="copy" label="Copy" icon="📄" size="small"
-                            (itemclick)="onCopy($event)"></bs-ribbon-button>
+                            (itemClick)="onCopy($event)"></bs-ribbon-button>
         </bs-ribbon-group>
       </bs-ribbon-tab>
     </bs-ribbon>`;
@@ -176,14 +176,14 @@ export class RibbonComponent {
       [label]="pasteMode().label"
       [icon]="pasteMode().icon"
       size="large"
-      (mainaction)="onPaste($event)">
+      (mainAction)="onPaste($event)">
       <bs-ribbon-menu-item itemId="paste" label="Paste" icon="📋"
-                           (menuselect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
       <bs-ribbon-menu-item itemId="paste-values" label="Paste Values" icon="123"
-                           (menuselect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
+                           (menuSelect)="onPasteModeSelect($event)"></bs-ribbon-menu-item>
       <bs-ribbon-menu-separator></bs-ribbon-menu-separator>
       <bs-ribbon-menu-item itemId="paste-special" label="Paste Special…"
-                           (menuselect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
+                           (menuSelect)="onPasteSpecial($event)"></bs-ribbon-menu-item>
     </bs-ribbon-split-button>`;
 
   readonly snippetValueItems = dedent`
@@ -213,9 +213,9 @@ export class RibbonComponent {
     <bs-quick-access-toolbar aria-label="Quick Access Toolbar"
                              [touchMode]="touchMode()">
       <bs-ribbon-button itemId="save" label="Save" icon="💾" size="small"
-                        (itemclick)="onSave($event)"></bs-ribbon-button>
+                        (itemClick)="onSave($event)"></bs-ribbon-button>
       <bs-ribbon-button itemId="undo" label="Undo" icon="↶" size="small"
-                        (itemclick)="onUndo($event)"></bs-ribbon-button>
+                        (itemClick)="onUndo($event)"></bs-ribbon-button>
     </bs-quick-access-toolbar>
 
     <bs-ribbon …> … </bs-ribbon>`;
@@ -234,12 +234,12 @@ export class RibbonComponent {
     <!-- Any element works as an icon: an SVG, an icon-font <i>, an image.
          It is sized from the size the item renders at. -->
     <bs-ribbon-button itemId="save" label="Save" size="large"
-                      (itemclick)="onSave($event)">
+                      (itemClick)="onSave($event)">
       <i *bsRibbonButtonIconTemplate class="bi bi-save"></i>
     </bs-ribbon-button>
 
     <bs-ribbon-button itemId="copy" label="Copy" size="small"
-                      (itemclick)="onCopy($event)">
+                      (itemClick)="onCopy($event)">
       <svg *bsRibbonButtonIconTemplate viewBox="0 0 16 16">…</svg>
     </bs-ribbon-button>`;
 

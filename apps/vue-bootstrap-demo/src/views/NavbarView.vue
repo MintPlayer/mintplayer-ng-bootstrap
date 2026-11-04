@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import {
   BsNavbar,
-  BsNavbarDropdown,
   BsNavbarItem,
   BsNavbarNav,
 } from '@mintplayer/vue-bootstrap/navbar';
+import { BsDropdownItem, BsDropdownMenu } from '@mintplayer/vue-bootstrap/dropdown';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main">
@@ -14,11 +14,11 @@ const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main
     <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
     <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
 
-    <BsNavbarDropdown label="Products">
-      <BsNavbarItem><a href="#">Web components</a></BsNavbarItem>
-      <BsNavbarItem><a href="#">Angular bootstrap</a></BsNavbarItem>
-      <BsNavbarItem><a href="#">Vue bootstrap</a></BsNavbarItem>
-    </BsNavbarDropdown>
+    <BsDropdownMenu label="Products">
+      <BsDropdownItem><a href="#">Web components</a></BsDropdownItem>
+      <BsDropdownItem><a href="#">Angular bootstrap</a></BsDropdownItem>
+      <BsDropdownItem><a href="#">Vue bootstrap</a></BsDropdownItem>
+    </BsDropdownMenu>
   </BsNavbarNav>
 
   <BsNavbarNav align="end">
@@ -37,8 +37,9 @@ const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main
       dropdown is a native <code>&lt;details&gt;</code>, so the bar works with JavaScript
       off. The brand goes in the <code>#brand</code> slot, entries are grouped in a
       <code>BsNavbarNav</code> (<code>align="end"</code> pushes a group to the far edge),
-      and <code>BsNavbarItem</code> is every entry — a nav-link in a group, a menu item
-      inside a <code>BsNavbarDropdown</code>.
+      and <code>BsNavbarItem</code> is an entry in a group. A dropdown is the same
+      <code>BsDropdownMenu</code> / <code>BsDropdownItem</code> pair a standalone dropdown uses:
+      in a nav group it renders the navbar's disclosure, with <code>label</code> as its trigger text.
     </p>
 
     <section>
@@ -56,11 +57,11 @@ const SOURCE = `<BsNavbar breakpoint="lg" color="body-tertiary" aria-label="Main
           <BsNavbarItem active><a href="#">Home</a></BsNavbarItem>
           <BsNavbarItem><a href="#">Pricing</a></BsNavbarItem>
 
-          <BsNavbarDropdown label="Products">
-            <BsNavbarItem><a href="#">Web components</a></BsNavbarItem>
-            <BsNavbarItem><a href="#">Angular bootstrap</a></BsNavbarItem>
-            <BsNavbarItem><a href="#">Vue bootstrap</a></BsNavbarItem>
-          </BsNavbarDropdown>
+          <BsDropdownMenu label="Products">
+            <BsDropdownItem><a href="#">Web components</a></BsDropdownItem>
+            <BsDropdownItem><a href="#">Angular bootstrap</a></BsDropdownItem>
+            <BsDropdownItem><a href="#">Vue bootstrap</a></BsDropdownItem>
+          </BsDropdownMenu>
         </BsNavbarNav>
 
         <BsNavbarNav align="end">

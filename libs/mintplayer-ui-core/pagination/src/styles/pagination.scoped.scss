@@ -1,0 +1,5 @@
+// The pagination's own sheet (#458 M4): only what Bootstrap's pagination part lacks.
+// The host is a block, so the list's flex row has the full inline size to lay out in.
+.pagination-host {
+  display: block;
+}

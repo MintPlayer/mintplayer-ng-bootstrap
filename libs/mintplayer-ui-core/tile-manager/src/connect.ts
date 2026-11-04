@@ -4,8 +4,6 @@ import type { TileManagerMachine } from './tile-manager-machine';
 /** An attribute bag. `null` means "attribute absent"; `true` means present and empty. */
 export type AttrBag = Record<string, string | boolean | null>;
 
-export const TILE_MANAGER_SCOPE = 'tile-manager';
-
 /**
  * Inline style, kebab-case (custom properties included). Kept out of the attribute
  * bag: Angular's `[mpProps]` refuses `style` by design, and every framework has its
@@ -37,8 +35,9 @@ export interface TileTextView {
 }
 
 export interface TileManagerApi {
-  board: { attrs: AttrBag; style: StyleBag };
-  container: AttrBag;
+  board: AttrBag;
+  /** The query container. Its style carries the inputs as custom properties: the floors and the row track. */
+  container: { attrs: AttrBag; style: StyleBag };
   grid: { attrs: AttrBag; style: StyleBag };
   /** Tiles in the `tiles` input order, stable across gestures; position comes from the rendered layout. */
   tiles: TileView[];
@@ -71,7 +70,6 @@ export function tileManagerIds(rootId: string) {
  */
 export function connect(machine: TileManagerMachine, rootId: string): TileManagerApi {
   const s = machine.snapshot;
-  const scope = { 'data-mps': TILE_MANAGER_SCOPE };
   const ids = tileManagerIds(rootId);
   const live = s.measured;
   const tabStop = live ? machine.tabStop : null;
@@ -108,7 +106,6 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
       {
         id,
         attrs: {
-          ...scope,
           ...name,
           role: live ? 'button' : 'group',
           'aria-roledescription': s.messages.tileRoleDescription,
@@ -117,11 +114,11 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
           'aria-describedby': live ? ids.instructions(capabilities) : null,
           'data-tile-id': id,
           'data-mode': mode,
-          'data-draggable': live && canMove && s.dragMode === 'tile' ? true : null,
-          'data-dragging': dragging || null,
-          'data-resizing': resizing || null,
-          'data-blocked': blocked || null,
-          'data-pressing': (g.kind === 'pending' && g.touch && g.pressing && active === id) || null,
+          'data-draggable': live && canMove && s.dragMode === 'tile' ? '' : null,
+          'data-dragging': dragging ? '' : null,
+          'data-resizing': resizing ? '' : null,
+          'data-blocked': blocked ? '' : null,
+          'data-pressing': g.kind === 'pending' && g.touch && g.pressing && active === id ? '' : null,
         },
         style: live
           ? {
@@ -133,14 +130,13 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
             }
           : {},
         header: {
-          ...scope,
           id: ids.header(id),
           'data-part': 'header',
-          'data-drag-handle': live && canMove && s.dragMode === 'header' ? true : null,
+          'data-drag-handle': live && canMove && s.dragMode === 'header' ? '' : null,
         },
-        content: { ...scope, 'data-part': 'body' },
+        content: { 'data-part': 'body' },
         // Decorative: R mode is the keyboard equivalent, and the tile's instructions say so.
-        grips: live && canResize ? GRIPS.map((handle) => ({ handle, attrs: { ...scope, 'data-part': handle, 'aria-hidden': 'true' } })) : [],
+        grips: live && canResize ? GRIPS.map((handle) => ({ handle, attrs: { 'data-part': handle, 'aria-hidden': 'true' } })) : [],
       },
     ];
   });
@@ -150,14 +146,14 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
 
   return {
     board: {
-      attrs: {
-        ...scope,
-        id: ids.board,
-        role: 'region',
-        'aria-label': s.label ?? s.messages.boardLabel,
-        'aria-describedby': ids.description,
-        'data-resize-mode': s.resizeMode,
-      },
+      id: ids.board,
+      role: 'region',
+      'aria-label': s.label ?? s.messages.boardLabel,
+      'aria-describedby': ids.description,
+      'data-resize-mode': s.resizeMode,
+    },
+    container: {
+      attrs: {},
       // Not positions: the floors and the row track are safe on the server (D14).
       style: {
         '--mp-tile-min-column': `${s.minColumnWidth}px`,
@@ -165,16 +161,15 @@ export function connect(machine: TileManagerMachine, rootId: string): TileManage
         '--mp-tile-row-height': s.minRowHeight,
       },
     },
-    container: { ...scope },
-    grid: { attrs: { ...scope }, style: live ? { 'grid-template-columns': `repeat(${s.columnCount}, minmax(0, 1fr))` } : {} },
+    grid: { attrs: {}, style: live ? { 'grid-template-columns': `repeat(${s.columnCount}, minmax(0, 1fr))` } : {} },
     tiles,
     descriptions: [
-      { key: 'description', attrs: { ...scope, id: ids.description }, text: s.messages.boardDescription(live ? s.columnCount : null, readOnly) },
+      { key: 'description', attrs: { id: ids.description }, text: s.messages.boardDescription(live ? s.columnCount : null, readOnly) },
       ...(['both', 'move', 'resize', 'none'] as const)
         .filter((c) => used.includes(c))
-        .map((c) => ({ key: c, attrs: { ...scope, id: ids.instructions(c) }, text: s.messages.instructions(c === 'both' || c === 'move', c === 'both' || c === 'resize') })),
+        .map((c) => ({ key: c, attrs: { id: ids.instructions(c) }, text: s.messages.instructions(c === 'both' || c === 'move', c === 'both' || c === 'resize') })),
     ],
-    live: { attrs: { ...scope, role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: s.announcement.text },
+    live: { attrs: { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, text: s.announcement.text },
   };
 }
 

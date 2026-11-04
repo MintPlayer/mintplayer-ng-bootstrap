@@ -2,6 +2,8 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
+    // The conformance specs import the codegen's tables from tools/scripts/lib/*.mjs: type them from the JS.
+    "allowJs": true,
     "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"]
   },
   "include": [

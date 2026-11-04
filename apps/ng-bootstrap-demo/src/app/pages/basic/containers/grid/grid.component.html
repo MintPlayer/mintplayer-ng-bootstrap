@@ -3,8 +3,8 @@
 <p>
   <code>bs-grid</code> provides the Bootstrap grid container; <code>bsRow</code>
   marks a row of columns; and width directives such as <code>[md]</code>,
-  <code>[lg]</code>, <code>[sm]</code>, <code>[xxs]</code>, or the auto-fit
-  <code>[col]</code> directive set the column span at the corresponding
+  <code>[lg]</code>, <code>[sm]</code>, <code>[xxs]</code>, or the auto-width
+  <code>col</code> attribute set the column span at the corresponding
   breakpoint.
 </p>
 
@@ -17,13 +17,13 @@
 
 <bs-grid>
     <div bsRow>
-        <div [col]>Hello</div>
-        <div [col]>World</div>
+        <div col>Hello</div>
+        <div col>World</div>
     </div>
     <div bsRow>
-        <div [col]>This</div>
-        <div [col]>Is</div>
-        <div [col]>Me</div>
+        <div col>This</div>
+        <div col>Is</div>
+        <div col>Me</div>
     </div>
 </bs-grid>
 

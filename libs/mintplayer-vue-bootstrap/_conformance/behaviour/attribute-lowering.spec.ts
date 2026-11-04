@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { h, nextTick } from 'vue';
 
 import { BsCarousel, BsCarouselItem } from '@mintplayer/vue-bootstrap/carousel';
-import BsShell from '../../shell/src/BsShell.vue';
+import { BsShell } from '@mintplayer/vue-bootstrap/shell';
 
 import { mountEl, mountWrapper } from './harness';
 
@@ -79,7 +79,7 @@ describe('BsShell — lowering onto the shell markup', () => {
   it('lowers an explicit state and size', () => {
     const { el } = mountShell({ props: { state: 'show', size: '15rem' } });
     expect(check(el, 'narrow').checked).toBe(true);
-    expect(el.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
+    expect(el.querySelector<HTMLElement>('.sidebar-root')!.style.getPropertyValue('--mp-shell-size')).toBe('15rem');
   });
 
   it('emits statechange as { open } when a toggle flips', async () => {
@@ -88,7 +88,7 @@ describe('BsShell — lowering onto the shell markup', () => {
     check(el, 'wide').click();
     await nextTick();
 
-    expect(wrapper.emitted('statechange')![0]).toEqual([{ open: false }]);
+    expect(wrapper.emitted('stateChange')![0]).toEqual([{ open: false }]);
   });
 
   it('renders the named slots into their regions', () => {

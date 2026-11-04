@@ -7,16 +7,19 @@ import { banner, coreImports, jsdoc, styleImports, styleInstall } from './model.
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
  */
+/** The attrs element's tag map: an svg root is not in HTMLElementTagNameMap. */
+const SVG_TAGS = new Set(['svg', 'g', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon', 'text']);
+
 export function emitReactComponent(model, { generator, runtime, extension, scopedStyles }) {
   const { names } = model;
-  const element = `HTMLElementTagNameMap['${model.rootTag}']`;
+  const element = model.rootType;
   const named = model.slots.filter((slot) => slot.name !== 'default');
   const slotNames = new Set(named.map((slot) => slot.name));
   // An input that is also a slot takes rich content in React: the node fills the slot.
   const inputs = model.inputs.filter((input) => !slotNames.has(input.name));
   const ext = model.extensions.react;
   const has = (name) => !!ext?.exports.has(name);
-  const own = [...new Set([...model.inputs.map((i) => i.name), ...model.outputs.map((o) => o.react), ...named.map((s) => s.name)])];
+  const own = [...new Set([...model.inputs.map((i) => i.name), ...model.outputs.map((o) => o.react), ...model.changes.map((c) => c.react), ...named.map((s) => s.name)])];
   const propsName = `${names.component}Props`;
 
   const lines = [
@@ -24,7 +27,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `import * as React from 'react';`,
     `import { forwardRef, useImperativeHandle, useRef } from 'react';`,
     `import { installLightStyles } from '${scopedStyles}';`,
-    `import { ${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
+    `import { ${model.content.some((c) => c.lends) ? 'lentSlots, ' : ''}${model.provides ? 'reactCoreContext, ' : ''}${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
     coreImports(model, { values: [model.core, ...(model.provides ? [model.provides] : [])], types: [model.inputsType].filter(Boolean) }),
   ];
   styleImports(model)
@@ -40,9 +43,10 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   lines.push('');
 
   // Props interface.
-  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<HTMLElementTagNameMap['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
+  lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<${SVG_TAGS.has(model.attrsTag) ? 'SVGElementTagNameMap' : 'HTMLElementTagNameMap'}['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
   inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  ${input.name}?: ${model.inputsType}['${input.name}'];`));
   model.outputs.forEach((output) => lines.push(`${jsdoc(output.doc, '  ')}  ${output.react}?: (detail: ${output.type}) => void;`));
+  model.changes.forEach((change) => lines.push(`  /** \`${change.input}\` changed from inside (two-way: pass the value back as \`${change.input}\`). */`, `  ${change.react}?: (value: ${change.type}) => void;`));
   // A slot prop takes what the template's slot takes: a node, or a function of the slot's args.
   named.forEach((slot) => lines.push(`  ${slot.name}?: NonNullable<${model.templateName}TemplateProps['slots']>['${slot.name}'];`));
   lines.push(`  children?: React.ReactNode;`, `}`, '');
@@ -58,6 +62,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   const params = [
     ...inputs.map((input) => (input.default === undefined ? input.name : `${input.name} = ${literal(input) ? constName(input) : input.default}`)),
     ...model.outputs.map((o) => o.react),
+    ...model.changes.map((c) => c.react),
     ...named.map((s) => s.name),
     'className',
     'children',
@@ -70,15 +75,21 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   const emit = model.outputs.length
     ? `(name, detail) => { ${model.outputs.map((o) => `if (name === '${o.name}') ${o.react}?.(detail as ${o.type});`).join(' ')} }`
     : `() => undefined`;
+  // The models' write-back: the runtime calls it when the core moves a model away from its prop.
+  const writeModel = model.changes.length
+    ? `(name, value) => { ${model.changes.map((c) => `if (name === '${c.input}') ${c.react}?.(value as ${c.type});`).join(' ')} }`
+    : null;
 
   lines.push(jsdoc(model.doc).trimEnd());
   lines.push(`export const ${names.component} = forwardRef<${element}, ${propsName}>(function ${names.component}(`);
   lines.push(`  { ${params.join(', ')} },`, `  ref,`, `) {`);
   if (model.style) lines.push(`  ${styleInstall(model, 'installLightStyles')}`);
   lines.push(`  const rootRef = useRef<${element}>(null);`, `  useImperativeHandle(ref, () => rootRef.current as ${element});`);
-  model.content.forEach(({ input, child, within }) =>
-    lines.push(`  const content_${input} = useContent(children, { type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),
-  );
+  // A declaration's slot props are not inputs: the template renders them (<content-slot>).
+  const query = ({ child, within, lends }) =>
+    `{ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''}${lends ? `, slots: [${child.slots.map((s) => `'${s.name}'`).join(', ')}]` : ''} }`;
+  model.content.forEach((c) => lines.push(`  const content_${c.input} = useContent(children, ${query(c)});`));
+  model.content.filter((c) => c.lends).forEach((c) => lines.push(`  const lent_${c.input} = lentSlots(children, ${query(c)});`));
   const inputsExpr = has('useExtendInputs') ? `ext_useExtendInputs(${inputsObject}, { children })` : inputsObject;
   lines.push(
     `  const core = useCore(${model.core}, ${inputsExpr}, {`,
@@ -86,9 +97,11 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `    label: rest['aria-label'],`,
     `    rootRef,`,
     `    emit: ${emit},`,
+    ...(writeModel ? [`    models: [${model.changes.map((c) => `'${c.input}'`).join(', ')}],`, `    writeModel: ${writeModel},`] : []),
     `  });`,
   );
-  const slotsProp = named.length ? ` slots={{ ${named.map((s) => s.name).join(', ')} }}` : '';
+  const lent = model.content.filter((c) => c.lends);
+  const slotsProp = (named.length ? ` slots={{ ${named.map((s) => s.name).join(', ')} }}` : '') + (lent.length ? ` contentSlots={{ ${lent.map((c) => `${c.input}: lent_${c.input}`).join(', ')} }}` : '');
   // An extension's `Children` component wraps the default slot's content (the nav item marks its link).
   // createElement: JSX would read the lowercase `ext_` alias as an intrinsic tag.
   const content = has('Children') ? '{React.createElement(ext_Children, null, children)}' : '{children}';

@@ -3,15 +3,26 @@
 // at runtime (`PropType` casts), so Vue never has to resolve a core's types
 // across packages; attributes fall through to the template's root.
 import { banner, coreImports, jsdoc, styleImports, styleInstall } from './model.mjs';
+import { contentSlotPrefix } from '../templates/emit-vue.mjs';
 
 const RUNTIME_TYPES = { string: 'String', boolean: 'Boolean', number: 'Number' };
 
-function propLine(model, input) {
+export function propLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
   const runtime = RUNTIME_TYPES[input.kind];
-  const typed = runtime ? `${runtime} as PropType<${type}>` : `null as unknown as PropType<${type}>`;
-  return `${jsdoc(input.doc, '  ')}  ${input.name}: { type: ${typed}, default: ${input.default ?? 'undefined'} },`;
+  // An opaque `unknown` input must stay `any` here: Vue infers `PropType<unknown>`
+  // from the prop's `default` (`undefined`), which then refuses every value.
+  const typed = runtime
+    ? `${runtime} as PropType<${type}>`
+    : `null as unknown as PropType<unknown extends ${type} ? any : ${type}>`;
+  // Vue CALLS a function default of a prop that is not typed `Function` (it is a factory),
+  // so a formatter default (`(n) => …`) is handed over through one.
+  const value = input.default ?? 'undefined';
+  const fallback = !runtime && FUNCTION_EXPRESSION.test(value.trim()) ? `() => ${value}` : value;
+  return `${jsdoc(input.doc, '  ')}  ${input.name}: { type: ${typed}, default: ${fallback} },`;
 }
+
+const FUNCTION_EXPRESSION = /^(?:async\s+)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/;
 
 /**
  * @returns {{ file: string, text: string, exports: string[] }}
@@ -22,18 +33,20 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
   const hasDefault = model.slots.some((slot) => slot.name === 'default');
   const ext = model.extensions.vue;
   const has = (name) => !!ext?.exports.has(name);
+  const lent = model.content.filter((c) => c.lends);
 
   const script = [
     banner(model, generator),
     `import { useTemplateRef, type ComponentPublicInstance${model.inputs.length ? ', type PropType' : ''} } from 'vue';`,
     `import { installLightStyles } from '${scopedStyles}';`,
-    `import { ${model.content.length ? 'useContent, ' : ''}useCore } from '${runtime}';`,
+    `import { ${model.content.length ? 'useContent, ' : ''}useCore${lent.length ? ', useLentSlots' : ''} } from '${runtime}';`,
     coreImports(model, { values: [model.core], types: [model.inputsType, model.methodsType].filter(Boolean) }),
   ];
   // A content query matches its components by identity, so it imports them.
   [...new Set(model.content.flatMap(({ child, within }) => [child, within].filter(Boolean)))]
     .filter((other) => other !== model)
-    .forEach((other) => script.push(`import ${other.names.component} from './${other.names.component}.generated.vue';`));
+    // A declaration is a plain .ts module.
+    .forEach((other) => script.push(other.kind === 'declaration' ? `import { ${other.names.component} } from './${other.names.component}.generated';` : `import ${other.names.component} from './${other.names.component}.generated.vue';`));
   styleImports(model)
     .filter(({ module }) => module !== model.entryModule)
     .forEach(({ module, names: list }) => script.push(`import { ${list.join(', ')} } from '${module}';`));
@@ -48,7 +61,7 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
   if (model.outputs.length || models.length) {
     script.push(
       `const emit = defineEmits<{`,
-      ...model.outputs.map((o) => `${jsdoc(o.doc, '  ')}  ${o.lower}: [detail: ${o.type}];`),
+      ...model.outputs.map((o) => `${jsdoc(o.doc, '  ')}  ${o.name}: [detail: ${o.type}];`),
       ...models.map((i) => `  'update:${i.name}': [value: ${model.inputsType}['${i.name}']];`),
       `}>();`,
     );
@@ -59,10 +72,15 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
   model.content.forEach(({ input, child, within }) =>
     script.push(`const content_${input} = useContent({ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} });`),
   );
+  // Each declaration's slots, forwarded to the template under `content:<query>:<index>:<slot>` (<content-slot>).
+  lent.forEach(({ input, child, within }) =>
+    script.push(`const lent_${input} = useLentSlots({ type: ${child.names.component}${within ? `, within: ${within.names.component}` : ''} }, '${contentSlotPrefix(input)}');`),
+  );
+  if (lent.length) script.push(`const lentSlots = () => [${lent.map(({ input }) => `...lent_${input}()`).join(', ')}];`);
   const inputsFn = `() => ({ ${[...model.inputs.map((i) => `${i.name}: props.${i.name}`), ...model.content.map(({ input }) => `${input}: content_${input}()`)].join(', ')} })`;
-  // An output is lowercased; a v-model update keeps its input name.
+  // Vue's convention: emits keep their camelCase names (a template listens `@item-select`).
   const emit = model.outputs.length || models.length
-    ? `(name, detail) => emit((name.startsWith('update:') ? name : name.toLowerCase()) as never, detail as never)`
+    ? `(name, detail) => emit(name as never, detail as never)`
     : `() => undefined`;
   script.push(
     `const core = useCore(${model.core}, ${has('extendInputs') ? `ext_extendInputs(${inputsFn})` : inputsFn}, {`,
@@ -91,6 +109,7 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
         : `    <template v-if="$slots.${slot.name}" #${slot.name}><slot name="${slot.name}" /></template>`,
     ),
     // An extension's `Children` component wraps the default slot's content (the nav item marks its link).
+    ...(lent.length ? ['    <template v-for="lent in lentSlots()" #[lent.name]><component :is="lent.render" /></template>'] : []),
     ...(hasDefault ? [has('Children') ? '    <ext_Children><slot /></ext_Children>' : '    <slot />'] : []),
   ];
   const text = [

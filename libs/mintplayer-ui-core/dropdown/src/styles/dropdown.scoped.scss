@@ -1,0 +1,85 @@
+// The dropdown group's own rules (#458 M6); the dropdown partial is installed by
+// the manifest. The menu rules are the shared dropdown-menu sheet, stamped with
+// this group's scope.
+@use '../../../dropdown-menu/src/styles/dropdown-menu.scoped' with ($scope: dropdown);
+
+// Bootstrap gives a header an <h6>, a divider an <hr> and a menu a <ul>; here
+// they are divs (an Angular or Lit item host may not sit in a list), so they
+// need the block display the elements had.
+.dropdown-header,
+.dropdown-divider {
+  display: block;
+}
+
+// The Angular / Lit host around a menu is out of the layout, so the navbar's
+// flex and Bootstrap's child rules (.navbar-nav .dropdown-menu) see the real node.
+.dropdown-contents {
+  display: contents;
+}
+
+// --- in a navbar: a native <details> disclosure (the navbar sheet places it) ---
+// The summary keeps its native disclosure semantics; only the marker goes.
+summary.dropdown-toggle {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+summary.dropdown-toggle::-webkit-details-marker {
+  display: none;
+}
+// A submenu trigger is a dropdown item with a caret pointing at its panel.
+.dropdown-submenu > summary.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dropdown-submenu > summary.dropdown-toggle::after {
+  margin-inline-start: 0.5rem;
+  border-top: 0.3em solid transparent;
+  border-bottom: 0.3em solid transparent;
+  border-inline-start: 0.3em solid;
+  border-inline-end: 0;
+}
+.nav-item.dropdown > .dropdown-menu {
+  margin: 0 1rem;
+}
+.dropdown-submenu > .dropdown-menu {
+  margin: 0 0.5rem;
+}
+// Collapsed, a hydrated submenu's panel is a popover that is never shown: undo
+// the UA's [popover] sizing so it lays out inline like any panel.
+.dropdown-submenu > .dropdown-menu[popover] {
+  width: auto;
+  height: auto;
+}
+
+// The panel Bootstrap positions with Popper's inline styles: here the core
+// writes the position as custom properties (placeBeside), and the width of the
+// trigger for sameWidth (the menu is then at least that wide).
+.dropdown-panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  left: var(--mp-anchored-left, 0);
+  top: var(--mp-anchored-top, 0);
+}
+
+// A descendant, not a child: in Angular and Lit the menu's host sits between.
+.dropdown-panel .dropdown-menu {
+  min-width: var(--mp-dropdown-width, var(--bs-dropdown-min-width));
+}
+
+// A closing panel takes no clicks.
+.dropdown-panel:not(.show) {
+  pointer-events: none;
+}
+
+// A dialog panel takes focus when it opens; the ring shows only for keyboard focus.
+.dropdown-panel:focus {
+  outline: none;
+}
+
+.dropdown-panel:focus-visible {
+  outline: 2px solid var(--bs-focus-ring-color, rgba(13, 110, 253, 0.25));
+  outline-offset: 2px;
+}

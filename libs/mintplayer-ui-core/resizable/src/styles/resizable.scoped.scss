@@ -1,0 +1,84 @@
+@use 'sass:math';
+
+// The resizable box (#458 M7). The geometry is the instance sheet's; this sheet places the
+// glyphs. Their classes are PHYSICAL sides: the core resolves start/end against the text
+// direction, so placement, drag math and accessible name share one source.
+
+$glyph-size: 8px;
+$thumb-size: 14px;
+
+// Keeps the box from collapsing out of reach when a parent shrinks.
+.resizable {
+  display: block;
+  min-width: 2rem;
+  min-height: 2rem;
+}
+
+.glyph {
+  position: absolute;
+  width: $thumb-size;
+  height: $thumb-size;
+  z-index: 20;
+  // The pointer drags the edge, never the page.
+  touch-action: none;
+
+  &::before {
+    content: '';
+    width: $glyph-size;
+    height: $glyph-size;
+    display: block;
+    border-radius: math.div($glyph-size, 2);
+    transition: background-color 0.2s ease-in-out;
+  }
+
+  &.top { top: math.div($thumb-size, -2); }
+  &.left { left: math.div($thumb-size, -2); }
+  &.bottom { bottom: math.div($thumb-size, -2); }
+  &.right { right: math.div($thumb-size, -2); }
+
+  &.top, &.bottom { cursor: ns-resize; }
+  &.left, &.right { cursor: ew-resize; }
+  &.top.left, &.bottom.right { cursor: nwse-resize; }
+  &.top.right, &.bottom.left { cursor: nesw-resize; }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 1px;
+  }
+
+  &.left, &.right {
+    &:not(.top):not(.bottom) {
+      top: math.div($glyph-size, 2);
+      height: calc(100% - #{$glyph-size});
+
+      &::before { height: 100%; }
+    }
+    &::before {
+      margin-left: math.div($thumb-size - $glyph-size, 2);
+      margin-right: math.div($thumb-size - $glyph-size, 2);
+    }
+  }
+
+  &.top, &.bottom {
+    &:not(.left):not(.right) {
+      left: math.div($glyph-size, 2);
+      width: calc(100% - #{$glyph-size});
+
+      &::before { width: 100%; }
+    }
+    &::before {
+      margin-top: math.div($thumb-size - $glyph-size, 2);
+      margin-bottom: math.div($thumb-size - $glyph-size, 2);
+    }
+  }
+
+  &:hover::before,
+  &:focus-visible::before,
+  &.active::before {
+    background-color: var(--bs-primary);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &::before { transition: none; }
+  }
+}

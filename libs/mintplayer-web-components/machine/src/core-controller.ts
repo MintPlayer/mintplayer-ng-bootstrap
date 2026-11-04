@@ -85,7 +85,15 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
         host.requestUpdate();
       },
       models: options.models as never,
-      writeModel: (name, value) => ((host as unknown as Record<string, unknown>)[name] = value),
+      // A model reports its change as `<name>change`, like an output: the property first, then the event.
+      writeModel: (name, value) => {
+        (host as unknown as Record<string, unknown>)[name] = value;
+        host.dispatchEvent(new CustomEvent(`${name}change`.toLowerCase(), { detail: value, bubbles: true, composed: true }));
+      },
+      // A normalised consumer write: the property shows it, the change event stays silent.
+      syncModel: (name, value) => {
+        (host as unknown as Record<string, unknown>)[name] = value;
+      },
       emit: (name, detail) => host.dispatchEvent(new CustomEvent(name.toLowerCase(), { detail, bubbles: true, composed: true })),
     });
     host.addController(this);
@@ -148,7 +156,9 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   #labelChanged(): void {
     const value = this.#host.getAttribute('aria-label');
     const ours = this.#applied.attrs['aria-label'];
-    if (value === (ours === null || ours === undefined || ours === false ? null : String(ours)) || value === this.#label) return;
+    // The host bag's own write is not the consumer's; a removal (null) never is.
+    const own = value !== null && ours !== null && ours !== undefined && ours !== false && value === String(ours);
+    if (own || value === this.#label) return;
     this.#label = value;
     this.#host.requestUpdate();
   }

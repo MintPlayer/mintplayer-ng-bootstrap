@@ -33,10 +33,6 @@ export interface CalendarState {
 }
 
 export interface CalendarEvents {
-  /** A day chosen by click, Enter or Space. */
-  selectedDateChange: Date;
-  /** The month changed by the month buttons or a key that crossed it. */
-  currentMonthChange: Date;
 }
 
 export interface CalendarMethods {
@@ -55,14 +51,12 @@ const initialMonth = (inputs: Readonly<CalendarInputs>) => monthOf(inputs.curren
 function showMonth(api: Api, month: Date) {
   if (isSameYearMonth(month, api.state().currentMonth)) return;
   api.setState({ currentMonth: monthOf(month) });
-  api.emit('currentMonthChange', monthOf(month));
 }
 
 function select(api: Api, date: Date) {
   const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   showMonth(api, day);
   api.setState({ selectedDate: day, focusedDate: day });
-  api.emit('selectedDateChange', day);
 }
 
 export const calendarCore = defineCore<CalendarInputs, CalendarState, { view: CalendarView }, CalendarEvents, undefined, undefined, CalendarMethods>({

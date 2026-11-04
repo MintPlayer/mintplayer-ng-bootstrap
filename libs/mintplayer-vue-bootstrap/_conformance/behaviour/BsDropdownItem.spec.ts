@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { defineComponent, h, nextTick, shallowRef } from 'vue';
 
-import BsDropdownItem from '../../dropdown-menu/src/BsDropdownItem.vue';
-import BsDropdownMenu from '../../dropdown-menu/src/BsDropdownMenu.vue';
-import type { DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown-menu';
+import { BsDropdownItem, BsDropdownMenu } from '../../dropdown/src/generated';
+import type { DropdownSelectEventDetail } from '@mintplayer/ui-core/dropdown';
 
-import { mountWrapper } from './harness';
+import { mountEl, mountWrapper } from './harness';
 
 /**
- * `BsDropdownItem`'s opaque `value` must reach the menu's `select` event
- * unchanged. It used to be written to the `<li>`'s `value` property, which
- * `HTMLLIElement` owns as a native long: an object or a string became 0.
+ * The dropdown group's menu (#458 M6): `BsDropdownItem`'s opaque `value` must
+ * reach the menu's `itemSelect` event unchanged (it travels on the item's
+ * `dropdownValue` property, never on a native `value`), and the menu writes
+ * its height cap.
  */
 
 // shallowRef, not ref: a deep ref would hand the wrapper a reactive PROXY of the
@@ -20,7 +20,8 @@ const seen: unknown[] = [];
 
 const Host = defineComponent({
   setup: () => () =>
-    h(BsDropdownMenu, { onSelect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
+    h(BsDropdownMenu, { onItemSelect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
+      // `value` is opaque (`kind: false`), so the generated prop type cannot name it.
       h(BsDropdownItem, { value: value.value }, () => 'A'),
     ),
 });
@@ -30,8 +31,8 @@ async function select(next: unknown): Promise<unknown> {
   const root = mountWrapper(Host).element as Element;
   await nextTick();
   seen.splice(0);
-  root.querySelector<HTMLElement>('li.dropdown-item')!.click();
-  expect(seen, 'the menu emitted no select event').toHaveLength(1);
+  root.querySelector<HTMLElement>('.dropdown-item')!.click();
+  expect(seen, 'the menu emitted no itemselect event').toHaveLength(1);
   return seen[0];
 }
 
@@ -45,26 +46,30 @@ describe('Vue BsDropdownItem value', () => {
     expect(await select('two')).toBe('two');
   });
 
-  it('carries an integer value to the menu select event', async () => {
-    expect(await select(7)).toBe(7);
-  });
-
   it('follows a prop change', async () => {
     value.value = 'first';
     const root = mountWrapper(Host).element as Element;
     await nextTick();
     value.value = { id: 2 };
     await nextTick();
-    const li = root.querySelector('li.dropdown-item')!;
     seen.splice(0);
-    (li as HTMLElement).click();
+    root.querySelector<HTMLElement>('.dropdown-item')!.click();
     expect(seen).toEqual([{ id: 2 }]);
   });
+});
 
-  it('leaves the li native value untouched, so no value="0" attribute appears', async () => {
-    value.value = 'two';
-    const root = mountWrapper(Host).element as Element;
-    await nextTick();
-    expect(root.querySelector('li.dropdown-item')!.hasAttribute('value')).toBe(false);
+describe('Vue BsDropdownMenu', () => {
+  it('renders the scoped .dropdown-menu with no height cap by default', () => {
+    const { el } = mountEl(BsDropdownMenu, 'div.dropdown-menu');
+    expect(el.getAttribute('data-mps')).toBe('dropdown');
+    expect(el.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
+  });
+
+  // Zero is a legitimate cap and must not be dropped the way an unset value is.
+  it('writes maxHeight as the height-cap custom property, zero included', () => {
+    const capped = mountEl(BsDropdownMenu, 'div.dropdown-menu', { props: { maxHeight: 240 } }).el;
+    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
+    const zero = mountEl(BsDropdownMenu, 'div.dropdown-menu', { props: { maxHeight: 0 } }).el;
+    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
   });
 });

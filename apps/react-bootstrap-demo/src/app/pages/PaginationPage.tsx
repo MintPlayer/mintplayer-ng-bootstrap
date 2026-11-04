@@ -16,7 +16,7 @@ export function MyPagination() {
       pageNumbers={pages}
       selectedPageNumber={page}
       numberOfBoxes={9}
-      onPageChange={setPage}
+      onSelectedPageNumberChange={setPage}
     />
   );
 }`;
@@ -39,7 +39,7 @@ export function PaginationPage() {
         <BsPagination
           pageNumbers={PAGES_SMALL}
           selectedPageNumber={smallPage}
-          onPageChange={setSmallPage}
+          onSelectedPageNumberChange={setSmallPage}
         />
         <small className="text-muted d-block mt-1">Selected: {smallPage}</small>
       </section>
@@ -50,7 +50,7 @@ export function PaginationPage() {
           pageNumbers={PAGES_LARGE}
           selectedPageNumber={bigPage}
           numberOfBoxes={9}
-          onPageChange={setBigPage}
+          onSelectedPageNumberChange={setBigPage}
         />
         <small className="text-muted d-block mt-1">Selected: {bigPage}</small>
       </section>

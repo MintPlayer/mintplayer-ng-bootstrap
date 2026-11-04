@@ -1,3 +1,2 @@
-export * from './form/form.component';
-export * from './form-group/form-group.directive';
-export * from './form-control/form-control.directive';
+// Generated from @mintplayer/ui-core/form (#458 D10).
+export * from './generated';

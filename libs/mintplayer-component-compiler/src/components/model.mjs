@@ -3,7 +3,7 @@
 // the four emitters read (PRD #437 D10).
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { attribute, attrsTarget, directive, rootElement } from '../templates/source.mjs';
+import { attribute, attrsTarget, contentSlotUses, directive, rootElement } from '../templates/source.mjs';
 
 const pascal = (name) => name.split(/[-_]/).map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 const camel = (name) => pascal(name).replace(/^./, (c) => c.toLowerCase());
@@ -85,11 +85,11 @@ function exportsOf(file) {
 export function componentModels({ group, entry, corePackage, template, extension, literals = () => null, partials = new Map(), components = new Map() }) {
   const entryModule = `${corePackage}/${entry}`;
   const style = groupStyle(group, entry, corePackage);
-  const models = Object.entries(group.components).map(([element, manifest]) => {
+  const models = Object.entries(group.components ?? {}).map(([element, manifest]) => {
     const src = template(manifest.template ?? `${element}.view.vue`);
-    const { root, host } = rootElement(src);
+    const { root, roots, host } = rootElement(src);
     const where = `${entry}/${element}`;
-    if (!root) throw new Error(`${where}: the template needs a single root element`);
+    if (!root) throw new Error(`${where}: the template needs a single root element (or a root v-if chain ending in v-else)`);
 
     let hostExpression = null;
     if (host) {
@@ -100,7 +100,7 @@ export function componentModels({ group, entry, corePackage, template, extension
       }
       hostExpression = expression;
     }
-    if (attribute(root, 'ref')?.value?.content !== 'root') throw new Error(`${where}: the template's root element needs ref="root"`);
+    if (roots.some((r) => attribute(r, 'ref')?.value?.content !== 'root')) throw new Error(`${where}: the template's root element needs ref="root"`);
 
     const fields = manifest.inputs?.fields ?? {};
     const inputs = Object.entries(fields).map(([name, field]) => {
@@ -111,6 +111,11 @@ export function componentModels({ group, entry, corePackage, template, extension
     });
     const clash = inputs.find((input) => RESERVED.has(input.name));
     if (clash) throw new Error(`${where}: input "${clash.name}" shadows an HTMLElement member; pick another name`);
+    // A model reports its own changes (`changes` below); an output of that name would be a second channel.
+    const shadowed = inputs.find((input) => input.model && Object.hasOwn(manifest.outputs ?? {}, `${input.name}Change`));
+    if (shadowed) {
+      throw new Error(`${where}: output "${shadowed.name}Change" duplicates the model "${shadowed.name}", which reports its own changes; remove the output`);
+    }
 
     const slots = src.slots.members.map((member) => ({ name: member.name, params: member.paramType }));
     // A slot is a prop in React and Vue: one named like an input replaces it, silently.
@@ -144,8 +149,12 @@ export function componentModels({ group, entry, corePackage, template, extension
       templateBase: src.file.replace(/^.*[\\/]/, '').replace(/\.vue$/, ''),
       templateName: src.name,
       rootTag: root.tag,
+      // The root's DOM type: HTMLElement when the branches of a root v-if chain differ.
+      rootType: roots.every((r) => r.tag === root.tag) ? `HTMLElementTagNameMap['${root.tag}']` : 'HTMLElement',
       // The element the consumer's attributes land on (mp-attrs), which types the React props.
       attrsTag: attrsTarget(src, root).tag,
+      // The host is the root but the role lives on an inner mp-attrs node: Angular forwards the host's aria-*/id/tabindex there.
+      forwardsHost: !!host && attrsTarget(src, root) !== root,
       host,
       hostExpression,
       hostRole: host ? (IMPLICIT_ROLES[root.tag] ?? null) : null,
@@ -153,6 +162,19 @@ export function componentModels({ group, entry, corePackage, template, extension
       inputs,
       inputsType: manifest.inputs?.type ?? null,
       outputs: Object.entries(manifest.outputs ?? {}).map(([name, output]) => ({ name, lower: name.toLowerCase(), react: `on${name[0].toUpperCase()}${name.slice(1)}`, ...output })),
+      // Each model's change channel, derived from `model: true` alone: Angular's model() output, Vue's
+      // update:x, React's on<X>Change prop and Lit's <x>change event. Fired when the front writes the model back.
+      changes: inputs
+        .filter((input) => input.model)
+        .map((input) => ({
+          input: input.name,
+          name: `${input.name}Change`,
+          lower: `${input.name}change`.toLowerCase(),
+          react: `on${input.name[0].toUpperCase()}${input.name.slice(1)}Change`,
+          // What is written back is the core's state of that name (runtime `writeModel`), often
+          // narrower than the input (`filters: X | null` in, always an `X` out).
+          type: `ReturnType<NonNullable<(typeof ${manifest.core})['state']>>['${input.name}']`,
+        })),
       methods: Object.entries(manifest.methods?.fields ?? {}).map(([name, method]) => ({ name, ...method })),
       methodsType: manifest.methods?.type ?? null,
       slots,
@@ -176,8 +198,156 @@ export function componentModels({ group, entry, corePackage, template, extension
       wrapsContent: false,
     };
   });
-  return resolveContent(models, entry);
+  const declarations = declarationModels({ group, entry, entryModule, literals });
+  resolveContent([...models, ...declarations], entry);
+  checkContentSlots(models, entry);
+  const directives = directiveModels({ group, entry, entryModule, style, literals });
+  directives
+    .filter((directive) => directive.manifest.overlay)
+    .forEach((directive) => {
+      const panel = models.find((model) => model.element === directive.manifest.overlay);
+      if (!panel) throw new Error(`${entry}/${directive.element} (directive): overlay "${directive.manifest.overlay}" is not a component of the group`);
+      directive.overlay = panel;
+    });
+  return [...models, ...declarations, ...directives];
 }
+
+/**
+ * The group's declarations (#458 Q15): elements with inputs and slots but no
+ * core and no template, which a parent's content query collects and whose
+ * slots the parent renders (`<content-slot>`). They carry `kind: 'declaration'`.
+ */
+function declarationModels({ group, entry, entryModule, literals }) {
+  return Object.entries(group.declarations ?? {}).map(([element, manifest]) => {
+    const where = `${entry}/${element} (declaration)`;
+    if (group.components?.[element] || group.directives?.[element]) throw new Error(`${where}: another element of the group has the same name`);
+    const unsupported = ['core', 'template', 'provides', 'content', 'methods', 'outputs'].filter((key) => key in manifest);
+    if (unsupported.length) throw new Error(`${where}: a declaration has no ${unsupported.join(', ')}`);
+    const inputs = Object.entries(manifest.inputs?.fields ?? {}).map(([name, field]) => {
+      if (field.model) throw new Error(`${where}: input "${name}" cannot be two-way on a declaration`);
+      const kind = inputKind(field);
+      return { name, ...field, kind, values: kind === 'string' ? literals(manifest.inputs?.type, name) : null };
+    });
+    const clash = inputs.find((input) => RESERVED.has(input.name));
+    if (clash) throw new Error(`${where}: input "${clash.name}" shadows an HTMLElement member; pick another name`);
+    const slots = [{ name: 'default', params: null }, ...Object.entries(manifest.slots ?? {}).map(([name, slot]) => ({ name, params: null, doc: slot.doc ?? null }))];
+    slots.forEach((slot) => {
+      if (!/^[A-Za-z_$][\w$]*$/.test(slot.name)) throw new Error(`${where}: slot "${slot.name}" must be an identifier (camelCase)`);
+      if (inputs.some((input) => input.name === slot.name)) throw new Error(`${where}: slot "${slot.name}" has the name of an input; rename one of them`);
+    });
+    const names = manifest.names ?? {};
+    const base = pascal(element);
+    return {
+      kind: 'declaration',
+      element,
+      entry,
+      entryModule,
+      group,
+      manifest,
+      doc: manifest.doc ?? null,
+      core: null,
+      inputs,
+      inputsType: manifest.inputs?.type ?? null,
+      outputs: [],
+      changes: [],
+      methods: [],
+      methodsType: null,
+      slots,
+      provides: null,
+      style: null,
+      names: {
+        angular: names.angular ?? `Bs${base}Component`,
+        selector: names.selector ?? `bs-${element}`,
+        component: names.component ?? `Bs${base}`,
+        lit: names.lit ?? `Mp${base}`,
+        tag: names.tag ?? `mp-${element}`,
+        slotDirective: (slot) => `Bs${base}${pascal(slot)}Directive`,
+        slotSelector: (slot) => `bs${base}${pascal(slot)}`,
+        file: element,
+      },
+      extensions: {},
+      camel: camel(element),
+      content: [],
+      queried: null,
+      wrapsContent: false,
+    };
+  });
+}
+
+/** Every `<content-slot>` names a content query of its component over a declaration, and one of its slots. */
+function checkContentSlots(models, entry) {
+  models.forEach((model) =>
+    contentSlotUses(model.src).forEach(({ query, name }) => {
+      const where = `${entry}/${model.element}: <content-slot query="${query}">`;
+      const content = model.content.find((c) => c.input === query);
+      if (!content) throw new Error(`${where} names no content query of the component`);
+      if (content.child.kind !== 'declaration') throw new Error(`${where} queries "${content.child.element}", which renders itself; only a declaration lends its slots`);
+      if (!content.child.slots.some((slot) => slot.name === name)) throw new Error(`${where}: "${content.child.element}" has no "${name}" slot`);
+    }),
+  );
+}
+
+/**
+ * The group's directives (#458 §4.3): cores without a template, placed on an
+ * element the consumer renders. They share the component models' inputs,
+ * outputs, style and naming, and carry `kind: 'directive'`.
+ */
+function directiveModels({ group, entry, entryModule, style, literals }) {
+  return Object.entries(group.directives ?? {}).map(([name, manifest]) => {
+    const where = `${entry}/${name} (directive)`;
+    if (group.components?.[name]) throw new Error(`${where}: a component of the group has the same name`);
+    const unsupported = ['template', 'provides', 'content', 'methods'].filter((key) => key in manifest);
+    if (unsupported.length) throw new Error(`${where}: a directive has no ${unsupported.join(', ')}`);
+    const fields = manifest.inputs?.fields ?? {};
+    const inputs = Object.entries(fields).map(([input, field]) => {
+      if (field.model) throw new Error(`${where}: input "${input}" cannot be two-way on a directive`);
+      const kind = inputKind(field);
+      return { name: input, ...field, kind, values: kind === 'string' ? literals(manifest.inputs?.type, input) : null };
+    });
+    const names = manifest.names ?? {};
+    const base = pascal(name);
+    return {
+      kind: 'directive',
+      element: name,
+      entry,
+      entryModule,
+      group,
+      manifest,
+      doc: manifest.doc ?? null,
+      core: manifest.core,
+      inputs,
+      inputsType: manifest.inputs?.type ?? null,
+      outputs: Object.entries(manifest.outputs ?? {}).map(([output, field]) => ({ name: output, lower: output.toLowerCase(), react: `on${output[0].toUpperCase()}${output.slice(1)}`, ...field })),
+      methods: [],
+      methodsType: null,
+      slots: [],
+      content: [],
+      provides: null,
+      style,
+      names: {
+        angular: names.angular ?? `Bs${base}Directive`,
+        selector: names.selector ?? `[bs${base}]`,
+        react: names.react ?? `useBs${base}`,
+        vue: names.vue ?? `vBs${base}`,
+        // An overlay directive is a renderless component in Vue (S4).
+        vueComponent: `Bs${base}`,
+        lit: names.lit ?? `bs${base}`,
+        file: `${name}.directive`,
+      },
+      camel: camel(name),
+      /** An overlay directive's panel: the component model of `manifest.overlay` (resolved by the caller). */
+      overlay: null,
+    };
+  });
+}
+
+/**
+ * The bag a directive puts on its element. A plain directive's view returns it, stamped with the group's
+ * scope: the element opts in to the group's sheets. An overlay directive's view returns `{ anchor, overlay }`;
+ * its anchor is not stamped (only the panel is styled, and the element may carry another group's scope).
+ */
+export const directiveBag = (model, props) =>
+  model.manifest.overlay ? `${props}.anchor` : model.style ? `({ ...${props}, 'data-mps': '${model.style.scope}' })` : props;
 
 /** Links each manifest `content` query to the group's element models it names. */
 function resolveContent(models, entry) {
@@ -189,9 +359,11 @@ function resolveContent(models, entry) {
       if (!child) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.component}", which is not in the group`);
       if (query.within && !within) throw new Error(`${entry}/${model.element}: content query "${input}" names "${query.within}" as within, which is not in the group`);
       if (model.inputs.some((i) => i.name === input)) throw new Error(`${entry}/${model.element}: content query "${input}" is also a manifest input`);
-      child.queried = { within };
+      if (within?.kind === 'declaration') throw new Error(`${entry}/${model.element}: content query "${input}" names the declaration "${query.within}" as within; a wrapper renders itself`);
+      child.queried = { within, by: model };
       if (within) within.wrapsContent = true;
-      return { input, child, within };
+      // A declaration lends its slots: the front collects them beside its inputs.
+      return { input, child, within, lends: child.kind === 'declaration' };
     });
   });
   return models;

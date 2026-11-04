@@ -35,9 +35,6 @@ export default {
           options: {},
         },
       },
-      outputs: {
-        valueChange: { type: 'SelectChangeEventDetail', doc: 'The user picked: the value, and every value of a multiple select.' },
-      },
     },
   },
 } satisfies ComponentGroup;

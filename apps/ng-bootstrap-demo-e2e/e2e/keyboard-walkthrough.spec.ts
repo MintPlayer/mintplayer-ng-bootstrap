@@ -45,8 +45,9 @@ test.describe('alert — dismiss rescues focus', () => {
 test.describe('rating — unset value still has a tab stop', () => {
   test('a star is reachable and ArrowRight raises the value', async ({ page }) => {
     await page.goto('/basic/rating');
-    const stop = page.locator('bs-rating [tabindex="0"]').first();
-    await expect(stop).toBeVisible({ timeout: 15_000 });
+    // Native radios: the group's tab stop is the checked one (the first when none is).
+    const stop = page.locator('bs-rating input[type=radio]:checked').first();
+    await expect(stop).toBeAttached({ timeout: 15_000 });
     await stop.focus();
     await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(100);
@@ -135,10 +136,8 @@ test.describe('context menu — Shift+F10 opens at the focused element', () => {
     await host.focus();
     await page.keyboard.press('Shift+F10');
     await page.waitForTimeout(300);
-    // Scoped to the overlay container: other (closed) menus on the page also
-    // match a bare li locator, and their hidden nodes win the race.
-    const menuItem = page.locator('.cdk-overlay-container li', { hasText: 'Item 1' }).first();
-    await expect(menuItem).toBeVisible();
+    const menuItem = page.getByRole('menu', { name: 'Context menu' }).getByRole('menuitem', { name: 'Cut' });
+    await expect(menuItem).toBeFocused();
     await expectNotStranded(page);
     await page.keyboard.press('Escape');
     await page.waitForTimeout(300);

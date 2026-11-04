@@ -1,5 +1,58 @@
-import { describe, expect, it } from 'vitest';
-import { sameWindow, virtualWindow } from './virtual-window';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { sameWindow, trackScroll, virtualWindow } from './virtual-window';
+
+describe('trackScroll', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  function stubFrames() {
+    const frames = new Map<number, FrameRequestCallback>();
+    let next = 0;
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => (frames.set(++next, cb), next));
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id));
+    return () => [...frames.values()].splice(0).map((cb) => (frames.clear(), cb(0)));
+  }
+
+  function scroller() {
+    const el = document.createElement('div');
+    Object.defineProperty(el, 'clientHeight', { value: 300 });
+    el.scrollTop = 40;
+    return el;
+  }
+
+  it('reports once per frame, on start, scroll and resize', () => {
+    const flush = stubFrames();
+    const observers: { cb: () => void; disconnect: ReturnType<typeof vi.fn> }[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      disconnect = vi.fn();
+      constructor(public cb: () => void) { observers.push(this); }
+      observe() { /* measured by the stub */ }
+    });
+    const el = scroller();
+    const report = vi.fn();
+    const stop = trackScroll(el, report);
+    el.dispatchEvent(new Event('scroll'));
+    flush();
+    expect(report.mock.calls).toEqual([[40, 300]]);
+    observers[0].cb();
+    flush();
+    expect(report).toHaveBeenCalledTimes(2);
+    stop();
+    expect(observers[0].disconnect).toHaveBeenCalled();
+    el.dispatchEvent(new Event('scroll'));
+    flush();
+    expect(report).toHaveBeenCalledTimes(2);
+  });
+
+  it('works without ResizeObserver', () => {
+    const flush = stubFrames();
+    vi.stubGlobal('ResizeObserver', undefined);
+    const report = vi.fn();
+    const stop = trackScroll(scroller(), report);
+    flush();
+    expect(report).toHaveBeenCalledOnce();
+    stop();
+  });
+});
 
 describe('virtualWindow', () => {
   it('renders the viewport plus a buffer on each side', () => {

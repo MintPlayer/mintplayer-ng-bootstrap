@@ -118,9 +118,9 @@ uses for `_ngcontent`.
 
 ### Plain web components
 
-A few hand-written Lit elements (`@mintplayer/web-components`) keep a shadow root and take your
-content through native `<slot>`s. If you host a light-DOM `mp-*` element **inside your own shadow
-root**, adopt the document's component sheets into it, or it renders unstyled:
+Every `mp-*` element (`@mintplayer/web-components`) renders in the light DOM, so the page's CSS reaches
+it. If you host one **inside your own shadow root**, adopt the document's component sheets into it, or
+it renders unstyled:
 
 ```ts
 import { adoptLightStyles } from '@mintplayer/web-components/light-dom';

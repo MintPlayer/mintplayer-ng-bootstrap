@@ -12,60 +12,55 @@
 
 <bs-form>
     <bs-grid>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtFirstName">First name</label>
             <div [md]="6">
                 <input type="text" #txtFirstName>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtLastName">Last name</label>
             <div [md]="6">
                 <input type="text" #txtLastName>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <label [md]="6" bsColFormLabel [bsFor]="txtBirthday">Birthday</label>
             <div [md]="6">
                 <input type="date" #txtBirthday>
             </div>
         </div>
-        <div bsRow bsFormGroup class="mb-3">
+        <div bsRow class="mb-3">
             <div [md]="6" bsColFormLabel>Address</div>
             <div [md]="6" class="text-center">
-                <button (click)="isOpen = true" [color]="colors.primary">Specify address</button>
+                <button (click)="isOpen.set(true)" [color]="colors.primary">Specify address</button>
             </div>
         </div>
     </bs-grid>
 </bs-form>
-<bs-modal [(isOpen)]="isOpen">
-    <div *bsModal cdkTrapFocus>
-        <div bsModalHeader>
-            <h5 class="modal-title flex-grow-1">Specify address</h5>
-            <bs-close bsModalClose></bs-close>
-        </div>
-        <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
+<bs-modal [(open)]="isOpen">
+    <span *bsModalHeader>Specify address</span>
             <bs-form class="w-100">
                 <bs-grid>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtStreet">Street</label>
                         <div [md]="6">
-                            <input type="text" autofocus #txtStreet>
+                            <input type="text" #txtStreet>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtNumber">Number</label>
                         <div [md]="6">
                             <input type="number" #txtNumber>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup class="mb-3">
+                    <div bsRow class="mb-3">
                         <label [md]="6" bsColFormLabel [bsFor]="txtPostalCode">Postal code</label>
                         <div [md]="6">
                             <input type="number" #txtPostalCode>
                         </div>
                     </div>
-                    <div bsRow bsFormGroup>
+                    <div bsRow>
                         <label [md]="6" bsColFormLabel [bsFor]="txtCity">City</label>
                         <div [md]="6">
                             <input type="text" #txtCity>
@@ -73,11 +68,9 @@
                     </div>
                 </bs-grid>
             </bs-form>
-        </div>
-        <div bsModalFooter>
-            <button type="button" bsModalClose [color]="colors.secondary" aria-label="Close">Close</button>
-        </div>
-    </div>
+    <ng-container *bsModalFooter>
+        <button type="button" data-bs-dismiss="modal" [color]="colors.secondary">Close</button>
+    </ng-container>
 </bs-modal>
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>

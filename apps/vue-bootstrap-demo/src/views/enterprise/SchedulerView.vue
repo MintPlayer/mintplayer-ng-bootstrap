@@ -78,7 +78,7 @@ function insertInto(
   );
 }
 
-// Resource-tree requests. Like `eventcreate` these are asks, not writes: the
+// Resource-tree requests. Like `@event-create` these are asks, not writes: the
 // scheduler never edits its own `resources`, so the id and initial colour are ours.
 // New ARRAY each time — the wrapper watches by reference, matching Lit.
 function onResourceCreate({ parentId }: SchedulerResourceCreateDetail) {
@@ -164,7 +164,7 @@ function onEventDelete(detail: SchedulerEventDeleteDetail) {
 
 // No app-owned editor here: the scheduler's BUILT-IN event editor (phase 2, on by
 // default) handles double-click / right-click / F2 — Save arrives as the same
-// `eventupdate` this page already applies, Delete as `eventdelete`. The
+// `@event-update` this page already applies, Delete as `@event-delete`. The
 // React demo shows the `eventEditor: false` escape hatch with its own form.
 
 // Replace the event by id, assigning a NEW array so the wrapper re-syncs.
@@ -180,7 +180,7 @@ const SOURCE = `<!-- view, date and selectedRange are two-way (v-model) -->
   v-model:view="view"
   v-model:date="date"
   v-model:selectedRange="range"
-  @eventcreate="(e) => {
+  @event-create="(e) => {
     events = [...events, {
       id: generateEventId(), title: 'New Event',
       start: e.range.start, end: e.range.end,
@@ -198,8 +198,8 @@ const SOURCE = `<!-- view, date and selectedRange are two-way (v-model) -->
       views. Drag across the grid to select a range — the scheduler emits
       <code>eventcreate</code> with the range; the consumer decides
       whether to materialise an event (or open a confirmation modal).
-      Every emit carries its payload directly (<code>@eventcreate</code>,
-      <code>@eventdelete</code>, …).
+      Every emit carries its payload directly (<code>@event-create</code>,
+      <code>@event-delete</code>, …).
     </p>
 
     <details class="mb-2">
@@ -229,13 +229,13 @@ const SOURCE = `<!-- view, date and selectedRange are two-way (v-model) -->
         v-model:date="date"
         v-model:selectedRange="range"
         class="scheduler-demo"
-        @eventupdate="onEventUpdate"
-        @eventcreate="onEventCreate"
-        @eventdelete="onEventDelete"
-        @resourcecreate="onResourceCreate"
-        @groupcreate="onGroupCreate"
-        @resourceupdate="onResourceUpdate"
-        @resourcedelete="onResourceDelete"
+        @event-update="onEventUpdate"
+        @event-create="onEventCreate"
+        @event-delete="onEventDelete"
+        @resource-create="onResourceCreate"
+        @group-create="onGroupCreate"
+        @resource-update="onResourceUpdate"
+        @resource-delete="onResourceDelete"
       />
     </section>
 

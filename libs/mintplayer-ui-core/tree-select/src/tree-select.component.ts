@@ -40,7 +40,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'TreeSelectValue', doc: 'The value, after the user changed it.' },
         selectionChanged: { type: 'TreeSelectChangeEventDetail', doc: 'The node added or removed (neither for a clear), with the value.' },
         openChange: { type: 'boolean', doc: 'The panel opened (true) or closed (false).' },
         searchStart: { type: 'TreeSelectSearchEventDetail', doc: 'A search started (an empty query restores the browse tree).' },

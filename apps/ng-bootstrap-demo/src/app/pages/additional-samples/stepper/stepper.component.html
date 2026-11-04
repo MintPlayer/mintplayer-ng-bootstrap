@@ -20,8 +20,8 @@
 
 <bs-grid>
     <div bsRow class="mb-4">
-        <div [col]>
-            <bs-alert [type]="colors.info">
+        <div col>
+            <bs-alert color="info">
                 The CDK stepper from <code>&#64;angular/cdk/stepper</code> is an unstyled primitive.
                 See the
                 <a href="https://material.angular.dev/cdk/stepper/overview" target="_blank" rel="noopener">
@@ -35,7 +35,7 @@
 
     <!-- ============ 1. Linear · Horizontal — signup wizard ============ -->
     <div bsRow class="mb-5">
-        <div [col]>
+        <div col>
             <h2>Linear &middot; Horizontal</h2>
             <p class="text-body-secondary">
                 Reactive-form wizard. <kbd>Next</kbd> stays disabled until the current step's form is valid.
@@ -125,7 +125,7 @@
 
     <!-- ============ 2. Linear · Vertical — checkout ============ -->
     <div bsRow class="mb-5">
-        <div [col]>
+        <div col>
             <h2>Linear &middot; Vertical</h2>
             <p class="text-body-secondary">
                 Reactive-form checkout flow. Same gating, vertical layout — headers stack and the
@@ -219,7 +219,7 @@
 
     <!-- ============ 3. Non-linear · Horizontal — guided tour ============ -->
     <div bsRow class="mb-5">
-        <div [col]>
+        <div col>
             <h2>Non-linear &middot; Horizontal</h2>
             <p class="text-body-secondary">
                 Free navigation — click any header to jump to that step. No form validation gates progress.
@@ -233,7 +233,7 @@
                     <p>The setup step would normally configure something. Here it's just static prose for the demo.</p>
                 </cdk-step>
                 <cdk-step label="Try it">
-                    <bs-alert [type]="colors.warning" class="mb-0">
+                    <bs-alert color="warning" class="mb-0">
                         Try clicking on step <strong>Welcome</strong> in the header — you'll jump straight back without
                         having to use the Back button.
                     </bs-alert>
@@ -273,7 +273,7 @@
 
     <!-- ============ 4. Non-linear · Vertical — settings panel ============ -->
     <div bsRow class="mb-5">
-        <div [col]>
+        <div col>
             <h2>Non-linear &middot; Vertical</h2>
             <p class="text-body-secondary">
                 Settings-style panel: click any section header to expand its content; no required order.

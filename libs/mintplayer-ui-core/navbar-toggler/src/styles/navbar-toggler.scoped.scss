@@ -1,0 +1,44 @@
+// The hamburger's own rules (#458 M5); the navbar part styles .navbar-toggler
+// (and its focus ring). The bars cross while open.
+.navbar-toggler-host {
+  display: inline-block;
+  align-self: start;
+}
+
+.navbar-toggler {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &.open {
+    > .navbar-toggler-line:nth-child(1) {
+      transform: rotate(-45deg) translate(-7px, 5px);
+    }
+
+    > .navbar-toggler-line:nth-child(2) {
+      opacity: 0;
+    }
+
+    > .navbar-toggler-line:nth-child(3) {
+      transform: rotate(45deg) translate(-6px, -4px);
+    }
+  }
+}
+
+.navbar-toggler-line {
+  display: block;
+  width: 25px;
+  height: 2px;
+  background: var(--bs-secondary-color);
+  margin: 6px 0;
+  transition: 0.4s;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

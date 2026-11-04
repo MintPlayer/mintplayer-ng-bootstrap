@@ -5,7 +5,7 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const active = ref('home');
 
-const SOURCE = `<BsTabControl v-model="active">
+const SOURCE = `<BsTabControl v-model:activeTab="active">
   <BsTabPage tab-id="home"><template #header>Home</template><div class="p-3">Home content</div></BsTabPage>
   <BsTabPage tab-id="profile"><template #header>Profile</template><div class="p-3">Profile content</div></BsTabPage>
   <BsTabPage tab-id="settings" disabled><template #header>Settings</template>…</BsTabPage>
@@ -23,7 +23,7 @@ const SOURCE = `<BsTabControl v-model="active">
 
     <section>
       <h2>Three tabs</h2>
-      <BsTabControl v-model="active">
+      <BsTabControl v-model:activeTab="active">
         <BsTabPage tab-id="home">
           <template #header>Home</template>
           <div class="p-3">Home content lives here.</div>

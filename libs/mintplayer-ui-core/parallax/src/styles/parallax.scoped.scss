@@ -1,0 +1,19 @@
+// The parallax band (#458 M5). The core writes --mp-parallax-image and
+// --mp-parallax-height on the band; a fixed background is what makes it a
+// parallax, and reduced motion lets it scroll with the page instead.
+.parallax-host {
+  display: block;
+}
+
+.parallax {
+  height: var(--mp-parallax-height, 150px);
+  background-image: var(--mp-parallax-image, none);
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+
+  @media (prefers-reduced-motion: reduce) {
+    background-attachment: scroll;
+  }
+}

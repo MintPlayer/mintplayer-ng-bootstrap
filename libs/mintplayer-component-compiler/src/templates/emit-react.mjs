@@ -3,18 +3,32 @@
 // scoped slot), the default slot as `children`. The root element also takes
 // the consumer's `className` / `attrs` and the `rootRef`.
 import { rewrite } from './expressions.mjs';
-import { GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
+import { BODY_TARGET, GENERATOR, NATIVE_TAGS, NODE, PROP, TAG, TemplateError, VOID_TAGS, checkElement, directive, groupChains, meaningful, parseFor, refName, renderedProps, rootElement, attrsTarget, composedUse, contentSlotUse, instanceStyleUse, partialUse, slotArgs, slotName, teleportTarget } from './source.mjs';
 
 const RENAME = { class: 'className', for: 'htmlFor', tabindex: 'tabIndex', readonly: 'readOnly', autocomplete: 'autoComplete', maxlength: 'maxLength', colspan: 'colSpan', rowspan: 'rowSpan' };
 const FORM_TAGS = new Set(['input', 'select', 'textarea']);
+
+/** A ref on elements of different tags. */
+const MIXED = '*';
+
+/** Each ref name's element tags, over the whole template. */
+function refTags(node, map = new Map()) {
+  const ref = node.type === NODE.ELEMENT ? refName(node) : null;
+  if (ref) map.set(ref, (map.get(ref) ?? new Set()).add(node.tag));
+  (node.children ?? []).forEach((child) => refTags(child, map));
+  return map;
+}
 
 const eventProp = (name) => 'on' + name.split('-').map((part) => part[0].toUpperCase() + part.slice(1)).join('');
 
 export function emitReact(src, { generator = GENERATOR, runtime, partials, components } = {}) {
   if (!runtime) throw new Error('emitReact: options.runtime must name the module that exports reactProps / reactFormProps');
   const ctx = { src, locals: new Set(), refs: new Map(), uses: new Set(['reactProps']), root: null, partials, imports: new Set(), components, composed: new Map() };
-  const { root } = rootElement(src);
+  const { root, roots } = rootElement(src);
   ctx.root = root;
+  // A root v-if / v-else chain: every branch is the root (className, attrs).
+  ctx.roots = roots;
+  ctx.refTags = refTags(src.root);
   ctx.attrsTarget = attrsTarget(src, root);
   const body = children(ctx, src.root.children);
   const name = `${src.name}Template`;
@@ -22,9 +36,9 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
   const slotMembers = src.slots.members
     .filter((s) => s.name !== 'default')
     .map((s) => `${s.name}?: React.ReactNode${s.paramType ? ` | ((args: ${s.paramType}) => React.ReactNode)` : ''};`);
-  const refMembers = [...ctx.refs].map(([r, tag]) => `${r}Ref?: React.Ref<HTMLElementTagNameMap['${tag}']>;`);
+  const refMembers = [...ctx.refs].map(([r, tag]) => `${r}Ref?: React.Ref<${tag === MIXED ? 'HTMLElement' : `HTMLElementTagNameMap['${tag}']`}>;`);
   const propNames = [...src.propNames];
-  const destructure = [...propNames, 'slots = {}', 'children', 'className', 'attrs', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
+  const destructure = [...propNames, 'slots = {}', ...(ctx.uses.has('contentSlots') ? ['contentSlots = {}'] : []), 'children', 'className', 'attrs', ...[...ctx.refs.keys()].map((r) => `${r}Ref`)].join(', ');
 
   const helpers = [];
   if (ctx.uses.has('renderSlot')) {
@@ -35,7 +49,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
       '',
     );
   }
-  const machine = [...ctx.uses].filter((u) => u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps' || u === 'reactStyle').sort().join(', ');
+  const machine = [...ctx.uses].filter((u) => u === 'BodyPortal' || u === 'reactProps' || u === 'reactFormProps' || u === 'reactOptionProps' || u === 'reactStyle').sort().join(', ');
 
   return [
     `// GENERATED from ${src.file.replace(/\\/g, '/')} by ${generator}. Do not edit.`,
@@ -48,6 +62,7 @@ export function emitReact(src, { generator = GENERATOR, runtime, partials, compo
     '',
     `export type ${name}Props = ${src.props.text} & {`,
     `  slots?: { ${slotMembers.join(' ')} };`,
+    ...(ctx.uses.has('contentSlots') ? ["  /** Each content query's children's lent slots, by query and position (<content-slot>). */", '  contentSlots?: Partial<Record<string, ReadonlyArray<Partial<Record<string, React.ReactNode>>>>>;'] : []),
     '  children?: React.ReactNode;',
     '  /** Merged onto the root element after the bag. */',
     '  className?: string;',
@@ -108,6 +123,13 @@ function element(ctx, el, depth) {
 
 function bare(ctx, el, depth) {
   const to = teleportTarget(ctx.src, el);
+  if (to === BODY_TARGET) {
+    // A portal into a body host the runtime creates after mount: client only (#458 §4.4).
+    // The host inherits data-bs-theme / dir / lang from the root, when the template names it.
+    ctx.uses.add('BodyPortal');
+    const from = refName(rootElement(ctx.src).root) === 'root' ? ' from={rootRef}' : '';
+    return `${pad(depth)}<BodyPortal${from}>${fragment(ctx, children(ctx, el.children, depth + 1), depth)}</BodyPortal>\n`;
+  }
   if (to !== null) {
     // A portal: the content renders into the core's element, nothing where the tag sits.
     ctx.uses.add('createPortal');
@@ -115,6 +137,17 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}{(${target}) ? createPortal(${fragment(ctx, children(ctx, el.children, depth + 1), depth)}, ${target}) : null}\n`;
   }
   if (el.tagType === TAG.SLOT) return slot(ctx, el, depth);
+  const lent = contentSlotUse(ctx.src, el);
+  if (lent) {
+    // A queried child's lent slot: the node its element carried as a prop (or its children).
+    ctx.uses.add('contentSlots');
+    return `${pad(depth)}{contentSlots['${lent.query}']?.[${x(ctx, lent.index)}]?.['${lent.name}'] ?? null}\n`;
+  }
+  const sheet = instanceStyleUse(ctx.src, el);
+  if (sheet) {
+    const css = x(ctx, sheet.css);
+    return `${pad(depth)}{(${css}) ? <style>{${css}}</style> : null}\n`;
+  }
   if (el.tagType === TAG.TEMPLATE) return children(ctx, el.children, depth);
   if (el.tagType === TAG.COMPONENT) {
     const composed = composedUse(ctx.src, el, ctx.components);
@@ -127,7 +160,7 @@ function bare(ctx, el, depth) {
     return `${pad(depth)}<${use.partial.name}Template ${binds} slots={slots} />\n`;
   }
   checkElement(ctx.src, el);
-  const isRoot = el === ctx.root;
+  const isRoot = ctx.roots.includes(el);
   // A form control's bag seeds the DOM; script owns its state afterwards. An
   // option's selection is seeded by its select's `defaultValue` (React refuses
   // `selected` on an option), so its bag goes without it.
@@ -158,25 +191,36 @@ function bare(ctx, el, depth) {
       const isProp = p.modifiers.some((m) => (m.content ?? m) === 'prop');
       const seed = FORM_TAGS.has(el.tag) && p.arg.content === 'value' && isProp;
       if (isProp && !seed) {
-        nodeProps.push(`node.${p.arg.content} = ${exp};`);
+        nodeProps.push({ name: p.arg.content, exp });
         return [];
       }
+      // A seeded value also follows later changes (an outside write after the user moved it),
+      // except on a select (see the README) and on an element that carries a ref.
+      if (seed && el.tag !== 'select' && !refName(el)) nodeProps.push({ name: 'value', exp, sync: true });
       const name = seed ? 'defaultValue' : (RENAME[p.arg.content] ?? p.arg.content);
       return `${name}={${exp}}`;
     }
     return `${eventProp(p.arg.content)}={${exp}}`;
   });
   const ref = refName(el);
-  if (ref && nodeProps.length) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
+  if (ref && nodeProps.some((p) => !p.sync)) throw new TemplateError(ctx.src.file, el, 'an element with a ref takes no .prop binding other than :value.prop');
   if (ref) {
-    ctx.refs.set(ref, el.tag);
-    attrs.push(`ref={${ref}Ref}`);
+    // One ref on branches of different tags (a root chain) is typed HTMLElement.
+    const tag = ctx.refTags.get(ref).size > 1 ? MIXED : el.tag;
+    ctx.refs.set(ref, tag);
+    attrs.push(tag === MIXED ? `ref={${ref}Ref as React.Ref<HTMLElementTagNameMap['${el.tag}']>}` : `ref={${ref}Ref}`);
   }
-  if (nodeProps.length) attrs.push(`ref={(node: ${el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>'} | null) => { if (node) { ${nodeProps.join(' ')} } }}`);
+  if (nodeProps.length) {
+    // The values are read during render, where the template's v-if narrowing still holds; the
+    // ref only writes them. A live value is written only when it differs, so a caret survives.
+    const node = el.tag === 'input' ? 'HTMLInputElement' : 'HTMLElement & Record<string, unknown>';
+    const writes = nodeProps.map((p, i) => (p.sync ? `if (node.value !== String(p${i})) node.value = String(p${i});` : `node.${p.name} = p${i};`));
+    attrs.push(`ref={((${nodeProps.map((_, i) => `p${i}`).join(', ')}) => (node: ${node} | null) => { if (node) { ${writes.join(' ')} } })(${nodeProps.map((p) => p.exp).join(', ')})}`);
+  }
   // v-html: core-produced markup, never consumer input.
   const html = directive(el, 'html');
   if (html) attrs.push(`dangerouslySetInnerHTML={{ __html: ${x(ctx, html.exp.content)} }}`);
-  if (el === ctx.attrsTarget) {
+  if (el === ctx.attrsTarget || (ctx.attrsTarget === ctx.root && isRoot)) {
     attrs.push('{...attrs}');
     // A role in the core's bag is its ARIA contract: a consumer role never replaces it.
     if (bagExpr) attrs.push(`role={(${bagExpr}['role'] as string | null | undefined) ?? (attrs?.['role'] as string | undefined)}`);

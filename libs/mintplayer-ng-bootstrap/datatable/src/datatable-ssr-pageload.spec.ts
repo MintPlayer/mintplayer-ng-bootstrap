@@ -8,13 +8,13 @@ import { BsDatatableComponent } from './generated/datatable.component.generated'
  * #450: a consumer whose columns come from its query result (MintPlayer.Spark's
  * query grid) records them off the response. On the server its `fetch` runs;
  * on the client the transferred seed replaces that call, so the only copy of
- * the result is `(pageload)` with `seeded: true` and the response's `extra`.
+ * the result is `(pageLoad)` with `seeded: true` and the response's `extra`.
  * Before #450 the seed kept rows and total only, and the hydrated grid kept
  * its rows with no cells and no header.
  *
  * The same consumer must work with no server render at all, and with a server
  * render that has no `stateKey` (no prefetch): there the browser fetches page 1
- * itself and `(pageload)` reports it with `seeded: false`.
+ * itself and `(pageLoad)` reports it with `seeded: false`.
  *
  * `renderApplication` needs the server platform and hydration the browser one,
  * so each step tears the previous platform down (vitest isolates files).
@@ -32,7 +32,7 @@ let stateKey: string | null;
 @Component({
   selector: 'bs-query-grid',
   imports: [BsDatatableComponent],
-  template: `<bs-datatable [stateKey]="stateKey" [perPage]="10" [columns]="columns()" [fetch]="fetch" (pageload)="onPageLoad($event)" />`,
+  template: `<bs-datatable [stateKey]="stateKey" [perPage]="10" [columns]="columns()" [fetch]="fetch" (pageLoad)="onPageLoad($event)" />`,
 })
 class QueryGridComponent {
   readonly stateKey = stateKey;

@@ -38,10 +38,6 @@ export default {
         },
       },
       outputs: {
-        queryChange: { type: 'Expression', doc: 'The user edited the query.' },
-        rootEntityChange: { type: 'string', doc: 'The user picked another entity in the toolbar.' },
-        selectedFieldsChange: { type: 'string[]', doc: 'The projected columns changed.' },
-        sortByChange: { type: 'SortDescriptor[]', doc: 'The sort changed.' },
         saveQuery: { type: 'SaveQueryDetail', doc: 'Save the current query under a name.' },
         loadQuery: { type: 'SavedQueryNameDetail', doc: 'Load the named saved query.' },
         deleteQuery: { type: 'SavedQueryNameDetail', doc: 'Delete the named saved query.' },

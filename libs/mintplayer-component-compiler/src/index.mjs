@@ -28,40 +28,55 @@ import { emitAngularComponent } from './components/emit-angular.mjs';
 import { emitReactComponent } from './components/emit-react.mjs';
 import { emitVueComponent } from './components/emit-vue.mjs';
 import { emitLitComponent } from './components/emit-lit.mjs';
+import { emitAngularDirective, emitLitDirective, emitReactDirective, emitVueDirective } from './components/emit-directives.mjs';
+import { emitAngularDeclaration, emitLitDeclaration, emitReactDeclaration, emitVueDeclaration } from './components/emit-declarations.mjs';
 
 export { readSource, groupPartials, stampScope, TemplateError, HOST_MARKER, GENERATOR } from './templates/source.mjs';
 export { groupStyle } from './components/model.mjs';
 export { emitAngular, emitReact, emitVue, emitLit };
 export { emitAngularComponent, emitReactComponent, emitVueComponent, emitLitComponent, componentModels };
+export { emitAngularDirective, emitReactDirective, emitVueDirective, emitLitDirective };
+export { emitAngularDeclaration, emitReactDeclaration, emitVueDeclaration, emitLitDeclaration };
 
 /** A generated Angular component holds its template's props in one `props` signal, so a prop never clashes with an input. */
 const ANGULAR_PROP = (name) => `props().${name}`;
 
-/** Per front: the template emitter, its extension, and the component emitter with its barrel line. */
+/** A barrel line re-exporting named exports from a `.ts`/`.tsx` file. */
+const namedBarrel = (out) => `export { ${out.exports.join(', ')} } from './${out.file.replace(/\.tsx?$/, '')}';`;
+
+/** Per front: the template emitter, its extension, the component and directive emitters, and the component's barrel line. */
 export const FRONTS = {
   angular: {
     ext: 'html',
     template: (src, options) => emitAngular(src, options).text,
     component: emitAngularComponent,
-    barrel: (out) => `export { ${out.exports.join(', ')} } from './${out.file.replace(/\.ts$/, '')}';`,
+    directive: emitAngularDirective,
+    declaration: emitAngularDeclaration,
+    barrel: namedBarrel,
   },
   react: {
     ext: 'tsx',
     template: emitReact,
     component: emitReactComponent,
-    barrel: (out) => `export { ${out.exports.join(', ')} } from './${out.file.replace(/\.tsx$/, '')}';`,
+    directive: emitReactDirective,
+    declaration: emitReactDeclaration,
+    barrel: namedBarrel,
   },
   vue: {
     ext: 'vue',
     template: emitVue,
     component: emitVueComponent,
+    directive: emitVueDirective,
+    declaration: emitVueDeclaration,
     barrel: (out) => `export { default as ${out.exports[0]} } from './${out.file}';`,
   },
   lit: {
     ext: 'ts',
     template: emitLit,
     component: emitLitComponent,
-    barrel: (out) => `export { ${out.exports.join(', ')} } from './${out.file.replace(/\.ts$/, '')}';`,
+    directive: emitLitDirective,
+    declaration: emitLitDeclaration,
+    barrel: namedBarrel,
   },
 };
 
@@ -121,21 +136,26 @@ function runtimeSpecifier(runtime, outDir, cwd) {
 function findEntries(config, cwd) {
   const root = resolve(cwd, config.root);
   const templates = config.templates ?? 'src/templates';
+  const manifestOf = (entry) => join(root, entry, 'src', `${entry.split('/').pop()}.component.ts`);
+  // A group of directives only has a manifest and no templates (#458).
+  const isEntry = (entry) => existsSync(join(root, entry, templates)) || existsSync(manifestOf(entry));
   const dirs = (parent) =>
     readdirSync(join(root, parent), { withFileTypes: true })
       .filter((d) => d.isDirectory() && d.name !== 'node_modules' && !d.name.startsWith('.'))
       .map((d) => (parent ? `${parent}/${d.name}` : d.name));
   return dirs('')
-    .flatMap((top) => (existsSync(join(root, top, templates)) ? [top] : existsSync(join(root, top, 'src')) ? [] : dirs(top)))
-    .filter((entry) => existsSync(join(root, entry, templates)))
+    .flatMap((top) => (isEntry(top) ? [top] : existsSync(join(root, top, 'src')) ? [] : dirs(top)))
+    .filter(isEntry)
     .map((entry) => {
       const dir = join(root, entry, templates);
-      const manifest = join(root, entry, 'src', `${entry.split('/').pop()}.component.ts`);
+      const manifest = manifestOf(entry);
       return {
         entry,
-        sources: readdirSync(dir)
-          .filter((f) => f.endsWith('.view.vue'))
-          .map((f) => ({ file: join(dir, f), base: f.replace(/\.vue$/, '') })),
+        sources: existsSync(dir)
+          ? readdirSync(dir)
+              .filter((f) => f.endsWith('.view.vue'))
+              .map((f) => ({ file: join(dir, f), base: f.replace(/\.vue$/, '') }))
+          : [],
         manifest: existsSync(manifest) ? manifest : null,
       };
     });
@@ -145,7 +165,7 @@ function findEntries(config, cwd) {
 async function loadManifest(file) {
   const module = await import(`${pathToFileURL(file).href}?t=${Date.now()}`);
   const group = module.default;
-  if (!group?.group || !group.components) throw new Error(`${file}: the default export must be a ComponentGroup`);
+  if (!group?.group || !(group.components || group.directives)) throw new Error(`${file}: the default export must be a ComponentGroup with components or directives`);
   return group;
 }
 
@@ -165,7 +185,7 @@ async function describeEntry(config, cwd, entry) {
   if (scope) sources.forEach((src) => stampScope(src, scope));
   const partials = groupPartials(
     sources,
-    group ? new Set(Object.entries(group.components).map(([element, manifest]) => manifest.template ?? `${element}.view.vue`)) : null,
+    group ? new Set(Object.entries(group.components ?? {}).map(([element, manifest]) => manifest.template ?? `${element}.view.vue`)) : null,
   );
   const models = group
     ? componentModels({
@@ -210,7 +230,7 @@ function checkOutputNames(described) {
     models.flatMap((model) =>
       model.outputs
         .filter((output) => DOM_EVENT_NAMES.has(output.lower))
-        .map((output) => `${entry.entry}/${model.element}: output "${output.name}" lowercases to the DOM event "${output.lower}"; rename it`),
+        .map((output) => `${entry.entry}/${model.element}: output "${output.name}" is the Lit element's event "${output.lower}", a DOM event; rename it`),
     ),
   );
   if (clashes.length) throw new Error(clashes.join('\n'));
@@ -272,11 +292,16 @@ function entryOutputs(cwd, described, registry, name, front) {
   });
 
   if (group) {
+    const options = { generator: GENERATOR, runtime, scopedStyles: described.config.scopedStyles ?? '@mintplayer/ui-core/scoped-styles', extension: (file) => relativeSpecifier(file, outDir, cwd) };
     const outputs = models.map((model) =>
-      FRONTS[name].component({ ...model, components }, { generator: GENERATOR, runtime, scopedStyles: described.config.scopedStyles ?? '@mintplayer/ui-core/scoped-styles', extension: (file) => relativeSpecifier(file, outDir, cwd) }),
+      model.kind === 'directive'
+        ? { barrel: namedBarrel, ...FRONTS[name].directive(model, options) }
+        : model.kind === 'declaration'
+        ? { ...FRONTS[name].declaration(model, options), barrel: namedBarrel }
+        : { ...FRONTS[name].component({ ...model, components }, options), barrel: FRONTS[name].barrel },
     );
     outputs.forEach((out) => files.set(join(outDir, out.file), out.text));
-    const barrel = [`// GENERATED from the ${group.group} manifest by ${GENERATOR}. Do not edit.`, ...outputs.map(FRONTS[name].barrel), ''].join('\n');
+    const barrel = [`// GENERATED from the ${group.group} manifest by ${GENERATOR}. Do not edit.`, ...outputs.map((out) => out.barrel(out)), ''].join('\n');
     files.set(join(outDir, 'index.ts'), barrel);
   }
   return { outDir, files };
@@ -307,8 +332,9 @@ export async function compileComponents(config, { cwd = process.cwd(), check = f
   const others = await Promise.all(
     (await registryConfigs(config, cwd)).map(async (other) => Promise.all(findEntries(other, cwd).map((entry) => describeEntry(other, cwd, entry)))),
   );
+  // Only elements compose: a directive sits on an element the consumer renders, a declaration only in a parent's content.
   const registry = [...own, ...others.flat()].flatMap(({ config: from, entry, models }) =>
-    models.map((model) => ({
+    models.filter((model) => !model.kind).map((model) => ({
       config: from,
       entry: entry.entry,
       element: model.element,
@@ -316,6 +342,7 @@ export async function compileComponents(config, { cwd = process.cwd(), check = f
       names: model.names,
       inputs: model.inputs,
       outputs: model.outputs,
+      changes: model.changes,
       slots: model.slots,
     })),
   );

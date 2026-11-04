@@ -2,7 +2,7 @@
 
 <p>
     A thin wrapper around the native <code>&lt;table&gt;</code> element that
-    applies Bootstrap table styling. Toggle <code>[isResponsive]</code> to
+    applies Bootstrap table styling. Toggle <code>[responsive]</code> to
     wrap the table in a horizontally scrollable container on narrow viewports.
 </p>
 
@@ -10,13 +10,13 @@
 
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <bs-checkbox [(ngModel)]="isResponsive">Responsive</bs-checkbox>
         </div>
     </div>
     <div bsRow>
-        <div [col]>
-            <bs-table [isResponsive]="isResponsive">
+        <div col>
+            <bs-table [responsive]="isResponsive">
                 <thead>
                     <tr>
                         <th>#</th>

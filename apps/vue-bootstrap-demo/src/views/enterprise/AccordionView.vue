@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { BsAccordion, BsAccordionItem } from '@mintplayer/vue-bootstrap/accordion';
+import { BsAccordion, BsAccordionTab } from '@mintplayer/vue-bootstrap/accordion';
 import type { AccordionTabToggle } from '@mintplayer/vue-bootstrap/accordion';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SOURCE = `<BsAccordion multi highlight-active-tab @tab-toggle="onToggle">
-  <BsAccordionItem>
+  <BsAccordionTab>
     <template #header>Profile</template>
     Profile content
-  </BsAccordionItem>
+  </BsAccordionTab>
 </BsAccordion>`;
 
 const SECTIONS = [
@@ -30,7 +30,7 @@ function onToggle({ index, active }: AccordionTabToggle) {
     <p>
       <code>BsAccordion</code> renders Bootstrap's accordion markup itself, from the
       framework-neutral <code>@mintplayer/ui-core/accordion</code> core. Each
-      <code>BsAccordionItem</code> is one row: its <code>#header</code> slot goes in the row's
+      <code>BsAccordionTab</code> is one row: its <code>#header</code> slot goes in the row's
       summary, its default slot in the collapsible region.
     </p>
     <p>
@@ -43,10 +43,10 @@ function onToggle({ index, active }: AccordionTabToggle) {
     <section data-demo="single">
       <h2>Single-open</h2>
       <BsAccordion highlight-active-tab @tab-toggle="onToggle">
-        <BsAccordionItem v-for="section in SECTIONS" :key="section.title">
+        <BsAccordionTab v-for="section in SECTIONS" :key="section.title">
           <template #header>{{ section.title }}</template>
           <span class="d-block px-3 py-2">{{ section.body }}</span>
-        </BsAccordionItem>
+        </BsAccordionTab>
       </BsAccordion>
       <p class="mt-2">Last toggle: <code>{{ lastToggle }}</code></p>
     </section>
@@ -54,10 +54,10 @@ function onToggle({ index, active }: AccordionTabToggle) {
     <section data-demo="multi">
       <h2>Multi</h2>
       <BsAccordion multi>
-        <BsAccordionItem v-for="section in SECTIONS" :key="section.title">
+        <BsAccordionTab v-for="section in SECTIONS" :key="section.title">
           <template #header>{{ section.title }}</template>
           <span class="d-block px-3 py-2">{{ section.body }}</span>
-        </BsAccordionItem>
+        </BsAccordionTab>
       </BsAccordion>
     </section>
 
@@ -65,23 +65,23 @@ function onToggle({ index, active }: AccordionTabToggle) {
       <h2>Nested</h2>
       <p>Closing an outer tab collapses every accordion inside it, at any depth.</p>
       <BsAccordion class="multi-level">
-        <BsAccordionItem>
+        <BsAccordionTab>
           <template #header>Profile</template>
           <BsAccordion>
-            <BsAccordionItem>
+            <BsAccordionTab>
               <template #header>Email</template>
               <span class="d-block px-3 py-2">info&#64;example.com</span>
-            </BsAccordionItem>
-            <BsAccordionItem>
+            </BsAccordionTab>
+            <BsAccordionTab>
               <template #header>Username</template>
               <span class="d-block px-3 py-2">user-name</span>
-            </BsAccordionItem>
+            </BsAccordionTab>
           </BsAccordion>
-        </BsAccordionItem>
-        <BsAccordionItem>
+        </BsAccordionTab>
+        <BsAccordionTab>
           <template #header>Sign in</template>
           <span class="d-block px-3 py-2">Sign-in content</span>
-        </BsAccordionItem>
+        </BsAccordionTab>
       </BsAccordion>
     </section>
 

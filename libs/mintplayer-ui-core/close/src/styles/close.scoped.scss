@@ -1,0 +1,6 @@
+// The close button's own sheet (S15). The box only hosts the button: it takes
+// no space of its own, so the button sits where the host is placed.
+.close {
+  display: inline-flex;
+  vertical-align: middle;
+}

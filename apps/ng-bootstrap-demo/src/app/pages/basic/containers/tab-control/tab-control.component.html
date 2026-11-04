@@ -26,10 +26,10 @@
 <h2>Configuration</h2>
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <label class="py-2" [bsFor]="tabsPositionSelect">Tabs position</label>
         </div>
-        <div [col]>
+        <div col>
             <bs-select aria-label="Tabs position" [(ngModel)]="tabsPosition" #tabsPositionSelect>
                 <option [ngValue]="'top'">Top</option>
                 <option [ngValue]="'bottom'">Bottom</option>

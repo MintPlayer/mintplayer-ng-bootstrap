@@ -5,3 +5,6 @@ export * from './core-controller';
 export * from './teleport-directive';
 export * from './content-query';
 export * from './mark-links';
+export * from './core-directive';
+export * from './body-teleport-directive';
+export * from './instance-style-directive';

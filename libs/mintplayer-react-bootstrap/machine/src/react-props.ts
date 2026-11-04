@@ -23,15 +23,27 @@ const RENAME: Readonly<Record<string, string>> = {
  * applies the same bag, so ARIA cannot drift between them.
  *
  * `true` means present-and-empty. React stringifies it on a hyphenated
- * (`data-*`, `aria-*`) attribute, so those get `''`; a known boolean property
- * (`hidden`, `inert`) keeps `true`, because React drops it when given `''`.
+ * (`data-*`, `aria-*`) attribute, so those get `''`. A boolean HTML attribute
+ * (`hidden`, `inert`, `disabled`, …) gets `true` whether the core wrote `true`
+ * or the HTML-style `''`: React treats `''` as false and drops the attribute,
+ * so a dismissed alert would stay visible and a disabled button would click.
  */
 export function reactProps(bag: AttrBag): Record<string, string | number | boolean> {
   return Object.fromEntries(
     Object.entries(bag)
       .filter((entry): entry is [string, string | number | boolean] => entry[1] !== null)
-      .map(([name, value]) => [RENAME[name] ?? name, value === true && name.includes('-') ? '' : value]),
+      .map(([name, value]) => [RENAME[name] ?? name, reactValue(name, value)]),
   );
+}
+
+/** The HTML boolean attributes a core writes, by their DOM (lowercase) names. */
+const BOOLEAN_ATTRS: ReadonlySet<string> = new Set([
+  'checked', 'disabled', 'hidden', 'inert', 'multiple', 'open', 'readonly', 'required', 'selected', 'autofocus', 'novalidate',
+]);
+
+function reactValue(name: string, value: string | number | boolean): string | number | boolean {
+  if (name.includes('-')) return value === true ? '' : value;
+  return value === '' && BOOLEAN_ATTRS.has(name) ? true : value;
 }
 
 /** A form control's state attributes, and the uncontrolled React props that only seed them. */

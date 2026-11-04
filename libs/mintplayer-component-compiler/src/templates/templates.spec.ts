@@ -42,11 +42,15 @@ describe('emitters', () => {
     expect(text).toContain('export function demoTemplate(');
   });
 
-  it('Vue is the source minus the host marker', () => {
+  it('Vue is the source minus the host marker, the root merging $attrs under the core role', () => {
     const hosted = read('<div mp-host v-bind="bag"><slot /></div>');
     const text = emitVue(hosted);
-    expect(text).toContain('<div v-bind="bag">');
+    expect(text).toContain(
+      `<div v-bind="{ ...bag, ...$attrs, class: undefined, style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }" :class="([bag['class'], $attrs.class]) as MpHtmlAttributes['class']" :style="$attrs.style as MpHtmlAttributes['style']">`,
+    );
+    expect(text).toContain('defineOptions({ inheritAttrs: false });');
     expect(text).not.toContain('mp-host');
+    expect(emitVue(read('<div v-bind="bag"><slot /></div>'))).toContain('<div v-bind="bag">');
   });
 
   it('React and Lit refuse to emit without a runtime module', () => {
@@ -76,6 +80,12 @@ describe('scope stamping (S15)', () => {
   it('is idempotent over the parser cache, and refuses a second scope', () => {
     // Every stamped() above parsed the same text, so they shared one cached AST.
     expect(() => stampScope(read('<div mp-host v-bind="bag"><span v-if="label">{{ label }}</span><select v-bind="bag"><button><selectedcontent></selectedcontent></button></select><slot /></div>'), 'other')).toThrow(/two groups/);
+  });
+
+  it('refuses a <slot> that defineSlots does not declare', () => {
+    const noSlots = 'defineProps<{ bag: Record<string, string | null> }>();';
+    expect(() => read('<div v-bind="bag"><slot /></div>', noSlots)).toThrow(/<slot> is not declared: add "default"/);
+    expect(() => read('<div v-bind="bag"><slot name="icon" /></div>')).toThrow(/<slot name="icon"> is not declared/);
   });
 
   it('refuses a template that writes data-mps itself, static or bound', () => {
@@ -166,9 +176,79 @@ describe('teleport', () => {
     expect(emitVue(src)).toContain('<teleport v-if="hosts[name]" :to="hosts[name]">');
   });
 
-  it('takes :to only, so Vue can guard it', () => {
-    expect(() => emitLit(read('<div v-bind="bag"><teleport v-if="label" :to="bag"></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
-    expect(() => emitLit(read('<div v-bind="bag"><teleport></teleport></div>'), RUNTIME)).toThrow(/takes :to only/);
+  it('takes :to or to="body" only, so Vue can guard it', () => {
+    const only = /takes :to="el" or to="body" only/;
+    expect(() => emitLit(read('<div v-bind="bag"><teleport v-if="label" :to="bag"></teleport></div>'), RUNTIME)).toThrow(only);
+    expect(() => emitLit(read('<div v-bind="bag"><teleport></teleport></div>'), RUNTIME)).toThrow(only);
+    expect(() => emitLit(read('<div v-bind="bag"><teleport to="#elsewhere"></teleport></div>'), RUNTIME)).toThrow(only);
+  });
+
+  it('to="body" renders into a body host in every front (#458 §4.4)', () => {
+    const body = read('<div ref="root" v-bind="bag"><teleport to="body"><p>{{ label }}</p></teleport></div>');
+    const angular = emitAngular(body);
+    expect(angular.text).toMatch(/<ng-template mpBodyTeleport>\s*<p>/);
+    expect(angular.uses).toContain('MpBodyTeleportDirective');
+    const react = emitReact(body, RUNTIME);
+    expect(react).toMatch(/import \{[^}]*BodyPortal[^}]*\} from '@test\/machine'/);
+    expect(react).toMatch(/<BodyPortal from=\{rootRef\}>[\s\S]*<p>[\s\S]*<\/BodyPortal>/);
+    const lit = emitLit(body, RUNTIME);
+    expect(lit).toContain("import { bodyTeleport, props } from '@test/machine'");
+    expect(lit).toContain('${bodyTeleport(html`');
+    const vue = emitVue(body, RUNTIME);
+    expect(vue).toMatch(/<MpBodyTeleport\s*><p>\{\{ label \}\}<\/p><\/MpBodyTeleport>/);
+    expect(vue).toContain("import { MpBodyTeleport } from '@test/machine';");
+  });
+});
+
+describe('content-slot (#458 Q15)', () => {
+  const script = 'defineProps<{ bag: Record<string, string | null>; items: string[] }>();\ndefineSlots<{ default?: () => unknown }>();';
+  const src = read(
+    '<div v-bind="bag"><label v-for="(item, i) in items" :key="item"><content-slot query="pages" name="header" :index="i" /></label><div v-for="(item, i) in items" :key="item"><content-slot query="pages" :index="i" /></div><slot /></div>',
+    script,
+  );
+
+  it("each front renders the queried child's slot at its position", () => {
+    const angular = emitAngular(src).text;
+    expect(angular).toContain('@if (contentSlots().pages[i]?.header; as lent_pages_header)');
+    expect(angular).toContain('[ngTemplateOutlet]="lent_pages_header"');
+    expect(angular).toContain('contentSlots().pages[i]?.default');
+    const react = emitReact(src, RUNTIME);
+    expect(react).toContain("{contentSlots['pages']?.[i]?.['header'] ?? null}");
+    expect(react).toContain("{contentSlots['pages']?.[i]?.['default'] ?? null}");
+    expect(react).toMatch(/contentSlots = \{\}/);
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain("${contentSlots['pages']?.[i]?.['header'] ?? nothing}");
+    const vue = emitVue(src);
+    expect(vue).toContain(`<slot :name="'content:pages:' + (i) + ':header'" />`);
+    expect(vue).toContain(`<slot :name="'content:pages:' + (i) + ':default'" />`);
+    expect(vue).toContain('defineSlots<Record<string, (() => unknown) | undefined> & {');
+  });
+
+  it('takes a static query, an optional name and :index, and no content', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" /></div>', script), RUNTIME)).toThrow(/:index/);
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot :query="bag" :index="0" /></div>', script), RUNTIME)).toThrow(/query/);
+    expect(() => emitLit(read('<div v-bind="bag"><content-slot query="pages" :index="0">x</content-slot></div>', script), RUNTIME)).toThrow();
+  });
+});
+
+describe('instance-style (#458 M4)', () => {
+  const script = 'defineProps<{ bag: Record<string, string | null>; css: string | null; name: string }>();';
+  const src = read('<div v-bind="bag"><instance-style :name="name" :css="css" /></div>', script);
+
+  it("each front renders one instance's own sheet", () => {
+    const angular = emitAngular(src);
+    expect(angular.text).toContain('<ng-container [mpInstanceStyle]="css()" [mpInstanceStyleName]="name()" />');
+    expect([...angular.uses]).toContain('MpInstanceStyleDirective');
+    expect(emitReact(src, RUNTIME)).toContain('{(css) ? <style>{css}</style> : null}');
+    const lit = emitLit(src, RUNTIME);
+    expect(lit).toContain('${instanceStyle(css)}');
+    expect(lit).toMatch(/import \{[^}]*instanceStyle[^}]*\} from/);
+    expect(emitVue(src)).toContain(`<component :is="'style'" v-if="css">{{ css }}</component>`);
+  });
+
+  it('takes :name and :css only, and no content', () => {
+    expect(() => emitLit(read('<div v-bind="bag"><instance-style :css="css" /></div>', script), RUNTIME)).toThrow(/name/);
+    expect(() => emitLit(read('<div v-bind="bag"><instance-style :name="name" :css="css">x</instance-style></div>', script), RUNTIME)).toThrow();
   });
 });
 
@@ -189,7 +269,7 @@ describe('mp-attrs', () => {
     expect(text).toContain(
       `<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }">`,
     );
-    expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
+    expect(text).toContain(`<div :class="($attrs.class) as MpHtmlAttributes['class']" :style="$attrs.style as MpHtmlAttributes['style']" v-bind="bag">`);
     expect(text).not.toContain('mp-attrs');
   });
 
@@ -200,6 +280,16 @@ describe('mp-attrs', () => {
 
   it('rejects a conditional target', () => {
     expect(() => emitReact(read('<div v-bind="bag"><select v-if="label" mp-attrs v-bind="bag"></select></div>'), RUNTIME)).toThrow(/always render/);
+  });
+
+  it("Angular and Lit forward the host's attributes to the marked element of an mp-host template", () => {
+    const hosted = read('<div mp-host v-bind="bag"><select mp-attrs v-bind="bag"><slot /></select></div>');
+    expect(emitAngular(hosted).text).toContain('[mpHostAttrs]="hostAttrs"');
+    const lit = emitLit(hosted, RUNTIME);
+    expect(lit).toContain('<select ${props(forwardHostAttrs(bag, hostAttrs))}>');
+    expect(lit).toContain("import { forwardHostAttrs, props, type HostAttrs } from '@test/machine'");
+    expect(lit).toContain('hostAttrs?: HostAttrs | null;');
+    expect(emitLit(src, RUNTIME)).not.toContain('forwardHostAttrs');
   });
 });
 
@@ -303,7 +393,9 @@ describe('composition', () => {
     tag: 'mp-tree',
     names: { angular: 'BsTreeComponent', component: 'BsTree', lit: 'MpTree', tag: 'mp-tree', selector: 'bs-tree', slotDirective: (s: string) => `BsTree${cap(s)}Directive`, slotSelector: (s: string) => `bsTree${cap(s)}` },
     inputs: [{ name: 'nodes' }, { name: 'selected', model: true }],
-    outputs: [{ name: 'selectedChange', lower: 'selectedchange', react: 'onSelectedChange' }, { name: 'nodeClick', lower: 'nodeclick', react: 'onNodeClick' }],
+    outputs: [{ name: 'nodeClick', lower: 'nodeclick', react: 'onNodeClick' }],
+    // The model's own channel, derived by model.mjs from `model: true`.
+    changes: [{ input: 'selected', name: 'selectedChange', lower: 'selectedchange', react: 'onSelectedChange' }],
     slots: [{ name: 'default', params: null }, { name: 'item', params: '{ node: string }' }],
     module: { angular: '@test/ng/tree', react: '../../tree/src/generated/index', vue: './bs-tree.generated.vue', lit: '@test/wc/tree' },
   };
@@ -313,7 +405,7 @@ describe('composition', () => {
 
   it('Angular renders the child component, a model as value + change, a scoped slot as its directive', () => {
     const { text, composed } = emitAngular(src, { components });
-    expect(text).toContain('<bs-tree class="t" aria-label="Files" [nodes]="view().nodes" [selected]="view().selected.value" (selectedChange)="view().selected.set($event)" (nodeclick)="view().onClick($event)">');
+    expect(text).toContain('<bs-tree class="t" aria-label="Files" [nodes]="view().nodes" [selected]="view().selected.value" (selectedChange)="view().selected.set($event)" (nodeClick)="view().onClick($event)">');
     expect(text).toContain('<ng-template bsTreeItem let-node="node">');
     expect(text).toMatch(/<\/ng-template>\s*<span>\s*Empty\s*<\/span>\s*<\/bs-tree>/);
     expect([...composed].map((c: { child: { tag: string }; slots: Set<string> }) => [c.child.tag, [...c.slots]])).toEqual([['mp-tree', ['item']]]);
@@ -338,7 +430,7 @@ describe('composition', () => {
   it('Vue renders the child component, a model as value + update, an output as its lowercased event', () => {
     const text = emitVue(src, { components });
     expect(text).toContain("import BsTree from './bs-tree.generated.vue';");
-    expect(text).toContain('<BsTree :nodes="view.nodes" :selected="view.selected.value" @update:selected="view.selected.set" @nodeclick="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></BsTree>');
+    expect(text).toContain('<BsTree :nodes="view.nodes" :selected="view.selected.value" @update:selected="view.selected.set" @node-click="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></BsTree>');
   });
 
   it("checks every binding against the child's manifest", () => {

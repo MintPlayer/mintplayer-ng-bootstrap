@@ -117,10 +117,10 @@ export class DatatablesComponent {
     <!-- The parent needs a definite height. -->
     <div style="height: 225px">
       <bs-datatable fill pagination [columns]="columns" [fetch]="fetchArtists">
-        <ng-template bsDatatableRow let-artist="row">
+        <ng-container *bsDatatableRow="let artist">
           <td>{{ artist.name }}</td>
           <td>{{ artist.yearStarted }}</td>
-        </ng-template>
+        </ng-container>
       </bs-datatable>
     </div>
   `;
@@ -131,10 +131,10 @@ export class DatatablesComponent {
     <div style="height: 225px">
       <bs-datatable fill [virtualScroll]="true" [itemSize]="40" [columns]="columns"
         [fetch]="fetchArtists" [perPage]="25" [rowKey]="rowKey">
-        <ng-template bsDatatableRow let-artist="row">
+        <ng-container *bsDatatableRow="let artist">
           <td>{{ artist.name }}</td>
           <td>{{ artist.yearStarted }}</td>
-        </ng-template>
+        </ng-container>
       </bs-datatable>
     </div>
   `;
@@ -147,22 +147,22 @@ export class DatatablesComponent {
            { name: 'actions', label: 'Actions', sortable: false, resizable: false },
          ] -->
     <bs-datatable [columns]="columns" [fetch]="fetchArtists" pagination>
-      <ng-template bsDatatableHeader let-column="column">
+      <ng-container *bsDatatableHeader="let column">
         @if (column.name === 'actions') {
           <span aria-hidden="true">&#8943;</span>
         } @else {
           {{ column.label }}
         }
-      </ng-template>
+      </ng-container>
 
-      <ng-template bsDatatableRow let-artist="row">
+      <ng-container *bsDatatableRow="let artist">
         <td>{{ artist.name }}</td>
         <td>{{ artist.yearStarted }}</td>
         <td>
           <button type="button" class="btn btn-sm btn-outline-secondary"
                   (click)="inspect(artist)">Details</button>
         </td>
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 
@@ -219,11 +219,11 @@ export class DatatablesComponent {
   protected readonly snippetBasicHtml = dedent`
     <bs-datatable pagination [columns]="columns" [fetch]="fetchArtists"
       [(sortColumns)]="sortColumns" [perPageOptions]="[10, 20, 50]">
-      <ng-template bsDatatableRow let-artist="row">
+      <ng-container *bsDatatableRow="let artist">
         <td class="text-nowrap">{{ artist.name }}</td>
         <td class="text-nowrap">{{ artist.yearStarted }}</td>
         <td class="text-nowrap">{{ artist.yearQuit }}</td>
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 
@@ -267,22 +267,22 @@ export class DatatablesComponent {
          cycles ascending, descending, off; the fetch callback receives
          req.sortColumns, and [(sortColumns)] reads and writes it. -->
     <bs-datatable [columns]="columns" [fetch]="fetchArtists" [(sortColumns)]="sortColumns">
-      <ng-template bsDatatableRow let-artist="row">
+      <ng-container *bsDatatableRow="let artist">
         <td>{{ artist.name }}</td>
         <td>{{ artist.yearStarted }}</td>
         <td>{{ artist.yearQuit }}</td>
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 
   protected readonly snippetSelectionHtml = dedent`
     <!-- selectionMode = 'none' | 'single' | 'multiple' | 'checkbox'.
-         'checkbox': a row click only opens the row (rowclick); the checkbox
+         'checkbox': a row click only opens the row (rowClick); the checkbox
          cell alone selects. Enter opens, Space toggles.
 
          The selection is the row KEYS, from [rowKey], and survives paging,
          sorting and reload(). With [fetch] the key MUST be stable — taken from
-         the row, never from its position. (selectionchanged) also hands over
+         the row, never from its position. (selectionChanged) also hands over
          the selected rows. -->
     <button type="button" (click)="table.reload()">Reload</button>
 
@@ -294,7 +294,7 @@ export class DatatablesComponent {
       [rowKey]="rowKey"
       [rowLabel]="rowLabel"
       [(selectedIds)]="selection"
-      (rowclick)="opened.set($event.row)">
+      (rowClick)="opened.set($event.row)">
       <!-- row template as above -->
     </bs-datatable>
   `;
@@ -321,11 +321,11 @@ export class DatatablesComponent {
       [fetch]="fetchWindowedArtists"
       [perPage]="25"
       [rowKey]="rowKey">
-      <ng-template bsDatatableRow let-artist="row">
+      <ng-container *bsDatatableRow="let artist">
         <td>{{ artist.name }}</td>
         <td>{{ artist.yearStarted }}</td>
         <td>{{ artist.yearQuit }}</td>
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 
@@ -357,13 +357,13 @@ export class DatatablesComponent {
       selectionMode="multiple"
       selectionStrategy="cascading"
       [(selectedIds)]="treeSelection">
-      <ng-template bsDatatableCell let-row="row" let-column="column">
+      <ng-container *bsDatatableCell="let row; let column = column">
         @if (column.name === 'code') {
           <span class="font-monospace small">{{ row.code }}</span>
         } @else {
           {{ row[column.name] }}
         }
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 
@@ -481,10 +481,10 @@ export class DatatablesComponent {
 
       <!-- The escape hatch, for the column with filterMode: 'custom'. Its
            commands write the same filters model the built-in panels do. -->
-      <ng-template bsDatatableFilter let-ctx="ctx">
+      <ng-container *bsDatatableFilter="let ctx = ctx">
         <button type="button" (click)="ctx.apply(benelux, false)">Benelux</button>
         <button type="button" (click)="ctx.clear()">Everywhere</button>
-      </ng-template>
+      </ng-container>
     </bs-datatable>
   `;
 

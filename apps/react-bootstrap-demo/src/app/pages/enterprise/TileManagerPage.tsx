@@ -55,8 +55,8 @@ useEffect(() => localStorage.setItem('dashboard', JSON.stringify(layouts)), [lay
   stackBelow={576}
   gap={12}
   label="Dashboard"
-  renderHeader={(tile) => tile.title}
-  renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+  header={({ tile }) => (tile as DashboardTile).title}
+  content={({ tile }) => <div className="tile-body">{(tile as DashboardTile).body}</div>}
 />`;
 
 function loadLayouts(): TileLayouts {
@@ -129,11 +129,11 @@ export function TileManagerPage() {
       <div className="tile-demo-controls">
         <div className="control-field">
           <label className="form-label mb-1">Stack below</label>
-          <BsSelect aria-label="Stack below" value={String(stackBelow)} options={STACK_OPTIONS} onValueChange={({ value }) => setStackBelow(Number(value ?? 0))} />
+          <BsSelect aria-label="Stack below" value={String(stackBelow)} options={STACK_OPTIONS} onValueChange={(value) => setStackBelow(Number(value ?? 0))} />
         </div>
         <div className="control-field">
           <label className="form-label mb-1">Gap</label>
-          <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={({ value }) => setGap(Number(value ?? 12))} />
+          <BsSelect aria-label="Gap" value={String(gap)} options={GAP_OPTIONS} onValueChange={(value) => setGap(Number(value ?? 12))} />
         </div>
         <BsCheckbox type="switch" checked={editing} onCheckedChange={setEditing}>Edit layout</BsCheckbox>
         <BsCheckbox type="checkbox" checked={animateReflow} onCheckedChange={setAnimateReflow}>Animate reflow</BsCheckbox>
@@ -142,7 +142,7 @@ export function TileManagerPage() {
       <div className="tile-demo-checklist">
         <strong>Panels:</strong>
         {PANELS.map((panel) => (
-          <BsCheckbox key={panel.id} type="checkbox" checked={!hidden.has(panel.id)} onChange={() => setHidden((ids) => toggled(ids, panel.id))}>
+          <BsCheckbox key={panel.id} type="checkbox" checked={!hidden.has(panel.id)} onCheckedChange={() => setHidden((ids) => toggled(ids, panel.id))}>
             {panel.title}
           </BsCheckbox>
         ))}
@@ -150,7 +150,7 @@ export function TileManagerPage() {
       <div className="tile-demo-checklist">
         <strong>Lock:</strong>
         {PANELS.map((panel) => (
-          <BsCheckbox key={panel.id} type="checkbox" checked={locked.has(panel.id)} onChange={() => setLocked((ids) => toggled(ids, panel.id))}>
+          <BsCheckbox key={panel.id} type="checkbox" checked={locked.has(panel.id)} onCheckedChange={() => setLocked((ids) => toggled(ids, panel.id))}>
             {panel.title}
           </BsCheckbox>
         ))}
@@ -173,8 +173,8 @@ export function TileManagerPage() {
           label="Demo dashboard"
           onColumnCountChange={(change) => setColumnCount(change.columnCount)}
           onGestureBlocked={setBlocked}
-          renderHeader={(tile) => <span>{tile.title}</span>}
-          renderContent={(tile) => <div className="tile-body">{tile.body}</div>}
+          header={({ tile }) => <span>{(tile as DemoTile).title}</span>}
+          content={({ tile }) => <div className="tile-body">{(tile as DemoTile).body}</div>}
         />
       </div>
 

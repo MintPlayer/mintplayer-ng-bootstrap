@@ -1,0 +1,11 @@
+// The modal's own rules (#458 M6); the modal, close and transitions partials
+// are installed by the manifest. The declaring host renders nothing: the
+// dialog lives in a body host. Bootstrap's script toggles `display` on .modal;
+// here the dialog renders only while it is shown, so it is always a block.
+.modal-host {
+  display: contents;
+}
+
+.modal {
+  display: block;
+}

@@ -1,46 +1,40 @@
 <h1 class="text-center">Modals</h1>
 
 <p>
-  <code>bs-modal</code> is a structural-directive-based dialog primitive. The host
-  (<code>&lt;bs-modal&gt;</code>) owns open/close state via the
-  <code>[(isOpen)]</code> two-way binding; the <code>*bsModal</code> directive
-  marks the projected content. Header / body / footer are tagged with
-  <code>bsModalHeader</code> / <code>bsModalBody</code> / <code>bsModalFooter</code>,
-  and any element with <code>bsModalClose</code> dismisses the dialog.
+  <code>bs-modal</code> renders its dialog at the end of <code>&lt;body&gt;</code>, so no
+  <code>overflow: hidden</code> ancestor clips it. <code>[(open)]</code> is two-way; Escape,
+  the backdrop and the header's close button close it. The content is the body; the
+  <code>*bsModalHeader</code> slot is the title that names the dialog, and the
+  <code>*bsModalFooter</code> slot holds its actions. Any element inside with
+  <code>data-bs-dismiss="modal"</code> closes it, as in Bootstrap.
 </p>
 
 <h2>Basic usage</h2>
 
 <bs-grid class="text-center">
     <div bsRow>
-        <div [col] class="text-center">
-            <button [color]="colors.primary" (click)="isOpen = true">Show modal</button>
-            <bs-modal [(isOpen)]="isOpen">
-                <div *bsModal cdkTrapFocus>
-                    <div bsModalHeader>
-                        <h5 class="modal-title">Modal title</h5>
-                    </div>
-                    <div bsModalBody class="text-nowrap p-2 d-flex flex-row align-items-center justify-content-between">
-                        <bs-form>
-                            <bs-grid>
-                                <div bsRow class="form-group">
-                                    <div [col] bsColFormLabel>Search for tags</div>
-                                </div>
-                                <div bsRow class="form-group">
-                                    <div [md]="3" [lg]="6">
-                                        <input type="text" placeholder="Search for tags" autofocus>
-                                    </div>
-                                    <div [md]="9" [lg]="6">
-                                        <input type="text" placeholder="More tags">
-                                    </div>
-                                </div>
-                            </bs-grid>
-                        </bs-form>
-                    </div>
-                    <div bsModalFooter>
-                        <button type="button" bsModalClose [color]="colors.secondary" aria-label="Close">Close</button>
-                    </div>
-                </div>
+        <div col class="text-center">
+            <button [color]="colors.primary" (click)="isOpen.set(true)">Show modal</button>
+            <bs-modal [(open)]="isOpen">
+                <span *bsModalHeader>Modal title</span>
+                <bs-form>
+                    <bs-grid>
+                        <div bsRow>
+                            <label col bsColFormLabel for="modal-tags">Search for tags</label>
+                        </div>
+                        <div bsRow>
+                            <div [md]="3" [lg]="6">
+                                <input id="modal-tags" type="text" placeholder="Search for tags">
+                            </div>
+                            <div [md]="9" [lg]="6">
+                                <input type="text" placeholder="More tags" aria-label="More tags">
+                            </div>
+                        </div>
+                    </bs-grid>
+                </bs-form>
+                <ng-container *bsModalFooter>
+                    <button type="button" data-bs-dismiss="modal" [color]="colors.secondary">Close</button>
+                </ng-container>
             </bs-modal>
         </div>
     </div>

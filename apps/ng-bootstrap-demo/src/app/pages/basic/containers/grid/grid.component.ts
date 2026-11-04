@@ -41,11 +41,11 @@ export class GridComponent {
   `;
 
   protected readonly snippetFlexHtml = dedent`
-    <!-- [col] auto-fits — columns share width equally inside the row. -->
+    <!-- col auto-fits — columns share width equally inside the row. -->
     <bs-grid>
       <div bsRow>
-        <div [col]>Hello</div>
-        <div [col]>World</div>
+        <div col>Hello</div>
+        <div col>World</div>
       </div>
     </bs-grid>
   `;

@@ -1,29 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { h, nextTick } from 'vue';
 
-import BsDropdownMenu from '../../dropdown-menu/src/BsDropdownMenu.vue';
-import { BsNavbar, BsNavbarDropdown, BsNavbarItem } from '../../navbar/src/generated';
+import { BsDropdownItem, BsDropdownMenu } from '../../dropdown/src/generated';
+import { BsNavbar, BsNavbarItem, BsNavbarNav } from '../../navbar/src/generated';
 
 import { mountEl, mountWrapper } from './harness';
 
-/** The navbar and dropdown-menu fronts render the markup of their headless cores. */
-
-describe('BsDropdownMenu — markup from the headless core', () => {
-  it('renders the scoped .dropdown-menu list with no height cap by default', () => {
-    const { el } = mountEl(BsDropdownMenu, 'ul');
-    expect(el.classList).toContain('dropdown-menu');
-    expect(el.getAttribute('data-mps')).toBe('dropdown-menu');
-    expect(el.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
-  });
-
-  // Zero is a legitimate cap and must not be dropped the way an unset value is.
-  it('writes maxHeight as the height-cap custom property, zero included', () => {
-    const capped = mountEl(BsDropdownMenu, 'ul', { props: { maxHeight: 240 } }).el;
-    expect(capped.style.getPropertyValue('--mp-dropdown-max-height')).toBe('240px');
-    const zero = mountEl(BsDropdownMenu, 'ul', { props: { maxHeight: 0 } }).el;
-    expect(zero.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
-  });
-});
+/** The navbar fronts render the markup of their headless cores (the menu: BsDropdownItem.spec.ts). */
 
 describe('BsNavbar — markup from the headless core', () => {
   const toggle = (nav: Element) => nav.querySelector<HTMLInputElement>('input.navbar-toggle')!;
@@ -47,7 +30,7 @@ describe('BsNavbar — markup from the headless core', () => {
 
   it('does not announce a programmatic open as a user toggle', () => {
     const { wrapper } = mountEl(BsNavbar, 'nav', { props: { expanded: true } });
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
+    expect(wrapper.emitted('update:expanded')).toBeUndefined();
   });
 
   it('maps breakpoint, color and positioning onto Bootstrap classes', () => {
@@ -58,13 +41,13 @@ describe('BsNavbar — markup from the headless core', () => {
     expect(el.getAttribute('data-breakpoint')).toBe('lg');
   });
 
-  it('emits expandedchange when the checkbox is toggled', async () => {
+  it('writes the expanded model back when the checkbox is toggled', async () => {
     const { wrapper, el } = mountEl(BsNavbar, 'nav');
 
     toggle(el).click();
     await nextTick();
 
-    expect(wrapper.emitted('expandedchange')![0]).toEqual([{ expanded: true }]);
+    expect(wrapper.emitted('update:expanded')![0]).toEqual([true]);
     expect(toggle(el).getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -75,7 +58,7 @@ describe('BsNavbar — markup from the headless core', () => {
 
     input.click();
 
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
+    expect(wrapper.emitted('update:expanded')).toBeUndefined();
   });
 
   it('renders the brand slot in .navbar-brand', () => {
@@ -99,12 +82,13 @@ describe('BsNavbarItem — markup from the headless core', () => {
     expect(el.getAttribute('aria-disabled')).toBe('true');
   });
 
-  it('becomes a dropdown item inside a BsNavbarDropdown', () => {
-    const wrapper = mountWrapper(BsNavbarDropdown, {
-      props: { label: 'More' },
-      slots: { default: () => h(BsNavbarItem, { active: true }, () => h('a', { href: '/x' }, 'X')) },
+  it('a BsDropdownMenu in a BsNavbarNav is the navbar disclosure around BsDropdownItems', () => {
+    const wrapper = mountWrapper(BsNavbarNav, {
+      slots: {
+        default: () => h(BsDropdownMenu, { label: 'More' }, () => h(BsDropdownItem, { active: true }, () => h('a', { href: '/x' }, 'X'))),
+      },
     });
-    const details = wrapper.element as HTMLDetailsElement;
+    const details = wrapper.element.querySelector('details')!;
     expect(details.querySelector('summary')?.textContent).toBe('More');
     const item = details.querySelector('.dropdown-menu > div')!;
     expect([...item.classList]).toEqual(['dropdown-item', 'active']);

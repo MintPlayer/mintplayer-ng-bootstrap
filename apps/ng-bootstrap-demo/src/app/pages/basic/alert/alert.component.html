@@ -2,8 +2,9 @@
 
 <p>
   <code>bs-alert</code> renders a Bootstrap contextual feedback banner with a
-  two-way <code>[(isVisible)]</code> binding; pair it with
-  <code>&lt;bs-alert-close&gt;</code> for a built-in dismiss control.
+  two-way <code>[(visible)]</code> binding. <code>dismissible</code> adds a close button
+  (named by <code>closeLabel</code>) that hides the alert and moves focus to the next
+  control; <code>announce</code> opts in to <code>role="alert"</code> for dynamic alerts.
 </p>
 
 <h2>Basic usage</h2>
@@ -13,17 +14,14 @@
 
 <h2>Static alert</h2>
 
-<bs-alert [type]="colors.warning" [(isVisible)]="alert1Visible">
+<bs-alert color="warning" [(visible)]="alert1Visible" dismissible>
     Cras justo odio
-    <bs-alert-close></bs-alert-close>
 </bs-alert>
-<bs-alert [type]="colors.danger" [(isVisible)]="alert2Visible">
+<bs-alert color="danger" [(visible)]="alert2Visible" dismissible>
     Cras justo odio
-    <bs-alert-close></bs-alert-close>
 </bs-alert>
-<bs-alert [(isVisible)]="alert3Visible">
+<bs-alert [(visible)]="alert3Visible" dismissible>
     Cras justo odio
-    <bs-alert-close></bs-alert-close>
 </bs-alert>
 <button type="button" [color]="colors.primary" (click)="alert1Visible.set(true); alert2Visible.set(true); alert3Visible.set(true)">
     Show all alerts again
@@ -34,9 +32,8 @@
 <h2 class="mt-4">Alerts list</h2>
 
 @for (alertItem of alertsList(); track alertItem.id) {
-    <bs-alert [type]="colors.danger" (afterOpenedOrClosed)="alertVisibleChange(alertItem, $event)">
+    <bs-alert color="danger" (visibleChange)="alertVisibleChange(alertItem, $event)" dismissible>
         {{ alertItem.text }}
-        <bs-alert-close></bs-alert-close>
     </bs-alert>
 }
 <bs-form (submit)="addAlertItem()">

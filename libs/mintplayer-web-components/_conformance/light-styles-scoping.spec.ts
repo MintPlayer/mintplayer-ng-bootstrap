@@ -9,24 +9,60 @@ import { getLightStyleEntries } from '@mintplayer/web-components/light-dom';
 // Every component that installs a document-level sheet. Completeness is
 // asserted below against the installLightStyles calls in the source.
 import '@mintplayer/web-components/accordion';
+import '@mintplayer/web-components/alert';
+import '@mintplayer/web-components/badge';
+import '@mintplayer/web-components/breadcrumb';
+import '@mintplayer/web-components/button-group';
 import '@mintplayer/web-components/calendar';
+import '@mintplayer/web-components/card';
 import '@mintplayer/web-components/carousel';
 import '@mintplayer/web-components/charts/hierarchy';
+import '@mintplayer/web-components/charts/sparkline';
 import '@mintplayer/web-components/charts/trend';
+import '@mintplayer/web-components/close';
 import '@mintplayer/web-components/code-snippet';
 import '@mintplayer/web-components/datatable';
 import '@mintplayer/web-components/datepicker';
 import '@mintplayer/web-components/datetime-picker';
 import '@mintplayer/web-components/dock';
-import '@mintplayer/web-components/dropdown-menu';
+import '@mintplayer/web-components/context-menu';
+import '@mintplayer/web-components/dropdown';
 import '@mintplayer/web-components/file-manager';
+import '@mintplayer/web-components/grid';
 import '@mintplayer/web-components/input-group';
+import '@mintplayer/web-components/list-group';
 import '@mintplayer/web-components/multi-range';
 import '@mintplayer/web-components/nav';
 import '@mintplayer/web-components/navbar';
 import '@mintplayer/web-components/otp-input';
+import '@mintplayer/web-components/pagination';
 import '@mintplayer/web-components/phone-input';
+import '@mintplayer/web-components/placeholder';
+import '@mintplayer/web-components/table';
+import '@mintplayer/web-components/grid';
+import '@mintplayer/web-components/navbar-toggler';
+import '@mintplayer/web-components/playlist-toggler';
+import '@mintplayer/web-components/marquee';
+import '@mintplayer/web-components/scrollspy';
+import '@mintplayer/web-components/rating';
+import '@mintplayer/web-components/color-picker';
+import '@mintplayer/web-components/priority-nav';
+import '@mintplayer/web-components/resizable';
+import '@mintplayer/web-components/file-upload';
+import '@mintplayer/web-components/modal';
+import '@mintplayer/web-components/offcanvas';
+import '@mintplayer/web-components/popover';
+import '@mintplayer/web-components/tooltip';
+import '@mintplayer/web-components/toast';
+import '@mintplayer/web-components/parallax';
+import '@mintplayer/web-components/sticky-footer';
+import '@mintplayer/web-components/form';
+import '@mintplayer/web-components/floating-labels';
+import '@mintplayer/web-components/range';
+import '@mintplayer/web-components/progress-bar';
 import '@mintplayer/web-components/query-builder';
+import '@mintplayer/web-components/radio';
+import '@mintplayer/web-components/checkbox';
 import '@mintplayer/web-components/ribbon';
 import '@mintplayer/web-components/scheduler';
 import '@mintplayer/web-components/select';
@@ -34,6 +70,7 @@ import '@mintplayer/web-components/shell';
 import '@mintplayer/web-components/signature-pad';
 import '@mintplayer/web-components/spinner';
 import '@mintplayer/web-components/splitter';
+import '@mintplayer/web-components/tab-control';
 import '@mintplayer/web-components/theming';
 import '@mintplayer/web-components/tile-manager';
 import '@mintplayer/web-components/timeline';
@@ -44,8 +81,8 @@ import '@mintplayer/web-components/typeahead';
 
 /**
  * The no-leak guarantee for every stylesheet installed at DOCUMENT level —
- * light-tier (emulated-encapsulation) components, and the document sheet a
- * slot-based component such as mp-card ships for its slotted content.
+ * light-tier (emulated-encapsulation) components, generated D10 groups, and the
+ * document sheet a slot-based component ships for its slotted content.
  *
  * A document-level sheet has no browser-enforced boundary, so the boundary has
  * to be *checked* rather than trusted. This suite is that check: it reads every

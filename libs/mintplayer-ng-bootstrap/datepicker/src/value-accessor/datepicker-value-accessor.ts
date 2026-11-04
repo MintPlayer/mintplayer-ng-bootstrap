@@ -46,7 +46,7 @@ export class BsDatepickerValueAccessor implements ControlValueAccessor, Validato
   ngOnInit(): void {
     // The component is created after its host directives, so it is looked up here.
     const component = (this.component = this.injector.get(BsDatepickerComponent));
-    const sub = component.selecteddatechange.subscribe((value) => {
+    const sub = component.selectedDate.subscribe((value) => {
       if (!this.bound() || isSameDate(value, this.viewValue())) return;
       this.viewValue.set(value);
       this.onChange(value);

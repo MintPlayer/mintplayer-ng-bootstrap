@@ -65,23 +65,7 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
   });
 
   it('every inheritAttrs:false wrapper re-binds v-bind="$attrs"', () => {
-    // Fronts of a headless core merge useAttrs() with the core's bags instead
-    // (the core owns role and the IDREFs); the runtime sweep below pins where
-    // the attributes land, behaviour/BsTypeahead.spec.ts the typeahead's.
-    const FILTERED_FORWARDING = [
-      '../checkbox/src/BsCheckbox.vue',
-      '../radio/src/BsRadio.vue',
-      '../pagination/src/BsPagination.vue',
-      '../radio-group/src/BsRadioGroup.vue',
-      '../shell/src/BsShell.vue',
-      '../tab-control/src/BsTabControl.vue',
-      '../tab-control/src/BsTabPage.vue',
-      '../tile-manager/src/BsTileManager.vue',
-      '../typeahead/src/BsTypeahead.vue',
-      '../charts/sparkline/src/BsSparkline.vue',
-    ];
     const offenders = Object.entries(SFC_SOURCES)
-      .filter(([path]) => !FILTERED_FORWARDING.includes(path))
       .filter(([, source]) => source.includes('inheritAttrs: false'))
       // A compiled view merges $attrs into its mp-attrs element's bag instead.
       .filter(([, source]) => !/v-bind="(\$attrs"|\{[^"]*\.\.\.\$attrs)/.test(source))
@@ -94,7 +78,49 @@ describe('Vue wrapper attribute passthrough — the invariant, statically', () =
 /** SFC name → CSS selector of the element a consumer's attributes must land on. */
 const TARGETS: Record<string, string> = {
   BsAccordion: 'div.accordion',
-  BsAccordionItem: 'details.accordion-item',
+  BsAccordionTab: 'summary.accordion-button',
+  BsAlert: 'div.alert',
+  BsBadge: 'span.badge',
+  BsPlaceholder: 'div.placeholder-region',
+  BsTable: 'table.table',
+  BsGrid: 'div.grid-host',
+  BsNavbarToggler: 'button.navbar-toggler',
+  BsPlaylistToggler: 'button.playlist-toggler',
+  BsMarquee: 'span.marquee',
+  BsScrollspy: 'nav.spy',
+  BsRating: 'div.rating',
+  BsResizable: 'div.resizable',
+  BsFileUpload: 'div.dropzone',
+  BsColorPicker: 'div.color-picker',
+  BsPriorityNav: 'nav.priority-nav',
+  BsParallax: 'div.parallax-host',
+  BsModal: 'div.modal-host',
+  BsOffcanvas: 'div.offcanvas-host',
+  // Renderless overlay directives (#458 M6): the attributes reach the trigger the slot renders.
+  BsPopover: 'button.trigger',
+  BsTooltip: 'button.trigger',
+  BsDropdown: 'button.trigger',
+  BsContextMenu: 'button.trigger',
+  BsDropdownPanel: 'div.dropdown-panel',
+  BsContextMenuPanel: 'div.context-menu-panel',
+  BsPopoverPanel: 'div.popover',
+  BsTooltipPanel: 'div.tooltip',
+  BsToast: 'div.toast',
+  BsToastHeader: 'div.toast-header',
+  BsToastBody: 'div.toast-body',
+  BsToaster: 'div.toast-container',
+  BsStickyFooter: 'footer',
+  BsForm: 'form',
+  BsFloatingLabel: 'div.form-floating',
+  BsRange: 'input.form-range',
+  BsListGroup: 'div.list-group',
+  BsListGroupItem: 'div.list-group-item',
+  BsProgress: 'div.progress-host',
+  BsProgressBar: 'div.progress-bar',
+  BsBreadcrumb: 'nav',
+  BsBreadcrumbItem: 'li.breadcrumb-item',
+  BsButtonGroup: 'div.btn-group',
+  BsClose: 'button.btn-close',
   BsCalendar: 'div.mp-calendar',
   BsCard: 'div.card',
   BsCardBody: 'div.card-body',
@@ -109,18 +135,19 @@ const TARGETS: Record<string, string> = {
   BsCarousel: 'div.carousel',
   BsCarouselItem: 'div.carousel-item',
   BsHierarchyChart: 'div.hierarchy-chart',
-  BsSparkline: 'span.sparkline',
+  BsSparkline: 'svg',
   BsTrendChart: 'div.trend-chart',
   BsCheckbox: 'input[type=checkbox]',
+  BsCheckboxGroup: 'div[role=group]',
   BsCodeSnippet: 'div.code-snippet',
   BsDatatable: 'div.datatable',
   BsDatepicker: 'div.mp-datepicker',
   BsDatetimePicker: 'div.mp-datetime-picker',
   BsDockManager: 'div.dock',
-  BsDropdownDivider: 'li.dropdown-divider',
-  BsDropdownHeader: 'li.dropdown-header',
-  BsDropdownItem: 'li.dropdown-item',
-  BsDropdownMenu: 'ul.dropdown-menu',
+  BsDropdownDivider: 'div.dropdown-divider',
+  BsDropdownHeader: 'div.dropdown-header',
+  BsDropdownItem: 'div.dropdown-item',
+  BsDropdownMenu: 'div.dropdown-menu',
   BsFileManager: 'div.file-manager',
   BsInputGroup: 'div.input-group',
   BsMultiRange: 'div.mp-multi-range',
@@ -128,7 +155,6 @@ const TARGETS: Record<string, string> = {
   BsNavItem: 'li.nav-item',
   BsNavbar: 'nav.navbar',
   BsNavbarNav: 'div.navbar-nav',
-  BsNavbarDropdown: 'details.dropdown',
   BsNavbarItem: 'div.nav-item',
   BsOtpInput: 'input',
   BsPagination: 'nav',
@@ -162,8 +188,6 @@ const TARGETS: Record<string, string> = {
   BsSplitter: 'div.splitter',
   BsSplitterPanel: 'div.splitter-panel',
   BsTabControl: 'div.tab-control',
-  // A marker that renders nothing alone: mounted in BsTabControl (COMPOSED).
-  BsTabPage: 'div.tab-pane',
   BsThemeToggle: 'span.theme-toggle',
   BsTileManager: '.mp-tile-manager',
   BsTimeline: 'div.timeline',
@@ -184,22 +208,18 @@ const TARGETS: Record<string, string> = {
  */
 const slots = { default: () => h('span', { class: 'slot-content' }, 'content') };
 
-const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
+/** A renderless directive renders only its trigger slot, given the props to bind. */
+const triggerSlots = { default: ({ props }: { props: Record<string, unknown> }) => h('button', { ...props, class: 'trigger' }, 'trigger') };
+const CASE_SLOTS: Record<string, Record<string, unknown>> = { BsPopover: triggerSlots, BsTooltip: triggerSlots, BsDropdown: triggerSlots, BsContextMenu: triggerSlots };
 
-/** Marker SFCs that render nothing alone: mounted inside their parent, with the probe on the marker. */
-const COMPOSED: Record<string, () => Component> = {
-  BsTabPage: () => ({
-    render: () => h(SFC_COMPONENTS['BsTabControl'], null, { default: () => [h(SFC_COMPONENTS['BsTabPage'], PROBE, slots)] }),
-  }),
-};
+const PROBE = { 'aria-label': 'probe-name', 'data-probe': 'x', id: 'probe-id' };
 
 /**
  * Where the label lands when the target is a box around the role-bearing node:
- * the sparkline's span is sized, its role=img svg is what aria-label names.
+ * the datatable's wrapper holds the table that aria-label names.
  */
 const LABEL_TARGETS: Record<string, string> = {
   BsDatatable: 'table',
-  BsSparkline: 'svg[role=img]',
 };
 
 /** Props a case needs before its labelled node exists: a sparkline with no points draws no svg. */
@@ -232,9 +252,7 @@ describe('Vue wrapper attribute passthrough — every SFC, at runtime', () => {
   });
 
   it.each(CASES)('$name forwards consumer attributes to $target', ({ name, target }) => {
-    const wrapper = COMPOSED[name]
-      ? mountWrapper(COMPOSED[name]())
-      : mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots });
+    const wrapper = mountWrapper(SFC_COMPONENTS[name], { attrs: PROBE, props: PROPS[name], slots: CASE_SLOTS[name] ?? slots });
     const host: HTMLElement = (wrapper.element as Node).parentElement ?? document.body;
     const el = host.querySelector<HTMLElement>(target);
 

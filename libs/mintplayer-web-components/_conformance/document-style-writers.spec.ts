@@ -26,6 +26,10 @@ const ALLOWED_WRITERS: readonly string[] = [
   // The registry itself lives in @mintplayer/ui-core/scoped-styles since #436;
   // `light-dom/src/install-light-styles.ts` is a re-export and writes nothing.
   // ui-core has its own copy of this guard for the registry file.
+  // A compiled template's <instance-style> (#458 M4): one instance's own sheet (the tile
+  // manager's server layout rules), rendered inside that instance and removed with it.
+  // It never writes to the head and holds no component sheet.
+  'machine/src/instance-style-directive.ts',
 ];
 
 const WRITER_PATTERNS: readonly RegExp[] = [
@@ -44,13 +48,12 @@ const WRITER_PATTERNS: readonly RegExp[] = [
 const RENDERS_INTO_LIGHT_DOM = /createRenderRoot\(\)[^{]*\{\s*return this;?\s*\}/;
 const STYLE_ELEMENT_IN_TEMPLATE = /<style[\s>]/;
 
-const isSource = (name: string): boolean =>
+const isTs = (name: string): boolean =>
   name.endsWith('.ts') &&
   !name.endsWith('.spec.ts') &&
   !name.endsWith('.d.ts') &&
   !name.endsWith('.styles.ts') &&
-  !name.endsWith('.template.ts') &&
-  !name.endsWith('.generated.ts');
+  !name.endsWith('.template.ts');
 
 const walk = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true })
@@ -58,13 +61,20 @@ const walk = (dir: string): string[] =>
     .flatMap((entry) => {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) return walk(full);
-      return isSource(entry.name) ? [full] : [];
+      return isTs(entry.name) ? [full] : [];
     });
 
-const sources = walk(LIB_ROOT).map((abs) => ({
+const all = walk(LIB_ROOT).map((abs) => ({
   file: abs.slice(LIB_ROOT.length + 1).replace(/\\/g, '/'),
   code: readFileSync(abs, 'utf8'),
 }));
+/** Hand-written source: the writer rules apply here. */
+const sources = all.filter((s) => !s.file.endsWith('.generated.ts'));
+/**
+ * Every element, generated ones included: since #458 the Lit elements are
+ * generated from D10 sources, so the light-DOM template check must read them.
+ */
+const elements = all.filter((s) => RENDERS_INTO_LIGHT_DOM.test(s.code));
 
 describe('document-level CSS has a single writer', () => {
   it('finds source files to check', () => {
@@ -84,13 +94,13 @@ describe('document-level CSS has a single writer', () => {
   });
 
   it('no light-DOM component renders a <style> element', () => {
-    const offenders = sources
-      .filter((s) => RENDERS_INTO_LIGHT_DOM.test(s.code) && STYLE_ELEMENT_IN_TEMPLATE.test(s.code))
-      .map((s) => s.file);
+    // A generated element renders the template of its sibling *.view.generated.ts.
+    const templates = [...elements, ...all.filter((s) => s.file.endsWith('.view.generated.ts'))];
+    const offenders = templates.filter((s) => STYLE_ELEMENT_IN_TEMPLATE.test(s.code)).map((s) => s.file);
     expect(offenders).toEqual([]);
   });
 
   it('finds the light-DOM components (the pattern still matches their createRenderRoot)', () => {
-    expect(sources.filter((s) => RENDERS_INTO_LIGHT_DOM.test(s.code)).length).toBeGreaterThan(0);
+    expect(elements.length).toBeGreaterThan(0);
   });
 });

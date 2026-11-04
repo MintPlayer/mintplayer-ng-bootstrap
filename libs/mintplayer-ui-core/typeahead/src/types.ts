@@ -11,6 +11,21 @@ export type TypeaheadRequest = AbortableRequest;
  */
 export type TypeaheadProvider<T> = (term: string, request: TypeaheadRequest) => Promise<readonly T[]>;
 
+/**
+ * An observable-like result (an RxJS `Observable`, an Angular `HttpClient`
+ * call): its first emission is the answer, and it is unsubscribed when the
+ * request aborts, which cancels the call in flight.
+ */
+export interface TypeaheadSubscribable<R> {
+  subscribe(observer: { next(value: R): void; error(error: unknown): void; complete(): void }): { unsubscribe(): void };
+}
+
+/** What a front's `provider` input accepts: a Promise or an observable-like answer (#458 M3). */
+export type TypeaheadSource<T> = (
+  term: string,
+  request: TypeaheadRequest,
+) => Promise<readonly T[]> | TypeaheadSubscribable<readonly T[]>;
+
 /** Localized strings. Interpolated strings are formatter functions, never prefix/suffix pairs. */
 export interface TypeaheadLabels {
   /** Accessible name of the input. `null` when the front names it another way (`aria-labelledby`). */

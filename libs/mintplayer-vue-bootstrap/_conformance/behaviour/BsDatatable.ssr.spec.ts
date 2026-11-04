@@ -37,7 +37,7 @@ const QueryGrid = (stateKey: string | null) =>
         perPage: 10,
         columns: COLUMNS,
         fetch,
-        onPageload: (detail: DatatablePageLoadDetail) => loads.push({ phase, detail }),
+        onPageLoad: (detail: DatatablePageLoadDetail) => loads.push({ phase, detail }),
       }),
   });
 

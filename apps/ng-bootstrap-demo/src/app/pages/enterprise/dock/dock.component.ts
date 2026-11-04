@@ -86,7 +86,7 @@ export class DockComponent {
     },
   });
 
-  liveLayout = signal<DockLayoutSnapshot | undefined>(undefined);
+  liveLayout = signal<DockLayoutInput | undefined>(undefined);
   savedLayout = signal<DockLayoutSnapshot | undefined>(undefined);
 
   saveLayout(): void {
@@ -111,13 +111,13 @@ export class DockComponent {
 
   protected readonly snippetBasicHtml = dedent`
     <bs-dock-manager [(layout)]="layout">
-      <ng-template bsDockManagerPane let-pane="pane">
+      <ng-container *bsDockManagerPane="let pane">
         @switch (pane) {
           @case ('panel-1') { <div class="p-3"><h3>Panel 1</h3></div> }
           @case ('panel-2') { <div class="p-3"><h3>Panel 2</h3></div> }
           @case ('panel-3') { <div class="p-3"><h3>Panel 3</h3></div> }
         }
-      </ng-template>
+      </ng-container>
     </bs-dock-manager>
   `;
 

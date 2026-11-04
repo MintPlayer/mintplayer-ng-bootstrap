@@ -24,6 +24,15 @@ function lazyNamed<P>(
 //
 // Pages are code-split via lazyNamed so each page becomes its own JS
 // chunk — the initial bundle only ships the shell + router + Home.
+const BadgePage        = lazyNamed(() => import('./pages/BadgePage'),        'BadgePage');
+const ButtonGroupPage  = lazyNamed(() => import('./pages/ButtonGroupPage'),  'ButtonGroupPage');
+const ClosePage        = lazyNamed(() => import('./pages/ClosePage'),        'ClosePage');
+const AlertPage        = lazyNamed(() => import('./pages/AlertPage'),        'AlertPage');
+const BreadcrumbPage   = lazyNamed(() => import('./pages/BreadcrumbPage'),   'BreadcrumbPage');
+const ListGroupPage    = lazyNamed(() => import('./pages/ListGroupPage'),    'ListGroupPage');
+const ProgressPage     = lazyNamed(() => import('./pages/ProgressPage'),     'ProgressPage');
+const PlaceholderPage  = lazyNamed(() => import('./pages/PlaceholderPage'),  'PlaceholderPage');
+const TablePage        = lazyNamed(() => import('./pages/TablePage'),        'TablePage');
 const CalendarPage     = lazyNamed(() => import('./pages/CalendarPage'),     'CalendarPage');
 const CardPage         = lazyNamed(() => import('./pages/CardPage'),         'CardPage');
 const CarouselPage     = lazyNamed(() => import('./pages/CarouselPage'),     'CarouselPage');
@@ -36,6 +45,8 @@ const SelectPage       = lazyNamed(() => import('./pages/forms/SelectPage'),    
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
+const RatingPage       = lazyNamed(() => import('./pages/RatingPage'),       'RatingPage');
+const ColorPickerPage  = lazyNamed(() => import('./pages/ColorPickerPage'),  'ColorPickerPage');
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
@@ -50,9 +61,25 @@ const TabControlPage   = lazyNamed(() => import('./pages/TabControlPage'),   'Ta
 const TreeviewPage     = lazyNamed(() => import('./pages/TreeviewPage'),     'TreeviewPage');
 const TreeSelectPage   = lazyNamed(() => import('./pages/TreeSelectPage'),   'TreeSelectPage');
 const TypeaheadPage    = lazyNamed(() => import('./pages/TypeaheadPage'),    'TypeaheadPage');
-const DropdownMenuPage = lazyNamed(() => import('./pages/DropdownMenuPage'), 'DropdownMenuPage');
 const NavbarPage       = lazyNamed(() => import('./pages/NavbarPage'),       'NavbarPage');
 const SplitterPage     = lazyNamed(() => import('./pages/advanced/SplitterPage'), 'SplitterPage');
+const FloatingLabelsPage = lazyNamed(() => import('./pages/forms/FloatingLabelsPage'), 'FloatingLabelsPage');
+const RangePage        = lazyNamed(() => import('./pages/forms/RangePage'),          'RangePage');
+const MarqueePage      = lazyNamed(() => import('./pages/MarqueePage'),              'MarqueePage');
+const ModalPage        = lazyNamed(() => import('./pages/overlay/ModalPage'),        'ModalPage');
+const OffcanvasPage    = lazyNamed(() => import('./pages/overlay/OffcanvasPage'),    'OffcanvasPage');
+const PopoverPage      = lazyNamed(() => import('./pages/overlay/PopoverPage'),      'PopoverPage');
+const TooltipPage      = lazyNamed(() => import('./pages/overlay/TooltipPage'),      'TooltipPage');
+const ToastPage        = lazyNamed(() => import('./pages/overlay/ToastPage'),        'ToastPage');
+const DropdownPage     = lazyNamed(() => import('./pages/overlay/DropdownPage'),     'DropdownPage');
+const ContextMenuPage  = lazyNamed(() => import('./pages/overlay/ContextMenuPage'),  'ContextMenuPage');
+const ToggleButtonsPage = lazyNamed(() => import('./pages/advanced/ToggleButtonsPage'), 'ToggleButtonsPage');
+const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage'),    'ParallaxPage');
+const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
+const ScrollspyPage    = lazyNamed(() => import('./pages/advanced/ScrollspyPage'),   'ScrollspyPage');
+const ResizablePage    = lazyNamed(() => import('./pages/advanced/ResizablePage'),   'ResizablePage');
+const FileUploadPage   = lazyNamed(() => import('./pages/advanced/FileUploadPage'),  'FileUploadPage');
+const PriorityNavPage  = lazyNamed(() => import('./pages/advanced/PriorityNavPage'), 'PriorityNavPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
@@ -77,6 +104,15 @@ export function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           {/* Basic */}
+          <Route path="/basic/badge" element={<BadgePage />} />
+          <Route path="/basic/button-group" element={<ButtonGroupPage />} />
+          <Route path="/basic/close" element={<ClosePage />} />
+          <Route path="/basic/alert" element={<AlertPage />} />
+          <Route path="/basic/breadcrumb" element={<BreadcrumbPage />} />
+          <Route path="/basic/list-group" element={<ListGroupPage />} />
+          <Route path="/basic/progress-bar" element={<ProgressPage />} />
+          <Route path="/basic/placeholder" element={<PlaceholderPage />} />
+          <Route path="/basic/table" element={<TablePage />} />
           <Route path="/basic/calendar" element={<CalendarPage />} />
           <Route path="/basic/card" element={<CardPage />} />
           <Route path="/basic/carousel" element={<CarouselPage />} />
@@ -88,19 +124,37 @@ export function App() {
           <Route path="/basic/forms/select" element={<SelectPage />} />
           <Route path="/basic/forms/timepicker" element={<TimepickerPage />} />
           <Route path="/basic/forms/multi-range" element={<MultiRangePage />} />
+          <Route path="/basic/forms/floating-labels" element={<FloatingLabelsPage />} />
+          <Route path="/basic/forms/range" element={<RangePage />} />
+          <Route path="/basic/marquee" element={<MarqueePage />} />
+          <Route path="/overlay/modal" element={<ModalPage />} />
+          <Route path="/overlay/offcanvas" element={<OffcanvasPage />} />
+          <Route path="/overlay/popover" element={<PopoverPage />} />
+          <Route path="/overlay/tooltip" element={<TooltipPage />} />
+          <Route path="/overlay/toast" element={<ToastPage />} />
+          <Route path="/overlay/dropdown" element={<DropdownPage />} />
+          <Route path="/overlay/context-menu" element={<ContextMenuPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
+          <Route path="/basic/rating" element={<RatingPage />} />
+          <Route path="/basic/color-picker" element={<ColorPickerPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="/basic/tab-control" element={<TabControlPage />} />
           <Route path="/basic/treeview" element={<TreeviewPage />} />
           <Route path="/basic/tree-select" element={<TreeSelectPage />} />
           <Route path="/basic/typeahead" element={<TypeaheadPage />} />
-          <Route path="/basic/dropdown-menu" element={<DropdownMenuPage />} />
           <Route path="/basic/navbar" element={<NavbarPage />} />
           {/* Advanced */}
           <Route path="/advanced/otp-input" element={<OtpInputPage />} />
           <Route path="/advanced/signature-pad" element={<SignaturePadPage />} />
           <Route path="/advanced/splitter" element={<SplitterPage />} />
+          <Route path="/advanced/toggle-buttons" element={<ToggleButtonsPage />} />
+          <Route path="/advanced/parallax" element={<ParallaxPage />} />
+          <Route path="/advanced/sticky-footer" element={<StickyFooterPage />} />
+          <Route path="/advanced/scrollspy" element={<ScrollspyPage />} />
+          <Route path="/advanced/resizable" element={<ResizablePage />} />
+          <Route path="/advanced/file-upload" element={<FileUploadPage />} />
+          <Route path="/advanced/priority-nav" element={<PriorityNavPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/charts" element={<ChartsPage />} />

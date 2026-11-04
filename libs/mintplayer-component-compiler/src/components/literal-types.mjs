@@ -12,6 +12,31 @@ function walkTs(dir) {
   });
 }
 
+const readTs = (dir) => walkTs(dir).map((file) => readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
+
+const aliasesIn = (texts) =>
+  texts.flatMap((text) => [...text.matchAll(/export\s+type\s+(\w+)\s*=\s*([^;{}()<>[\]]+);/g)].map((m) => [m[1], m[2].replace(/\s+/g, ' ').trim()]));
+
+/**
+ * The aliases a source imports from another ui-core entry (`type AnchorSide` from
+ * `@mintplayer/ui-core/overlay`), read from that entry's sources. Local aliases win.
+ */
+function importedAliases(dir, texts) {
+  const path = dir.replace(/\\/g, '/');
+  const marker = 'mintplayer-ui-core';
+  const at = path.lastIndexOf(marker);
+  if (at < 0) return [];
+  const root = path.slice(0, at + marker.length);
+  const entries = new Set(texts.flatMap((text) => [...text.matchAll(/from\s+'@mintplayer\/ui-core\/([\w/-]+)'/g)].map((m) => m[1])));
+  return [...entries].flatMap((entry) => {
+    try {
+      return aliasesIn(readTs(join(root, entry, 'src')));
+    } catch {
+      return [];
+    }
+  });
+}
+
 const unionParts = (text) => text.split('|').map((part) => part.trim()).filter(Boolean);
 const STRING_LITERAL = /^'([^']*)'$|^"([^"]*)"$/;
 
@@ -22,10 +47,8 @@ const STRING_LITERAL = /^'([^']*)'$|^"([^"]*)"$/;
  *   (`null` / `undefined` members aside).
  */
 export function literalTypes(dir) {
-  const texts = walkTs(dir).map((file) => readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
-  const aliases = new Map(
-    texts.flatMap((text) => [...text.matchAll(/export\s+type\s+(\w+)\s*=\s*([^;{}()<>[\]]+);/g)].map((m) => [m[1], m[2].replace(/\s+/g, ' ').trim()])),
-  );
+  const texts = readTs(dir);
+  const aliases = new Map([...importedAliases(dir, texts), ...aliasesIn(texts)]);
   const interfaces = new Map(
     texts.flatMap((text) =>
       [...text.matchAll(/export\s+interface\s+(\w+)(?:<[^>]*>)?(?:\s+extends\s+([\w\s,]+))?\s*\{\n([\s\S]*?)\n\}/g)].map((m) => [

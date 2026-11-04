@@ -3,13 +3,13 @@ import {
   attachNavbar,
   closeNavbarDropdowns,
   connectNavbar,
-  connectNavbarDropdown,
   connectNavbarItem,
   connectNavbarNav,
   navbarTheme,
   setNavbarExpanded,
   type NavbarBag,
 } from './navbar';
+import { connectDropdownDisclosure, connectDropdownItem } from '@mintplayer/ui-core/dropdown';
 
 /**
  * Apply a bag the way the fronts do: null/false drops, true is an empty
@@ -32,12 +32,15 @@ function link(text: string, href: string | null = `#${text}`) {
   return a;
 }
 
+/** A dropdown in the bar is a bs-dropdown-menu in navigation mode: the dropdown group's markup and scope. */
+const DROPDOWN = { 'data-mps': 'dropdown' };
+
 function dropdown(depth: number, label: string, ...items: Node[]) {
-  const view = connectNavbarDropdown({ depth });
-  return el('details', view.details, el('summary', view.summary, label), el('div', view.panel, ...items));
+  const view = connectDropdownDisclosure({ depth });
+  return el('details', { ...view.details, ...DROPDOWN }, el('summary', { ...view.summary, ...DROPDOWN }, label), el('div', { ...view.panel, ...DROPDOWN }, ...items));
 }
 
-const menuItem = (...children: Node[]) => el('div', connectNavbarItem({ inMenu: true }), ...children);
+const menuItem = (...children: Node[]) => el('div', { ...connectDropdownItem({ active: false, disabled: false, value: undefined }, 'navigation'), ...DROPDOWN }, ...children);
 
 function mount() {
   const view = connectNavbar({ id: 'n', hydrated: true });
@@ -104,10 +107,10 @@ describe('navbarTheme', () => {
   });
 });
 
-describe('connectNavbarDropdown and items', () => {
+describe('connectDropdownDisclosure and items', () => {
   it('names the dropdowns of one depth alike, and never gives the panel or summary a role', () => {
-    const top = connectNavbarDropdown({ depth: 0, active: true });
-    const sub = connectNavbarDropdown({ depth: 1 });
+    const top = connectDropdownDisclosure({ depth: 0, active: true });
+    const sub = connectDropdownDisclosure({ depth: 1 });
     expect(top.details).toMatchObject({ class: 'nav-item dropdown', name: 'mp-navbar-0' });
     expect(top.summary['class']).toBe('nav-link dropdown-toggle active');
     expect(sub.details).toMatchObject({ class: 'dropdown dropdown-submenu', name: 'mp-navbar-1' });
@@ -119,14 +122,21 @@ describe('connectNavbarDropdown and items', () => {
   // No popover in server HTML: an unshown popover is display:none, and without
   // script the submenu must open inline below its trigger.
   it('makes only a hydrated submenu panel a manual popover', () => {
-    expect(connectNavbarDropdown({ depth: 1 }).panel['popover']).toBeNull();
-    expect(connectNavbarDropdown({ depth: 1, hydrated: true }).panel['popover']).toBe('manual');
-    expect(connectNavbarDropdown({ depth: 0, hydrated: true }).panel['popover']).toBeNull();
+    expect(connectDropdownDisclosure({ depth: 1 }).panel['popover']).toBeNull();
+    expect(connectDropdownDisclosure({ depth: 1, hydrated: true }).panel['popover']).toBe('manual');
+    expect(connectDropdownDisclosure({ depth: 0, hydrated: true }).panel['popover']).toBeNull();
   });
 
   it('marks the current page and disabled items', () => {
     expect(connectNavbarItem({ active: true })).toMatchObject({ class: 'nav-item active', 'aria-current': 'page' });
-    expect(connectNavbarItem({ inMenu: true, disabled: true })).toMatchObject({ class: 'dropdown-item disabled', 'aria-disabled': 'true' });
+    expect(connectNavbarItem({ disabled: true })).toMatchObject({ class: 'nav-item disabled', 'aria-disabled': 'true' });
+    expect(connectDropdownItem({ active: true, disabled: true, value: undefined }, 'navigation')).toMatchObject({
+      class: 'dropdown-item active disabled',
+      'aria-current': 'true',
+      'aria-disabled': 'true',
+    });
+    // In a menu the menu writes the ARIA, on whichever node is the menuitem.
+    expect(connectDropdownItem({ active: true, disabled: true, value: undefined })).toEqual({ class: 'dropdown-item active disabled' });
     expect(connectNavbarNav('end')['class']).toBe('navbar-nav nav-end');
   });
 });

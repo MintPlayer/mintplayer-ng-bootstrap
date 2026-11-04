@@ -1,9 +1,9 @@
 <h1 class="text-center">Radio</h1>
 <bs-grid>
     <div bsRow>
-        <div [col]>
+        <div col>
             <h2>Group, adjacent, template-driven</h2>
-            <p class="text-muted"><code>string</code> form value via <code>[(ngModel)]</code> on <code>&lt;bs-radio-group&gt;</code>, which takes <code>role="radiogroup"</code> and hands one <code>name</code> to its radios, so the browser supplies one-of-N, the single tab stop and arrow-key selection (also without JavaScript). <code>&lt;bs-radio&gt;</code> has no <code>[name]</code> input — the group owns it.</p>
+            <p class="text-muted"><code>string</code> form value via <code>[(ngModel)]</code> on <code>&lt;bs-radio-group&gt;</code>, which takes <code>role="radiogroup"</code> and hands one <code>name</code> to its radios, so the browser supplies one-of-N, the single tab stop and arrow-key selection (also without JavaScript). A <code>[name]</code> on a <code>&lt;bs-radio&gt;</code> applies only outside a group: inside one, the group owns it.</p>
         </div>
     </div>
     <div bsRow>
@@ -19,14 +19,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTemplateTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTemplateHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group, adjacent, reactive</h2>
             <p class="text-muted">Same shape via <code>[formControl]</code> on the group element.</p>
         </div>
@@ -44,14 +44,14 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupReactiveTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupReactiveHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group with <code>type="toggle_button"</code></h2>
             <p class="text-muted">Radio-style button toggles (single-select among visually-button-styled options).</p>
         </div>
@@ -69,16 +69,16 @@
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="toggleButtonTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="toggleButtonHtml" [language]="'html'"></bs-code-snippet>
         </div>
     </div>
 
     <div bsRow class="mt-5">
-        <div [col]>
+        <div col>
             <h2>Group, non-adjacent (table row pattern)</h2>
-            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one radio. The group lives on <code>&lt;tbody&gt;</code> and each child uses <code>[group]="g"</code> for explicit wiring.</p>
+            <p class="text-muted">Each <code>&lt;tr&gt;</code> holds one radio. The attribute form <code>[bsRadioGroup]</code> sits on the <code>&lt;tbody&gt;</code>, a host the page already has; the radios find their group by DI, so they need no wiring. The size cell holds a radio list of its own: the nearest group wins, so picking a size never changes the row selection, and the other way round.</p>
         </div>
     </div>
     <div bsRow>
@@ -88,24 +88,35 @@
                     <tr>
                         <th scope="col"></th>
                         <th scope="col">Label</th>
+                        <th scope="col">Size</th>
                     </tr>
                 </thead>
-                <tbody bsRadioGroup name="selectedRow" #g="bsRadioGroup" [(ngModel)]="selectedRow">
+                <tbody bsRadioGroup name="selectedRow" [(ngModel)]="selectedRow">
                     @for (row of rows(); track row.id) {
                         <tr>
-                            <td><bs-radio [group]="g" [value]="row.id" [inputLabel]="'Select ' + row.label" /></td>
+                            <td><bs-radio [value]="row.id" [inputLabel]="'Select ' + row.label" /></td>
                             <td>{{ row.label }}</td>
+                            <td>
+                                <bs-radio-group [attr.aria-label]="'Size of ' + row.label" [(value)]="row.size">
+                                    @for (size of sizes; track size) {
+                                        <bs-radio [value]="size" [inline]="true">{{ size }}</bs-radio>
+                                    }
+                                </bs-radio-group>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
         <div [md]="4">
-            <span>Selected: {{ selectedRow() | json }}</span>
+            <div>Selected: {{ selectedRow() | json }}</div>
+            @for (row of rows(); track row.id) {
+                <div>{{ row.label }}: {{ row.size() | json }}</div>
+            }
         </div>
     </div>
     <div bsRow class="mt-2">
-        <div [col]>
+        <div col>
             <bs-code-snippet [code]="groupTableTs" [language]="'ts'"></bs-code-snippet>
             <bs-code-snippet [code]="groupTableHtml" [language]="'html'"></bs-code-snippet>
         </div>

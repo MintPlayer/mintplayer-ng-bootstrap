@@ -1,2 +1,2 @@
-export * from './component/popover.component';
-export * from './directives';
+// Generated from @mintplayer/ui-core/popover (#458 D10).
+export * from './generated';

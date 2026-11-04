@@ -291,7 +291,7 @@ const SELECTION_SOURCE = `<BsDatatable
   :rowKey="(row) => String(row.id)"
   :rowLabel="(row) => 'order #' + row.id"
   v-model:selectedIds="selectedIds"
-  @rowclick="(detail) => (opened = detail.row)"
+  @row-click="(detail) => (opened = detail.row)"
 />`;
 
 // ─── Tree-mode demo ──────────────────────────────────────────────────────
@@ -346,7 +346,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
   :virtualScroll="true" :itemSize="40"
   :tree="true" idKey="id" childCountKey="childCount"
   selectionMode="multiple" selectionStrategy="cascading"
-  @selectionchanged="onSelectionChange"
+  @selection-changed="onSelectionChange"
 />`;
 </script>
 
@@ -484,7 +484,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :rowKey="orderRowKey"
         :rowLabel="orderRowLabel"
         v-model:selectedIds="selectedOrderIds"
-        @rowclick="onOrderRowClick"
+        @row-click="onOrderRowClick"
       />
 
       <p class="text-body-secondary">
@@ -523,7 +523,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :rowKey="rowKey"
         selectionMode="multiple"
         selectionStrategy="cascading"
-        @selectionchanged="onSelectionChange"
+        @selection-changed="onSelectionChange"
       />
       <small v-if="selectedRows.length" class="text-body-secondary">
         Selected {{ selectedRows.length }} item(s).
@@ -594,10 +594,10 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         Because the browser skips <code>fetch</code> for that first page,
         anything else your <code>fetch</code> reads off its response (the columns
         a server query decides, say) belongs in the response's <code>extra</code>,
-        which must be JSON. <code>@pageload</code> hands it back for every page
+        which must be JSON. <code>@page-load</code> hands it back for every page
         the table applies, with <code>seeded: true</code> for the page that came
         from the server. Record it in <code>fetch</code> too:
-        <code>@pageload</code> fires in the browser only.
+        <code>@page-load</code> fires in the browser only.
       </p>
       <p class="text-body-secondary small">
         <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,

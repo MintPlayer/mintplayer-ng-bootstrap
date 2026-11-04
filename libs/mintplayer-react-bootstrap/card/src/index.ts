@@ -1,10 +1,4 @@
-export { BsCard } from './BsCard';
-export { BsCardBody } from './BsCardBody';
-export { BsCardFooter } from './BsCardFooter';
-export { BsCardGroup } from './BsCardGroup';
-export { BsCardHeader } from './BsCardHeader';
-export { BsCardImg } from './BsCardImg';
-export { BsCardLink } from './BsCardLink';
-export { BsCardSubtitle } from './BsCardSubtitle';
-export { BsCardText } from './BsCardText';
-export { BsCardTitle } from './BsCardTitle';
+// Generated from @mintplayer/ui-core/card (#458 M4, D10): the card and its parts.
+export * from './generated';
+export { CARD_COLORS, isCardColor } from '@mintplayer/ui-core/card';
+export type { CardColor, CardImagePosition } from '@mintplayer/ui-core/card';

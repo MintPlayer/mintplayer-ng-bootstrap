@@ -3,7 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { BsForDirective } from '@mintplayer/ng-bootstrap/for';
 import { MockDirective, MockComponent } from 'ng-mocks';
 import { TabControlComponent } from './tab-control.component';
-import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective, BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsGridComponent, BsGridRowDirective, BsGridColumnDirective, BsGridColDirective } from '@mintplayer/ng-bootstrap/grid';
+import { BsColFormLabelDirective } from '@mintplayer/ng-bootstrap/form';
 import { BsTabControlComponent, BsTabPageComponent, BsTabPageHeaderDirective } from '@mintplayer/ng-bootstrap/tab-control';
 import { BsSelectComponent } from '@mintplayer/ng-bootstrap/select';
 

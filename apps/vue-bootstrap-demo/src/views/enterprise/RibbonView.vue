@@ -172,11 +172,11 @@ const snippetMinimal = `<BsRibbon v-model:active-tab-id="activeTab" v-model:mini
                      dialog-launcher="Clipboard Dialog">
       <BsRibbonButton item-id="paste" label="Paste" icon="📋"
                         size="large" tooltip="Paste (Ctrl+V)"
-                        @itemclick="onPaste" />
+                        @item-click="onPaste" />
       <BsRibbonButton item-id="cut"  label="Cut"  icon="✂️" size="small"
-                        @itemclick="onCut" />
+                        @item-click="onCut" />
       <BsRibbonButton item-id="copy" label="Copy" icon="📄" size="small"
-                        @itemclick="onCopy" />
+                        @item-click="onCopy" />
     </BsRibbonGroup>
   </BsRibbonTab>
 </BsRibbon>`;
@@ -186,14 +186,14 @@ const snippetSplitButton = `<BsRibbonSplitButton
   :label="pasteMode.label"
   :icon="pasteMode.icon"
   size="large"
-  @mainaction="onPaste">
+  @main-action="onPaste">
   <BsRibbonMenuItem item-id="paste" label="Paste" icon="📋"
-                       @menuselect="onPasteModeSelect" />
+                       @menu-select="onPasteModeSelect" />
   <BsRibbonMenuItem item-id="paste-values" label="Paste Values" icon="123"
-                       @menuselect="onPasteModeSelect" />
+                       @menu-select="onPasteModeSelect" />
   <BsRibbonMenuSeparator />
   <BsRibbonMenuItem item-id="paste-special" label="Paste Special…"
-                       @menuselect="onPasteSpecial" />
+                       @menu-select="onPasteSpecial" />
 </BsRibbonSplitButton>`;
 
 const snippetValueItems = `<!-- Vue: bind the prop + listen for the matching event.
@@ -222,9 +222,9 @@ const snippetContextual = `<BsRibbonContextualTabSet
 const snippetQat = `<BsQuickAccessToolbar aria-label="Quick Access Toolbar"
                          :touch-mode="touchMode">
   <BsRibbonButton item-id="save" label="Save" icon="💾" size="small"
-                    @itemclick="onSave" />
+                    @item-click="onSave" />
   <BsRibbonButton item-id="undo" label="Undo" icon="↶" size="small"
-                    @itemclick="onUndo" />
+                    @item-click="onUndo" />
 </BsQuickAccessToolbar>
 
 <BsRibbon …> … </BsRibbon>`;
@@ -241,12 +241,12 @@ const snippetTheming = `<!-- .excel { --bs-ribbon-accent: #217346; } -->
 const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-font <i>, an image.
      It is sized from the size the item renders at. -->
 <BsRibbonButton item-id="save" label="Save" size="large"
-                @itemclick="onSave">
+                @item-click="onSave">
   <template #iconTemplate><i class="bi bi-save"></i></template>
 </BsRibbonButton>
 
 <BsRibbonButton item-id="copy" label="Copy" size="small"
-                @itemclick="onCopy">
+                @item-click="onCopy">
   <template #iconTemplate><svg viewBox="0 0 16 16">…</svg></template>
 </BsRibbonButton>`;
 </script>
@@ -302,9 +302,9 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
         aria-label="Quick Access Toolbar"
         :touch-mode="touchMode"
       >
-        <BsRibbonButton item-id="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" @itemclick="onItemClick" />
-        <BsRibbonButton item-id="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" @itemclick="onItemClick" />
-        <BsRibbonButton item-id="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" @itemclick="onItemClick" />
+        <BsRibbonButton item-id="qat-save" label="Save" icon="💾" size="small" tooltip="Save (Ctrl+S)" @item-click="onItemClick" />
+        <BsRibbonButton item-id="qat-undo" label="Undo" icon="↶" size="small" tooltip="Undo (Ctrl+Z)" @item-click="onItemClick" />
+        <BsRibbonButton item-id="qat-redo" label="Redo" icon="↷" size="small" tooltip="Redo (Ctrl+Y)" @item-click="onItemClick" />
       </BsQuickAccessToolbar>
 
       <BsRibbon
@@ -314,7 +314,7 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
         :version="version"
         :color-scheme="colorScheme"
         :touch-mode="touchMode"
-        @tabchange="onTabChange"
+        @tab-change="onTabChange"
       >
         <!-- ============ Tell Me slot (FR-24) ============ -->
         <template #tellMe>
@@ -340,32 +340,32 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
               :icon="pasteMode.icon"
               size="large"
               tooltip="Paste (Ctrl+V)"
-              @mainaction="onItemClick"
+              @main-action="onItemClick"
             >
               <BsRibbonMenuItem
                 item-id="paste"
                 label="Paste"
                 icon="📋"
-                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
+                @menu-select="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
               <BsRibbonMenuItem
                 item-id="paste-values"
                 label="Paste Values"
                 icon="123"
-                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
+                @menu-select="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
               <BsRibbonMenuItem
                 item-id="paste-formatting"
                 label="Paste Formatting"
                 icon="🎨"
-                @menuselect="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
+                @menu-select="(detail: { itemId: string }) => { onPasteModeSelect(detail); onItemClick(detail); }"
               />
               <BsRibbonMenuSeparator />
-              <BsRibbonMenuItem item-id="paste-special" label="Paste Special…" @menuselect="onItemClick" />
+              <BsRibbonMenuItem item-id="paste-special" label="Paste Special…" @menu-select="onItemClick" />
             </BsRibbonSplitButton>
-            <BsRibbonButton item-id="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="format-painter" label="Format Painter" icon="🖌️" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="cut" label="Cut" icon="✂️" size="small" tooltip="Cut (Ctrl+X)" @item-click="onItemClick" />
+            <BsRibbonButton item-id="copy" label="Copy" icon="📄" size="small" tooltip="Copy (Ctrl+C)" @item-click="onItemClick" />
+            <BsRibbonButton item-id="format-painter" label="Format Painter" icon="🖌️" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="font" label="Font" dialog-launcher="Font Dialog">
@@ -401,9 +401,9 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
               tooltip="Underline (Ctrl+U)"
               v-model:pressed="underlineOn"
             />
-            <BsRibbonButton item-id="strikethrough" label="Strikethrough" icon="S̶" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="subscript" label="Subscript" icon="X₂" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="superscript" label="Superscript" icon="X²" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="strikethrough" label="Strikethrough" icon="S̶" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="subscript" label="Subscript" icon="X₂" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="superscript" label="Superscript" icon="X²" size="small" @item-click="onItemClick" />
             <BsRibbonColorPicker
               item-id="font-color"
               label="Font Color"
@@ -414,15 +414,15 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
 
           <BsRibbonGroup group-id="paragraph" label="Paragraph" dialog-launcher="Paragraph Dialog">
             <BsRibbonDropdownButton item-id="bullets" label="Bullets" icon="•≡" size="small" tooltip="Bullet list">
-              <BsRibbonMenuItem item-id="bullet-disc" label="Disc" icon="●" @menuselect="onItemClick" />
-              <BsRibbonMenuItem item-id="bullet-circle" label="Circle" icon="○" @menuselect="onItemClick" />
-              <BsRibbonMenuItem item-id="bullet-square" label="Square" icon="■" @menuselect="onItemClick" />
+              <BsRibbonMenuItem item-id="bullet-disc" label="Disc" icon="●" @menu-select="onItemClick" />
+              <BsRibbonMenuItem item-id="bullet-circle" label="Circle" icon="○" @menu-select="onItemClick" />
+              <BsRibbonMenuItem item-id="bullet-square" label="Square" icon="■" @menu-select="onItemClick" />
               <BsRibbonMenuSeparator />
-              <BsRibbonMenuItem item-id="define-new-bullet" label="Define New Bullet…" @menuselect="onItemClick" />
+              <BsRibbonMenuItem item-id="define-new-bullet" label="Define New Bullet…" @menu-select="onItemClick" />
             </BsRibbonDropdownButton>
-            <BsRibbonButton item-id="numbering" label="Numbering" icon="1≡" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="indent-decrease" label="Decrease Indent" icon="⇤" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="indent-increase" label="Increase Indent" icon="⇥" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="numbering" label="Numbering" icon="1≡" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="indent-decrease" label="Decrease Indent" icon="⇤" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="indent-increase" label="Increase Indent" icon="⇥" size="small" @item-click="onItemClick" />
             <BsRibbonGroupButton
               item-id="alignment"
               label="Alignment"
@@ -433,16 +433,16 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="styles" label="Styles" dialog-launcher="Styles">
-            <BsRibbonButton item-id="style-normal" label="Normal" icon="¶" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="style-h1" label="Heading 1" icon="H1" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="style-h2" label="Heading 2" icon="H2" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="style-title" label="Title" icon="T" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="style-normal" label="Normal" icon="¶" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="style-h1" label="Heading 1" icon="H1" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="style-h2" label="Heading 2" icon="H2" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="style-title" label="Title" icon="T" size="medium" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="editing" label="Editing">
-            <BsRibbonButton item-id="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="select" label="Select" icon="☐" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="find" label="Find" icon="🔍" size="small" tooltip="Find (Ctrl+F)" @item-click="onItemClick" />
+            <BsRibbonButton item-id="replace" label="Replace" icon="🔁" size="small" tooltip="Replace (Ctrl+H)" @item-click="onItemClick" />
+            <BsRibbonButton item-id="select" label="Select" icon="☐" size="small" @item-click="onItemClick" />
             <BsRibbonCheckBox
               item-id="match-case"
               label="Match case"
@@ -455,52 +455,52 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
         <!-- ============ Insert tab ============ -->
         <BsRibbonTab tab-id="insert" label="Insert">
           <BsRibbonGroup group-id="pages" label="Pages" icon="📑">
-            <BsRibbonButton item-id="cover-page" label="Cover Page" icon="📑" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="blank-page" label="Blank Page" icon="📄" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="cover-page" label="Cover Page" icon="📑" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="blank-page" label="Blank Page" icon="📄" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="page-break" label="Page Break" icon="📑" size="medium" tooltip="Insert page break (Ctrl+Enter)" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="tables" label="Tables" icon="▦" :priority="10">
-            <BsRibbonButton item-id="table" label="Table" icon="▦" size="large" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="table" label="Table" icon="▦" size="large" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="shape-gallery" label="Shape Gallery" icon="⬡">
             <BsRibbonGallery item-id="shapes" label="Shapes" size="medium" :columns="3">
-              <BsRibbonGalleryItem item-id="rect" icon="▭" label="Rectangle" :selected="selectedShape === 'rect'" @galleryselect="onShapeSelect" />
-              <BsRibbonGalleryItem item-id="circle" icon="●" label="Circle" :selected="selectedShape === 'circle'" @galleryselect="onShapeSelect" />
-              <BsRibbonGalleryItem item-id="triangle" icon="▲" label="Triangle" :selected="selectedShape === 'triangle'" @galleryselect="onShapeSelect" />
-              <BsRibbonGalleryItem item-id="diamond" icon="◆" label="Diamond" :selected="selectedShape === 'diamond'" @galleryselect="onShapeSelect" />
-              <BsRibbonGalleryItem item-id="star" icon="★" label="Star" :selected="selectedShape === 'star'" @galleryselect="onShapeSelect" />
-              <BsRibbonGalleryItem item-id="arrow" icon="➤" label="Arrow" :selected="selectedShape === 'arrow'" @galleryselect="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="rect" icon="▭" label="Rectangle" :selected="selectedShape === 'rect'" @gallery-select="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="circle" icon="●" label="Circle" :selected="selectedShape === 'circle'" @gallery-select="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="triangle" icon="▲" label="Triangle" :selected="selectedShape === 'triangle'" @gallery-select="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="diamond" icon="◆" label="Diamond" :selected="selectedShape === 'diamond'" @gallery-select="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="star" icon="★" label="Star" :selected="selectedShape === 'star'" @gallery-select="onShapeSelect" />
+              <BsRibbonGalleryItem item-id="arrow" icon="➤" label="Arrow" :selected="selectedShape === 'arrow'" @gallery-select="onShapeSelect" />
             </BsRibbonGallery>
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="illustrations" label="Illustrations" icon="🖼️">
-            <BsRibbonButton item-id="pictures" label="Pictures" icon="🖼️" size="large" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="shapes" label="Shapes" icon="⬡" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="icons" label="Icons" icon="★" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="chart" label="Chart" icon="📊" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="smartart" label="SmartArt" icon="🧩" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="screenshot" label="Screenshot" icon="📸" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="pictures" label="Pictures" icon="🖼️" size="large" @item-click="onItemClick" />
+            <BsRibbonButton item-id="shapes" label="Shapes" icon="⬡" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="icons" label="Icons" icon="★" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="chart" label="Chart" icon="📊" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="smartart" label="SmartArt" icon="🧩" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="screenshot" label="Screenshot" icon="📸" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="links" label="Links" icon="🔗">
-            <BsRibbonButton item-id="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="bookmark" label="Bookmark" icon="🔖" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="cross-reference" label="Cross-reference" icon="↗" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="link" label="Link" icon="🔗" size="medium" tooltip="Insert hyperlink (Ctrl+K)" @item-click="onItemClick" />
+            <BsRibbonButton item-id="bookmark" label="Bookmark" icon="🔖" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="cross-reference" label="Cross-reference" icon="↗" size="medium" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="header-footer" label="Header &amp; Footer" icon="▤">
-            <BsRibbonButton item-id="header" label="Header" icon="▔" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="footer" label="Footer" icon="▁" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="page-number" label="Page Number" icon="#" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="header" label="Header" icon="▔" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="footer" label="Footer" icon="▁" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="page-number" label="Page Number" icon="#" size="medium" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="text" label="Text" icon="🆎">
-            <BsRibbonButton item-id="text-box" label="Text Box" icon="🆎" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="wordart" label="WordArt" icon="🅰️" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="date-time" label="Date &amp; Time" icon="📅" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="symbol" label="Symbol" icon="Ω" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="text-box" label="Text Box" icon="🆎" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="wordart" label="WordArt" icon="🅰️" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="date-time" label="Date &amp; Time" icon="📅" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="symbol" label="Symbol" icon="Ω" size="medium" @item-click="onItemClick" />
           </BsRibbonGroup>
         </BsRibbonTab>
 
@@ -508,31 +508,31 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
         <BsRibbonContextualTabSet label="Picture Tools" color="#F2C744" :visible="pictureToolsVisible">
           <BsRibbonTab tab-id="picture-format" label="Format">
             <BsRibbonGroup group-id="picture-styles" label="Picture Styles">
-              <BsRibbonButton item-id="picture-border" label="Picture Border" icon="▢" size="medium" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-effects" label="Picture Effects" icon="✨" size="medium" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-layout" label="Picture Layout" icon="🖼️" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-border" label="Picture Border" icon="▢" size="medium" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-effects" label="Picture Effects" icon="✨" size="medium" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-layout" label="Picture Layout" icon="🖼️" size="medium" @item-click="onItemClick" />
             </BsRibbonGroup>
             <BsRibbonGroup group-id="picture-arrange" label="Arrange">
-              <BsRibbonButton item-id="picture-position" label="Position" icon="⤧" size="small" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-wrap-text" label="Wrap Text" icon="↩" size="small" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-rotate" label="Rotate" icon="↻" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-position" label="Position" icon="⤧" size="small" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-wrap-text" label="Wrap Text" icon="↩" size="small" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-rotate" label="Rotate" icon="↻" size="small" @item-click="onItemClick" />
             </BsRibbonGroup>
             <BsRibbonGroup group-id="picture-size" label="Size">
-              <BsRibbonButton item-id="picture-crop" label="Crop" icon="✂" size="large" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-width" label="Width" icon="↔" size="small" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-height" label="Height" icon="↕" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-crop" label="Crop" icon="✂" size="large" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-width" label="Width" icon="↔" size="small" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-height" label="Height" icon="↕" size="small" @item-click="onItemClick" />
             </BsRibbonGroup>
           </BsRibbonTab>
           <BsRibbonTab tab-id="picture-effects" label="Effects">
             <BsRibbonGroup group-id="picture-adjust" label="Adjust">
-              <BsRibbonButton item-id="picture-brightness" label="Brightness" icon="🔆" size="medium" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-contrast" label="Contrast" icon="◐" size="medium" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-saturation" label="Saturation" icon="🎨" size="medium" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-brightness" label="Brightness" icon="🔆" size="medium" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-contrast" label="Contrast" icon="◐" size="medium" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-saturation" label="Saturation" icon="🎨" size="medium" @item-click="onItemClick" />
             </BsRibbonGroup>
             <BsRibbonGroup group-id="picture-artistic" label="Artistic">
-              <BsRibbonButton item-id="picture-blur" label="Blur" icon="◌" size="small" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-sharpen" label="Sharpen" icon="◇" size="small" @itemclick="onItemClick" />
-              <BsRibbonButton item-id="picture-grayscale" label="Grayscale" icon="◑" size="small" @itemclick="onItemClick" />
+              <BsRibbonButton item-id="picture-blur" label="Blur" icon="◌" size="small" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-sharpen" label="Sharpen" icon="◇" size="small" @item-click="onItemClick" />
+              <BsRibbonButton item-id="picture-grayscale" label="Grayscale" icon="◑" size="small" @item-click="onItemClick" />
             </BsRibbonGroup>
           </BsRibbonTab>
         </BsRibbonContextualTabSet>
@@ -540,49 +540,49 @@ const snippetSlotIcons = `<!-- Any element works as an icon: an SVG, an icon-fon
         <!-- ============ Design tab ============ -->
         <BsRibbonTab tab-id="design" label="Design">
           <BsRibbonGroup group-id="document-formatting" label="Document Formatting">
-            <BsRibbonButton item-id="themes" label="Themes" icon="🎨" size="large" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="colors" label="Colors" icon="🌈" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="fonts" label="Fonts" icon="🔤" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="effects" label="Effects" icon="✨" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="set-default" label="Set as Default" icon="✓" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="themes" label="Themes" icon="🎨" size="large" @item-click="onItemClick" />
+            <BsRibbonButton item-id="colors" label="Colors" icon="🌈" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="fonts" label="Fonts" icon="🔤" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="paragraph-spacing" label="Paragraph Spacing" icon="↕" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="effects" label="Effects" icon="✨" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="set-default" label="Set as Default" icon="✓" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="page-background" label="Page Background">
-            <BsRibbonButton item-id="watermark" label="Watermark" icon="💧" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="page-color" label="Page Color" icon="🎨" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="page-borders" label="Page Borders" icon="▢" size="medium" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="watermark" label="Watermark" icon="💧" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="page-color" label="Page Color" icon="🎨" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="page-borders" label="Page Borders" icon="▢" size="medium" @item-click="onItemClick" />
           </BsRibbonGroup>
         </BsRibbonTab>
 
         <!-- ============ Layout tab ============ -->
         <BsRibbonTab tab-id="layout" label="Layout">
           <BsRibbonGroup group-id="page-setup" label="Page Setup" dialog-launcher="Page Setup">
-            <BsRibbonButton item-id="margins" label="Margins" icon="▭" size="large" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="orientation" label="Orientation" icon="🔄" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="size" label="Size" icon="📏" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="columns" label="Columns" icon="▥" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="breaks" label="Breaks" icon="⤓" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="line-numbers" label="Line Numbers" icon="№" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="hyphenation" label="Hyphenation" icon="‐" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="margins" label="Margins" icon="▭" size="large" @item-click="onItemClick" />
+            <BsRibbonButton item-id="orientation" label="Orientation" icon="🔄" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="size" label="Size" icon="📏" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="columns" label="Columns" icon="▥" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="breaks" label="Breaks" icon="⤓" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="line-numbers" label="Line Numbers" icon="№" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="hyphenation" label="Hyphenation" icon="‐" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="paragraph-layout" label="Paragraph" dialog-launcher="Paragraph">
-            <BsRibbonButton item-id="indent-left" label="Indent Left" icon="⇥" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="indent-right" label="Indent Right" icon="⇤" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="space-before" label="Space Before" icon="↑≡" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="space-after" label="Space After" icon="↓≡" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="indent-left" label="Indent Left" icon="⇥" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="indent-right" label="Indent Right" icon="⇤" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="space-before" label="Space Before" icon="↑≡" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="space-after" label="Space After" icon="↓≡" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
 
           <BsRibbonGroup group-id="arrange" label="Arrange">
-            <BsRibbonButton item-id="position" label="Position" icon="⤧" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="wrap-text" label="Wrap Text" icon="↩" size="medium" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="bring-forward" label="Bring Forward" icon="⬆" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="send-backward" label="Send Backward" icon="⬇" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="selection-pane" label="Selection Pane" icon="☰" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="align" label="Align" icon="⊟" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="group" label="Group" icon="⊞" size="small" @itemclick="onItemClick" />
-            <BsRibbonButton item-id="rotate" label="Rotate" icon="↻" size="small" @itemclick="onItemClick" />
+            <BsRibbonButton item-id="position" label="Position" icon="⤧" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="wrap-text" label="Wrap Text" icon="↩" size="medium" @item-click="onItemClick" />
+            <BsRibbonButton item-id="bring-forward" label="Bring Forward" icon="⬆" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="send-backward" label="Send Backward" icon="⬇" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="selection-pane" label="Selection Pane" icon="☰" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="align" label="Align" icon="⊟" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="group" label="Group" icon="⊞" size="small" @item-click="onItemClick" />
+            <BsRibbonButton item-id="rotate" label="Rotate" icon="↻" size="small" @item-click="onItemClick" />
           </BsRibbonGroup>
         </BsRibbonTab>
       </BsRibbon>

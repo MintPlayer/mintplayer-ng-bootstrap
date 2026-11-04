@@ -8,13 +8,13 @@
   <code>[state]</code> input (<code>'auto'</code>, <code>'show'</code>,
   <code>'hide'</code>) controls visibility, while <code>[breakpoint]</code> sets
   the viewport size at which <code>'auto'</code> reveals the sidebar.
-  <code>setSize()</code> on the component instance lets you resize it at runtime.
+  Bind <code>[size]</code> to resize it at runtime.
 </p>
 
 <h2>Basic usage</h2>
 
 <div class="shell-demo">
-<bs-shell [state]="shellState" [breakpoint]="'md'" #shell (statechange)="onShellToggle($event)">
+<bs-shell [state]="shellState" [breakpoint]="'md'" [size]="size()" (stateChange)="onShellToggle($event)">
     <div *bsShellSidebar class="text-light">
         <bs-accordion>
             <bs-accordion-tab>
@@ -47,10 +47,10 @@
     </div>
 
     <div class="text-center">
-        <bs-button-group bsRadioGroup name="shellState" #group="bsRadioGroup" [(ngModel)]="shellState" class="mx-auto">
-            <bs-radio type="toggle_button" [value]="'auto'" [group]="group">Auto</bs-radio>
-            <bs-radio type="toggle_button" [value]="'show'" [group]="group">Show</bs-radio>
-            <bs-radio type="toggle_button" [value]="'hide'" [group]="group">Hide</bs-radio>
+        <bs-button-group bsRadioGroup name="shellState" [(ngModel)]="shellState" class="mx-auto">
+            <bs-radio type="toggle_button" [value]="'auto'">Auto</bs-radio>
+            <bs-radio type="toggle_button" [value]="'show'">Show</bs-radio>
+            <bs-radio type="toggle_button" [value]="'hide'">Hide</bs-radio>
         </bs-button-group>
         <br>
         <button [color]="colors.primary" (click)="setSize(20)">Change sidebar width</button>

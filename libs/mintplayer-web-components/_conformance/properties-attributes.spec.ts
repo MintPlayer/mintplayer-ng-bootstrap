@@ -88,9 +88,7 @@ const OVERRIDES: Record<string, Override> = {
   'mp-timepicker@step': { value: '30', reason: SLOW_STEP },
   'mp-datetime-picker@step': { value: '30', reason: SLOW_STEP },
   'mp-otp-input.value': { value: '482193', reason: 'the default numeric type strips non-digits' },
-  'mp-radio-group.value': { expect: null, reason: 'a value must name a child mp-radio; the bare group has none, so it is refused' },
   'mp-tab-control@tabs-position': { value: 'bottom', reason: 'enum read straight from the attribute: top | bottom' },
-  'mp-tab-control@border': { value: 'top', reason: 'enum read straight from the attribute: full | top | false' },
   'mp-otp-input@value': {
     value: '482193',
     restored: '',
@@ -98,8 +96,6 @@ const OVERRIDES: Record<string, Override> = {
   },
   'mp-checkbox@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
   'mp-toggle-button@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
-  'mp-radio@color': { value: 'success', reason: 'a validated Bootstrap colour; unknown names are refused' },
-  'mp-radio@type': { value: 'toggle_button', reason: 'enum: radio | toggle_button; unknown values are refused' },
   'mp-pagination@size': { value: 'large', reason: 'enum: small | medium | large; unknown values are refused' },
   'mp-timeline@orientation': { value: 'horizontal', reason: 'enum: vertical | horizontal; unknown values are refused' },
   'mp-timeline@align': { value: 'end', reason: 'enum: start | end | alternate | alternate-reverse; unknown values are refused' },

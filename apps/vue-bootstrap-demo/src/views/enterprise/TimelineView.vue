@@ -160,9 +160,9 @@ const DECLARATIVE_SOURCE = `<BsTimeline align="alternate">
         </div>
 
         <div class="control-toggles">
-          <BsCheckbox type="switch" v-model="reverse">Reverse</BsCheckbox>
-          <BsCheckbox type="switch" v-model="customMarkers">Custom markers</BsCheckbox>
-          <BsCheckbox type="switch" v-model="cardContent">Card content</BsCheckbox>
+          <BsCheckbox type="switch" v-model:checked="reverse">Reverse</BsCheckbox>
+          <BsCheckbox type="switch" v-model:checked="customMarkers">Custom markers</BsCheckbox>
+          <BsCheckbox type="switch" v-model:checked="cardContent">Card content</BsCheckbox>
         </div>
       </div>
 

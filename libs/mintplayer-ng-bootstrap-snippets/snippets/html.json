@@ -62,18 +62,12 @@
         "prefix": "bs-modal",
         "description": "Bootstrap Modal",
         "body": [
-            "<bs-modal [(isOpen)]=\"${1:isOpen}\">",
-            "\t<div *bsModal>",
-            "\t\t<div bsModalHeader>",
-            "\t\t\t<h5 class=\"modal-title\">${2:Modal title}</h5>",
-            "\t\t</div>",
-            "\t\t<div bsModalBody>",
-            "\t\t\t${3:Modal body}",
-            "\t\t</div>",
-            "\t\t<div bsModalFooter>",
-            "\t\t\t<button type=\"button\" bsModalClose class=\"btn btn-light bg-transparent\">Close</button>",
-            "\t\t</div>",
-            "\t</div>",
+            "<bs-modal [(open)]=\"${1:isOpen}\">",
+            "\t<span *bsModalHeader>${2:Modal title}</span>",
+            "\t${3:Modal body}",
+            "\t<ng-container *bsModalFooter>",
+            "\t\t<button type=\"button\" data-bs-dismiss=\"modal\" class=\"btn btn-light bg-transparent\">Close</button>",
+            "\t</ng-container>",
             "</bs-modal>"
         ]
     },
@@ -81,9 +75,8 @@
         "prefix": "bs-alert",
         "description": "Bootstrap Alert",
         "body": [
-            "<bs-alert [type]=\"${1:colors.danger}\" [(isVisible)]=\"${2:alertVisible}\">",
+            "<bs-alert color=\"${1:danger}\" [(visible)]=\"${2:alertVisible}\" dismissible>",
             "\t${3:Content}",
-            "\t<bs-alert-close></bs-alert-close>",
             "</bs-alert>"
         ]
     },
@@ -91,7 +84,7 @@
         "prefix": "bs-badge",
         "description": "Bootstrap Badge",
         "body": [
-            "<bs-badge [type]=\"${1:colors.warning}\">${2:Content}</bs-badge>"
+            "<bs-badge color=\"${1:warning}\">${2:Content}</bs-badge>"
         ]
     },
     "Breadcrumb": {
@@ -185,13 +178,13 @@
         "body": [
             "<bs-grid>",
             "\t<div bsRow>",
-            "\t\t<div [col]=\"8\" [sm]=\"6\">${1:Hello}</div>",
-            "\t\t<div [col]=\"4\" [sm]=\"6\">${2:World}</div>",
+            "\t\t<div [xxs]=\"8\" [sm]=\"6\">${1:Hello}</div>",
+            "\t\t<div [xxs]=\"4\" [sm]=\"6\">${2:World}</div>",
             "\t</div>",
             "\t<div bsRow>",
-            "\t\t<div [col]=\"6\" [sm]=\"4\">${3:This}</div>",
-            "\t\t<div [col]=\"3\" [sm]=\"4\">${4:Is}</div>",
-            "\t\t<div [col]=\"3\" [sm]=\"4\">${5:Me}</div>",
+            "\t\t<div [xxs]=\"6\" [sm]=\"4\">${3:This}</div>",
+            "\t\t<div [xxs]=\"3\" [sm]=\"4\">${4:Is}</div>",
+            "\t\t<div [xxs]=\"3\" [sm]=\"4\">${5:Me}</div>",
             "\t</div>",
             "</bs-grid>"
         ]
@@ -282,7 +275,7 @@
         "body": [
             "<bs-progress>",
             "\t<bs-progress-bar [minimum]=\"${1:0}\" [maximum]=\"${2:100}\" [value]=\"${3:15}\"></bs-progress-bar>",
-            "\t<bs-progress-bar [minimum]=\"${4:0}\" [maximum]=\"${5:100}\" [value]=\"${6:30}\" [color]=\"${7:colors.warning}\" [striped]=\"${8:true}\"></bs-progress-bar>",
+            "\t<bs-progress-bar [minimum]=\"${4:0}\" [maximum]=\"${5:100}\" [value]=\"${6:30}\" color=\"${7:warning}\" [striped]=\"${8:true}\"></bs-progress-bar>",
             "</bs-progress>"
         ]
     },
@@ -304,7 +297,7 @@
         "prefix": "bs-table",
         "description": "Bootstrap Table",
         "body": [
-            "<bs-table [isResponsive]=\"${1:true}\">",
+            "<bs-table [responsive]=\"${1:true}\">",
             "\t<thead>",
             "\t\t<tr>",
             "\t\t\t${2}",
