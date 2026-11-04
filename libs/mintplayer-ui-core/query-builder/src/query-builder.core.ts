@@ -115,7 +115,7 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
     dragging: false,
     drafts: {},
   }),
-  view: ({ inputs, state, id, label }) => ({
+  view: ({ inputs, state, id, hydrated, label }) => ({
     view: connectQueryBuilder({
       id,
       tree: treeOf(id, state.query),
@@ -134,6 +134,7 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
       dragging: state.dragging,
       drafts: state.drafts,
       label,
+      hydrated,
       onValue: (nodeId, value) => valueCommands.get(id)?.(nodeId, value),
     }),
   }),
