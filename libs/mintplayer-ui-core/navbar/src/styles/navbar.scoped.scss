@@ -76,10 +76,12 @@
 
 // Narrow, `.navbar-nav` zeroes the link padding; keep the links and the
 // dropdown triggers on the navbar's own padding token at every width. Each
-// front marks an item's consumer link a `.nav-link` of this scope (Angular
-// `BsNavbarLinkDirective`, the `navbar-item` extensions elsewhere), so
-// Bootstrap's nav and navbar parts style it.
-.nav-link {
+// front marks an item's consumer link a `.nav-link` (Angular
+// `BsNavbarLinkDirective`, the `navbar-item` extensions elsewhere) without
+// stamping it: Bootstrap's nav part reaches it through its `.navbar-nav`
+// anchor, and these rules through the stamped item.
+/*! @mps-global */
+.nav-item[data-mps=navbar] > .nav-link {
   padding-inline: var(--bs-navbar-nav-link-padding-x);
   white-space: nowrap;
 }
@@ -91,10 +93,12 @@
 }
 // The item's `active` / `disabled` inputs, on the link they wrap (Bootstrap's
 // own `.nav-link.active` covers the class a router integration writes).
-.nav-item.active > .nav-link {
+/*! @mps-global */
+.nav-item.active[data-mps=navbar] > .nav-link {
   color: var(--bs-navbar-active-color);
 }
-.nav-item.disabled > .nav-link {
+/*! @mps-global */
+.nav-item.disabled[data-mps=navbar] > .nav-link {
   color: var(--bs-navbar-disabled-color);
   pointer-events: none;
 }

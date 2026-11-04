@@ -2,10 +2,10 @@ import { Directive, ElementRef, Renderer2, inject } from '@angular/core';
 import { BsNavbarItemComponent } from './generated';
 
 /**
- * Makes a `bs-navbar-item`'s link a `.nav-link` of the navbar scope, so
- * Bootstrap's nav and navbar parts style it: the consumer writes a plain
+ * Makes a `bs-navbar-item`'s link a `.nav-link`, which Bootstrap's nav and
+ * navbar parts reach through the stamped `.navbar-nav` (consumer DOM is never stamped): the consumer writes a plain
  * `<a routerLink>`. (Inside a dropdown the entries are `bs-dropdown-item`s,
- * whose links stay plain.) It runs in the constructor, so the server HTML carries both.
+ * whose links stay plain.) It runs in the constructor, so the server HTML carries it.
  *
  * Angular selectors cannot say `bs-navbar-item > a` (a combinator parses as
  * `a`), so it matches every anchor and button of a template that imports it
@@ -18,6 +18,5 @@ export class BsNavbarLinkDirective {
     const link = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
     const renderer = inject(Renderer2);
     renderer.addClass(link, 'nav-link');
-    renderer.setAttribute(link, 'data-mps', 'navbar');
   }
 }

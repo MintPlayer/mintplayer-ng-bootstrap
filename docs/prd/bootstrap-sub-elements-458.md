@@ -504,7 +504,9 @@ weekday-name pipes go too, because the core localises through `Intl`.
 Related finding: the `markLinks` helpers in every front add `.nav-link` and the scope to a consumer's
 link, which means they stamp consumer DOM. With the anchored guard (`nav-link` is a sub class of `.nav` /
 `.navbar-nav`), the scope stamp is no longer needed for styling. M6 removes the stamp and keeps the class
-only.
+only. **Done:** `markLinks` lost its scope parameter in every front, the Angular link directives add the
+class only, and the navbar sheet's three link rules are `@mps-global`, anchored on the stamped
+`.nav-item[data-mps=navbar]`.
 
 ## 6. Milestones (one PR, one branch off `master`; commit per milestone, no per-milestone test runs)
 
