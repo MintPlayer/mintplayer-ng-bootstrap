@@ -1,6 +1,7 @@
 # PRD + plan — one mechanism for every component: sub-elements styled by the import alone, every front generated (issue #458, absorbs #455)
 
-Status: **M0–M8 done; M9 verification in PR #459** (CI green; see M9 for what ran and what remains).
+Status: **M0–M8 done; M9 verified in PR #459** (CI green; the local sweep's results and the one open
+item, the card visual baseline, are under M9).
 Decisions locked in the grill of 2026-11-03; spikes S1–S8 in §5.1. Base: `master` after #456 (the #452 squash,
 `54792702`).
 
@@ -785,9 +786,18 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
      added nothing, typing overwrote the list), and a same-group drop counted slots before removing the
      dragged row (one row too low). Both now have e2e coverage in the Angular demo, and the builder writes
      `hydratedAttr()` so those tests can wait for it.
-   - **What ran.** CI on every push (the affected builds, unit suites, demo e2e and axe gates) is green.
-     `compile-components-check` (not a CI step), the full ui-core suite and the query-builder e2e file
-     (Chromium and Firefox) ran locally and pass. React and Vue demo e2e cover only the axe scan, so behaviour there rests on
+   - **What ran.** CI on every push (the affected builds, unit suites, demo e2e and axe gates) is green,
+     last on `fb8d25e4`. The local sweep (2026-11-04, uncached) passed `compile-components-check` (not a
+     CI step), the five library builds and the five unit suites (ui-core 3090, web-components 2222,
+     and the three framework suites). Of the demo e2e only the Angular one finished: the owner stopped
+     the sweep during React's, so the React and Vue e2e and the three axe runs rest on CI.
+   - **Angular demo e2e locally: 622 passed, 6 failed.** Five are environmental: four in Firefox during
+     a run where Firefox logged an abnormal shutdown (accordion nesting, two datatable specs, a
+     query-builder context teardown timeout), plus the tab-control roving-focus spec in Chromium. All of
+     them pass in CI. The sixth is real and only visible locally: `card.visual.spec.ts` (visual
+     baselines skip on Linux, see `VISUAL-BASELINES.md`) finds the card demo page 87px shorter than its
+     baseline (10135px, was 10222px). **Open:** decide whether the card conversion (M4) changed the demo
+     on purpose, and refresh the baseline, or fix the regression. React and Vue demo e2e cover only the axe scan, so behaviour there rests on
      the core specs plus the Angular e2e.
 
 ## 7. Risks
