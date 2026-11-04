@@ -48,6 +48,14 @@ describe('connectSparkline', () => {
     expect(connectSparkline([0, 10], { showLastDot: false }).dot).toBeNull();
   });
 
+  // #461: an unset Angular numeric input used to arrive as NaN and draw "M 3 NaN L 97 NaN".
+  it('scales automatically when a bound is NaN', () => {
+    const view = connectSparkline([1474276010.667, 1417019392], { yMin: NaN, yMax: NaN });
+    expect(view.line?.['d'] ?? '').not.toContain('NaN');
+    expect(view.dot?.['cy']).not.toBe('NaN');
+    expect(view).toEqual(connectSparkline([1474276010.667, 1417019392], {}));
+  });
+
   it('centres a flat series instead of dividing by zero', () => {
     const view = connectSparkline([5, 5], {});
     expect(view.line?.['d'] ?? '').not.toContain('NaN');

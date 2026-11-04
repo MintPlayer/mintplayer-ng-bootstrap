@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import { BsIdService } from '@mintplayer/ng-bootstrap/a11y';
-import { coreRuntime, type ComponentCore, type CoreBag, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
+import { coreRuntime, scopedHost, type ComponentCore, type CoreBag, type CoreContext, type ViewArgs } from '@mintplayer/ui-core/component';
 import { runPrefetch } from '@mintplayer/ui-core/transfer-state';
 import { useHostProps } from './host-props';
 import { MACHINE_SSR_OPTIONS } from './ssr';
@@ -48,6 +48,12 @@ export interface UseCoreOptions<I, P> {
   readonly outputs?: Readonly<Record<string, { emit(detail: never): void }>>;
   /** The host element's bag, where the template root is the host (`mp-host`). Default: `core.host`. */
   readonly hostBag?: (props: P) => CoreBag | null | undefined;
+  /**
+   * The group's scope, stamped as `data-mps` on the host bag `core.host` writes where the template
+   * root is NOT the host (`bs-progress-bar`'s `.progress-bar-host`, #460). Unlike `hostBag`, it does
+   * not make the host the core's root.
+   */
+  readonly hostScope?: string;
   /** Two-way inputs (`model()`), by name; written back when the core changes the state of the same name. */
   readonly models?: Readonly<Record<string, { set(value: never): void }>>;
   /**
@@ -143,7 +149,7 @@ export function useCore<I, S, P, E, C, PC, M>(core: ComponentCore<I, S, P, E, C,
   const props = computed(() => core.view(args()));
   const provided = computed(() => core.provide?.(args()) as PC);
 
-  const hostBag = options.hostBag ?? core.host?.bind(core);
+  const hostBag = options.hostBag ?? scopedHost(core.host?.bind(core), options.hostScope);
   if (hostBag) useHostProps(() => hostBag(props()), options.element);
 
   const runtime = coreRuntime(core, {

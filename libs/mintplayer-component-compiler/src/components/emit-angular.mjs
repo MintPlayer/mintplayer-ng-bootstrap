@@ -16,11 +16,13 @@ export function inputLine(model, input) {
   const primary = input.kind !== 'boolean' && input.kind !== 'number' && !input.model && input.alias !== undefined
     && model.names?.selector === `[${input.alias}]`;
   // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
+  // An unset value (`undefined`, `null`, a bare attribute's '') means "the default", never NaN —
+  // Angular's numberAttribute turns all three into NaN, which a core's `??` lets through (#461).
   const transform =
     input.kind === 'boolean'
       ? 'booleanAttribute'
       : input.kind === 'number'
-        ? `(v: unknown) => numberAttribute(v) as ${type}`
+        ? `(v: unknown) => (v == null || v === '' ? ${value} : numberAttribute(v)) as ${type}`
         : primary
           ? `(v: ${type} | '') => (v === '' ? ${value} : v)`
           : null;
@@ -196,9 +198,12 @@ export function emitAngularComponent(model, { generator, runtime = '@mintplayer/
   if (model.host) {
     const bag = `props.${model.hostExpression}`;
     options.push(`hostBag: (props) => ${scopedHostBag(model, bag)}`);
+  } else if (model.style) {
+    // The root is the host's first child: the core's own `host` bag still carries the scope (#460).
+    options.push(`hostScope: '${model.style.scope}'`);
   }
   const models = model.inputs.filter((i) => i.model);
-  if (models.length) options.push(`models: { ${models.map((i) => `${i.name}: this.${i.name}`).join(', ')} }`);
+  if (models.length) options.push(`models: {${models.map((i) => `${i.name}: this.${i.name}`).join(', ')} }`);
   lines.push(`  readonly #core = useCore(${model.core}, { ${options.join(', ')} });`);
   if (provides) lines.push(`  /** What this component hands its content. */`, `  readonly provided = this.#core.provided;`);
   if (model.propNames.length) lines.push(`  /** The template's props. */`, `  protected readonly props = this.#core.props;`);

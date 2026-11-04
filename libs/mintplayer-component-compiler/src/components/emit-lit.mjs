@@ -80,6 +80,9 @@ export function emitLitComponent(model, { generator, runtime, scopedStyles, exte
   if (model.host) {
     const bag = `props.${model.hostExpression}`;
     options.push(`hostBag: (props) => ${scopedHostBag(model, bag)}`);
+  } else if (model.style) {
+    // The root is the host's first child: the core's own `host` bag still carries the scope (#460).
+    options.push(`hostScope: '${model.style.scope}'`);
   }
   const models = model.inputs.filter((i) => i.model);
   if (models.length) options.push(`models: [${models.map((i) => `'${i.name}'`).join(', ')}]`);
