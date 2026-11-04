@@ -31,7 +31,7 @@
     (layoutchange)="liveLayout.set($event)"
     class="dock-demo__surface"
     >
-    <ng-template bsDockManagerPane let-pane="pane">
+    <ng-container *bsDockManagerPane="let pane">
       @switch (pane) {
         @case ('panel-1') {
           <div class="p-3">
@@ -70,7 +70,7 @@
           </div>
         }
       }
-    </ng-template>
+    </ng-container>
   </bs-dock-manager>
 
   <div class="dock-demo__actions">

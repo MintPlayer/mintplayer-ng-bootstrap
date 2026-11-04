@@ -74,7 +74,12 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `moreTemplate` slot (`open` argument); `overflowChange` emits the items.
   - **Playlist toggler:** `[(state)]` → `[(open)]`, `ariaLabel` → `label`; disabled until hydrated.
   - **Angular slot templates:** the first slot argument is now also the template's `$implicit`, so
-    the structural form `*bsXTemplate="let item"` binds it; named arguments work as before.
+    the structural form `*bsXTemplate="let item"` binds it; named arguments work as before. The docs and
+    demos use the structural form throughout (`<ng-container *bsModalFooter>`, `*bsDatatableRow="let row"`).
+  - **Dropdown (Angular):** `sameWidth` and `hasPopup` are aliased `bsDropdownSameWidth` /
+    `bsDropdownHasPopup`, so they are microsyntax keys: `*bsDropdown="'bottom-end'; sameWidth: true"`.
+  - **Overlay directives (Vue):** the trigger goes in an explicit `<template #default="{ props }">`
+    next to `<template #content>`; `v-slot` on the component itself cannot be combined with a named slot.
   - **Projected Bootstrap sub-classes are styled again.** A part's sub class (`card-title`,
     `table-active`, `modal-title`, `form-label`, …) now matches inside a stamped root of its own partial,
     so `<h5 class="card-title">` inside `bs-card-body` needs no `…Page` install. MintPlayer.Spark#557's
@@ -324,7 +329,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
       The `expandedchange` output still reports only user toggles.
     - Item nesting inside a dropdown comes from the navbar's own context, not `BS_DROPDOWN_MENU_CONTEXT`.
   - **Angular:**
-    - `bs-navbar-brand` is replaced by the `[bsNavbarBrand]` directive on an `<ng-template>`.
+    - `bs-navbar-brand` is replaced by the structural `*bsNavbarBrand` directive.
     - `bs-navbar-dropdown` takes a `label` input; `[bsNavbarDropdownLabel]` still overrides it with markup.
     - `[bsNavbarContent]` reserves `var(--bs-navbar-content-offset, 3.5rem)` on the server and with JS off, then
       follows the bar's measured height.
@@ -346,7 +351,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     - `options` takes `{ value, label, disabled? }` items and `{ label, options }` groups (rendered as
       `<optgroup>`). Without `options`, `<option>` / `<optgroup>` children are rendered inside the select.
     - Rich options (customizable select, `appearance: base-select`) come from an `option` slot instead of an
-      `optionRenderer` that returned an HTML string: Angular `<ng-template bsSelectOption let-option="option">`,
+      `optionRenderer` that returned an HTML string: Angular `<ng-container *bsSelectOption="let option">`,
       React `option={({ option }) => …}`, Vue `#option="{ option }"`, Lit `optionRenderer` returning a template.
       Only where the engine supports it; elsewhere the option is its label.
     - A consumer's `aria-*`, `id` and `tabindex` reach the `<select>` in React and Vue, whose props are typed
@@ -561,7 +566,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   `<mint-dock-manager>` is replaced by `<mp-dock-manager>` (Lit) and the generated `BsDockManager`
   components.
   - **Pane content** comes from one `pane` slot, called with the pane's name, in place of
-    `<bs-dock-pane name>` / `slot="<pane>"` children. Angular: `<ng-template bsDockManagerPane let-pane="pane">`
+    `<bs-dock-pane name>` / `slot="<pane>"` children. Angular: `<ng-container *bsDockManagerPane="let pane">`
     (`BsDockPaneComponent` is gone). React: `pane={({ pane }) => …}`. Vue: `<template #pane="{ pane }">`.
     Lit: `paneRenderer` or `slot="pane"` children. Each pane renders once into a core-owned host that the
     dock moves between stacks, so its state survives every drag, drop and tear-off. A pane removed from
@@ -603,7 +608,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     (one directive per item), React `iconTemplate={<svg …/>}`, Vue `<template #iconTemplate>`, Lit
     `slot="iconTemplate"`. The `.ribbon-icon-*` utility classes are gone; the icon is sized from the size
     the item renders at.
-  - **Tell me:** `slot="tell-me"` is replaced by the `tellMe` slot: Angular `<ng-template bsRibbonTellMe>`,
+  - **Tell me:** `slot="tell-me"` is replaced by the `tellMe` slot: Angular `<ng-container *bsRibbonTellMe>`,
     React `tellMe={…}`, Vue `<template #tellMe>`.
   - The ribbon types come from `@mintplayer/ui-core/ribbon` and every front re-exports them.
 - **Scheduler is generated from one source in every front, its grid server-rendered (issue #437).** It is
@@ -737,7 +742,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     `format(row, rowIndex)` gives a cell's text. `cellRenderer`, `headerRenderer` and `filterRenderer` (functions
     returning a DOM `Node`) are gone.
   - **Templates are slots:** `header {column}`, `cell {row, column, rowIndex}`, `row {row, rowIndex, ctx}` (all of
-    a row's data cells) and `filter {column, ctx}`. Angular `<ng-template bsDatatableRow let-row="row">` and so on,
+    a row's data cells) and `filter {column, ctx}`. Angular `<ng-container *bsDatatableRow="let row">` and so on,
     React `cell={({ row, column }) => …}`, Vue `#cell="{ row, column }"`, Lit `cellRenderer` / `headerRenderer` /
     `rowRenderer` / `filterRenderer` taking the slot's arguments. A slot renders every column; return
     `cellText(row, column, rowIndex)` for the columns you leave alone.
@@ -766,7 +771,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
     **Migration**: walk `children` instead of reading `rows`.
   - **Custom value editors are a slot.** Mark a field `editor: 'custom'` in the schema and the condition's value
     renders through the `editor` slot with an `EditorContext` (`field`, `operator`, `value`, `disabled`,
-    `onChange`). Angular `<ng-template bsQueryBuilderEditor let-ctx="ctx">`, React `editor={({ ctx }) => …}`,
+    `onChange`). Angular `<ng-container *bsQueryBuilderEditor="let ctx">`, React `editor={({ ctx }) => …}`,
     Vue `#editor="{ ctx }"`. Switch on `ctx.field.name` for several fields.
   - **Removed:** `editorRegistry`, `EditorRegistry`, `EditorFactory`, `EditorHandle`, the Angular
     `*bsQueryBuilderEditor="'field'"` structural directive, `operatorOverrides` on the element, the Lit
@@ -1261,7 +1266,7 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
-- **`@mintplayer/ng-bootstrap/treeview`**: `BsTreeviewItemComponent` removed; content-projected `<bs-treeview-item>` API replaced by data-driven `[items]: TreeNode[]` input. Custom per-node rendering is now provided via the new `*bsTreeviewNode` structural directive (with `$implicit: TreeNode` context). **Migration**: collect your treeview content into a nested `TreeNode` array (`{ id, label, iconKey?, children?, meta? }`) and bind `<bs-treeview [items]="treeNodes()">` with an inline `<ng-template bsTreeviewNode let-node>` rendering arbitrary content (icons, labels, badges). Two-way bindings `[(expandedIds)]` and `[(selectedIds)]` control state; `(nodeSelect)` / `(nodeExpand)` / `(nodeCollapse)` events replace per-item click handlers.
+- **`@mintplayer/ng-bootstrap/treeview`**: `BsTreeviewItemComponent` removed; content-projected `<bs-treeview-item>` API replaced by data-driven `[items]: TreeNode[]` input. Custom per-node rendering is now provided via the new `*bsTreeviewNode` structural directive (with `$implicit: TreeNode` context). **Migration**: collect your treeview content into a nested `TreeNode` array (`{ id, label, iconKey?, children?, meta? }`) and bind `<bs-treeview [items]="treeNodes()">` with an inline `<ng-container *bsTreeviewNode="let node">` rendering arbitrary content (icons, labels, badges). Two-way bindings `[(expandedIds)]` and `[(selectedIds)]` control state; `(nodeSelect)` / `(nodeExpand)` / `(nodeCollapse)` events replace per-item click handlers.
 - **`@mintplayer/ng-bootstrap/datatable`**: column-projection contract changed. `*bsDatatableColumn` (header template + `bsDatatableColumnSortable`) and `*bsRowTemplate` (per-row `<td>` template) are preserved and now bridge into the new Lit web component (`<mp-datatable>`) via Angular `EmbeddedViewRef`s — the same pattern the query-builder uses to host Angular editors inside its Lit host. Programmatic `[columns]: DatatableColumnDef[]` with `cellRenderer` callbacks is also supported. **Migration**: existing template-directive consumers work unchanged; `DatatableSortBase`, `ColumnDef`, and `SyntheticColumn` are no longer exported (use the new `DatatableColumnDef<T>` type), and `computeNextSort` is exposed as a pure helper. The CDK virtual scroll implementation is replaced by a built-in scroll-position-driven virtualizer (no `@angular/cdk` peer dep); behaviour and `[virtualScroll]` / `[itemSize]` inputs are preserved.
 
 - **`@mintplayer/ng-bootstrap/navbar`**: `BsNavbarComponent` has been modernized to align with Bootstrap 5.3's `data-bs-theme` pattern.

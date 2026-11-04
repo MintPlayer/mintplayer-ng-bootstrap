@@ -227,8 +227,9 @@ before its text; autohide (default 5 s) pauses while the pointer or focus is on 
 
 **Overlay directives (M6, tooltip and popover).** A manifest directive with `overlay: '<panel component>'`
 renders that panel into a body host while its core's `props.overlay` is non-null; `props.anchor` is the
-trigger's bag. Per front: Angular `<ng-template bsTooltip="top">…</ng-template>` inside the trigger (the
-template is the content; input `alias` gives the structural microsyntax), React
+trigger's bag. Per front: Angular `<ng-container *bsTooltip="'top'">…</ng-container>` inside the trigger (the
+template is the content; an input `alias` of `bs<Directive><Input>` makes it a microsyntax key, so
+`*bsDropdown="'bottom-end'; sameWidth: true"`), React
 `const [props, node] = useBsTooltip({ position, content })`, Vue the renderless
 `<BsTooltip v-slot="{ props }">` with a `#content` slot (its `$attrs` join the trigger's props), Lit
 `${bsTooltip({ position }, () => content)}`. Placement is `ui-core/overlay` `placeBeside`: the requested

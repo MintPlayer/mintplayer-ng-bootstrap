@@ -38,6 +38,10 @@ export class PriorityNavComponent {
   readonly actions = toItems(['Edit', 'Duplicate', 'Delete']);
   readonly lastAction = signal<string | null>(null);
 
+  protected run(item: PriorityNavItem) {
+    this.lastAction.set(item.label ?? String(item.key));
+  }
+
   // Labels whose fractional widths made a shrink-wrapped nav flip every frame in Firefox (#428).
   readonly headerActions = toItems(['Refresh', 'Filter', 'Settings']);
   readonly barActions = toItems(['Back', 'Edit', 'Delete']);

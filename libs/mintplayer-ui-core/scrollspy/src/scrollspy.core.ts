@@ -133,21 +133,23 @@ function scrollableAncestor(el: HTMLElement | null): HTMLElement | null {
 const sameSections = (a: readonly ScrollspySection[], b: readonly ScrollspySection[]) =>
   a.length === b.length && a.every((section, i) => section.text === b[i].text && section.level === b[i].level);
 
-/** Per attached host: rebind to the scroll target the current inputs name. */
-const rebinders = new WeakMap<HTMLElement, () => void>();
+/** Per attached host: re-read the scroll target after an input change. */
+const refreshers = new WeakMap<HTMLElement, () => void>();
 
 export const scrollspyCore = defineCore<ScrollspyInputs, ScrollspyState, { view: ScrollspyView }>({
   state: () => ({ sections: [], active: -1, contained: false }),
   view: ({ inputs, state, label }) => ({ view: connectScrollspy(inputs, state, label) }),
   attach: (api) => {
     const host = api.host;
-    const win = host.ownerDocument.defaultView ?? window;
+    const doc = host.ownerDocument;
+    const win = doc.defaultView ?? window;
     let elements: HTMLElement[] = [];
-    let target: ScrollTarget = win;
 
+    // Resolved on every use, never cached: a scrollspy in an overlay attaches before its
+    // container is scrollable (the modal body only scrolls once the modal is in the body host).
     const resolveTarget = (): ScrollTarget => api.inputs().scrollContainer ?? scrollableAncestor(host) ?? win;
     const isElement = (t: ScrollTarget): t is HTMLElement => t !== win;
-    const triggerY = () => (isElement(target) ? target.getBoundingClientRect().top : api.inputs().offset) + 1;
+    const triggerY = (target: ScrollTarget) => (isElement(target) ? target.getBoundingClientRect().top : api.inputs().offset) + 1;
 
     // The list scrolls itself only (never scrollIntoView, which scrolls the page too and,
     // run from the page's own scroll handler, pulled the window back).
@@ -163,8 +165,9 @@ export const scrollspyCore = defineCore<ScrollspyInputs, ScrollspyState, { view:
     };
 
     const update = () => {
+      const target = resolveTarget();
       const sections = elements.map((el) => ({ text: el.textContent?.trim() ?? '', level: headingLevel(el.tagName) }));
-      const active = activeSectionIndex(elements.map((el) => el.getBoundingClientRect().top), triggerY());
+      const active = activeSectionIndex(elements.map((el) => el.getBoundingClientRect().top), triggerY(target));
       const state = api.state();
       const contained = isElement(target);
       if (active === state.active && contained === state.contained && sameSections(sections, state.sections)) return;
@@ -179,18 +182,25 @@ export const scrollspyCore = defineCore<ScrollspyInputs, ScrollspyState, { view:
       update();
     };
 
-    const onScroll = () => update();
-    const listen = () => {
-      target = resolveTarget();
-      target.addEventListener('scroll', onScroll, { passive: true });
+    // Scroll does not bubble, but every element's scroll reaches the document in the capture
+    // phase: react to the page's or the current target's.
+    const onScroll = (event: Event) => {
+      const target = resolveTarget();
+      if (event.target === (isElement(target) ? target : doc)) update();
     };
-    const unlisten = () => target.removeEventListener('scroll', onScroll);
+    // An enclosing overlay sliding in moves the sections without a scroll: measure again
+    // when a transition or animation on an ancestor ends.
+    const onSettle = (event: Event) => {
+      if (event.target instanceof Node && event.target.contains(host)) update();
+    };
+    const settleOptions = { capture: true, passive: true };
 
     const onClick = (event: Event) => {
       const button = (event.target as Element | null)?.closest?.(`[${SCROLLSPY_INDEX_ATTR}]`);
       if (!button || !host.contains(button)) return;
       const section = elements[Number(button.getAttribute(SCROLLSPY_INDEX_ATTR))];
       if (!section) return;
+      const target = resolveTarget();
       const top = section.getBoundingClientRect().top;
       if (isElement(target)) {
         target.scrollTo({ top: sectionScrollTop(top, target.getBoundingClientRect().top, target.scrollTop), behavior: 'smooth' });
@@ -204,22 +214,25 @@ export const scrollspyCore = defineCore<ScrollspyInputs, ScrollspyState, { view:
     observer.observe(host, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: [SCROLLSPY_SECTION_ATTR] });
 
     host.addEventListener('click', onClick);
-    listen();
+    doc.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    doc.addEventListener('transitionend', onSettle, settleOptions);
+    doc.addEventListener('animationend', onSettle, settleOptions);
     scan();
-    rebinders.set(host, () => {
-      unlisten();
-      listen();
-      update();
-    });
+    // Once more after the first layout: an overlay's container is scrollable by then.
+    const frame = win.requestAnimationFrame(update);
+    refreshers.set(host, update);
     return () => {
-      rebinders.delete(host);
+      win.cancelAnimationFrame(frame);
+      refreshers.delete(host);
       observer.disconnect();
       host.removeEventListener('click', onClick);
-      unlisten();
+      doc.removeEventListener('scroll', onScroll, { capture: true });
+      doc.removeEventListener('transitionend', onSettle, settleOptions);
+      doc.removeEventListener('animationend', onSettle, settleOptions);
     };
   },
   inputsChanged: (api, prev) => {
     const next = api.inputs();
-    if (next.scrollContainer !== prev.scrollContainer || next.offset !== prev.offset) rebinders.get(api.host)?.();
+    if (next.scrollContainer !== prev.scrollContainer || next.offset !== prev.offset) refreshers.get(api.host)?.();
   },
 });

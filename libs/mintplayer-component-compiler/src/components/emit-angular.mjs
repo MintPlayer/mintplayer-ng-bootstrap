@@ -9,16 +9,27 @@ const angularOutput = (output) => output.lower;
 
 export function inputLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;
+  const value = input.default ?? 'undefined';
+  // The input aliased to the directive's own selector is its primary: a bare `*bsDropdown` (or
+  // `<span bsDropdown>`) binds the empty string, which means "the default".
+  const primary = input.kind !== 'boolean' && input.kind !== 'number' && !input.model && input.alias !== undefined
+    && model.names?.selector === `[${input.alias}]`;
   // A numeric input may be a literal union (`0 | 1 | … | 6`): the attribute's number is cast to it.
   const transform =
-    input.kind === 'boolean' ? 'booleanAttribute' : input.kind === 'number' ? `(v: unknown) => numberAttribute(v) as ${type}` : null;
-  const value = input.default ?? 'undefined';
+    input.kind === 'boolean'
+      ? 'booleanAttribute'
+      : input.kind === 'number'
+        ? `(v: unknown) => numberAttribute(v) as ${type}`
+        : primary
+          ? `(v: ${type} | '') => (v === '' ? ${value} : v)`
+          : null;
+  const writeType = primary ? `${type} | ''` : 'unknown';
   const alias = input.alias ? `alias: '${input.alias}'` : null;
   const opts = (...entries) => (entries.filter(Boolean).length ? `, { ${entries.filter(Boolean).join(', ')} }` : '');
   const call = input.model
     ? `model<${type}>(${value}${opts(alias)})`
     : transform
-    ? `input<${type}, unknown>(${value}${opts(`transform: ${transform}`, alias)})`
+    ? `input<${type}, ${writeType}>(${value}${opts(`transform: ${transform}`, alias)})`
     : input.default !== undefined || alias
       ? `input<${type}>(${value}${opts(alias)})`
       : `input<${type}>()`;

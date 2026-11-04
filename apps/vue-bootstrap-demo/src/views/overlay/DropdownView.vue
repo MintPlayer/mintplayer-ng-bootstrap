@@ -8,8 +8,10 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 const chosen = ref<string | null>(null);
 const choose = ({ value }: DropdownSelectEventDetail) => (chosen.value = String(value));
 
-const SOURCE = `<BsDropdown v-slot="{ props }">
-  <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
+const SOURCE = `<BsDropdown>
+  <template #default="{ props }">
+    <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
+  </template>
   <template #content>
     <BsDropdownMenu @itemselect="({ value }) => (chosen = value)">
       <BsDropdownHeader>File</BsDropdownHeader>
@@ -37,8 +39,10 @@ const SOURCE = `<BsDropdown v-slot="{ props }">
     <section>
       <h2>Menu</h2>
       <div class="d-flex gap-2 overflow-hidden">
-        <BsDropdown v-slot="{ props }">
-          <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
+        <BsDropdown>
+          <template #default="{ props }">
+            <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
+          </template>
           <template #content>
             <BsDropdownMenu @itemselect="choose">
               <BsDropdownHeader>File</BsDropdownHeader>
@@ -52,8 +56,10 @@ const SOURCE = `<BsDropdown v-slot="{ props }">
             </BsDropdownMenu>
           </template>
         </BsDropdown>
-        <BsDropdown placement="bottom-end" same-width v-slot="{ props }">
-          <button type="button" class="btn btn-secondary" v-bind="props">Aligned to the end</button>
+        <BsDropdown placement="bottom-end" same-width>
+          <template #default="{ props }">
+            <button type="button" class="btn btn-secondary" v-bind="props">Aligned to the end</button>
+          </template>
           <template #content>
             <BsDropdownMenu>
               <BsDropdownItem>One</BsDropdownItem>
@@ -71,8 +77,10 @@ const SOURCE = `<BsDropdown v-slot="{ props }">
       <p class="text-body-secondary">
         With <code>has-popup="dialog"</code> the panel holds content that is not a menu and takes focus itself.
       </p>
-      <BsDropdown has-popup="dialog" v-slot="{ props }">
-        <button type="button" class="btn btn-primary" v-bind="props">Pick a date</button>
+      <BsDropdown has-popup="dialog">
+        <template #default="{ props }">
+          <button type="button" class="btn btn-primary" v-bind="props">Pick a date</button>
+        </template>
         <template #content><BsCalendar /></template>
       </BsDropdown>
     </section>

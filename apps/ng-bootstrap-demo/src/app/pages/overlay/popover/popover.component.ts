@@ -19,9 +19,9 @@ export class PopoverComponent {
   protected readonly snippetBasicHtml = dedent`
     <button [color]="colors.primary">
       Click me
-      <ng-template bsPopover="top" bsPopoverTitle="Popover title">
+      <ng-container *bsPopover="'top'; title: 'Popover title'">
         Place any content here — text, links, embedded components.
-      </ng-template>
+      </ng-container>
     </button>
   `;
 

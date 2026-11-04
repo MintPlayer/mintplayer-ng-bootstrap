@@ -21,17 +21,17 @@
         <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Left
-                <ng-template bsPopover="start" bsPopoverTitle="Popover title">
+                <ng-container *bsPopover="'start'; title: 'Popover title'">
                     And here's some amazing content. It's very engaging. Right?
-                </ng-template>
+                </ng-container>
             </button>
         </div>
         <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Top
-                <ng-template bsPopover="top" bsPopoverTitle="Popover title">
+                <ng-container *bsPopover="'top'; title: 'Popover title'">
                     And here's some amazing content. It's very engaging. Right?
-                </ng-template>
+                </ng-container>
             </button>
         </div>
     </div>
@@ -39,17 +39,17 @@
         <div [md]="3" class="offset-md-3 position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Bottom
-                <ng-template bsPopover="bottom" bsPopoverTitle="Popover title">
+                <ng-container *bsPopover="'bottom'; title: 'Popover title'">
                     And here's some amazing content. It's very engaging. Right?
-                </ng-template>
+                </ng-container>
             </button>
         </div>
         <div [md]="3" class="position-relative overflow-hidden">
             <button [color]="colors.primary">
                 Right
-                <ng-template bsPopover="end" bsPopoverTitle="Popover title">
+                <ng-container *bsPopover="'end'; title: 'Popover title'">
                     And here's some amazing content. It's very engaging. Right?
-                </ng-template>
+                </ng-container>
             </button>
         </div>
     </div>

@@ -42,7 +42,7 @@
 <div class="p-2 demo-box actions-demo">
     <bs-priority-nav [collapseAt]="'sm'" [items]="actions">
         <button *bsPriorityNavItemTemplate="let item" type="button" class="btn btn-sm btn-outline-secondary"
-                (click)="lastAction.set(item.label)">{{ item.label }}</button>
+                (click)="run(item)">{{ item.label }}</button>
     </bs-priority-nav>
 </div>
 @if (lastAction(); as action) {

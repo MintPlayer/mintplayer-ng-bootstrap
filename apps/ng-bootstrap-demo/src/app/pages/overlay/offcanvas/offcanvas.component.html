@@ -33,13 +33,13 @@
                             <div class="mt-3">
                                 <button [color]="colors.secondary" type="button">
                                     Dropdown button
-                                    <ng-template bsDropdown>
+                                    <ng-container *bsDropdown>
                                         <bs-dropdown-menu>
                                             <bs-dropdown-item>Action</bs-dropdown-item>
                                             <bs-dropdown-item>Another action</bs-dropdown-item>
                                             <bs-dropdown-item>Something else here</bs-dropdown-item>
                                         </bs-dropdown-menu>
-                                    </ng-template>
+                                    </ng-container>
                                 </button>
                             </div>
                 </bs-offcanvas>

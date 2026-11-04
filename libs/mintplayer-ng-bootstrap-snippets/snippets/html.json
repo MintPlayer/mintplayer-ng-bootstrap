@@ -65,9 +65,9 @@
             "<bs-modal [(open)]=\"${1:isOpen}\">",
             "\t<span *bsModalHeader>${2:Modal title}</span>",
             "\t${3:Modal body}",
-            "\t<ng-template bsModalFooter>",
+            "\t<ng-container *bsModalFooter>",
             "\t\t<button type=\"button\" data-bs-dismiss=\"modal\" class=\"btn btn-light bg-transparent\">Close</button>",
-            "\t</ng-template>",
+            "\t</ng-container>",
             "</bs-modal>"
         ]
     },

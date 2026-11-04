@@ -45,7 +45,7 @@
   >
     <!-- The value editor of every field with editor: 'custom' (here orderDate):
          a vanilla <input type="date"> through the bsQueryBuilderEditor template. -->
-    <ng-template bsQueryBuilderEditor let-ctx="ctx">
+    <ng-container *bsQueryBuilderEditor="let ctx">
       <input
         type="date"
         class="form-control form-control-sm custom-date-editor"
@@ -54,7 +54,7 @@
         [disabled]="ctx.disabled"
         (input)="ctx.onChange(($any($event.target).value || null))"
       />
-    </ng-template>
+    </ng-container>
   </bs-query-builder>
 
   <div class="d-flex gap-2 align-items-center my-3">
@@ -82,11 +82,11 @@
     [columns]="datatableColumns()"
     [resizableColumns]="false"
   >
-    <ng-template bsDatatableRow let-row="row">
+    <ng-container *bsDatatableRow="let row">
       @for (col of datatableColumns(); track col.name) {
         <td class="text-nowrap">{{ formatCell($any(row), col.name) }}</td>
       }
-    </ng-template>
+    </ng-container>
   </bs-datatable>
 
   <h2>JSON wire format</h2>

@@ -20,7 +20,7 @@
 </bs-form>
 
 <bs-toaster [queue]="toasts">
-    <ng-template bsToasterToast let-toast="toast">
+    <ng-container *bsToasterToast="let toast">
         <bs-toast [visible]="toast.visible" (visibleChange)="toasts.close(toast.id)">
             <bs-toast-header>
                 <svg class="rounded me-2" width="20" height="20" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" focusable="false" aria-hidden="true">
@@ -29,9 +29,9 @@
                 <strong class="me-auto">Bootstrap</strong>
                 <small class="text-body-secondary">just now</small>
             </bs-toast-header>
-            <bs-toast-body>{{ toast.data.message }}</bs-toast-body>
+            <bs-toast-body>{{ toast.data }}</bs-toast-body>
         </bs-toast>
-    </ng-template>
+    </ng-container>
 </bs-toaster>
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>

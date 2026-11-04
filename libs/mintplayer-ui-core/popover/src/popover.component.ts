@@ -4,10 +4,9 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  * The popover's manifest (#458 M6): an overlay directive on the trigger and the
  * non-modal dialog it renders into a body host.
  *
- * - Angular: `<button>Info<ng-template bsPopover="top" bsPopoverTitle="Title">Body</ng-template></button>`
- *   (or `<span *bsPopover="'top'; title: 'Title'">Body</span>`)
+ * - Angular: `<button>Info<ng-container *bsPopover="'top'; title: 'Title'">Body</ng-container></button>`
  * - React: `const [props, popover] = useBsPopover({ position: 'top', title: 'Title', content: 'Body' })`
- * - Vue: `<BsPopover position="top" title="Title" v-slot="{ props }"><button v-bind="props">Info</button><template #content>Body</template></BsPopover>`
+ * - Vue: `<BsPopover position="top" title="Title"><template #default="{ props }"><button v-bind="props">Info</button></template><template #content>Body</template></BsPopover>`
  * - Lit: `html\`<button ${bsPopover({ position: 'top', title: 'Title' }, () => 'Body')}>Info</button>\``
  */
 export default {

@@ -5,8 +5,10 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 
 const SIDES: readonly AnchorSide[] = ['start', 'top', 'bottom', 'end'];
 
-const SOURCE = `<BsPopover position="top" title="Popover title" v-slot="{ props }">
-  <button type="button" class="btn btn-primary" v-bind="props">Click me</button>
+const SOURCE = `<BsPopover position="top" title="Popover title">
+  <template #default="{ props }">
+    <button type="button" class="btn btn-primary" v-bind="props">Click me</button>
+  </template>
   <template #content>Any content here.</template>
 </BsPopover>`;
 </script>
@@ -24,8 +26,10 @@ const SOURCE = `<BsPopover position="top" title="Popover title" v-slot="{ props 
     <section>
       <h2>Basic usage</h2>
       <div class="d-flex flex-wrap gap-2 overflow-hidden">
-        <BsPopover v-for="side in SIDES" :key="side" :position="side" title="Popover title" v-slot="{ props }">
-          <button type="button" class="btn btn-primary" v-bind="props">{{ side }}</button>
+        <BsPopover v-for="side in SIDES" :key="side" :position="side" title="Popover title">
+          <template #default="{ props }">
+            <button type="button" class="btn btn-primary" v-bind="props">{{ side }}</button>
+          </template>
           <template #content>And here's some amazing content. It's very engaging. Right?</template>
         </BsPopover>
       </div>

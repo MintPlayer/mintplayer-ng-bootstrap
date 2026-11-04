@@ -1,8 +1,8 @@
 <bs-modal [(open)]="isOpen">
   <span *bsModalHeader>{{ title() }}</span>
   {{ message() }}
-  <ng-template bsModalFooter>
+  <ng-container *bsModalFooter>
     <button type="button" class="btn btn-light bg-transparent" (click)="onChoice(false)">Cancel</button>
     <button type="button" class="btn btn-primary" (click)="onChoice(true)">OK</button>
-  </ng-template>
+  </ng-container>
 </bs-modal>

@@ -17,11 +17,11 @@ async function openScrollspyModal(page: Page) {
   await page.getByRole('button', { name: 'Open modal', exact: true }).click();
   await expect(page.getByText('Scrollspy in modal', { exact: true })).toBeVisible();
   // The modal animates in via EnterFromTop (animating `top`, not `transform`)
-  // and FadeInOut. Wait for every WAAPI animation under bs-modal-content to
+  // and FadeInOut. Wait for every WAAPI animation under the modal to
   // finish — otherwise the dialog is still moving between reads and the
   // "header is fixed" assertion is fooled by animation progress.
   await page.waitForFunction(() => {
-    const host = document.querySelector('bs-modal-content');
+    const host = document.querySelector('.modal[data-mps=modal]');
     if (!host) return false;
     const anims = (host as Element & { getAnimations?: (opts?: { subtree?: boolean }) => Animation[] })
       .getAnimations?.({ subtree: true }) ?? [];
@@ -34,8 +34,8 @@ test.describe('scrollspy inside a scrollable modal', () => {
     await openScrollspyModal(page);
 
     const result = await page.evaluate(() => {
-      const modal = document.querySelector('bs-modal-content .modal') as HTMLElement;
-      const modalBody = document.querySelector('bs-modal-content .modal-body') as HTMLElement;
+      const modal = document.querySelector('.modal[data-mps=modal]') as HTMLElement;
+      const modalBody = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement;
       const cs = getComputedStyle(modalBody);
       return {
         bodyOverflowY: cs.overflowY,
@@ -55,9 +55,9 @@ test.describe('scrollspy inside a scrollable modal', () => {
     await openScrollspyModal(page);
 
     const result = await page.evaluate(async () => {
-      const modal = document.querySelector('bs-modal-content .modal') as HTMLElement;
-      const modalBody = document.querySelector('bs-modal-content .modal-body') as HTMLElement;
-      const modalHeader = document.querySelector('bs-modal-content .modal-header') as HTMLElement;
+      const modal = document.querySelector('.modal[data-mps=modal]') as HTMLElement;
+      const modalBody = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement;
+      const modalHeader = document.querySelector('.modal[data-mps=modal] .modal-header') as HTMLElement;
 
       const headerTopBefore = modalHeader.getBoundingClientRect().top;
       const modalScrollTopBefore = modal.scrollTop;
@@ -90,21 +90,21 @@ test.describe('scrollspy inside a scrollable modal', () => {
     await openScrollspyModal(page);
 
     const before = await page.evaluate(() => {
-      const modalBody = document.querySelector('bs-modal-content .modal-body') as HTMLElement;
+      const modalBody = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement;
       return { windowY: window.scrollY, bodyScrollTop: modalBody.scrollTop };
     });
 
     // Click "Warning" inside the modal's TOC (the inner scrollspy nav.spy).
-    await page.locator('bs-modal-content nav.spy button', { hasText: 'Warning' }).click();
+    await page.locator('.modal[data-mps=modal] nav.spy button', { hasText: 'Warning' }).click();
 
     // Wait for smooth-scroll to settle: poll modal-body.scrollTop until it is non-zero.
     await page.waitForFunction(() => {
-      const mb = document.querySelector('bs-modal-content .modal-body') as HTMLElement | null;
+      const mb = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement | null;
       return mb !== null && mb.scrollTop > 0;
     });
 
     const after = await page.evaluate(() => {
-      const modalBody = document.querySelector('bs-modal-content .modal-body') as HTMLElement;
+      const modalBody = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement;
       return { windowY: window.scrollY, bodyScrollTop: modalBody.scrollTop };
     });
 
@@ -132,7 +132,7 @@ test.describe('scrollspy inside a scrollable modal', () => {
     });
     await expect(page.getByText('Scrollspy in modal', { exact: true })).toBeVisible();
     await page.waitForFunction(() => {
-      const host = document.querySelector('bs-modal-content');
+      const host = document.querySelector('.modal[data-mps=modal]');
       if (!host) return false;
       const anims = (host as Element & { getAnimations?: (opts?: { subtree?: boolean }) => Animation[] })
         .getAnimations?.({ subtree: true }) ?? [];
@@ -143,12 +143,12 @@ test.describe('scrollspy inside a scrollable modal', () => {
     expect(afterOpen).toBe(800);
 
     await page.evaluate(() => {
-      const closeBtn = document.querySelector('bs-modal-content button.btn-close') as HTMLButtonElement | null;
+      const closeBtn = document.querySelector('.modal[data-mps=modal] button.btn-close') as HTMLButtonElement | null;
       closeBtn?.click();
     });
-    // Wait for the modal to leave (no more bs-modal-content in DOM, or no running animations).
+    // Wait for the modal to leave (no more modal in the DOM, or no running animations).
     await page.waitForFunction(() => {
-      const host = document.querySelector('bs-modal-content .modal');
+      const host = document.querySelector('.modal[data-mps=modal]');
       return host === null;
     });
 
@@ -161,19 +161,19 @@ test.describe('scrollspy inside a scrollable modal', () => {
 
     // Active section starts on the first one.
     const initialActive = await page.evaluate(() => {
-      return document.querySelector('bs-modal-content nav.spy button.fw-bold')?.textContent?.trim() ?? null;
+      return document.querySelector('.modal[data-mps=modal] nav.spy button.fw-bold')?.textContent?.trim() ?? null;
     });
     expect(initialActive).toBe('Primary');
 
     // Scroll modal-body far enough to push several headings above the trigger line.
     await page.evaluate(async () => {
-      const modalBody = document.querySelector('bs-modal-content .modal-body') as HTMLElement;
+      const modalBody = document.querySelector('.modal[data-mps=modal] .modal-body') as HTMLElement;
       modalBody.scrollTop = modalBody.scrollHeight; // bottom
       await new Promise((r) => setTimeout(r, 80));
     });
 
     const finalActive = await page.evaluate(() => {
-      return document.querySelector('bs-modal-content nav.spy button.fw-bold')?.textContent?.trim() ?? null;
+      return document.querySelector('.modal[data-mps=modal] nav.spy button.fw-bold')?.textContent?.trim() ?? null;
     });
 
     expect(finalActive).not.toBe(initialActive);

@@ -28,9 +28,9 @@ export class ModalComponent {
     <bs-modal [(open)]="isOpen">
       <span *bsModalHeader>Modal title</span>
       Place any content here — forms, lists, embedded components.
-      <ng-template bsModalFooter>
+      <ng-container *bsModalFooter>
         <button type="button" data-bs-dismiss="modal" [color]="colors.secondary">Close</button>
-      </ng-template>
+      </ng-container>
     </bs-modal>
   `;
 

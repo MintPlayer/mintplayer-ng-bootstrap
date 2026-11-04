@@ -20,7 +20,7 @@
 <div class="d-flex gap-2 align-items-start position-relative overflow-hidden">
   <button [color]="colors.primary">
     Actions
-    <ng-template bsDropdown>
+    <ng-container *bsDropdown>
       <bs-dropdown-menu (itemselect)="chosen.set($any($event.value))">
         <bs-dropdown-header>File</bs-dropdown-header>
         <bs-dropdown-item [value]="'new'">New</bs-dropdown-item>
@@ -29,18 +29,18 @@
         <bs-dropdown-divider></bs-dropdown-divider>
         <bs-dropdown-item><a href="https://getbootstrap.com/docs/5.3/components/dropdowns/" target="_blank" rel="noopener">Bootstrap docs</a></bs-dropdown-item>
       </bs-dropdown-menu>
-    </ng-template>
+    </ng-container>
   </button>
 
   <button [color]="colors.secondary">
     Aligned to the end
-    <ng-template bsDropdown="bottom-end" [sameWidth]="true">
+    <ng-container *bsDropdown="'bottom-end'; sameWidth: true">
       <bs-dropdown-menu>
         <bs-dropdown-item>One</bs-dropdown-item>
         <bs-dropdown-item>Two</bs-dropdown-item>
         <bs-dropdown-item>Three</bs-dropdown-item>
       </bs-dropdown-menu>
-    </ng-template>
+    </ng-container>
   </button>
 </div>
 <p class="mt-2" data-testid="chosen">Chosen: {{ chosen() ?? 'nothing yet' }}</p>
@@ -54,9 +54,9 @@
 
 <button [color]="colors.primary">
   Pick a date
-  <ng-template bsDropdown hasPopup="dialog">
+  <ng-container *bsDropdown="'bottom-start'; hasPopup: 'dialog'">
     <bs-calendar></bs-calendar>
-  </ng-template>
+  </ng-container>
 </button>
 
 <div class="spacing"></div>

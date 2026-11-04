@@ -30,9 +30,9 @@ export class FocusTrapComponent {
       <span *bsModalHeader>Edit details</span>
       <input type="text" aria-label="First field" placeholder="Focus starts in the dialog">
       <input type="text" aria-label="Second field" placeholder="Tab stays inside the dialog">
-      <ng-template bsModalFooter>
+      <ng-container *bsModalFooter>
         <button type="button" data-bs-dismiss="modal" [color]="colors.secondary">Close</button>
-      </ng-template>
+      </ng-container>
     </bs-modal>
   `;
 

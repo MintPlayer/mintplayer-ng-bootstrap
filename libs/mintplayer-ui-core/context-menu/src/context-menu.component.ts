@@ -5,9 +5,9 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  * directive and the panel it renders at the pointer. The content is usually
  * a `dropdown-menu` (the dropdown group).
  *
- * - Angular: `<div tabindex="0">…<ng-template bsContextMenu><bs-dropdown-menu>…</bs-dropdown-menu></ng-template></div>`
+ * - Angular: `<div tabindex="0">…<ng-container *bsContextMenu><bs-dropdown-menu>…</bs-dropdown-menu></ng-container></div>`
  * - React: `const [props, menu] = useBsContextMenu({ content: <BsDropdownMenu>…</BsDropdownMenu> })`
- * - Vue: `<BsContextMenu v-slot="{ props }"><div v-bind="props">…</div><template #content>…</template></BsContextMenu>`
+ * - Vue: `<BsContextMenu><template #default="{ props }"><div v-bind="props">…</div></template><template #content>…</template></BsContextMenu>`
  * - Lit: `html\`<div ${bsContextMenu({}, () => html\`<mp-dropdown-menu>…</mp-dropdown-menu>\`)}>…</div>\``
  */
 export default {

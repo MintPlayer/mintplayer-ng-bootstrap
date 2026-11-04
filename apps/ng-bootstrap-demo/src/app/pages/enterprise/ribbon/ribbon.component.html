@@ -70,14 +70,14 @@
     (tabchange)="onTabChange($event)"
   >
     <!-- ============ Tell Me slot (FR-24) ============ -->
-    <ng-template bsRibbonTellMe>
+    <ng-container *bsRibbonTellMe>
       <input
         type="search"
         class="demo-tell-me"
         placeholder="🔍 Tell me what you want to do…"
         aria-label="Tell me what you want to do"
       />
-    </ng-template>
+    </ng-container>
 
     <!-- ============ Home tab ============ -->
     <bs-ribbon-tab tabId="home" label="Home"

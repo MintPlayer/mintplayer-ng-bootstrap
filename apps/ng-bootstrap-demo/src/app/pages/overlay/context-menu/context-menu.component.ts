@@ -17,13 +17,13 @@ export class ContextMenuComponent {
   protected readonly snippetBasicHtml = dedent`
     <div class="target-area" tabindex="0">
       Right-click me
-      <ng-template bsContextMenu>
+      <ng-container *bsContextMenu>
         <bs-dropdown-menu (itemselect)="chosen.set($event.value)">
           <bs-dropdown-item [value]="'cut'">Cut</bs-dropdown-item>
           <bs-dropdown-item [value]="'copy'">Copy</bs-dropdown-item>
           <bs-dropdown-item [value]="'paste'">Paste</bs-dropdown-item>
         </bs-dropdown-menu>
-      </ng-template>
+      </ng-container>
     </div>
   `;
 

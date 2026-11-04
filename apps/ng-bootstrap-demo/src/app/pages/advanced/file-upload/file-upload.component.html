@@ -4,7 +4,7 @@
     <code>bs-file-upload</code> is a drop zone over a native file input: drop files on it, click it or use the
     browse button. Each batch is added to the two-way <code>[(files)]</code> list, reported through
     <code>(filesdropped)</code> and announced to screen readers. Rows show the name, size and a progress bar you
-    update; an <code>ng-template bsFileUploadFileTemplate</code> replaces a row. With <code>name</code> the input
+    update; an <code>*bsFileUploadFileTemplate="let upload"</code> template replaces a row. With <code>name</code> the input
     submits its files with a form, no JavaScript needed.
 </p>
 
@@ -17,13 +17,13 @@
 <h2>Custom rows</h2>
 
 <bs-file-upload [(files)]="customFiles" (filesdropped)="upload($event, customFiles)">
-    <ng-template bsFileUploadFileTemplate let-upload="upload">
+    <ng-container *bsFileUploadFileTemplate="let upload">
         <div class="d-flex align-items-center gap-2">
             <span class="flex-grow-1 text-truncate">{{ upload.file.name }}</span>
             <span class="text-body-secondary">{{ upload.progress === upload.file.size ? 'Done' : 'Uploading…' }}</span>
             <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(customFiles, upload)">Remove</button>
         </div>
-    </ng-template>
+    </ng-container>
 </bs-file-upload>
 
 <bs-code-snippet [code]="snippetCustomHtml" [language]="'html'"></bs-code-snippet>

@@ -8,8 +8,10 @@ import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 const chosen = ref<string | null>(null);
 const choose = ({ value }: DropdownSelectEventDetail) => (chosen.value = String(value));
 
-const SOURCE = `<BsContextMenu v-slot="{ props }">
-  <div tabindex="0" v-bind="props">Right-click here</div>
+const SOURCE = `<BsContextMenu>
+  <template #default="{ props }">
+    <div tabindex="0" v-bind="props">Right-click here</div>
+  </template>
   <template #content>
     <BsDropdownMenu @itemselect="({ value }) => (chosen = value)">
       <BsDropdownItem value="cut">Cut</BsDropdownItem>
@@ -31,16 +33,18 @@ const SOURCE = `<BsContextMenu v-slot="{ props }">
 
     <section>
       <h2>Basic usage</h2>
-      <BsContextMenu v-slot="{ props }">
-        <div
-          class="border rounded p-5 text-center"
-          tabindex="0"
-          role="group"
-          aria-label="Context menu demo area (Shift+F10 opens the menu)"
-          v-bind="props"
-        >
-          Right-click here
-        </div>
+      <BsContextMenu>
+        <template #default="{ props }">
+          <div
+            class="border rounded p-5 text-center"
+            tabindex="0"
+            role="group"
+            aria-label="Context menu demo area (Shift+F10 opens the menu)"
+            v-bind="props"
+          >
+            Right-click here
+          </div>
+        </template>
         <template #content>
           <BsDropdownMenu @itemselect="choose">
             <BsDropdownItem value="cut">Cut</BsDropdownItem>

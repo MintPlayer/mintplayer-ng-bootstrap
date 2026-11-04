@@ -6,7 +6,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  *
  * - Angular: `<button>Save<span *bsTooltip="'top'">Saves the draft</span></button>`
  * - React: `const [props, tooltip] = useBsTooltip({ position: 'top', content: 'Saves the draft' })`
- * - Vue: `<BsTooltip position="top" v-slot="{ props }"><button v-bind="props">Save</button><template #content>…</template></BsTooltip>`
+ * - Vue: `<BsTooltip position="top"><template #default="{ props }"><button v-bind="props">Save</button></template><template #content>…</template></BsTooltip>`
  * - Lit: `html\`<button ${bsTooltip({ position: 'top' }, () => 'Saves the draft')}>Save</button>\``
  */
 export default {

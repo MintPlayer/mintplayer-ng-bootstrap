@@ -35,7 +35,7 @@ export class DropdownComponent {
   protected readonly snippetBasicHtml = dedent`
     <button [color]="colors.primary">
       Actions
-      <ng-template bsDropdown>
+      <ng-container *bsDropdown>
         <bs-dropdown-menu (itemselect)="chosen.set($event.value)">
           <bs-dropdown-header>File</bs-dropdown-header>
           <bs-dropdown-item [value]="'new'">New</bs-dropdown-item>
@@ -43,14 +43,14 @@ export class DropdownComponent {
           <bs-dropdown-divider></bs-dropdown-divider>
           <bs-dropdown-item><a href="https://getbootstrap.com">Bootstrap</a></bs-dropdown-item>
         </bs-dropdown-menu>
-      </ng-template>
+      </ng-container>
     </button>
 
     <button [color]="colors.primary">
       Pick a date
-      <ng-template bsDropdown hasPopup="dialog">
+      <ng-container *bsDropdown="'bottom-start'; hasPopup: 'dialog'">
         <bs-calendar></bs-calendar>
-      </ng-template>
+      </ng-container>
     </button>
   `;
 

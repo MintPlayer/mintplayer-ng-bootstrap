@@ -13,7 +13,7 @@
 <div class="space"></div>
 <div class="has-custom-context-menu w-100" tabindex="0" role="group" aria-label="Context menu demo area (Shift+F10 opens the menu)">
     Right-click here
-    <ng-template bsContextMenu>
+    <ng-container *bsContextMenu>
         <bs-dropdown-menu (itemselect)="chosen.set($any($event.value))">
             <bs-dropdown-item [value]="'cut'">Cut</bs-dropdown-item>
             <bs-dropdown-item [value]="'copy'">Copy</bs-dropdown-item>
@@ -21,7 +21,7 @@
             <bs-dropdown-divider></bs-dropdown-divider>
             <bs-dropdown-item [value]="'delete'" [disabled]="true">Delete</bs-dropdown-item>
         </bs-dropdown-menu>
-    </ng-template>
+    </ng-container>
 </div>
 <p class="mt-2" data-testid="chosen">Chosen: {{ chosen() ?? 'nothing yet' }}</p>
 <div class="space"></div>

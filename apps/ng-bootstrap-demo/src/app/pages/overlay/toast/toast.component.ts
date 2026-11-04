@@ -34,32 +34,32 @@ export class ToastComponent {
   colors = Color;
   itemToAdd = model('');
   readonly txtItem = viewChild.required<ElementRef<HTMLInputElement>>('txtItem');
-  readonly toasts = new ToastQueue<{ message: string }>();
+  readonly toasts = new ToastQueue<string>();
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.toasts.destroy());
   }
 
   addToast(message: string) {
-    this.toasts.push({ message: message || 'Hello, world!' });
+    this.toasts.push(message || 'Hello, world!');
     this.itemToAdd.set('');
     this.txtItem()?.nativeElement.focus();
   }
 
   protected readonly snippetBasicHtml = dedent`
-    <button type="button" [color]="colors.primary" (click)="toasts.push({ message: 'Saved!' })">
+    <button type="button" [color]="colors.primary" (click)="toasts.push('Saved!')">
       Show toast
     </button>
 
     <bs-toaster [queue]="toasts">
-      <ng-template bsToasterToast let-toast="toast">
+      <ng-container *bsToasterToast="let toast">
         <bs-toast [visible]="toast.visible" (visibleChange)="toasts.close(toast.id)">
           <bs-toast-header>
             <strong class="me-auto">Notification</strong>
           </bs-toast-header>
-          <bs-toast-body>{{ toast.data.message }}</bs-toast-body>
+          <bs-toast-body>{{ toast.data }}</bs-toast-body>
         </bs-toast>
-      </ng-template>
+      </ng-container>
     </bs-toaster>
   `;
 
@@ -91,7 +91,7 @@ export class ToastComponent {
     export class MyToastDemoComponent {
       protected readonly colors = Color;
       // Provide it from a service to toast from anywhere in the app.
-      readonly toasts = new ToastQueue<{ message: string }>();
+      readonly toasts = new ToastQueue<string>();
 
       constructor() {
         inject(DestroyRef).onDestroy(() => this.toasts.destroy());

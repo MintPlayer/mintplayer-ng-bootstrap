@@ -296,7 +296,7 @@ export class QueryBuilderDemoComponent {
          bsQueryBuilderEditor template; switch on ctx.field.name for several.
          The ctx exposes field, operator, value, disabled and onChange. -->
     <bs-query-builder [schema]="schema()" [(query)]="query">
-      <ng-template bsQueryBuilderEditor let-ctx="ctx">
+      <ng-container *bsQueryBuilderEditor="let ctx">
         <input
           type="date"
           class="form-control form-control-sm"
@@ -304,7 +304,7 @@ export class QueryBuilderDemoComponent {
           [value]="$any(ctx.value) ?? ''"
           [disabled]="ctx.disabled"
           (input)="ctx.onChange($any($event.target).value || null)" />
-      </ng-template>
+      </ng-container>
     </bs-query-builder>
   `;
 

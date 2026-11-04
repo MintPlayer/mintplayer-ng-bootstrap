@@ -6,9 +6,10 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  * parts (`dropdown-menu`, `dropdown-item`, `dropdown-header`,
  * `dropdown-divider`), which also work in place without a trigger.
  *
- * - Angular: `<button>Menu<ng-template bsDropdown><bs-dropdown-menu>…</bs-dropdown-menu></ng-template></button>`
+ * - Angular: `<button>Menu<ng-container *bsDropdown><bs-dropdown-menu>…</bs-dropdown-menu></ng-container></button>`
+ *   (inputs in microsyntax: `*bsDropdown="'bottom-end'; sameWidth: true; hasPopup: 'dialog'"`)
  * - React: `const [props, dropdown] = useBsDropdown({ content: <BsDropdownMenu>…</BsDropdownMenu> })`
- * - Vue: `<BsDropdown v-slot="{ props }"><button v-bind="props">Menu</button><template #content>…</template></BsDropdown>`
+ * - Vue: `<BsDropdown><template #default="{ props }"><button v-bind="props">Menu</button></template><template #content>…</template></BsDropdown>`
  * - Lit: `html\`<button ${bsDropdown({}, () => html\`<mp-dropdown-menu>…</mp-dropdown-menu>\`)}>Menu</button>\``
  */
 export default {
@@ -84,8 +85,8 @@ export default {
         type: 'DropdownInputs',
         fields: {
           placement: { default: "'bottom-start'", kind: 'string', alias: 'bsDropdown', doc: 'Where the panel sits; it flips vertically when it does not fit.' },
-          sameWidth: { default: 'false', doc: 'The panel is as wide as the trigger.' },
-          hasPopup: { default: "'menu'", kind: 'string', doc: '`menu`, or `dialog` for content that is not a menu (focus moves to the panel).' },
+          sameWidth: { default: 'false', alias: 'bsDropdownSameWidth', doc: 'The panel is as wide as the trigger.' },
+          hasPopup: { default: "'menu'", kind: 'string', alias: 'bsDropdownHasPopup', doc: '`menu`, or `dialog` for content that is not a menu (focus moves to the panel).' },
         },
       },
       names: { selector: '[bsDropdown]' },

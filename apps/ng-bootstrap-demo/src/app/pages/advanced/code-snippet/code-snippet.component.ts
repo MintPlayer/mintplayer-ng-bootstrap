@@ -15,11 +15,11 @@ export class CodeSnippetComponent {
   html = dedent`
     <bs-datatable #tabel [columns]="columns" [fetch]="fetchArtists"
       [(sortColumns)]="sortColumns" pagination>
-      <ng-template bsDatatableRow let-artist="row">
+      <ng-container *bsDatatableRow="let artist">
         <td class="text-nowrap">{{ artist.name }}</td>
         <td class="text-nowrap">{{ artist.yearStarted }}</td>
         <td class="text-nowrap">{{ artist.yearQuit }}</td>
-      </ng-template>
+      </ng-container>
     </bs-datatable>`;
 
   sample = dedent`
