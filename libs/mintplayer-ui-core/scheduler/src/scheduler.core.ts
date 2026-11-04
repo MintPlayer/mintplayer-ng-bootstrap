@@ -1663,12 +1663,17 @@ function attachScheduler(api: Api): () => void {
   };
 
   // A focusable separator needs aria-valuenow from the start, not only after a
-  // resize: measure the default width once the timeline is in the DOM.
-  const measureColumn = () => {
-    if (ui().column) return;
+  // resize: measure the default width once the timeline is in the DOM. A front may
+  // commit the timeline a few frames after the view switched, so keep looking until
+  // it is there (no other event is guaranteed to arrive: the root's size may not change).
+  const measureColumn = (frames = 6) => {
+    if (ui().column || disposed) return;
     const header = q('.scheduler-resource-header');
     const scrollerWidth = content()?.clientWidth ?? 0;
-    if (!header || !scrollerWidth) return;
+    if (!header || !scrollerWidth) {
+      if (frames > 0 && state().view === 'timeline') raf(() => measureColumn(frames - 1));
+      return;
+    }
     setUi({ column: { width: null, percent: columnWidthPercent(header.getBoundingClientRect().width, scrollerWidth) } });
   };
 
@@ -1702,7 +1707,7 @@ function attachScheduler(api: Api): () => void {
           const width = entries[0]?.contentRect.width ?? root.clientWidth;
           const narrow = width < NARROW_WIDTH;
           if (narrow !== ui().narrow) raf(() => setUi({ narrow }));
-          raf(measureColumn);
+          raf(() => measureColumn());
         });
   resizeObserver?.observe(root);
 
