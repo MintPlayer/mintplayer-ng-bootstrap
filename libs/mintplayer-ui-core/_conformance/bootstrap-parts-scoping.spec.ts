@@ -48,7 +48,7 @@ const stripGuards = (css: string, name: string) =>
 function selectorsOf(css: string): string[] {
   const out: string[] = [];
   postcss.parse(css).walkRules((rule) => {
-    for (let p = rule.parent; p; p = p.parent) {
+    for (let p: postcss.Node | undefined = rule.parent; p; p = p.parent) {
       if (p.type === 'atrule' && /keyframes/i.test((p as postcss.AtRule).name)) return;
     }
     selectorParser((list) => list.each((sel) => void out.push(String(sel).trim()))).processSync(rule.selector);

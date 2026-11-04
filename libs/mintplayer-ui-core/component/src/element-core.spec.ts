@@ -59,7 +59,7 @@ describe('elementCore (#458 directives)', () => {
     const host = elementCore(toggleCore, el, { size: 2 }, options);
     host.update({ size: 3 });
     expect(el.className).toBe('toggle toggle-3');
-    host.update({});
+    host.update({} as { size: number });
     expect(el.className).toBe('toggle');
   });
 

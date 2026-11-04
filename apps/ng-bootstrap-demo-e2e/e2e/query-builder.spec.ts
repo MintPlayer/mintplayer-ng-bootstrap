@@ -54,16 +54,20 @@ async function setupMocks(page: import('@playwright/test').Page) {
   });
 }
 
+/**
+ * The builder once its core attached. The server already rendered the page, so
+ * this (not the markup, not network idle) says the page reacts to clicks.
+ */
+async function hydratedBuilder(page: import('@playwright/test').Page) {
+  const qb = page.locator('bs-query-builder[data-mp-hydrated]').first();
+  await expect(qb).toBeVisible();
+  return qb;
+}
+
 test('query-builder demo: schema fetch + search round-trip', async ({ page }) => {
   await setupMocks(page);
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
-    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
-  });
-
-  // The bs-query-builder host renders inside the page.
-  const qb = page.locator('bs-query-builder').first();
-  await expect(qb).toBeVisible();
+  const qb = await hydratedBuilder(page);
 
   // bs-datatable fires its fetch on mount, so the initial state already shows
   // "2 matches" (the mocked response). No need to assert an empty state — we
@@ -94,9 +98,7 @@ test('query-builder demo: error response is surfaced', async ({ page }) => {
     });
   });
   await page.goto('/enterprise/query-builder');
-  await page.waitForLoadState('networkidle', { timeout: 2000 }).catch(() => {
-    /* HMR keeps the socket open, so the network never idles: settle briefly, never hang */
-  });
+  await hydratedBuilder(page);
 
   await page.getByRole('button', { name: 'Search' }).click();
   await expect(page.getByText(/INVALID_OPERATOR_FOR_TYPE/)).toBeVisible();
@@ -108,10 +110,7 @@ test('query-builder demo: error response is surfaced', async ({ page }) => {
 async function openBuilder(page: import('@playwright/test').Page) {
   await setupMocks(page);
   await page.goto('/enterprise/query-builder');
-  // The server already rendered the tree: wait for the core to attach before editing it.
-  const qb = page.locator('bs-query-builder[data-mp-hydrated]').first();
-  await expect(qb).toBeVisible();
-  return qb;
+  return hydratedBuilder(page);
 }
 
 /** Adds `values.length` "Total equals <v>" conditions to the root group. */
