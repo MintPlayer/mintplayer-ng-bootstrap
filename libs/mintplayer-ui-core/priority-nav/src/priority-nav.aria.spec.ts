@@ -47,7 +47,7 @@ describe('priority nav ARIA', () => {
   });
 
   it('keeps the measure copies inert and out of the accessibility tree', () => {
-    expect(view().measure).toMatchObject({ 'aria-hidden': 'true', inert: '' });
+    expect(view().measure).toMatchObject({ 'aria-hidden': 'true', inert: true });
   });
 
   it('idles the More toggle while nothing overflows, unless asked to keep it', () => {

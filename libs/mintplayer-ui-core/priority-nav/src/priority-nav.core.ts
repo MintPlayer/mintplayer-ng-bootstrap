@@ -146,7 +146,8 @@ export function connectPriorityNav(
     checkbox: hydrated ? null : { type: 'checkbox', id: checkboxId, class: 'priority-nav-more-checkbox', 'aria-controls': overflowId },
     // Inert, not just aria-hidden: the copies' links must be unreachable by Tab too. Measuring
     // needs geometry, which inert keeps (display:none would zero every width).
-    measure: hydrated ? { class: 'priority-nav-measure-wrapper', 'aria-hidden': 'true', inert: '' } : null,
+    // `true`, not '': React drops a boolean attribute given an empty string.
+    measure: hydrated ? { class: 'priority-nav-measure-wrapper', 'aria-hidden': 'true', inert: true } : null,
     strip: { class: 'priority-nav-strip', [STRIP_ATTR]: '' },
     rows: items.map((item) => {
       const key = keyOf(item);

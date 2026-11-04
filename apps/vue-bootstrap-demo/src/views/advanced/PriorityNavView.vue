@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { BsCodeSnippet } from '@mintplayer/vue-bootstrap/code-snippet';
 import { BsPriorityNav, type PriorityNavItem } from '@mintplayer/vue-bootstrap/priority-nav';
+import { BsResizable } from '@mintplayer/vue-bootstrap/resizable';
 
 const links: PriorityNavItem[] = [
   { key: 'home',     label: 'Home',     href: '#', priority: 1, hideBelow: 'sm' },
@@ -37,10 +38,13 @@ const ACTIONS_SOURCE = `<BsPriorityNav collapse-at="sm" :items="actions">
     </p>
 
     <section>
-      <h2>Basic usage</h2>
-      <div class="p-2 border rounded">
-        <BsPriorityNav :items="links" />
-      </div>
+      <h2>Resize me</h2>
+      <p>Drag the handle on the right to shrink the container and watch items move into the More menu.</p>
+      <BsResizable :vertical="false" :corners="false">
+        <div class="p-2 border rounded">
+          <BsPriorityNav :items="links" />
+        </div>
+      </BsResizable>
       <BsCodeSnippet :code="SOURCE" language="html" />
     </section>
 

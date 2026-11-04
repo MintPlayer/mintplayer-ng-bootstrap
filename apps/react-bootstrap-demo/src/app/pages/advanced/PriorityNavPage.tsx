@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BsCodeSnippet } from '@mintplayer/react-bootstrap/code-snippet';
 import { BsPriorityNav, type PriorityNavItem } from '@mintplayer/react-bootstrap/priority-nav';
+import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
 
 const LINKS: PriorityNavItem[] = [
   { key: 'home',     label: 'Home',     href: '#', priority: 1, hideBelow: 'sm' },
@@ -46,10 +47,13 @@ export function PriorityNavPage() {
       </p>
 
       <section>
-        <h2>Basic usage</h2>
-        <div className="p-2 border rounded">
-          <BsPriorityNav items={LINKS} />
-        </div>
+        <h2>Resize me</h2>
+        <p>Drag the handle on the right to shrink the container and watch items move into the More menu.</p>
+        <BsResizable vertical={false} corners={false}>
+          <div className="p-2 border rounded">
+            <BsPriorityNav items={LINKS} />
+          </div>
+        </BsResizable>
         <BsCodeSnippet code={SOURCE} language="tsx" />
       </section>
 
