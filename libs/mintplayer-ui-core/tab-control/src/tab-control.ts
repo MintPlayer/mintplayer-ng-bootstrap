@@ -1,4 +1,5 @@
 import { firstEnabledIndex, rovingTarget } from '@mintplayer/ui-core/roving';
+import { hydratedAttr } from '@mintplayer/ui-core/store';
 
 /**
  * The tab control has no machine (PRD #437 §8, wave A): one native radio per
@@ -88,7 +89,7 @@ export function connectTabControl(options: TabControlOptions, tabs: readonly Tab
   const bottom = options.tabsPosition === 'bottom';
   const border = options.border ?? true;
   return {
-    root: { class: 'tab-control', 'data-tabs-position': bottom ? 'bottom' : null },
+    root: { class: 'tab-control', 'data-tabs-position': bottom ? 'bottom' : null, ...hydratedAttr(enhanced) },
     strip: { class: bottom ? 'tsc bottom-tabs' : 'tsc' },
     // Not enhanced, the strip (which scrolls when the tabs overflow) holds only
     // labels: a tab stop of its own is the keyboard's way to scroll it.

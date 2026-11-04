@@ -80,7 +80,7 @@ export interface PriorityNavRow {
   /** The default rendering: a plain link. */
   link: CoreBag;
   /** The default link's target. */
-  href: string | null;
+  href: string | undefined;
 }
 
 export interface PriorityNavView {
@@ -160,7 +160,7 @@ export function connectPriorityNav(
         overflow: { class: `priority-nav-overflow-item${below}${hydrated && !out ? ' priority-nav-overflow-hidden' : ''}` },
         // href is a template binding: the bag setters refuse URL attributes.
         link: { class: 'priority-nav-link' },
-        href: item.href ?? null,
+        href: item.href,
       };
     }),
     noscriptToggle: hydrated ? null : { class: 'priority-nav-more-toggle priority-nav-more-toggle-noscript', for: checkboxId },

@@ -763,6 +763,12 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
    - Delete `BsNoNoscript`, the Angular `a11y/overlay-*` services and every hand-written front.
    - Conformance import lists.
    - The docs from §4.8 and the CHANGELOG.
+   - **Done.** `BsNoNoscript`, `BsOverlayFocusDirective` and `BsOverlayStackService` had no users left
+     and are deleted. The tab control writes `hydratedAttr()` on its root (Q14). The last hand-written
+     UI front, `bs-playlist-toggler`, is a D10 group mirroring the navbar toggler (`open` two-way, was
+     `state`; `label`, was `ariaLabel`; disabled until hydrated). What stays Angular-only is the non-UI
+     entries (pipes, `copy`, `navigation-lock`, …, §2). §4.8's docs are updated and the CHANGELOG
+     lists the M6–M8 breaks.
 9. **Verify once, at the end.**
    - `compile-components-check`.
    - Build `mintplayer-web-components`, ng-bootstrap, react-bootstrap and vue-bootstrap.

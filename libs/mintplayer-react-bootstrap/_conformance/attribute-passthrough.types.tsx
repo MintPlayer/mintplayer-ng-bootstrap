@@ -18,6 +18,7 @@ import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
 import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsPlaylistToggler } from '@mintplayer/react-bootstrap/playlist-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
 import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
 import { BsRating } from '@mintplayer/react-bootstrap/rating';
@@ -128,6 +129,7 @@ export const everyWrapperProbes = [
   <BsTable role="none" id="x" tabIndex={-1} />,
   <BsGrid role="none" id="x" tabIndex={-1} />,
   <BsNavbarToggler role="none" id="x" tabIndex={-1} />,
+  <BsPlaylistToggler role="none" id="x" tabIndex={-1} />,
   <BsMarquee role="none" id="x" tabIndex={-1} />,
   <BsScrollspy role="none" id="x" tabIndex={-1} />,
   <BsRating role="none" id="x" tabIndex={-1} />,

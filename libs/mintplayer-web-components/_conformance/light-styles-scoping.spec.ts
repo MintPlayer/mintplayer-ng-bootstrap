@@ -41,6 +41,7 @@ import '@mintplayer/web-components/placeholder';
 import '@mintplayer/web-components/table';
 import '@mintplayer/web-components/grid';
 import '@mintplayer/web-components/navbar-toggler';
+import '@mintplayer/web-components/playlist-toggler';
 import '@mintplayer/web-components/marquee';
 import '@mintplayer/web-components/scrollspy';
 import '@mintplayer/web-components/rating';

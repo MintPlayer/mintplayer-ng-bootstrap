@@ -43,6 +43,45 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
   - **Range:** `ariaLabel` → `label`; new two-way `value` and `disabled` inputs.
   - Each of these is available in React, Vue and Lit too (`BsMarquee`, `mp-marquee`, …); the
     directives as `useBsFormControl` / `vBsFormControl` / `bsFormControl` and so on.
+- **Overlays and the interactive components are generated from `@mintplayer/ui-core` too (issue
+  #458)**, with React, Vue and Lit fronts for each. Renames:
+  - **Modal, offcanvas:** `[(open)]` replaces `isOpen` / `isVisible`; `backdrop` / `closeOnBackdrop`
+    replace `hasBackdrop` / `backdropClick`; a `data-bs-dismiss` button replaces the close
+    directives; `header` / `footer` slots replace the wrapper components; `bsOffcanvasPush` is gone.
+  - **Tooltip, popover:** placement is tracked continuously, so `updatePosition()` is gone. A
+    popover's title is `bsPopoverTitle` / `title` (the header and body directives are gone).
+  - **Toast:** the framework-neutral `ToastQueue` replaces `BsToastService` and `bs-toast-container`.
+  - **Dropdown:** one `[bsDropdown]` directive replaces `bsDropdown`, `bsDropdownToggle` and
+    `bsDropdownMenu`; the menu output `select` is `itemSelect`. New `[bsContextMenu]`.
+  - **Navbar:** `bs-navbar-dropdown` is gone; write `<bs-dropdown-menu label="…">` with
+    `bs-dropdown-item`s inside a `bs-navbar-nav` (nested menus become submenus).
+  - **Calendar month:** `bs-calendar-month` is gone; use `bs-calendar`.
+  - **Scrollspy:** mark sections with a plain `data-scrollspy` attribute; `bsScrollspy` and
+    `BsScrollOffsetService` are gone (an `offset` input replaces the service). The list is built once
+    hydrated.
+  - **Rating:** native radios; `starsChange` → `previewChange`, `ariaLabel` → `label`, new
+    `starLabel` and `name`; the default value is 0 (none) instead of 3; arrow keys wrap.
+  - **Resizable:** `[bsResizeGlyph]` and the `RESIZABLE` token are gone; new `resized` output.
+  - **File upload:** the row slot is `bsFileUploadFileTemplate` (was `bsFileUploadTemplate`);
+    `BsFormatBytesPipe` → the `formatBytes` function (and a `formatSize` input);
+    `placeholder` / `ariaLabel` → `label`, `inputAriaLabel` → `inputLabel`; new `name`, `accept`,
+    `multiple`, `disabled`.
+  - **Color picker:** one component; `bs-color-wheel`, `bs-slider` and the four strips are no longer
+    public. `color-math` moved to `@mintplayer/ui-core/color-picker`; names are a `labels` input.
+  - **Priority nav:** items are data: `[items]="links"` (`key`, `priority`, `hideBelow`, `label`,
+    `href`, plus your own fields), rendered by `<a *bsPriorityNavItemTemplate="let item">` or a
+    default link; `*bsPriorityNavItem` is gone. `ariaLabel` → `label`; the More content is the
+    `moreTemplate` slot (`open` argument); `overflowChange` emits the items.
+  - **Playlist toggler:** `[(state)]` → `[(open)]`, `ariaLabel` → `label`; disabled until hydrated.
+  - **Angular slot templates:** the first slot argument is now also the template's `$implicit`, so
+    the structural form `*bsXTemplate="let item"` binds it; named arguments work as before.
+  - **Projected Bootstrap sub-classes are styled again.** A part's sub class (`card-title`,
+    `table-active`, `modal-title`, `form-label`, …) now matches inside a stamped root of its own partial,
+    so `<h5 class="card-title">` inside `bs-card-body` needs no `…Page` install. MintPlayer.Spark#557's
+    `…Page` stopgaps for this case can go.
+  - **Removed:** `BsNoNoscript` (the `data-mp-hydrated` attribute every component writes once
+    interactive replaces it) and the Angular `BsOverlayFocusDirective` / `BsOverlayStackService`
+    (`@mintplayer/ui-core/overlay` and `focus` replace them).
 - **`collectScopedStyles` collects per render (issue #452).** It now takes the render and returns
   `{ result, styles }`: `await collectScopedStyles(() => renderApp(url))`. It used to return every sheet the
   process had ever installed, so a page's head carried the CSS of components only other pages render. A

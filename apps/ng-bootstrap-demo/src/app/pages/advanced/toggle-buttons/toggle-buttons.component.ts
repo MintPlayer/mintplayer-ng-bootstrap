@@ -33,8 +33,6 @@ export class ToggleButtonsComponent {
   `;
 
   protected readonly snippetPlaylistHtml = dedent`
-    <bs-playlist-toggler [(state)]="state"
-                         class="cursor-pointer d-inline-block">
-    </bs-playlist-toggler>
+    <bs-playlist-toggler [(open)]="open" label="Show the playlist"></bs-playlist-toggler>
   `;
 }

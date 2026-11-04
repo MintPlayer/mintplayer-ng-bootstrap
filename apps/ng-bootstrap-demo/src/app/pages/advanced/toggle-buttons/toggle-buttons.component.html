@@ -2,10 +2,9 @@
 
 <p>
     Animated open/close togglers for navbars, drawers and playlists. Each toggler owns its
-    boolean state through a two-way binding: <code>[(open)]</code> on the navbar toggler,
-    <code>[(state)]</code> on the playlist toggler. The navbar toggler is a real button, named by
+    boolean state through the two-way <code>[(open)]</code> binding. Each is a real button, named by
     <code>label</code>, that reports <code>aria-expanded</code> (and <code>aria-controls</code> with
-    <code>controls</code>).
+    <code>controls</code>), and is disabled until the page is interactive.
 </p>
 
 <h2>Basic usage</h2>
@@ -18,6 +17,6 @@
 
 <h2>Playlist toggler</h2>
 
-<bs-playlist-toggler [(state)]="state" class="cursor-pointer d-inline-block"></bs-playlist-toggler>
+<bs-playlist-toggler [(open)]="state" label="Show the playlist"></bs-playlist-toggler>
 
 <bs-code-snippet [code]="snippetPlaylistHtml" [language]="'html'"></bs-code-snippet>

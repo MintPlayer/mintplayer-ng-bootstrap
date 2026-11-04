@@ -173,7 +173,11 @@ Plain strings, no lit import, gitignored (`libs/**/*.styles.ts`). It is generate
    selector, the leftmost compound carrying a class the partial owns (`OWNED_CLASSES.carousel =
    /^carousel(-|$)/`) gets `:where([data-mps])` right after that class. Presence, not value: a part is
    shared by every component that renders that markup. A selector with no owned class is an error at build
-   time, not a silent global rule.
+   time, not a silent global rule. Since #458 each partial's owned classes are classified `root` or `sub`
+   (`PARTS` in the scoper): a root class keeps the strict guard, a sub class gets the **anchored guard**,
+   `:where([data-mps], <anchor>[data-mps] *)` (`.carousel-caption:where([data-mps], .carousel[data-mps] *)`),
+   so consumer content projected into a stamped root is styled without being stamped. A class that is
+   neither root nor sub fails the build.
 3. **Layer** both variants (`wrapInLayer(…, 'mp.bootstrap.components')`): the two order statements, then
    the rules inside `@layer mp.bootstrap.components`.
 4. **Write** the module (`buildBootstrapPartModule`) only if its bytes changed, so Nx and Vite caches stay warm.

@@ -124,7 +124,10 @@ The Bootstrap copy is rewritten so that it matches only stamped elements.
 
    A rule with no owned compound (a `:root` token block, `@keyframes`) ships verbatim. Those are not
    component selectors.
-4. **The limitation is accepted.** It is the same as Angular emulated encapsulation. Consumer markup that
+4. **Superseded by #458 §4.1 (the anchored guard).** A sub class now matches inside a stamped root of its
+   own partial (`.card-title:where([data-mps], .card[data-mps] *)`), so `<h5 class="card-title">` projected
+   into `bs-card-body` IS styled, and the `…Page` stopgaps for that case can go. The original text:
+   **The limitation is accepted.** It is the same as Angular emulated encapsulation. Consumer markup that
    uses a component's *sub*-classes directly, such as `<h5 class="card-title">` projected into `bs-card-body`,
    is unstamped and gets no card styles. The consumer either uses the provided part (`bs-card-title`) or
    installs the `…Page` variant from their page. Descendants of an owned anchor (consumer buttons in a button

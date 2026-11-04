@@ -1,0 +1,63 @@
+// The playlist toggle (#458 M8): three bars that draw a play arrow while
+// closed and a cross while open.
+.playlist-toggler-host {
+  display: inline-block;
+}
+
+.playlist-toggler {
+  width: 3.5rem;
+  padding: 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+  }
+
+  // Closed: a play arrow.
+  > .playlist-toggler-line:nth-child(1) {
+    transform: rotate(-30deg) translate(-10px, 11px);
+  }
+
+  > .playlist-toggler-line:nth-child(2) {
+    transform: rotate(90deg) translate(0, 14px);
+  }
+
+  > .playlist-toggler-line:nth-child(3) {
+    transform: rotate(30deg) translate(-10px, -11px);
+  }
+
+  // Open: a cross.
+  &.open {
+    > .playlist-toggler-line:nth-child(1) {
+      transform: rotate(-45deg) translate(-7px, 5px);
+    }
+
+    > .playlist-toggler-line:nth-child(2) {
+      opacity: 0;
+    }
+
+    > .playlist-toggler-line:nth-child(3) {
+      transform: rotate(45deg) translate(-6px, -4px);
+    }
+  }
+}
+
+.playlist-toggler-line {
+  display: block;
+  width: 25px;
+  height: 2px;
+  background: var(--bs-secondary-color);
+  margin: 6px 0;
+  transition: 0.4s;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}

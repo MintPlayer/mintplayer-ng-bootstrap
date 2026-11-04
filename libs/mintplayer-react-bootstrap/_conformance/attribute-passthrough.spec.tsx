@@ -76,6 +76,7 @@ import { BsPlaceholder } from '@mintplayer/react-bootstrap/placeholder';
 import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
+import { BsPlaylistToggler } from '@mintplayer/react-bootstrap/playlist-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
 import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
 import { BsRating } from '@mintplayer/react-bootstrap/rating';
@@ -199,6 +200,7 @@ const CASES: Case[] = [
   bare('BsTable', 'table.table', BsTable),
   bare('BsGrid', 'div.grid-host', BsGrid),
   bare('BsNavbarToggler', 'button.navbar-toggler', BsNavbarToggler),
+  bare('BsPlaylistToggler', 'button.playlist-toggler', BsPlaylistToggler),
   { ...bare('BsMarquee', 'span.marquee', BsMarquee), fixedRole: 'marquee' },
   bare('BsScrollspy', 'nav.spy', BsScrollspy),
   { ...bare('BsRating', 'div.rating', BsRating), fixedRole: 'radiogroup' },

@@ -85,6 +85,7 @@ const TARGETS: Record<string, string> = {
   BsTable: 'table.table',
   BsGrid: 'div.grid-host',
   BsNavbarToggler: 'button.navbar-toggler',
+  BsPlaylistToggler: 'button.playlist-toggler',
   BsMarquee: 'span.marquee',
   BsScrollspy: 'nav.spy',
   BsRating: 'div.rating',

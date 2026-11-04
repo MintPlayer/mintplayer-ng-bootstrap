@@ -67,8 +67,8 @@ Since #458 every `mp-*` element is **generated** from a D10 source into `<name>/
 hand-write or edit one. A generated element is light DOM (`createRenderRoot()` returns `this`), so the
 page's CSS, Bootstrap's utilities and a consumer's own component styles reach everything it renders; its
 group sheet and its Bootstrap parts install through the shared registry like every other front's.
-`<name>/src/index.ts` re-exports `./generated` plus the core's public types. (`mp-dropdown-menu` is the one
-hand-written element left, a light-DOM `ReactiveElement` that #458 M6 folds into a D10 group.)
+`<name>/src/index.ts` re-exports `./generated` plus the core's public types. No hand-written element is
+left (the last, `mp-dropdown-menu`, became a D10 group in #458 M6).
 
 **History.** Until #458 (2026-11) a dozen elements were hand-written: shadow-root, slot-based elements
 (accordion, card, checkbox, pagination, shell, tab control, …) that re-declared Bootstrap from
@@ -181,8 +181,7 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   host, so a D10 core's bags carry **no** `data-mps` (`_conformance/no-scope-in-compiled-bags.spec.ts`), and a
   template may not write one. A group that renders another core's markup `@use`s that core's sheet with its own
   scope (`tree-select` → treeview, `navbar` → dropdown-menu, `datepicker` → calendar); a reusable sheet takes
-  `$scope: <name> !default` for its final-form selectors. The fronts still hand-written until #458 M5/M6
-  (dropdown-menu and the Angular-only components) stamp their own scope. The Bootstrap partials a group's markup uses are listed in the manifest
+  `$scope: <name> !default` for its final-form selectors. The Bootstrap partials a group's markup uses are listed in the manifest
   (`style: { scope, bootstrap: ['card', 'nav'] }`); the compiler emits their install in every front.
 - **Component compiler** (PRD D10, `libs/mintplayer-component-compiler`, `@mintplayer/nx-component-compiler`):
   a component is written ONCE in ui-core as a core (`ComponentCore`, `ui-core/component`), a Vue-syntax view
@@ -195,8 +194,19 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   inputs are `model: true` (Angular `model()`, Vue `update:x`, Lit property write-back). Scaffold a new group
   with `nx g ./libs/mintplayer-component-compiler:component <name>`. The template subset is in the lib's
   README; the navbar is the reference.
+- **Directives** (`kind: 'directive'`, PRD #458 §4.3): a group lists them under `directives: {…}` beside
+  `components`. A directive core's `view` returns the bag for **the consumer's element** (it opted in, so
+  stamping `data-mps` there is legitimate). Fronts: an Angular `@Directive`, a React `useBs<Name>()` hook
+  returning mergeable props, a Vue custom directive (with `getSSRProps`), a Lit element-part directive.
+  `overlay: '<panel component>'` renders that panel into a body host while `props.overlay` is non-null
+  (tooltip, popover, `[bsDropdown]`). No hand-written directive path remains.
 - **Angular front SSR**: render the whole tree (including hidden popups) so server and client DOM are
   identical; hydration then attaches to the same nodes. Drive everything from signals under OnPush.
+  **Overlays are the exception** (#458 §4.4): modal, offcanvas, tooltip, popover and dropdown panels render
+  into a body host, a `div` at the end of `<body>` (copying `data-bs-theme`, `dir`, `lang`), so no
+  clipping ancestor can cut them. Angular renders a detached embedded view there (the client replaces the
+  server's host), Vue `<Teleport>` and React `createPortal` only on the client, Lit `render()`. Without
+  JS a closed overlay cannot open, so nothing depends on its server copy.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node
   whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this). Where a
   host-rooted template's role lives on an inner `mp-attrs` node, Angular (`useHostAttrs` + `[mpHostAttrs]`)
@@ -248,6 +258,12 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   compiler for D10 groups, by hand elsewhere), never projected consumer content. Raw Bootstrap markup on a
   consumer's page installs the verbatim `bootstrap<Partial>Page` from that page; it replaces the scoped
   copy under the same registry key, so a page never holds two copies.
+  **The anchored guard** (#458 §4.1): a partial's ROOT classes stay strict (`.table:where([data-mps])`),
+  but a SUB class (documented content: `.table-active`, `.modal-title`, `.form-label`, `.nav-link`)
+  matches when it is stamped itself OR sits inside a stamped root of its partial —
+  `.modal-title:where([data-mps], .modal-content[data-mps] *)`. So consumer content projected into a
+  component gets Bootstrap's sub-class styling without being stamped. One classification table per
+  partial (root / sub / anchors) is fail-closed: an owned class in neither list is a codegen error.
 - **C2. The page baseline** `@mintplayer/ui-core/styles/bootstrap.scss` holds only the PAGE-LEVEL partials:
   root, reboot, type, images, buttons (+ the `--bs-primary` re-bind), helpers and the utility API with the
   workspace patches (`styles/baseline/*`). Angular's `_bootstrap.scss` re-exports it; React and Vue apps
