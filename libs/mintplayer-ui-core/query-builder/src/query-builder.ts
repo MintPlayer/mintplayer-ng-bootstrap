@@ -460,14 +460,17 @@ function editorFor(o: QueryBuilderOptions, node: Condition, field: FieldDef): Qu
           disabled: o.disabled,
         },
       })),
-      chipAdd: act(parse, 0, {
-        type: 'text',
-        class: 'form-control form-control-sm qb-editor-chip-add',
-        placeholder: '+ add',
-        size: 8,
-        'aria-label': `${label} — add value`,
+      // Its own command: Enter adds a chip. As a 'value' input it would overwrite the list.
+      chipAdd: {
+        ...act(parse, 0, {
+          type: 'text',
+          class: 'form-control form-control-sm qb-editor-chip-add',
+          placeholder: '+ add',
+          size: 8,
+          'aria-label': `${label} — add value`,
+        }),
         'data-qb-act': 'chip-add',
-      }),
+      },
     };
   }
   if (field.type === 'enum' && options.length > 0) {

@@ -269,7 +269,10 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
       if (!source || !target) return;
       // Across a sub-query boundary the fields change: moveNode resets what the target entity lacks.
       const targetSchema = target.qbRoot !== source.qbRoot ? entityOfNode(target.parentId) ?? undefined : undefined;
-      mutate(moveNode(tree(), source.id, target.parentId, target.index, targetSchema));
+      // Slots count the list with the source still in it; moveNode inserts after removing it.
+      const from = findParentGroup(tree(), source.id);
+      const index = from?.parent.id === target.parentId && from.index < target.index ? target.index - 1 : target.index;
+      mutate(moveNode(tree(), source.id, target.parentId, index, targetSchema));
     };
     const onCancel = () => {
       drag.cancel();
