@@ -51,8 +51,11 @@ export interface HostedCore<I, S, P, E> {
   props(): P;
   /** Rebuilds the markup from the current props. */
   render(): void;
-  /** Attaches like a front after its first client render (renders first). */
-  attach(): CoreApi<I, S, E>;
+  /**
+   * Attaches like a front after its first client render (renders first; pass
+   * false to keep DOM a spec prepared, e.g. a value typed before hydration).
+   */
+  attach(rerender?: boolean): CoreApi<I, S, E>;
   readonly api: CoreApi<I, S, E> | null;
   setInputs(patch: Partial<I>): void;
   call(name: string, ...args: unknown[]): unknown;
@@ -110,9 +113,9 @@ export function hostCore<I, S, P, E, C, PC, M>(
     inputs: () => inputs,
     props,
     render,
-    attach() {
+    attach(rerender = true) {
       attached = true;
-      render();
+      if (rerender) render();
       runtime.attachTo(host);
       return runtime.api!;
     },
