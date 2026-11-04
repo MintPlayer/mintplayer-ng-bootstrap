@@ -85,7 +85,7 @@ describe('accordionCore and accordionTabCore', () => {
   });
 
   it('works with the details as its own host, outside an accordion, and without markup', () => {
-    const details = document.body.appendChild(el('details', { class: 'accordion-item' }, el('summary', null, 'Lone')));
+    const details = document.body.appendChild(el('details', { class: 'accordion-item' }, el('summary', null, 'Lone'))) as HTMLDetailsElement;
     const tab = hostCore(accordionTabCore, { open: false, disabled: false }, { host: details, context: { name: null, highlightActiveTab: false } });
     tab.attach();
     const key = new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true });

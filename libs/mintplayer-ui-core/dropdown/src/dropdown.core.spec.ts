@@ -102,7 +102,7 @@ describe('dropdownMenuCore / dropdownItemCore attached', () => {
     const menu = hostCore(dropdownMenuCore, { maxHeight: 0, label: null, active: false }, { context: { mode: 'menu', depth: -1 } });
     menu.attach();
     expect(menu.host.style.getPropertyValue('--mp-dropdown-max-height')).toBe('0px');
-    menu.setInputs({ maxHeight: null });
+    menu.setInputs({ maxHeight: undefined });
     expect(menu.host.style.getPropertyValue('--mp-dropdown-max-height')).toBe('');
     menu.dispose();
 
