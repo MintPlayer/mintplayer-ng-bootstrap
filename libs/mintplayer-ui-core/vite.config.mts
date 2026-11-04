@@ -86,7 +86,8 @@ export default defineConfig(() => {
         reportsDirectory: '../../coverage/libs/mintplayer-ui-core',
         provider: 'v8' as const,
         include: ['**/*.ts'],
-        exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '**/test-setup.ts', '**/*.styles.ts', '**/*.generated.ts', 'phone-core/src/metadata/**'],
+        // `_conformance/**` is test infrastructure (shared spec helpers), as in the front libs.
+        exclude: [...coverageConfigDefaults.exclude, '**/*.d.ts', '**/test-setup.ts', '**/*.styles.ts', '**/*.generated.ts', 'phone-core/src/metadata/**', '_conformance/**'],
         reporter: ['lcov'],
       },
     },
