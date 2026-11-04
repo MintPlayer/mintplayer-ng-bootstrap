@@ -9,7 +9,6 @@ import {
   setNavbarExpanded,
   type NavbarBag,
   type NavbarBreakpoint,
-  type NavbarExpandedChangeEventDetail,
   type NavbarLabels,
   type NavbarView,
 } from './navbar';
@@ -47,7 +46,6 @@ export interface NavbarState {
 }
 
 export interface NavbarEvents {
-  expandedChange: NavbarExpandedChangeEventDetail;
 }
 
 export interface NavbarProps {
@@ -78,7 +76,6 @@ export const navbarCore = defineCore<NavbarInputs, NavbarState, NavbarProps, Nav
     attachNavbar(api.host, {
       onExpandedChange: (expanded) => {
         api.setState({ expanded });
-        api.emit('expandedChange', { expanded });
       },
     }),
   // The bag only seeds the checkbox; a changed input must also reach one the
@@ -93,7 +90,6 @@ export const navbarCore = defineCore<NavbarInputs, NavbarState, NavbarProps, Nav
       const next = force ?? !api.state().expanded;
       if (setNavbarExpanded(api.host, next) === null) return;
       api.setState({ expanded: next });
-      api.emit('expandedChange', { expanded: next });
     },
   },
 });

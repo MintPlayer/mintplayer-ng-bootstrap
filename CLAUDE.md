@@ -191,7 +191,7 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   `mintplayer-ui-core:compile-components` (`-check` fails on stale output). Never hand-write a front for a
   component that has a manifest; a front-specific need goes in an extension file next to the entry
   (`<element>.angular.ts`: `hostDirectives` / `providers` / `extendInputs`; React `useExtendInputs`). Two-way
-  inputs are `model: true` (Angular `model()`, Vue `update:x`, Lit property write-back). Scaffold a new group
+  inputs are `model: true` (Angular `model()`, Vue `update:x`, React `onXChange`, Lit property write-back + `xchange`). Scaffold a new group
   with `nx g ./libs/mintplayer-component-compiler:component <name>`. The template subset is in the lib's
   README; the navbar is the reference.
 - **Directives** (`kind: 'directive'`, PRD #458 §4.3): a group lists them under `directives: {…}` beside
@@ -218,12 +218,19 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
 - **The root bag lands on the host in Angular and Lit** (`bs-foo` / `mp-foo` carries `class="foo"`,
   `data-mps`, the role); React and Vue render it on a `div.foo`. In a spec, query the host itself, not
   `.foo` inside it.
-- **Outputs are lowercased** everywhere: Angular `(layoutchange)`, Vue `@layoutchange`, Lit a
-  `layoutchange` CustomEvent; React `onLayoutChange` receives the payload, not an event. **Angular outputs
+- **Outputs follow each framework's own casing** (manifests name them camelCase): Angular
+  `(itemSelect)`, Vue `@item-select` (emitted as `itemSelect`, so a render-function prop is
+  `onItemSelect`), React `onItemSelect` receiving the payload, not an event, and Lit an `itemselect`
+  CustomEvent (a DOM event name is lowercase). **Angular outputs
   are `output()`s, not DOM events** — an e2e cannot listen for them; observe the committed DOM instead
   (expose `data-*` hooks in the core's bags, as the scheduler's `data-start` / `data-end` do).
 - **Two-way models** (`model: true`) write back only when the core calls `api.setState(patch)` with the
-  model's own key; `api.emit` dispatches an output and nothing else.
+  model's own key; `api.emit` dispatches an output and nothing else. **A model is its own change channel**
+  (#458): Angular `[(x)]` / `(xChange)` (the `model()`), Vue `v-model:x` / `@update:x`, React an `onXChange`
+  prop typed by the core's state, Lit an `xchange` CustomEvent after the property write. A manifest never
+  declares an `xChange` output beside a model `x` (the compiler refuses it), and a core never emits one: an
+  event about the same value (a commit, a payload with more than the value) gets its own name
+  (`valueCommit`, `phoneChange`).
 - **Readiness:** a core that attaches behaviour writes `hydratedAttr()` (`data-mp-hydrated`, from
   `ui-core/store`) on its root. It is never in server HTML, so e2e waits on it rather than on markup the
   server already rendered.

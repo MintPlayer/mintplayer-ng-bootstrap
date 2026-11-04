@@ -365,6 +365,42 @@ Other docs:
 - The CHANGELOG lists every API break per package, including the MintPlayer.Spark#557 note that the
   `…Page` stopgaps can go.
 
+### 4.9 A model is its own change channel (decided in review, 2026-11-04)
+
+Until now every `model: true` input had a paired manifest output `<model>Change`, and its core emitted it
+next to the `setState` that moved the model. Outputs are lowercased, so Angular exposed both the
+`model()`'s own `openChange` and a second output `openchange`. Vue exposed both `update:open` and
+`openchange`. The review asked why a consumer would need the second channel: Angular's convention is
+`[(open)]` / `(openChange)`.
+
+Decision: the compiler derives the change channel from `model: true` alone (`model.mjs` `changes`):
+- **Angular:** the `model()` (`[(x)]`, `(xChange)`).
+- **Vue:** `update:x` (`v-model:x`).
+- **React:** an `on<X>Change` prop, called from the runtime's `writeModel` and typed
+  `ReturnType<core.state>['x']` (what is written back is the core's state, often narrower than the
+  input).
+- **Lit:** an `xchange` CustomEvent dispatched after the property write.
+
+A manifest output named `<model>Change` is a compile error, and the cores no longer emit one. An event
+about the same value that carries something else keeps its own name: the multi-range's commit becomes
+`valueCommit` (its live `valueInput` is gone, the model is live), and the phone input keeps
+`phoneChange` (value plus parts and validity). `v-model:x` on a composed child binds the derived
+channel in every front. The ui-core `hostCore` helper takes `models` and reads write-backs with
+`changes(name)`, writing them into its inputs as a front does.
+
+**No echo.** A model reports what the component did, never the consumer's own write. The runtime
+(`coreRuntime`) writes nothing back while the core attaches, or while `inputsChanged` reacts to that
+model's own input: normalising it (`undefined` to `[]`, a clamp, a sort) is not a change. A model that
+another input moves (the selection re-fit when `selectionMode` narrows) is still written back, because
+the consumer's copy is now stale. The explicit emits this replaces never reported either case, so the
+specs keep their meaning.
+
+**Per-framework casing (same review).** With the lowercase duplicates gone, the remaining outputs
+follow each framework's own convention instead of one lowercase name everywhere: Angular camelCase
+(`(itemSelect)`), Vue camelCase emits heard in kebab-case (`@item-select`), React `onItemSelect`, and
+Lit's lowercase DOM event (`itemselect`). The one lowercase manifest output, the shell's `statechange`,
+became `stateChange`.
+
 ## 5. Spikes (before M1; results go back into this PRD)
 
 | Spike | Question | Done when |

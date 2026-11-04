@@ -43,10 +43,6 @@ export default {
           indeterminate: { default: 'false', model: true },
         },
       },
-      outputs: {
-        checkedChange: { type: 'boolean', doc: 'The user checked or cleared the box.' },
-        indeterminateChange: { type: 'boolean', doc: 'A user toggle cleared the mixed state.' },
-      },
     },
     'toggle-button': {
       core: 'toggleButtonCore',
@@ -56,9 +52,6 @@ export default {
         '`input.btn-check` + `label.btn` that keeps the native checkbox role. `checked` is two-way.',
       ].join('\n'),
       inputs: { type: 'ToggleButtonInputs', fields: shared },
-      outputs: {
-        checkedChange: { type: 'boolean', doc: 'The user pressed or released the button.' },
-      },
     },
     'checkbox-group': {
       core: 'checkboxGroupCore',
@@ -75,9 +68,6 @@ export default {
           value: { default: '[]', kind: false, model: true },
           disabled: { default: 'false', reflect: true },
         },
-      },
-      outputs: {
-        valueChange: { type: 'CheckboxGroupValue', doc: 'The user checked or cleared a checkbox of this group.' },
       },
     },
   },

@@ -119,7 +119,6 @@ export const toastCore = defineCore<ToastInputs, { visible: boolean; phase: Toas
       if (!button || !api.host.contains(button)) return;
       settle(false);
       api.setState({ visible: false });
-      api.emit('visibleChange', false);
     };
     api.host.addEventListener('click', onClick);
     toastSettlers.set(api.host, settle);

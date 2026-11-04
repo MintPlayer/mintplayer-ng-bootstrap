@@ -5,7 +5,8 @@
 import { emitAngular, partialGuard } from '../templates/emit-angular.mjs';
 import { banner, coreImports, jsdoc, scopedHostBag, styleImports, styleInstall } from './model.mjs';
 
-const angularOutput = (output) => output.lower;
+// Angular's convention: an output keeps the manifest's camelCase name (`itemSelect`, as `xChange` of a model()).
+const angularOutput = (output) => output.name;
 
 export function inputLine(model, input) {
   const type = `${model.inputsType}['${input.name}']`;

@@ -28,7 +28,7 @@
   <bs-dock-manager
     [(layout)]="layout"
     [debugLayoutIntegrity]="isDevMode"
-    (layoutchange)="liveLayout.set($event)"
+    (layoutChange)="liveLayout.set($event)"
     class="dock-demo__surface"
     >
     <ng-container *bsDockManagerPane="let pane">

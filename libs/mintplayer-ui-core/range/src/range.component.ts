@@ -22,9 +22,6 @@ export default {
           label: { default: 'null', kind: 'string' },
         },
       },
-      outputs: {
-        valueChange: { type: 'number', doc: 'The user moved the slider.' },
-      },
     },
   },
 } satisfies ComponentGroup;

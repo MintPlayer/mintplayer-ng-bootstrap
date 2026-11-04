@@ -67,8 +67,6 @@ export interface TypeaheadItemSelectDetail {
 }
 
 export interface TypeaheadEvents {
-  /** The term changed by typing or by a pick; never for a programmatic set. */
-  valueChange: string;
   itemSelect: TypeaheadItemSelectDetail;
   /** Enter with no suggestion highlighted. */
   termSubmit: string;
@@ -181,7 +179,6 @@ export const typeaheadCore = defineCore<
     const machine = new TypeaheadMachine<TypeaheadItem>({
       id: api.host.id,
       value: inputs.value ?? '',
-      onChange: (term) => api.emit('valueChange', term),
       onSelect: (item, value) => api.emit('itemSelect', { item, value }),
       onSubmit: (term) => api.emit('termSubmit', term),
       onOpen: () => api.emit('openChange', true),
@@ -196,7 +193,8 @@ export const typeaheadCore = defineCore<
       const field = api.host.querySelector<HTMLInputElement>(INPUT);
       if (field && field.value !== s.term) field.value = s.term;
       api.setState({
-        value: s.term,
+        // Only a moved term touches the model: an unset value seeded as '' is not a change.
+        ...(s.term === api.state().value ? {} : { value: s.term }),
         items: s.items,
         status: s.status,
         open: s.open,

@@ -30,9 +30,6 @@ export default {
           noPadding: { default: 'false' },
         },
       },
-      outputs: {
-        openChange: { type: 'boolean', doc: 'The user closed the panel (Escape, the backdrop or a dismiss button).' },
-      },
     },
   },
 } satisfies ComponentGroup;

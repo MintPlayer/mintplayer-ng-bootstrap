@@ -100,7 +100,7 @@ describe('mp-select', () => {
     el.addEventListener('valuechange', (e) => details.push((e as CustomEvent).detail));
     el.addEventListener('change', () => changes++);
     pick(el, 'b');
-    expect(details).toEqual([{ value: 'b', values: ['b'] }]);
+    expect(details).toEqual(['b']);
     expect(el.value).toBe('b');
     expect(changes).toBe(1);
   });

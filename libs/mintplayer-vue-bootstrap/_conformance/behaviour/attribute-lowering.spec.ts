@@ -88,7 +88,7 @@ describe('BsShell — lowering onto the shell markup', () => {
     check(el, 'wide').click();
     await nextTick();
 
-    expect(wrapper.emitted('statechange')![0]).toEqual([{ open: false }]);
+    expect(wrapper.emitted('stateChange')![0]).toEqual([{ open: false }]);
   });
 
   it('renders the named slots into their regions', () => {

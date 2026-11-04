@@ -111,7 +111,6 @@ export const tabControlCore = defineCore<
       const key = tabPageKeys(pages)[index];
       if (key === api.state().activeTab) return;
       api.setState({ activeTab: key });
-      api.emit('activeTabChange', key);
     };
     const tabIndex = (event: Event) => {
       const label = (event.target as Element | null)?.closest?.('label.nav-link');

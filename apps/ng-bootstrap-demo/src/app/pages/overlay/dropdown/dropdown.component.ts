@@ -36,7 +36,7 @@ export class DropdownComponent {
     <button [color]="colors.primary">
       Actions
       <ng-container *bsDropdown>
-        <bs-dropdown-menu (itemselect)="chosen.set($event.value)">
+        <bs-dropdown-menu (itemSelect)="chosen.set($event.value)">
           <bs-dropdown-header>File</bs-dropdown-header>
           <bs-dropdown-item [value]="'new'">New</bs-dropdown-item>
           <bs-dropdown-item [value]="'save'" [disabled]="true">Save</bs-dropdown-item>

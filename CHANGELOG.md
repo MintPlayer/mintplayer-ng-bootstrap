@@ -10,6 +10,37 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **A two-way model is its own change channel (issue #458).** Every `model: true` input reports its
+  changes through the framework's native mechanism only, and the separate `<model>Change` outputs are
+  gone:
+  - **Angular:** bind `[(x)]` or `(xChange)`, the `model()`'s own output. The lowercase duplicates
+    `(openchange)`, `(valuechange)`, `(selecteddatechange)`, … are removed.
+  - **Vue:** `v-model:x` or `@update:x`; `@openchange`, `@valuechange`, … are removed.
+  - **React:** `onXChange` stays, now derived from the model and typed by the core's state (often
+    narrower than the prop: a datatable's `onFiltersChange` never receives `null`).
+  - **Lit:** the `xchange` event stays, fired after the property is written back.
+  - **Payloads are the value itself:** the navbar's `expandedChange` passes a boolean, not
+    `{ expanded }` (`NavbarExpandedChangeEventDetail` is removed); the select's `valueChange` passes the
+    value, not `{ value, values }` (a `multiple` select reports `valuesChange`).
+  - **A model reports whenever the component moves it away from the bound value**, including when
+    another input forces it (a tree-select switched to single mode, an OTP input whose new layout drops
+    characters, a phone input's country set by its dial code). It never echoes the consumer's own write:
+    a value it normalises as it takes it (`undefined` shown as `[]`, a clamped or sorted range) is not
+    reported, and neither is anything settled while the component attaches.
+  - **Multi-range:** `valueInput` is removed (the `value` model follows every move), and the commit
+    event `valueChange` is renamed `valueCommit` (Angular `(valueCommit)`, Vue `@value-commit`, React
+    `onValueCommit`, Lit `valuecommit`).
+- **Outputs follow each framework's own casing (issue #458).** Manifests name outputs in camelCase,
+  and each front now exposes them in its framework's convention instead of lowercasing them everywhere:
+  - **Angular:** camelCase outputs, `(itemSelect)`, `(phoneChange)`, `(tabChange)`, `(layoutChange)`,
+    `(columnCountChange)`, … instead of `(itemselect)`, `(phonechange)`, ….
+  - **Vue:** emits are declared camelCase. Listen in kebab-case (`@item-select`, `@phone-change`,
+    `@preview-change`) or pass `onItemSelect` to a render function, instead of `@itemselect` /
+    `onItemselect`.
+  - **React:** unchanged (`onItemSelect`).
+  - **Lit:** unchanged; DOM event names stay lowercase (`itemselect`).
+  - **Shell:** `statechange` is renamed `stateChange` (Angular `(stateChange)`, Vue `@state-change`,
+    React `onStateChange`; the Lit event stays `statechange`).
 - **Presentational components are generated from `@mintplayer/ui-core` (issue #458), and React, Vue
   and Lit get each of them too.** Badge, close, button group, alert, breadcrumb, list group,
   progress, placeholder, table, grid, navbar toggler, marquee, parallax, sticky footer, form,

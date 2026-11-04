@@ -31,9 +31,6 @@ export default {
           hrefFor: { default: 'null', kind: false },
         },
       },
-      outputs: {
-        selectedPageNumberChange: { type: 'number', doc: 'The user picked a page (click, Enter or Space).' },
-      },
     },
   },
 } satisfies ComponentGroup;

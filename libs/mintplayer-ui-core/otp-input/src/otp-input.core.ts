@@ -48,8 +48,6 @@ export interface OtpInputState {
 }
 
 export interface OtpInputEvents {
-  /** Every keystroke, paste and clear: the current, possibly partial, code. */
-  valueChange: string;
   /** The user filled the last box. Fires again after a re-completion; never for a written value. */
   complete: string;
 }
@@ -90,7 +88,6 @@ function commit(api: Api, value: string, reveal: number | null) {
   }
   api.setState({ value, revealed: reveal, caret: input.selectionEnd ?? value.length });
   if (value === before) return;
-  api.emit('valueChange', value);
   if (value.length === total && before.length !== total) {
     stopReveal(api);
     api.setState({ revealed: null });
@@ -99,13 +96,11 @@ function commit(api: Api, value: string, reveal: number | null) {
 }
 
 /** A written value, or one renormalised by a layout or type change: shown, not completed. */
-function write(api: Api, value: string, report: boolean) {
+function write(api: Api, value: string) {
   stopReveal(api);
   const input = field(api);
   if (input.value !== value) input.value = value;
-  const changed = value !== api.state().value;
   api.setState({ value, revealed: null });
-  if (report && changed) api.emit('valueChange', value);
 }
 
 export const otpInputCore = defineCore<OtpInputInputs, OtpInputState, { view: OtpInputView }, OtpInputEvents, undefined, undefined, OtpInputMethods>({
@@ -172,18 +167,18 @@ export const otpInputCore = defineCore<OtpInputInputs, OtpInputState, { view: Ot
   inputsChanged: (api, prev) => {
     const inputs = api.inputs();
     if (inputs.value !== prev.value && normalise(inputs, inputs.value) !== api.state().value) {
-      write(api, normalise(inputs, inputs.value), false);
+      write(api, normalise(inputs, inputs.value));
       return;
     }
     // A shorter layout or a stricter type drops characters: the consumer must hear of it.
     if (!sameGroups(inputs.groups, prev.groups) || inputs.type !== prev.type || inputs.letterCase !== prev.letterCase) {
-      write(api, normalise(inputs, api.state().value), true);
+      write(api, normalise(inputs, api.state().value));
     }
   },
   methods: {
     clear: (api) => {
       if (api.state().value === '') return;
-      write(api, '', true);
+      write(api, '');
     },
     focusInput: (api, options) => field(api).focus(options),
   },

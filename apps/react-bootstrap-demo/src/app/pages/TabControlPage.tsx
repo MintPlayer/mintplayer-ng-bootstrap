@@ -9,7 +9,7 @@ const SOURCE = `<BsTabControl activeTab={active} onActiveTabChange={setActive}>
 </BsTabControl>`;
 
 export function TabControlPage() {
-  const [active, setActive] = useState('home');
+  const [active, setActive] = useState<string | null>('home');
 
   return (
     <div className="demo-page">

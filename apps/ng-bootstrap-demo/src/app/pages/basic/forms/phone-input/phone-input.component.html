@@ -10,7 +10,7 @@
 <p>
     Validation rules are loaded <em>per calling code</em> on first interaction, so
     a field costs about 20&nbsp;kB gzip when the user reaches it and nothing before
-    that. <code>(phonechange)</code> reports <code>valid</code> as
+    that. <code>(phoneChange)</code> reports <code>valid</code> as
     <code>undefined</code> until those rules arrive — deliberately, rather than
     claiming a number is valid before anything has checked it.
 </p>
@@ -29,7 +29,7 @@
                     [disabled]="disabled()"
                     [required]="required()"
                     [errorMessages]="errorMessages"
-                    (phonechange)="onPhoneChange($event)"></bs-phone-input>
+                    (phoneChange)="onPhoneChange($event)"></bs-phone-input>
             </bs-form>
         </div>
         <div [sm]="6">
@@ -41,7 +41,7 @@
         <div col>
             <p class="mb-1">Bound value (E.164):</p>
             <pre class="text-start"><code>{{ phone() ?? 'null' }}</code></pre>
-            <p class="mb-1">Last <code>(phonechange)</code> detail:</p>
+            <p class="mb-1">Last <code>(phoneChange)</code> detail:</p>
             <pre class="text-start"><code>{{ lastDetail() | json }}</code></pre>
         </div>
     </div>

@@ -239,7 +239,6 @@ export const accordionTabCore = defineCore<
     const onToggle = (event: Event) => {
       if (event.target !== row || row.open === api.state().open) return;
       api.setState({ open: row.open });
-      api.emit('openChange', row.open);
     };
     // A disabled summary ignores a synthesized click (the sheet blocks the pointer).
     const onClick = (event: Event) => {

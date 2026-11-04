@@ -37,7 +37,6 @@ export default {
       outputs: {
         itemClick: { type: 'TimelineItemClickDetail', doc: 'An enabled row was clicked, or activated with Enter/Space when only activatable.' },
         selectionChanged: { type: 'TimelineSelectionChangeDetail', doc: 'The selection changed: the selected, added and removed items.' },
-        selectedIdsChange: { type: 'TimelineKeys', doc: 'The keys of the selected rows.' },
       },
     },
     'timeline-item': {

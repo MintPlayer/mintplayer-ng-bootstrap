@@ -174,8 +174,8 @@ onBeforeUnmount(() => observer?.disconnect());
         :resize-mode="resizeMode"
         :animate-reflow="animateReflow"
         label="Demo dashboard"
-        @columncountchange="onColumnCountChange"
-        @gestureblocked="blocked = $event"
+        @column-count-change="onColumnCountChange"
+        @gesture-blocked="blocked = $event"
       >
         <template #header="{ tile }"><span>{{ panel(tile).title }}</span></template>
         <template #content="{ tile }"><div class="tile-body">{{ panel(tile).body }}</div></template>

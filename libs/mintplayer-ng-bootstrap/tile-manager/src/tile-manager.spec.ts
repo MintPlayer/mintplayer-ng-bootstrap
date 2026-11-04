@@ -22,7 +22,7 @@ import { BsTileManagerComponent, BsTileManagerContentDirective, BsTileManagerHea
       [(layouts)]="layouts"
       [breakpoints]="breakpoints"
       [dragMode]="dragMode()"
-      (layoutchange)="changes.push($event)">
+      (layoutChange)="changes.push($event)">
       <span *bsTileManagerHeader="let tile = tile" class="head">{{ tile.label }}</span>
       <p *bsTileManagerContent="let tile = tile" class="body">{{ tile.id }} body</p>
     </bs-tile-manager>

@@ -105,7 +105,7 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
         const exp = p.exp.content.trim();
         const output = use.outputs.find((o) => o.output.name === p.arg.content);
         const text = output
-          ? `@${output.output.lower}="${exp}"`
+          ? `@${output.output.name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}="${exp}"`
           : `:${p.arg.content}="${exp}.value" @update:${p.arg.content}="${exp}.set"`;
         edits.push({ start: p.loc.start.offset, end: p.loc.end.offset, text });
       });

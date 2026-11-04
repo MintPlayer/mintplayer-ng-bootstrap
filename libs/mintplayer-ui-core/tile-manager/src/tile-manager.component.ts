@@ -42,7 +42,6 @@ export default {
       outputs: {
         layoutPreview: { type: 'TileLayoutChange', doc: 'Each step of a gesture or keyboard move: the layout as it would be committed.' },
         layoutChange: { type: 'TileLayoutChange', doc: 'A commit: the full layouts record and the stale narrower counts.' },
-        layoutsChange: { type: 'TileLayouts', doc: 'The two-way `layouts`, after a commit.' },
         columnCountChange: { type: 'TileColumnCountChange', doc: 'The resolved column count changed.' },
         gestureBlocked: { type: 'TileGestureBlocked', doc: 'A move or resize was refused (no room, or the tile is locked).' },
       },

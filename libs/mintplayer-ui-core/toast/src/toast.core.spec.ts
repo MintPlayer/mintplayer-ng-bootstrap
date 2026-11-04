@@ -21,6 +21,7 @@ describe('toast views', () => {
 describe('toastCore', () => {
   const mount = (o: Partial<ToastInputs> = {}) => {
     const h = hostCore(toastCore, { visible: false, politeness: 'polite', ...o }, {
+      models: ['visible'],
       markup: ({ root }, host) => (applyBag(host, root), [el('div', { class: 'toast-header' }, el('button', { 'data-toast-dismiss': '' }, 'x')), el('div', null, 'Hello')]),
     });
     h.attach();
@@ -56,10 +57,10 @@ describe('toastCore', () => {
   it('closes from its dismiss button only', async () => {
     const h = mount({ visible: true });
     h.host.querySelector<HTMLElement>('.toast-header')!.click();
-    expect(h.events('visibleChange')).toEqual([]);
+    expect(h.changes('visible')).toEqual([]);
     h.host.querySelector<HTMLElement>('[data-toast-dismiss]')!.click();
     expect(h.state().visible).toBe(false);
-    expect(h.events('visibleChange')).toEqual([false]);
+    expect(h.changes('visible')).toEqual([false]);
     await wait(200);
     expect(h.state().phase).toBe('hidden');
   });

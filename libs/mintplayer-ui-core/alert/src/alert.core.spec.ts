@@ -16,7 +16,7 @@ function mount(o: Partial<AlertInputs> = {}) {
   const markup = ({ view }: { view: AlertView }, host: HTMLElement) =>
     (applyBag(host, view.root), [el('p', null, 'Saved'), view.dismiss && el('button', view.dismiss)].filter((n): n is HTMLElement => !!n));
   const before = document.body.appendChild(el('button', null, 'Before'));
-  const h = hostCore(alertCore, inputs(o), { markup });
+  const h = hostCore(alertCore, inputs(o), { models: ['visible'], markup });
   const after = document.body.appendChild(el('button', null, 'After'));
   h.attach();
   return { ...h, before, after, close: () => h.host.querySelector<HTMLElement>('.btn-close')! };
@@ -38,7 +38,7 @@ describe('alertCore', () => {
     h.close().focus();
     h.close().click();
     expect(h.state().visible).toBe(false);
-    expect(h.events('visibleChange')).toEqual([false]);
+    expect(h.changes('visible')).toEqual([false]);
     expect(document.activeElement).toBe(h.after);
   });
 

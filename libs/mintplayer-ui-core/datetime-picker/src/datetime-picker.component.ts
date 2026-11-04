@@ -44,7 +44,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'Date | null', doc: 'The value changed by the user: a picked day or time, Today, Now, clear.' },
         openChange: { type: 'DatetimePopup', doc: "Which popup is open now: 'date', 'time', or null." },
       },
       methods: {

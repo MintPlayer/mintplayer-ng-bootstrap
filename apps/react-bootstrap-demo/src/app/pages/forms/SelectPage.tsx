@@ -20,7 +20,7 @@ const DISHES: Dish[] = [
 // [ngValue] does this for you).
 const SOURCE = `<BsSelect aria-label="Dish"
           value={String(selected?.id ?? '')}
-          onValueChange={({ value }) => setSelected(DISHES.find(d => d.id === Number(value)) ?? null)}>
+          onValueChange={(value) => setSelected(DISHES.find(d => d.id === Number(value)) ?? null)}>
   <option value="">Choose a dish</option>
   {DISHES.map(d => <option key={d.id} value={String(d.id)}>{d.name}</option>)}
 </BsSelect>`;
@@ -38,7 +38,7 @@ export function SelectPage() {
         A native <code>&lt;select class="form-select"&gt;</code>: it opens,
         picks and submits with JavaScript off. Pass <code>options</code>, or put
         <code>&lt;option&gt;</code> children inside. <code>onValueChange</code>
-        receives <code>{"{ value, values }"}</code>.
+        receives the value; a <code>multiple</code> select reports through <code>onValuesChange</code>.
       </p>
 
       <section>
@@ -46,7 +46,7 @@ export function SelectPage() {
         <BsSelect
           aria-label="Dish"
           value={String(selected?.id ?? '')}
-          onValueChange={({ value }) =>
+          onValueChange={(value) =>
             setSelected(DISHES.find((d) => d.id === Number(value)) ?? null)
           }
         >

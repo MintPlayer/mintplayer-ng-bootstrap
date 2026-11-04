@@ -6,7 +6,7 @@ import { BsAccordionComponent, BsAccordionTabComponent, BsAccordionTabHeaderDire
 @Component({
   selector: 'bs-accordion-test',
   template: `
-    <bs-accordion [multi]="multi()" [highlightActiveTab]="highlight()" (tabtoggle)="toggles.push($event)">
+    <bs-accordion [multi]="multi()" [highlightActiveTab]="highlight()" (tabToggle)="toggles.push($event)">
       @for (tab of tabs(); track tab) {
         <bs-accordion-tab [(open)]="tab.open" [disabled]="tab.disabled">
           <ng-container *bsAccordionTabHeader>{{ tab.title }}</ng-container>

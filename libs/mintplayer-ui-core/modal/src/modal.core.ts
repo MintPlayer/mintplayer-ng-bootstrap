@@ -115,7 +115,6 @@ const presences = new WeakMap<HTMLElement, OverlayPresence>();
 function close(api: Api): void {
   if (!api.state().open) return;
   api.setState({ open: false });
-  api.emit('openChange', false);
   presences.get(api.host)?.set(false);
 }
 

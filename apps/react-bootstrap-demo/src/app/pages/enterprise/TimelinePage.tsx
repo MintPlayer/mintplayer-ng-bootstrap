@@ -146,7 +146,7 @@ export function TimelinePage() {
               aria-label="Orientation"
               value={orientation}
               options={ORIENTATION_OPTIONS}
-              onValueChange={({ value }) => setOrientation(value as TimelineOrientation)}
+              onValueChange={(value) => setOrientation(value as TimelineOrientation)}
             />
           </div>
 
@@ -156,7 +156,7 @@ export function TimelinePage() {
               aria-label="Alignment"
               value={align}
               options={ALIGN_OPTIONS}
-              onValueChange={({ value }) => setAlign(value as TimelineAlign)}
+              onValueChange={(value) => setAlign(value as TimelineAlign)}
             />
           </div>
 
@@ -166,7 +166,7 @@ export function TimelinePage() {
               aria-label="Selectable"
               value={selectable}
               options={SELECTABLE_OPTIONS}
-              onValueChange={({ value }) => setSelectable(value as TimelineSelectable)}
+              onValueChange={(value) => setSelectable(value as TimelineSelectable)}
             />
           </div>
 

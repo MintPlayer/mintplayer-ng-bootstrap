@@ -24,9 +24,6 @@ export default {
           visible: { default: 'true', model: true },
         },
       },
-      outputs: {
-        visibleChange: { type: 'boolean', doc: 'The user dismissed the alert.' },
-      },
     },
   },
 } satisfies ComponentGroup;

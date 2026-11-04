@@ -22,7 +22,7 @@ const toasts = new ToastQueue<{ message: string }>();   // one per app: toast fr
 
 <BsToaster :queue="toasts">
   <template #toast="{ toast }">
-    <BsToast :visible="toast.visible" @visiblechange="toasts.close(toast.id)">
+    <BsToast :visible="toast.visible" @update:visible="toasts.close(toast.id)">
       <BsToastHeader><strong class="me-auto">Notification</strong></BsToastHeader>
       <BsToastBody>{{ toast.data.message }}</BsToastBody>
     </BsToast>
@@ -48,7 +48,7 @@ const toasts = new ToastQueue<{ message: string }>();   // one per app: toast fr
       </form>
       <BsToaster :queue="toasts">
         <template #toast="{ toast }">
-          <BsToast :visible="toast.visible" @visiblechange="toasts.close(toast.id)">
+          <BsToast :visible="toast.visible" @update:visible="toasts.close(toast.id)">
             <BsToastHeader>
               <strong class="me-auto">Bootstrap</strong>
               <small class="text-body-secondary">just now</small>

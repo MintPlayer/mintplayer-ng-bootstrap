@@ -8,7 +8,7 @@ import { mountEl, mountWrapper } from './harness';
 
 /**
  * The dropdown group's menu (#458 M6): `BsDropdownItem`'s opaque `value` must
- * reach the menu's `itemselect` event unchanged (it travels on the item's
+ * reach the menu's `itemSelect` event unchanged (it travels on the item's
  * `dropdownValue` property, never on a native `value`), and the menu writes
  * its height cap.
  */
@@ -20,7 +20,7 @@ const seen: unknown[] = [];
 
 const Host = defineComponent({
   setup: () => () =>
-    h(BsDropdownMenu, { onItemselect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
+    h(BsDropdownMenu, { onItemSelect: (d: DropdownSelectEventDetail) => seen.push(d.value) }, () =>
       // `value` is opaque (`kind: false`), so the generated prop type cannot name it.
       h(BsDropdownItem, { value: value.value }, () => 'A'),
     ),

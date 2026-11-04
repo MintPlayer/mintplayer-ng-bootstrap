@@ -5,7 +5,7 @@ afterEach(() => document.body.replaceChildren());
 
 function mount(o: Partial<RangeInputs> = {}) {
   const markup = ({ view }: { view: RangeView }, host: HTMLElement) => (applyBag(host, view.root), el('input', view.input));
-  const h = hostCore(rangeCore, { value: 5, min: 0, max: 10, step: 1, disabled: false, label: 'Volume', ...o }, { markup });
+  const h = hostCore(rangeCore, { value: 5, min: 0, max: 10, step: 1, disabled: false, label: 'Volume', ...o }, { models: ['value'], markup });
   h.attach();
   const input = () => h.host.querySelector<HTMLInputElement>('input')!;
   const slide = (value: string, target: HTMLInputElement = input()) => {
@@ -17,7 +17,7 @@ function mount(o: Partial<RangeInputs> = {}) {
 
 describe('rangeCore', () => {
   it('names the slider from the consumer first, then its label', () => {
-    expect(hostCore(rangeCore, { value: 1, min: 0, max: 2, step: 1, disabled: true, label: null }, { label: 'Mine' }).props().view.input).toMatchObject({ 'aria-label': 'Mine', disabled: '' });
+    expect(hostCore(rangeCore, { value: 1, min: 0, max: 2, step: 1, disabled: true, label: null }, { models: ['value'], label: 'Mine' }).props().view.input).toMatchObject({ 'aria-label': 'Mine', disabled: '' });
     expect(hostCore(rangeCore, { value: 1, min: 0, max: 2, step: 1, disabled: false, label: null }).props().view.input['aria-label']).toBeNull();
   });
 
@@ -28,7 +28,7 @@ describe('rangeCore', () => {
     h.slide('abc');
     h.slide('3', h.host.appendChild(el('input')) as HTMLInputElement);
     expect(h.state().value).toBe(7);
-    expect(h.events('valueChange')).toEqual([7]);
+    expect(h.changes('value')).toEqual([7]);
   });
 
   it('follows the consumer’s value and stops listening once disposed', () => {

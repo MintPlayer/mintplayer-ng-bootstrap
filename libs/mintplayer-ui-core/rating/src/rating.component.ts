@@ -27,7 +27,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'number', doc: 'The user picked a star.' },
         previewChange: { type: 'number | null', doc: 'The star under the pointer; null when it leaves.' },
       },
     },

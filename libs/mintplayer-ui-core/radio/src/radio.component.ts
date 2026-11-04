@@ -37,9 +37,6 @@ export default {
           inputLabel: { default: 'null', kind: 'string' },
         },
       },
-      outputs: {
-        checkedChange: { type: 'boolean', doc: 'The input became checked (a radio never unchecks itself).' },
-      },
     },
     'radio-group': {
       core: 'radioGroupCore',
@@ -57,9 +54,6 @@ export default {
           disabled: { default: 'false', reflect: true },
           required: { default: 'false' },
         },
-      },
-      outputs: {
-        valueChange: { type: 'string | null', doc: 'The user picked a radio of this group.' },
       },
     },
   },

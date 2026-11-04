@@ -72,8 +72,8 @@
     [resizeMode]="resizeMode()"
     [animateReflow]="animateReflow()"
     label="Demo dashboard"
-    (columncountchange)="onColumnCountChange($event)"
-    (gestureblocked)="latestBlocked.set($event)">
+    (columnCountChange)="onColumnCountChange($event)"
+    (gestureBlocked)="latestBlocked.set($event)">
     <span *bsTileManagerHeader="let tile = tile">{{ panel(tile).title }}</span>
     <div *bsTileManagerContent="let tile = tile" class="tile-body">{{ panel(tile).body }}</div>
   </bs-tile-manager>

@@ -19,9 +19,12 @@ The compiler writes a complete component, plus an `index.ts` barrel, into each f
 | Vue | `Bs<El>.generated.vue`: runtime props, `defineEmits` (+ `update:x` for models), `defineExpose` |
 | Lit | `mp-<el>.generated.ts`: a light-DOM `LitElement` with `CoreController` and `LightChildren` |
 
-Outputs are keyed camelCase in the manifest. Angular, Vue and Lit expose them lowercased (`expandedchange`),
-React as `on<Pascal>`. A two-way input (`model: true`) is the core state key of the same name, written back
-when the core changes it. React stays controlled through the matching output.
+Outputs are keyed camelCase in the manifest, and each front names them by its own convention: Angular
+`(itemSelect)`, Vue `itemSelect` (`@item-select` in a template), React `onItemSelect`, and Lit a lowercase
+DOM event `itemselect`. A two-way input (`model: true`) is the core state key of the same name, written back
+when the core changes it, and it is its own change channel: Angular's `model()` (`(xChange)`), Vue
+`update:x`, React `onXChange`, Lit an `xchange` event. A manifest output `xChange` beside a model `x` is an
+error.
 
 **Escape hatch.** Put a front-only need in `<front lib>/<group>/src/<element>.<front>.ts`. The generator
 picks up these named exports:
@@ -198,8 +201,8 @@ the template of every front. A template without a manifest is still compiled on 
   - A template may compose its own element (recursion ends with the data under `v-if` / `v-for`).
     A cycle between groups is an error, and so is a tag claimed by two manifests.
 - **Output names.** An output whose lowercase name is a native DOM event (`change`, `select`,
-  `toggle`, `animationend`, ...) is refused. On a composed child, the native event would also reach
-  the listener.
+  `toggle`, `animationend`, ...) is refused: the Lit element dispatches it under that name, so the
+  native event would also reach the listener.
 - **`:value.prop` on a `<select>`** is a seed for React only: React emits it as `defaultValue`
   because it refuses `selected` on an `<option>`. The other fronts drop it and select through
   each option's `selected` bag key. A live `select.value` write would land before the options

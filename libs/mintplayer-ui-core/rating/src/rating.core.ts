@@ -107,7 +107,6 @@ export const ratingCore = defineCore<
       const value = Number(input.value);
       if (value === api.state().value) return;
       api.setState({ value });
-      api.emit('valueChange', value);
     };
     const preview = (value: number | null) => {
       if (api.inputs().disabled || value === previewed) return;

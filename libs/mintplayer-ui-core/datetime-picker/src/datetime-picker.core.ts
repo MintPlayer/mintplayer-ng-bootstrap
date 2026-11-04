@@ -80,8 +80,6 @@ export interface DatetimePickerState {
 }
 
 export interface DatetimePickerEvents {
-  /** The value changed: a picked day or time, Today, Now, clear, or a value typed before hydration. */
-  valueChange: Date | null;
   /** Which popup is open now: 'date', 'time', or null. */
   openChange: DatetimePopup;
 }
@@ -126,7 +124,6 @@ function commit(api: Api, value: Date | null) {
   });
   if (value) showMonth(api, value);
   syncField(api);
-  api.emit('valueChange', value);
 }
 
 function setDatePart(api: Api, day: Date) {
@@ -212,7 +209,6 @@ export const datetimePickerCore = defineCore<
     const typed = field?.type === 'datetime-local' ? parseIsoDateTime(field.value) : null;
     if (typed && typed.getTime() !== api.state().value?.getTime()) {
       api.setState({ value: typed, currentMonth: monthOf(typed) });
-      api.emit('valueChange', typed);
     }
     // The field becomes the readonly display now: a datetime field cannot hold
     // the formatted text, and its dirty value would survive the type change.

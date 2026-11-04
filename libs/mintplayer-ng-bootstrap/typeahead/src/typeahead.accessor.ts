@@ -39,7 +39,7 @@ export class BsTypeaheadValueAccessor implements ControlValueAccessor, OnInit {
   ngOnInit(): void {
     // The component is created after its host directives, so it is looked up here.
     const component = this.injector.get(BsTypeaheadComponent);
-    const sub = component.valuechange.subscribe((value) => {
+    const sub = component.value.subscribe((value) => {
       if (!this.bound() || value === this.viewValue()) return;
       this.viewValue.set(value);
       this.onChange(value);

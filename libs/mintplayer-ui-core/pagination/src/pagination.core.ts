@@ -89,7 +89,6 @@ export const paginationCore = defineCore<
       const page = Number(link.getAttribute(PAGINATION_PAGE_ATTR));
       if (!Number.isFinite(page) || page === api.state().selectedPageNumber) return;
       api.setState({ selectedPageNumber: page });
-      api.emit('selectedPageNumberChange', page);
     };
     api.host.addEventListener('click', onClick);
     return () => api.host.removeEventListener('click', onClick);

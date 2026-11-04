@@ -189,7 +189,7 @@ export class FileManagerDemoComponent {
     this.lazyMode() ? this.loadChildren : undefined,
   );
 
-  /** Toasts: error messages re-emitted via the `(errorreported)` event. */
+  /** Toasts: error messages re-emitted via the `(errorReported)` event. */
   readonly toasts = signal<{ id: string; message: string }[]>([]);
 
   iconResolver: FileManagerIconResolver = (iconKey) => this.icons().get(iconKey);
@@ -399,7 +399,7 @@ export class FileManagerDemoComponent {
   // ─── Code-snippet samples (rendered in the integration guide) ───────────
   readonly snippetOperationHandler = dedent`
     // Mark rows busy while the backend processes the change, then clear
-    // on completion. Failures route through reportError() → (errorreported).
+    // on completion. Failures route through reportError() → (errorReported).
     onOperation(op: OperationEventDetail, fm: BsFileManagerComponent) {
       if (op.kind === 'rename') {
         fm.markPending(op.nodeId, 'rename');
@@ -412,7 +412,7 @@ export class FileManagerDemoComponent {
     }`;
 
   readonly snippetUploadPipeline = dedent`
-    // The (uploadrequest) event carries pre-registered UploadEntry IDs.
+    // The (uploadRequest) event carries pre-registered UploadEntry IDs.
     // Drive your real XHR / fetch upload, then push progress into the WC
     // so it can render the in-flight bar wherever your app prefers.
     onUpload(req: UploadRequestEventDetail, fm: BsFileManagerComponent) {
@@ -491,7 +491,7 @@ export class FileManagerDemoComponent {
     };`;
 
   readonly snippetErrorBridge = dedent`
-    // Surface errors from your backend through the (errorreported) event.
+    // Surface errors from your backend through the (errorReported) event.
     // The component fires this whenever reportError() is called — wire
     // it to your toast / snackbar service.
     onError(detail: { kind: string; message: string; nodeId?: string }) {
@@ -499,7 +499,7 @@ export class FileManagerDemoComponent {
     }
 
     // template:
-    // <bs-file-manager (errorreported)="onError($event)"></bs-file-manager>`;
+    // <bs-file-manager (errorReported)="onError($event)"></bs-file-manager>`;
 }
 
 function duplicateBranches(

@@ -24,7 +24,7 @@ function mount(o: Partial<TabControlInputs> = {}) {
       el('div', view.content, ...view.entries.map((e) => el('div', e.pane))),
     ];
   };
-  const h = hostCore(tabControlCore, inputs(o), { markup });
+  const h = hostCore(tabControlCore, inputs(o), { models: ['activeTab'], markup });
   h.attach();
   const tab = (i: number) => h.host.querySelectorAll<HTMLElement>('label.nav-link')[i];
   const radio = (i: number) => h.host.querySelectorAll<HTMLInputElement>('input.tab-radio')[i];
@@ -57,7 +57,7 @@ describe('tabControlCore', () => {
     h.tab(1).click();
     h.tab(2).click();
     h.host.click();
-    expect(h.events('activeTabChange')).toEqual(['1']);
+    expect(h.changes('activeTab')).toEqual(['1']);
   });
 
   it('moves between tabs with the arrow keys, skipping disabled ones', () => {
@@ -67,7 +67,7 @@ describe('tabControlCore', () => {
     expect(document.activeElement).toBe(h.tab(3));
     h.tab(3).dispatchEvent(new KeyboardEvent('keydown', { key: 'x', bubbles: true, cancelable: true }));
     h.host.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
-    expect(h.events('activeTabChange')).toEqual(['d']);
+    expect(h.changes('activeTab')).toEqual(['d']);
   });
 
   it('follows a radio changed before the labels took over, and the consumer’s tab', () => {

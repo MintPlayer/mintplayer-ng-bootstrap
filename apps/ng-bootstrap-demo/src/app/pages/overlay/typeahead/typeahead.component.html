@@ -6,8 +6,8 @@
   <code>AbortSignal</code>: when a newer term supersedes a request, the older one is aborted and its
   answer is never shown. Typing is debounced (<code>[debounceMs]</code>, 200 ms) and gated on a
   minimum length (<code>[minLength]</code>, 1). The value is the text, usable with
-  <code>[(ngModel)]</code> or <code>formControlName</code>; <code>(itemselect)</code> delivers the picked item
-  and <code>(termsubmit)</code> the term on Enter. The provider may answer with a Promise or an Observable.
+  <code>[(ngModel)]</code> or <code>formControlName</code>; <code>(itemSelect)</code> delivers the picked item
+  and <code>(termSubmit)</code> the term on Enter. The provider may answer with a Promise or an Observable.
 </p>
 <p>
   The component is generated from one framework-neutral source (a core driving <code>TypeaheadMachine</code>
@@ -26,8 +26,8 @@
   [debounceMs]="200"
   [minLength]="2"
   inputLabel="Artist"
-  (itemselect)="selected.set($event.item)"
-  (termsubmit)="submitted.set($event)"
+  (itemSelect)="selected.set($event.item)"
+  (termSubmit)="submitted.set($event)"
 ></bs-typeahead>
 <p class="mt-2 small text-secondary">
   Aborted requests: <span data-testid="aborted">{{ aborted() }}</span> ·
@@ -57,7 +57,7 @@
 <h2>Forms</h2>
 <p>
   The control's value is the text, so free text is a valid value. A pick writes the item's text; the item itself
-  arrives with <code>(itemselect)</code>.
+  arrives with <code>(itemSelect)</code>.
 </p>
 
 <form class="row g-2 align-items-end" (ngSubmit)="submitted.set(street())">

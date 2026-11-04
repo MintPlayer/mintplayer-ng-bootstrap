@@ -77,7 +77,7 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function mount(o: Partial<FileManagerInputs> = {}) {
-  const h = hostCore(fileManagerCore, base(o), { id: 'fm', markup });
+  const h = hostCore(fileManagerCore, base(o), { models: ['selectedIds', 'viewMode', 'uploads', 'pending'], id: 'fm', markup });
   h.attach();
   const q = <T extends Element = HTMLElement>(selector: string) => h.host.querySelector<T>(selector)!;
   const card = (id: string) => [...h.host.querySelectorAll<HTMLElement>('.icon-card')].find((c) => c.dataset['nodeId'] === id)!;
@@ -107,7 +107,7 @@ describe('fileManagerCore icon view', () => {
     h.card('docs').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(h.state()).toMatchObject({ currentFolderId: 'docs', selectedIds: [] });
     expect(h.events('navigate')).toEqual([{ folderId: 'docs' }]);
-    expect(h.events('selectedIdsChange').at(-1)).toEqual([]);
+    expect(h.changes('selectedIds').at(-1)).toEqual([]);
     h.q('nav').dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
   });
 
@@ -147,7 +147,7 @@ describe('fileManagerCore icon view', () => {
     const h = mount({ currentFolderId: 'sub' });
     h.click(h.q('[data-fm-view="list"]'));
     h.click(h.q('[data-fm-view="list"]'));
-    expect(h.events('viewModeChange')).toEqual(['list']);
+    expect(h.changes('viewMode')).toEqual(['list']);
     h.render();
     const crumbs = [...h.host.querySelectorAll<HTMLElement>('[data-fm-navigate]')];
     expect(crumbs.map((c) => c.textContent)).toEqual(['Home', 'Docs', 'Sub']);
@@ -387,7 +387,7 @@ describe('fileManagerCore uploads', () => {
     expect(h.state().uploads.map((u) => [u.status, u.progress, u.error])).toEqual([['done', 100, undefined], ['error', 10, 'Too big']]);
     h.call('clearUpload', 'u1');
     h.call('clearUpload', 'nope');
-    expect(h.events('uploadsChange').at(-1)!.map((u) => u.id)).toEqual(['u2']);
+    expect(h.changes('uploads').at(-1)!.map((u) => u.id)).toEqual(['u2']);
   });
 });
 
@@ -453,7 +453,7 @@ describe('fileManagerCore handlers, methods and inputs', () => {
     expect(h.state().pending).toEqual({ a: 'rename' });
     h.call('clearPending', 'b');
     h.call('clearPending', 'a');
-    expect(h.events('pendingChange')).toEqual([{ a: 'rename' }, {}]);
+    expect(h.changes('pending')).toEqual([{ a: 'rename' }, {}]);
     h.call('reportError', 'Nope', 'a');
     h.call('reportError', 'Nope');
     expect(h.events('errorReported')).toEqual([{ kind: 'operation', message: 'Nope', nodeId: 'a' }, { kind: 'operation', message: 'Nope' }]);

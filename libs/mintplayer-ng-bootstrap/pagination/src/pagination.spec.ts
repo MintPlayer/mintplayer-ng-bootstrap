@@ -14,7 +14,7 @@ import { BsPaginationComponent } from './index';
       [numberOfBoxes]="numberOfBoxes()"
       [hrefFor]="hrefFor()"
       [size]="size()"
-      (selectedpagenumberchange)="picked.push($event)"
+      (selectedPageNumberChange)="picked.push($event)"
     ></bs-pagination>
   `,
 })

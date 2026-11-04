@@ -37,7 +37,6 @@ export default {
         },
       },
       outputs: {
-        filesChange: { type: 'FileUpload[]', doc: 'The files list grew: the whole new list.' },
         filesDropped: { type: 'FileUpload[]', doc: 'Files were chosen or dropped: the batch just added.' },
       },
     },

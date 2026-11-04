@@ -14,7 +14,7 @@ import { BsCodeSnippetComponent, type CodeLineActivation } from './index';
 @Component({
   imports: [BsCodeSnippetComponent],
   template: `<bs-code-snippet #snippet [code]="code()" [language]="'typescript'" [lineNumbers]="true" [lineHref]="lineHref"
-    [activeLine]="active()" (languagedetected)="detected.push($event)" (lineactivate)="onLine($event)" />`,
+    [activeLine]="active()" (languageDetected)="detected.push($event)" (lineActivate)="onLine($event)" />`,
 })
 class HostComponent {
   readonly code = signal('const a = 1;\nconst b = 2;');

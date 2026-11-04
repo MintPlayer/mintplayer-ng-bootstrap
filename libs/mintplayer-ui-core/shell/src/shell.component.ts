@@ -16,7 +16,7 @@ export default {
         'viewport mode is the open state, so the server-rendered page opens and closes with JavaScript off.',
         '',
         'Fill the `topbar` and `sidebar` slots; the default content is the main region. `toggle()` opens',
-        'or closes the sidebar in the current mode, and `statechange` reports every change made through',
+        'or closes the sidebar in the current mode, and `stateChange` reports every change made through',
         'the shell.',
       ].join('\n'),
       inputs: {
@@ -31,7 +31,7 @@ export default {
         },
       },
       outputs: {
-        statechange: { type: 'ShellStateChange', doc: 'The sidebar opened or closed through the shell (hamburger, toggle(), dismiss).' },
+        stateChange: { type: 'ShellStateChange', doc: 'The sidebar opened or closed through the shell (hamburger, toggle(), dismiss).' },
       },
       methods: {
         type: 'ShellMethods',

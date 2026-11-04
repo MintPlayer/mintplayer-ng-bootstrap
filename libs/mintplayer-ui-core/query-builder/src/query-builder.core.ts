@@ -84,10 +84,6 @@ export interface SavedQueryNameDetail {
 }
 
 export interface QueryBuilderEvents {
-  queryChange: Expression;
-  rootEntityChange: string;
-  selectedFieldsChange: string[];
-  sortByChange: SortDescriptor[];
   saveQuery: SaveQueryDetail;
   loadQuery: SavedQueryNameDetail;
   deleteQuery: SavedQueryNameDetail;
@@ -159,7 +155,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
 
     const mutate = (next: Expression, drafts: Readonly<Record<string, string>> = {}) => {
       api.setState({ query: next, drafts });
-      api.emit('queryChange', next);
     };
 
     // ── Focus after a rebuild, by node id ─────────────────────────────────
@@ -249,7 +244,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
 
     const emitSort = (next: SortDescriptor[]) => {
       api.setState({ sortBy: next });
-      api.emit('sortByChange', next);
     };
     const projectable = () => entityNamed(rootEntity())?.fields.filter((f) => f.type !== 'relation') ?? [];
 
@@ -395,7 +389,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
         case 'entity':
           if (value === rootEntity()) return;
           api.setState({ rootEntity: value });
-          api.emit('rootEntityChange', value);
           return;
         case 'sort-field':
           emitSort(api.state().sortBy.map((s, k) => (k === index ? { ...s, field: value } : s)));
@@ -408,7 +401,6 @@ export const queryBuilderCore = defineCore<QueryBuilderInputs, QueryBuilderState
           const current = api.state().selectedFields;
           const next = checked ? [...current.filter((f) => f !== value), value] : current.filter((f) => f !== value);
           api.setState({ selectedFields: next });
-          api.emit('selectedFieldsChange', next);
           return;
         }
       }

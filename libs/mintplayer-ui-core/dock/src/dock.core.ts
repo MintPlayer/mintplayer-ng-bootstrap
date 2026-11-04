@@ -252,7 +252,6 @@ function attachDock(api: Api): () => void {
   const commit = () => {
     syncPaneHosts();
     api.setState({ layout: cloneDockSnapshot(work) });
-    api.emit('layoutChange', cloneDockSnapshot(work));
   };
 
   const visual = (patch: Partial<DockVisualState>) => api.setState({ visual: { ...api.state().visual, ...patch } });

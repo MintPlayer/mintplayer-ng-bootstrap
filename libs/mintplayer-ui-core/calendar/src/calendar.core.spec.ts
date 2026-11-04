@@ -30,7 +30,7 @@ const markup = ({ view }: { view: CalendarView }, host: HTMLElement) => {
 };
 
 function mount(o: Partial<CalendarInputs> = {}) {
-  const h = hostCore(calendarCore, inputs(o), { markup });
+  const h = hostCore(calendarCore, inputs(o), { models: ['selectedDate', 'currentMonth'], markup });
   h.attach();
   const cell = (d: Date) => h.host.querySelector<HTMLElement>(`[data-date="${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}"]`);
   const key = (target: HTMLElement, key: string) => {
@@ -47,10 +47,10 @@ describe('calendarCore', () => {
     expect(h.state().currentMonth).toEqual(day(2, 1));
     h.cell(day(2, 12))!.click();
     expect(iso(h.state().selectedDate)).toBe('2026-3-12');
-    expect(h.events('selectedDateChange')).toHaveLength(1);
-    expect(h.events('currentMonthChange')).toEqual([]);
+    expect(h.changes('selectedDate')).toHaveLength(1);
+    expect(h.changes('currentMonth')).toEqual([]);
     h.host.click();
-    expect(h.events('selectedDateChange')).toHaveLength(1);
+    expect(h.changes('selectedDate')).toHaveLength(1);
   });
 
   it('refuses a disabled day by click, key and method', () => {
@@ -58,10 +58,10 @@ describe('calendarCore', () => {
     h.cell(day(2, 13))!.click();
     h.key(h.cell(day(2, 13))!, 'Enter');
     h.call('select', day(2, 13));
-    expect(h.events('selectedDateChange')).toEqual([]);
+    expect(h.changes('selectedDate')).toEqual([]);
     h.call('select', day(4, 3));
     expect(iso(h.state().selectedDate)).toBe('2026-5-3');
-    expect(h.events('currentMonthChange')).toEqual([day(4, 1)]);
+    expect(h.changes('currentMonth')).toEqual([day(4, 1)]);
   });
 
   it('pages months with the buttons and the methods', () => {
@@ -73,7 +73,7 @@ describe('calendarCore', () => {
     h.call('previousMonth');
     expect(h.state().currentMonth).toEqual(day(1, 1));
     h.call('nextMonth');
-    expect(h.events('currentMonthChange')).toEqual([day(3, 1), day(2, 1), day(1, 1), day(2, 1)]);
+    expect(h.changes('currentMonth')).toEqual([day(3, 1), day(2, 1), day(1, 1), day(2, 1)]);
   });
 
   it('moves the roving day with the keys, crossing into another month, and selects with Space', async () => {

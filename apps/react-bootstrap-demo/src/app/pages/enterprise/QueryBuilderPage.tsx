@@ -167,10 +167,10 @@ export function QueryBuilderPage() {
           selectedFields={selectedFields}
           sortBy={sortBy}
           showPreview
-          onQueryChange={(tree: Expression) => setQuery(tree)}
-          onRootEntityChange={(entity: string) => setRootEntity(entity)}
-          onSelectedFieldsChange={(fields: string[]) => setSelectedFields(fields)}
-          onSortByChange={(sort: SortDescriptor[]) => setSortBy(sort)}
+          onQueryChange={(tree) => tree && setQuery(tree)}
+          onRootEntityChange={setRootEntity}
+          onSelectedFieldsChange={(fields) => setSelectedFields([...fields])}
+          onSortByChange={(sort) => setSortBy([...sort])}
           editor={({ ctx }) => (
             // The value editor of every field with editor: 'custom' (orderDate here).
             <input

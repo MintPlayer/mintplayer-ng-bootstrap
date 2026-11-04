@@ -35,7 +35,6 @@ export default {
       },
       outputs: {
         slideChange: { type: 'CarouselSlideChangeEventDetail', doc: 'The committed slide changed.' },
-        pausedChange: { type: 'boolean', doc: 'Autoplay was paused or resumed from the play/pause button or a method.' },
         slideStart: { type: 'void', doc: 'A slide transition started.' },
         slideEnd: { type: 'void', doc: 'A slide transition ended.' },
       },

@@ -18,7 +18,7 @@ export class ContextMenuComponent {
     <div class="target-area" tabindex="0">
       Right-click me
       <ng-container *bsContextMenu>
-        <bs-dropdown-menu (itemselect)="chosen.set($event.value)">
+        <bs-dropdown-menu (itemSelect)="chosen.set($event.value)">
           <bs-dropdown-item [value]="'cut'">Cut</bs-dropdown-item>
           <bs-dropdown-item [value]="'copy'">Copy</bs-dropdown-item>
           <bs-dropdown-item [value]="'paste'">Paste</bs-dropdown-item>

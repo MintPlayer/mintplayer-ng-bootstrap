@@ -30,9 +30,6 @@ export default {
           labels: {},
         },
       },
-      outputs: {
-        expandedChange: { type: 'NavbarExpandedChangeEventDetail', doc: 'The collapse opened or closed through the bar.' },
-      },
       methods: { type: 'NavbarMethods', fields: { toggle: { doc: 'Opens or closes the collapse (flips it without an argument), and reports it.' } } },
     },
     'navbar-nav': {

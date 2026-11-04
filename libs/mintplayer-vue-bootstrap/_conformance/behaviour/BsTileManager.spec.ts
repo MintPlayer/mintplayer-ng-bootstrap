@@ -37,7 +37,7 @@ const Host = defineComponent({
         tiles: TILES,
         layouts: layouts.value,
         'onUpdate:layouts': (next: TileLayouts) => (layouts.value = next),
-        onLayoutchange: (c: TileLayoutChange) => changes.push(c),
+        onLayoutChange: (c: TileLayoutChange) => changes.push(c),
         breakpoints: [{ minWidth: 0, columns: 2 }],
         dragMode: dragMode.value,
       },

@@ -28,9 +28,6 @@ export default {
           closeLabel: { default: "'Close'", kind: 'string' },
         },
       },
-      outputs: {
-        openChange: { type: 'boolean', doc: 'The user closed the dialog (Escape, the backdrop or a dismiss button).' },
-      },
     },
   },
 } satisfies ComponentGroup;

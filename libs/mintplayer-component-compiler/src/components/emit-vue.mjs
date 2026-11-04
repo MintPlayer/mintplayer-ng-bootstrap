@@ -61,7 +61,7 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
   if (model.outputs.length || models.length) {
     script.push(
       `const emit = defineEmits<{`,
-      ...model.outputs.map((o) => `${jsdoc(o.doc, '  ')}  ${o.lower}: [detail: ${o.type}];`),
+      ...model.outputs.map((o) => `${jsdoc(o.doc, '  ')}  ${o.name}: [detail: ${o.type}];`),
       ...models.map((i) => `  'update:${i.name}': [value: ${model.inputsType}['${i.name}']];`),
       `}>();`,
     );
@@ -78,9 +78,9 @@ export function emitVueComponent(model, { generator, runtime, extension, scopedS
   );
   if (lent.length) script.push(`const lentSlots = () => [${lent.map(({ input }) => `...lent_${input}()`).join(', ')}];`);
   const inputsFn = `() => ({ ${[...model.inputs.map((i) => `${i.name}: props.${i.name}`), ...model.content.map(({ input }) => `${input}: content_${input}()`)].join(', ')} })`;
-  // An output is lowercased; a v-model update keeps its input name.
+  // Vue's convention: emits keep their camelCase names (a template listens `@item-select`).
   const emit = model.outputs.length || models.length
-    ? `(name, detail) => emit((name.startsWith('update:') ? name : name.toLowerCase()) as never, detail as never)`
+    ? `(name, detail) => emit(name as never, detail as never)`
     : `() => undefined`;
   script.push(
     `const core = useCore(${model.core}, ${has('extendInputs') ? `ext_extendInputs(${inputsFn})` : inputsFn}, {`,

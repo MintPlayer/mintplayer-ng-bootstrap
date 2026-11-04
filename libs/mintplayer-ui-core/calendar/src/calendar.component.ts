@@ -30,10 +30,6 @@ export default {
           labels: { default: 'null', kind: false },
         },
       },
-      outputs: {
-        selectedDateChange: { type: 'Date', doc: 'A day chosen by click, Enter or Space.' },
-        currentMonthChange: { type: 'Date', doc: 'The month changed: a month button, or a key that crossed into another month.' },
-      },
       methods: {
         type: 'CalendarMethods',
         fields: {

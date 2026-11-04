@@ -393,7 +393,9 @@ describe('composition', () => {
     tag: 'mp-tree',
     names: { angular: 'BsTreeComponent', component: 'BsTree', lit: 'MpTree', tag: 'mp-tree', selector: 'bs-tree', slotDirective: (s: string) => `BsTree${cap(s)}Directive`, slotSelector: (s: string) => `bsTree${cap(s)}` },
     inputs: [{ name: 'nodes' }, { name: 'selected', model: true }],
-    outputs: [{ name: 'selectedChange', lower: 'selectedchange', react: 'onSelectedChange' }, { name: 'nodeClick', lower: 'nodeclick', react: 'onNodeClick' }],
+    outputs: [{ name: 'nodeClick', lower: 'nodeclick', react: 'onNodeClick' }],
+    // The model's own channel, derived by model.mjs from `model: true`.
+    changes: [{ input: 'selected', name: 'selectedChange', lower: 'selectedchange', react: 'onSelectedChange' }],
     slots: [{ name: 'default', params: null }, { name: 'item', params: '{ node: string }' }],
     module: { angular: '@test/ng/tree', react: '../../tree/src/generated/index', vue: './bs-tree.generated.vue', lit: '@test/wc/tree' },
   };
@@ -403,7 +405,7 @@ describe('composition', () => {
 
   it('Angular renders the child component, a model as value + change, a scoped slot as its directive', () => {
     const { text, composed } = emitAngular(src, { components });
-    expect(text).toContain('<bs-tree class="t" aria-label="Files" [nodes]="view().nodes" [selected]="view().selected.value" (selectedChange)="view().selected.set($event)" (nodeclick)="view().onClick($event)">');
+    expect(text).toContain('<bs-tree class="t" aria-label="Files" [nodes]="view().nodes" [selected]="view().selected.value" (selectedChange)="view().selected.set($event)" (nodeClick)="view().onClick($event)">');
     expect(text).toContain('<ng-template bsTreeItem let-node="node">');
     expect(text).toMatch(/<\/ng-template>\s*<span>\s*Empty\s*<\/span>\s*<\/bs-tree>/);
     expect([...composed].map((c: { child: { tag: string }; slots: Set<string> }) => [c.child.tag, [...c.slots]])).toEqual([['mp-tree', ['item']]]);
@@ -428,7 +430,7 @@ describe('composition', () => {
   it('Vue renders the child component, a model as value + update, an output as its lowercased event', () => {
     const text = emitVue(src, { components });
     expect(text).toContain("import BsTree from './bs-tree.generated.vue';");
-    expect(text).toContain('<BsTree :nodes="view.nodes" :selected="view.selected.value" @update:selected="view.selected.set" @nodeclick="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></BsTree>');
+    expect(text).toContain('<BsTree :nodes="view.nodes" :selected="view.selected.value" @update:selected="view.selected.set" @node-click="view.onClick" class="t" aria-label="Files"><template #item="{ node }"><b>{{ node }}</b></template><span>Empty</span></BsTree>');
   });
 
   it("checks every binding against the child's manifest", () => {

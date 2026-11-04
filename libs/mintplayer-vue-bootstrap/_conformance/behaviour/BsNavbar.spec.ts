@@ -30,7 +30,7 @@ describe('BsNavbar — markup from the headless core', () => {
 
   it('does not announce a programmatic open as a user toggle', () => {
     const { wrapper } = mountEl(BsNavbar, 'nav', { props: { expanded: true } });
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
+    expect(wrapper.emitted('update:expanded')).toBeUndefined();
   });
 
   it('maps breakpoint, color and positioning onto Bootstrap classes', () => {
@@ -41,13 +41,13 @@ describe('BsNavbar — markup from the headless core', () => {
     expect(el.getAttribute('data-breakpoint')).toBe('lg');
   });
 
-  it('emits expandedchange when the checkbox is toggled', async () => {
+  it('writes the expanded model back when the checkbox is toggled', async () => {
     const { wrapper, el } = mountEl(BsNavbar, 'nav');
 
     toggle(el).click();
     await nextTick();
 
-    expect(wrapper.emitted('expandedchange')![0]).toEqual([{ expanded: true }]);
+    expect(wrapper.emitted('update:expanded')![0]).toEqual([true]);
     expect(toggle(el).getAttribute('aria-expanded')).toBe('true');
   });
 
@@ -58,7 +58,7 @@ describe('BsNavbar — markup from the headless core', () => {
 
     input.click();
 
-    expect(wrapper.emitted('expandedchange')).toBeUndefined();
+    expect(wrapper.emitted('update:expanded')).toBeUndefined();
   });
 
   it('renders the brand slot in .navbar-brand', () => {

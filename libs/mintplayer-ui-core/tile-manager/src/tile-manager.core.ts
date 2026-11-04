@@ -67,8 +67,6 @@ export interface TileManagerEvents {
   layoutPreview: TileLayoutChange;
   /** A commit, with the full layouts record and the stale narrower counts (D15). */
   layoutChange: TileLayoutChange;
-  /** The two-way `layouts` after a commit: React's controlled channel. */
-  layoutsChange: TileLayouts;
   columnCountChange: TileColumnCountChange;
   gestureBlocked: TileGestureBlocked;
 }
@@ -272,7 +270,6 @@ function attachTileManager(api: Api): () => void {
         case 'layoutchange': {
           const { type: _, ...change } = event;
           api.setState({ layouts: change.layouts });
-          api.emit('layoutsChange', change.layouts);
           api.emit('layoutChange', change);
           break;
         }

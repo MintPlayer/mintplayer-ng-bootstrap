@@ -23,9 +23,6 @@ export default {
           politeness: { default: "'polite'", kind: 'string' },
         },
       },
-      outputs: {
-        visibleChange: { type: 'boolean', doc: 'The user dismissed the toast.' },
-      },
     },
     'toast-header': {
       core: 'toastHeaderCore',

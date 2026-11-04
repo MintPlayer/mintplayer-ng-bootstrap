@@ -338,7 +338,7 @@ export class SchedulerComponent {
     this.log(`Date clicked: ${this.formatDate(event.date)}`);
   }
 
-  onViewChange(view: ViewType) {
+  onViewChange(view: ViewType | null) {
     // [(view)] / [(date)] already keep the models in sync — just log.
     this.log(`View changed to: ${view}`);
   }
@@ -615,9 +615,9 @@ export class SchedulerComponent {
       [date]="date()"
       [events]="events()"
       [options]="options()"
-      (eventcreate)="onEventCreate($event)"
-      (eventupdate)="onEventUpdate($event)"
-      (eventdelete)="onEventDelete($event)">
+      (eventCreate)="onEventCreate($event)"
+      (eventUpdate)="onEventUpdate($event)"
+      (eventDelete)="onEventDelete($event)">
     </bs-scheduler>
   `;
 

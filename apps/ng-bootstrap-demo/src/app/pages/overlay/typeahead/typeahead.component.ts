@@ -83,8 +83,8 @@ export class TypeaheadComponent {
       [debounceMs]="200"
       [minLength]="2"
       inputLabel="Artist"
-      (itemselect)="onSelect($event.item)"
-      (termsubmit)="onSubmit($event)"
+      (itemSelect)="onSelect($event.item)"
+      (termSubmit)="onSubmit($event)"
     ></bs-typeahead>
   `;
 
@@ -122,7 +122,7 @@ export class TypeaheadComponent {
   `;
 
   protected readonly snippetFormsHtml = dedent`
-    <!-- The value is the text; a pick writes the item's text, and (itemselect) delivers the item. -->
+    <!-- The value is the text; a pick writes the item's text, and (itemSelect) delivers the item. -->
     <bs-typeahead #street="ngModel" name="street" [(ngModel)]="model.street" [provider]="streets" required></bs-typeahead>
     <!-- Reactive forms work the same way: formControlName="street" -->
   `;

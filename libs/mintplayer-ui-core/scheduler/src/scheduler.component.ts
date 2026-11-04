@@ -48,10 +48,6 @@ export default {
         groupCreate: { type: 'SchedulerGroupCreateDetail', doc: 'A request to add a group (optionally under a group).' },
         resourceUpdate: { type: 'SchedulerResourceUpdateDetail', doc: 'A request to rename or recolour a resource.' },
         resourceDelete: { type: 'SchedulerResourceDeleteDetail', doc: 'A request to delete a resource.' },
-        viewChange: { type: 'ViewType', doc: 'The view, after it changed.' },
-        dateChange: { type: 'Date', doc: 'The shown date, after it changed.' },
-        selectedEventChange: { type: 'SchedulerEvent | null', doc: 'The selected event, after it changed.' },
-        selectedRangeChange: { type: 'TimeRange | null', doc: 'The range selection, after it changed.' },
       },
       methods: {
         type: 'SchedulerMethods',

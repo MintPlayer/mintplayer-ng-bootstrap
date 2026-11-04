@@ -16,7 +16,7 @@ export default {
         '',
         'With JavaScript off the thumbs drag, step and submit under `name`. Thumbs never pass each other;',
         '`minDistance` keeps a gap between neighbours. `value` is two-way, one entry per thumb.',
-        '`valueInput` fires while a thumb moves, `valueChange` when the move is committed.',
+        '`value` follows every move; `valueCommit` fires when a move is committed.',
       ].join('\n'),
       inputs: {
         type: 'MultiRangeInputs',
@@ -35,8 +35,7 @@ export default {
         },
       },
       outputs: {
-        valueInput: { type: 'number[]', doc: 'While a thumb moves: every pointer move and key step.' },
-        valueChange: { type: 'number[]', doc: 'A move committed: the pointer released, or a key step.' },
+        valueCommit: { type: 'number[]', doc: 'A move committed: the pointer released, or a key step. `value` itself follows every move.' },
       },
       methods: {
         type: 'MultiRangeMethods',

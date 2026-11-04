@@ -34,7 +34,7 @@ const pointer = (type: string, init: { pointerId?: number; pointerType?: string;
 };
 
 const mount = (o: Partial<ColorPickerInputs> = {}) => {
-  const h = hostCore(colorPickerCore, inputs(o), { markup });
+  const h = hostCore(colorPickerCore, inputs(o), { models: ['value', 'alpha', 'channelSlidersVisible'], markup });
   h.attach();
   const q = <T extends HTMLElement>(sel: string) => h.host.querySelector<T>(sel)!;
   const slide = (channel: string, value: string) => {
@@ -78,7 +78,7 @@ describe('color picker helpers', () => {
 
 describe('colorPickerCore', () => {
   it('renders every control disabled until hydrated, then live', () => {
-    const server = hostCore(colorPickerCore, inputs({ alpha: Number.NaN }), { hydrated: false, label: 'Tint' });
+    const server = hostCore(colorPickerCore, inputs({ alpha: Number.NaN }), { models: ['value', 'alpha', 'channelSlidersVisible'], hydrated: false, label: 'Tint' });
     const { view } = server.props();
     expect(server.state().alpha).toBe(0);
     expect(view.root['aria-label']).toBe('Tint');
@@ -86,7 +86,7 @@ describe('colorPickerCore', () => {
     expect(view.brightness.attrs['disabled']).toBe('');
     expect(view.hue).toBeNull();
 
-    const live = hostCore(colorPickerCore, inputs({ channelSlidersVisible: true, size: -5, disabled: true, allowAlpha: false }), { hydrated: true });
+    const live = hostCore(colorPickerCore, inputs({ channelSlidersVisible: true, size: -5, disabled: true, allowAlpha: false }), { models: ['value', 'alpha', 'channelSlidersVisible'], hydrated: true });
     const v = live.props().view;
     expect(v.root['aria-disabled']).toBe('true');
     expect(v.frameStyle['--mp-color-picker-size']).toBe('0px');
@@ -94,7 +94,7 @@ describe('colorPickerCore', () => {
     expect(v.hue?.attrs['aria-valuetext']).toBe('0°');
     expect(v.toggle?.checked).toBe(true);
 
-    const bare = hostCore(colorPickerCore, inputs({ showAccessibilityToggle: false, channelSlidersVisible: true }), { hydrated: true }).props().view;
+    const bare = hostCore(colorPickerCore, inputs({ showAccessibilityToggle: false, channelSlidersVisible: true }), { models: ['value', 'alpha', 'channelSlidersVisible'], hydrated: true }).props().view;
     expect(bare.toggle).toBeNull();
     expect(bare.saturation).toBeNull();
   });
@@ -103,16 +103,16 @@ describe('colorPickerCore', () => {
     const h = mount({ channelSlidersVisible: true });
     h.slide('brightness', '50');
     expect(h.state().brightness).toBe(0.5);
-    expect(h.events('valueChange')).toEqual(['#800000']);
+    expect(h.changes('value')).toEqual(['#800000']);
     h.slide('hue', '120');
     h.slide('saturation', '100');
-    expect(h.events('valueChange').at(-1)).toBe('#008000');
+    expect(h.changes('value').at(-1)).toBe('#008000');
     h.slide('saturation', '100');
-    expect(h.events('valueChange')).toHaveLength(2);
+    expect(h.changes('value')).toHaveLength(2);
     h.slide('alpha', '40');
-    expect(h.events('alphaChange')).toEqual([0.4]);
+    expect(h.changes('alpha')).toEqual([0.4]);
     h.slide('alpha', '40');
-    expect(h.events('alphaChange')).toHaveLength(1);
+    expect(h.changes('alpha')).toHaveLength(1);
   });
 
   it('ignores a non-numeric slider, a slider of another picker, and every slider while disabled', () => {
@@ -124,10 +124,10 @@ describe('colorPickerCore', () => {
     h.host.append(foreign);
     foreign.querySelector('input')!.dispatchEvent(new Event('input', { bubbles: true }));
     h.host.dispatchEvent(new Event('input', { bubbles: true }));
-    expect(h.events('valueChange')).toEqual([]);
+    expect(h.changes('value')).toEqual([]);
     h.setInputs({ disabled: true });
     h.slide('brightness', '10');
-    expect(h.events('valueChange')).toEqual([]);
+    expect(h.changes('value')).toEqual([]);
   });
 
   it('shows the channel sliders through the toggle', () => {
@@ -136,9 +136,9 @@ describe('colorPickerCore', () => {
     toggle.checked = true;
     toggle.dispatchEvent(new Event('change', { bubbles: true }));
     expect(h.state().channelSlidersVisible).toBe(true);
-    expect(h.events('channelSlidersVisibleChange')).toEqual([true]);
+    expect(h.changes('channelSlidersVisible')).toEqual([true]);
     h.host.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('channelSlidersVisibleChange')).toHaveLength(1);
+    expect(h.changes('channelSlidersVisible')).toHaveLength(1);
   });
 
   it('turns and tints with the wheel keys', () => {
@@ -185,10 +185,10 @@ describe('colorPickerCore', () => {
     wheel.dispatchEvent(pointer('pointerdown', { button: 2 }));
     wheel.getBoundingClientRect = () => ({ left: 0, top: 0, width: 0, height: 0 }) as DOMRect;
     wheel.dispatchEvent(pointer('pointerdown'));
-    expect(h.events('valueChange')).toEqual([]);
+    expect(h.changes('value')).toEqual([]);
     h.setInputs({ disabled: true });
     wheel.dispatchEvent(pointer('pointerdown'));
-    expect(h.events('valueChange')).toEqual([]);
+    expect(h.changes('value')).toEqual([]);
   });
 
   it('follows the consumer value, alpha and toggle, but not an echo of its own pick', () => {

@@ -368,8 +368,9 @@ export function composedUse(src, el, components) {
     if (p.name === 'model') {
       const input = inputNamed(p.arg?.content ?? '');
       if (!input?.model) throw new TemplateError(src.file, el, `v-model:${p.arg?.content} needs a model input of <${el.tag}>`);
-      const output = child.outputs.find((o) => o.name === `${input.name}Change`);
-      if (!output) throw new TemplateError(src.file, el, `v-model:${input.name} needs a ${input.name}Change output on <${el.tag}>`);
+      // The model's own change channel (model.mjs `changes`), named per front.
+      const output = child.changes.find((c) => c.input === input.name);
+      if (!output) throw new TemplateError(src.file, el, `v-model:${input.name}: <${el.tag}> derives no change channel for "${input.name}"`);
       if (!isMemberPath(p.exp.content)) throw new TemplateError(src.file, el, `v-model:${input.name} takes a ModelBinding path (view.x)`);
       use.models.push({ name: input.name, output, exp: p.exp.content.trim() });
       return;

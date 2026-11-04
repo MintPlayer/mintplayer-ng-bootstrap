@@ -44,10 +44,8 @@ export interface MultiRangeState {
 }
 
 export interface MultiRangeEvents {
-  /** While a thumb moves (every pointer move and key step). */
-  valueInput: number[];
-  /** A move committed: pointer released, or a key step. */
-  valueChange: number[];
+  /** A move committed: pointer released, or a key step. The `value` model follows every move. */
+  valueCommit: number[];
 }
 
 export interface MultiRangeMethods {
@@ -70,7 +68,7 @@ function sync(api: Api) {
   });
 }
 
-/** Move thumb `i` toward `candidate` within its neighbours. Reports `valueInput`; true when it moved. */
+/** Move thumb `i` toward `candidate` within its neighbours. True when it moved. */
 function move(api: Api, i: number, candidate: number): boolean {
   const { min, max, step, minDistance } = api.inputs();
   const values = [...api.state().value];
@@ -82,7 +80,6 @@ function move(api: Api, i: number, candidate: number): boolean {
   values[i] = next;
   api.setState({ value: values, active: i });
   sync(api);
-  api.emit('valueInput', [...values]);
   return true;
 }
 
@@ -125,7 +122,7 @@ export const multiRangeCore = defineCore<MultiRangeInputs, MultiRangeState, { vi
     };
     const onChange = (event: Event) => {
       if (indexOf(event.target) === null) return;
-      api.emit('valueChange', [...api.state().value]);
+      api.emit('valueCommit', [...api.state().value]);
     };
     const onPointerDown = (event: PointerEvent) => {
       if (api.inputs().disabled || event.button > 0) return;
@@ -154,7 +151,7 @@ export const multiRangeCore = defineCore<MultiRangeInputs, MultiRangeState, { vi
     const onPointerUp = (event: PointerEvent) => {
       if (drag && event.pointerId === drag.pointerId) {
         drag = null;
-        api.emit('valueChange', [...api.state().value]);
+        api.emit('valueCommit', [...api.state().value]);
       }
       if (api.state().active !== null) api.setState({ active: null });
     };
@@ -176,7 +173,6 @@ export const multiRangeCore = defineCore<MultiRangeInputs, MultiRangeState, { vi
       const values = normaliseValues(typed, min, max);
       api.setState({ value: values });
       sync(api);
-      api.emit('valueChange', [...values]);
     }
     return () => {
       host.removeEventListener('input', onInput);
@@ -195,9 +191,8 @@ export const multiRangeCore = defineCore<MultiRangeInputs, MultiRangeState, { vi
     const values = normaliseValues(source, inputs.min, inputs.max);
     if (same(values, api.state().value)) return;
     api.setState({ value: values });
+    // New bounds that move a thumb change the value the consumer holds: the model writes it back.
     sync(api);
-    // New bounds that move a thumb change the value the consumer holds.
-    if (inputs.value === prev.value) api.emit('valueChange', [...values]);
   },
   methods: {
     getValues: (api) => [...api.state().value],

@@ -86,7 +86,7 @@ export class DockComponent {
     },
   });
 
-  liveLayout = signal<DockLayoutSnapshot | undefined>(undefined);
+  liveLayout = signal<DockLayoutInput | undefined>(undefined);
   savedLayout = signal<DockLayoutSnapshot | undefined>(undefined);
 
   saveLayout(): void {

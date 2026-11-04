@@ -183,11 +183,6 @@ export interface DatatableState {
 }
 
 export interface DatatableEvents {
-  sortColumnsChange: SortColumn[];
-  pageChange: number;
-  perPageChange: number;
-  selectedIdsChange: string[];
-  expandedIdsChange: unknown[];
   rowClick: RowEventDetail;
   rowDblClick: RowEventDetail;
   /** Call `originalEvent.preventDefault()` to suppress the browser's menu. */
@@ -198,7 +193,6 @@ export interface DatatableEvents {
   loadError: DatatableLoadErrorDetail;
   /** Every response the table applies, and the seeded page 1 (`seeded: true`), which `fetch` never answered on the client. */
   pageLoad: DatatablePageLoadDetail;
-  filtersChange: DatatableFilters;
 }
 
 export interface DatatableLoadErrorDetail {
@@ -677,7 +671,6 @@ export const datatableCore = defineCore<
       rows.filter(([key, row]) => row !== undefined && set.has(key)).map(([key, row]) => remembered.set(key, row));
       [...remembered.keys()].filter((key) => !set.has(key)).map((key) => remembered.delete(key));
       api.setState({ selectedIds: ids });
-      api.emit('selectedIdsChange', ids);
       announcer.announce(labels().announceSelection(ids.length));
       api.emit('selectionChanged', { selectedIds: ids, selectedRows: resolve(ids) });
     };
@@ -738,12 +731,10 @@ export const datatableCore = defineCore<
     const resetPageTo1 = () => {
       if (api.state().page === 1) return;
       api.setState({ page: 1 });
-      api.emit('pageChange', 1);
     };
     const sortBy = (name: string, shift: boolean) => {
       const next = computeNextSort(api.state().sortColumns, name, shift);
       api.setState({ sortColumns: next });
-      api.emit('sortColumnsChange', next);
       resetPageTo1();
       const column = columns().find((c) => c.name === name);
       const mine = next.find((s) => s.property === name);
@@ -754,7 +745,6 @@ export const datatableCore = defineCore<
       const pages = model().totalPages;
       const next = Math.max(1, Math.min(pages, Math.floor(page)));
       api.setState({ page: next });
-      api.emit('pageChange', next);
       announcer.announce(labels().announcePage(next, pages));
       scheduleReload();
     };
@@ -762,7 +752,6 @@ export const datatableCore = defineCore<
       const next = positive(value, api.state().perPage);
       if (next === api.state().perPage) return;
       api.setState({ perPage: next });
-      api.emit('perPageChange', next);
       resetPageTo1();
       scheduleReload();
     };
@@ -776,7 +765,6 @@ export const datatableCore = defineCore<
       const opening = !expanded.includes(id);
       const expandedIds = opening ? [...expanded, id] : expanded.filter((x) => x !== id);
       api.setState({ expandedIds });
-      api.emit('expandedIdsChange', expandedIds);
       const info = { row: flat.row, depth: flat.depth, parentId: flat.parentId };
       if (opening) {
         api.emit('rowExpand', info);
@@ -935,7 +923,6 @@ export const datatableCore = defineCore<
       const current = api.state().filters;
       if (canonicalJson(next, 'filters') !== canonicalJson(current, 'filters')) {
         api.setState({ filters: next });
-        api.emit('filtersChange', next);
         resetPageTo1();
       }
       scheduleReload();

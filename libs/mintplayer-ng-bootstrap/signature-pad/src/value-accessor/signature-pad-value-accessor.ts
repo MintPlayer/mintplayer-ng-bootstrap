@@ -32,7 +32,7 @@ export class BsSignaturePadValueAccessor implements ControlValueAccessor, OnInit
   ngOnInit(): void {
     // The component is created after its host directives, so it is looked up here.
     const component = this.injector.get(BsSignaturePadComponent);
-    const sub = component.signaturechange.subscribe((value) => {
+    const sub = component.signature.subscribe((value) => {
       if (!this.bound() || value === this.viewValue()) return;
       this.viewValue.set(value);
       this.onChange(value);

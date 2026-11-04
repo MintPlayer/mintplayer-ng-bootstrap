@@ -230,7 +230,7 @@ function checkOutputNames(described) {
     models.flatMap((model) =>
       model.outputs
         .filter((output) => DOM_EVENT_NAMES.has(output.lower))
-        .map((output) => `${entry.entry}/${model.element}: output "${output.name}" lowercases to the DOM event "${output.lower}"; rename it`),
+        .map((output) => `${entry.entry}/${model.element}: output "${output.name}" is the Lit element's event "${output.lower}", a DOM event; rename it`),
     ),
   );
   if (clashes.length) throw new Error(clashes.join('\n'));
@@ -342,6 +342,7 @@ export async function compileComponents(config, { cwd = process.cwd(), check = f
       names: model.names,
       inputs: model.inputs,
       outputs: model.outputs,
+      changes: model.changes,
       slots: model.slots,
     })),
   );

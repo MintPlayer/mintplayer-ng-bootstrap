@@ -65,7 +65,6 @@ export const navbarTogglerCore = defineCore<NavbarTogglerInputs, { open: boolean
       if (!button || !api.host.contains(button) || api.inputs().toggleOnClick === false) return;
       const open = !api.state().open;
       api.setState({ open });
-      api.emit('openChange', open);
     };
     api.host.addEventListener('click', onClick);
     return () => api.host.removeEventListener('click', onClick);

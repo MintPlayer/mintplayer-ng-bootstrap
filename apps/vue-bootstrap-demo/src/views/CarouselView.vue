@@ -28,7 +28,7 @@ function onSlideChange(detail: CarouselSlideChangeEventDetail) {
 }
 
 const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="paused"
-  aria-label="Animal photos" @slidechange="onSlideChange">
+  aria-label="Animal photos" @slide-change="onSlideChange">
   <BsCarouselItem><img src="/assets/resized/deer.png" alt="A deer" /></BsCarouselItem>
   <BsCarouselItem><img src="/assets/resized/duck.png" alt="A duck" /></BsCarouselItem>
   <BsCarouselItem><img src="/assets/resized/lion.png" alt="A lion" /></BsCarouselItem>
@@ -53,7 +53,7 @@ const BASIC_SOURCE = `<BsCarousel indicators :interval="4000" v-model:paused="pa
         :interval="4000"
         v-model:paused="paused"
         aria-label="Animal photos"
-        @slidechange="onSlideChange"
+        @slide-change="onSlideChange"
       >
         <BsCarouselItem v-for="img of IMAGES" :key="img.src"><img :src="img.src" :alt="img.alt" /></BsCarouselItem>
       </BsCarousel>

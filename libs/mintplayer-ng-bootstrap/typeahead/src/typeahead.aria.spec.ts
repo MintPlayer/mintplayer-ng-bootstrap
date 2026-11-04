@@ -12,7 +12,7 @@ import { inMemoryTypeaheadProvider } from '@mintplayer/ui-core/typeahead';
 @Component({
   selector: 'bs-typeahead-aria-harness',
   imports: [BsTypeaheadComponent],
-  template: `<bs-typeahead [provider]="provider" [debounceMs]="0" inputLabel="Fruit" [errorText]="error()" (itemselect)="lastSelected.set($event.item)"></bs-typeahead>`,
+  template: `<bs-typeahead [provider]="provider" [debounceMs]="0" inputLabel="Fruit" [errorText]="error()" (itemSelect)="lastSelected.set($event.item)"></bs-typeahead>`,
 })
 class HarnessComponent {
   readonly provider = inMemoryTypeaheadProvider([{ text: 'Apple' }, { text: 'Banana' }, { text: 'Cherry' }]);

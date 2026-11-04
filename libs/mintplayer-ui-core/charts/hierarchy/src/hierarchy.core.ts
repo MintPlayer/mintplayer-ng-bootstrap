@@ -107,7 +107,6 @@ export interface HierarchyChartState {
 }
 
 export interface HierarchyChartEvents {
-  rootIdChange: string | null;
   zoom: HierarchyNodeEventDetail;
   nodeSelect: HierarchyNodeEventDetail;
   nodeHover: HierarchyHoverEventDetail;

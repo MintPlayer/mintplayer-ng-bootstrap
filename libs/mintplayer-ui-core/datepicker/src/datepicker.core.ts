@@ -56,9 +56,6 @@ export interface DatepickerState {
 }
 
 export interface DatepickerEvents {
-  /** A day picked in the grid. */
-  selectedDateChange: Date;
-  currentMonthChange: Date;
   /** The popup opened (true) or closed (false). */
   openChange: boolean;
 }
@@ -85,7 +82,6 @@ function syncField(api: Api) {
 function showMonth(api: Api, month: Date) {
   if (isSameYearMonth(month, api.state().currentMonth)) return;
   api.setState({ currentMonth: monthOf(month) });
-  api.emit('currentMonthChange', monthOf(month));
 }
 
 function pick(api: Api, date: Date) {
@@ -93,7 +89,6 @@ function pick(api: Api, date: Date) {
   showMonth(api, day);
   api.setState({ selectedDate: day, focusedDate: day });
   syncField(api);
-  api.emit('selectedDateChange', day);
   popupOf(api)?.hidePopover?.();
   api.host.querySelector<HTMLElement>('.datepicker-trigger')?.focus();
 }
@@ -137,7 +132,6 @@ export const datepickerCore = defineCore<DatepickerInputs, DatepickerState, { vi
     const typed = field?.type === 'date' ? parseIsoDate(field.value) : null;
     if (typed && !isSameDate(typed, api.state().selectedDate)) {
       api.setState({ selectedDate: typed, currentMonth: monthOf(typed) });
-      api.emit('selectedDateChange', typed);
     }
     // The field turns into the readonly display now, not on the next render:
     // a date field cannot hold the formatted text, and its dirty value would

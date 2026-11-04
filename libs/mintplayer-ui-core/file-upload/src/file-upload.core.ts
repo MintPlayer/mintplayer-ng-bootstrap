@@ -179,7 +179,6 @@ export const fileUploadCore = defineCore<
       if (!added.length) return;
       const files = [...current, ...added];
       api.setState({ files });
-      api.emit('filesChange', files);
       api.emit('filesDropped', added);
       const inputs = api.inputs();
       const message = added.length === 1

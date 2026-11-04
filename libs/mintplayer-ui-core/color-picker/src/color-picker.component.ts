@@ -24,11 +24,6 @@ export default {
           labels: { default: 'null', kind: false, doc: 'Localized accessible names; missing keys keep the English defaults.' },
         },
       },
-      outputs: {
-        valueChange: { type: 'string', doc: 'The user picked a color (hex).' },
-        alphaChange: { type: 'number', doc: 'The user moved the alpha slider.' },
-        channelSlidersVisibleChange: { type: 'boolean', doc: 'The user toggled the hue and saturation sliders.' },
-      },
     },
   },
 } satisfies ComponentGroup;

@@ -82,7 +82,7 @@
     [reverse]="reverse()"
     [selectable]="selectable()"
     [(selectedIds)]="selected"
-    (itemclick)="onItemClick($event)">
+    (itemClick)="onItemClick($event)">
     @if (customMarkers()) {
       <span *bsTimelineMarker="let item = item" class="tl-marker">
         <i [class]="item.icon" aria-hidden="true"></i>

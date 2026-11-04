@@ -27,7 +27,7 @@ const markup = ({ view }: { view: TypeaheadView }) =>
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const mount = (o: Partial<TypeaheadInputs> = {}) => {
-  const h = hostCore(typeaheadCore, inputs(o), { markup });
+  const h = hostCore(typeaheadCore, inputs(o), { models: ['value'], markup });
   h.attach();
   const input = () => h.host.querySelector<HTMLInputElement>('input[role=combobox]')!;
   const type = async (text: string) => {
@@ -47,7 +47,7 @@ const mount = (o: Partial<TypeaheadInputs> = {}) => {
 
 describe('typeaheadCore view', () => {
   it('renders a named combobox with an empty listbox and no status on the server', () => {
-    const h = hostCore(typeaheadCore, inputs({ value: 'ab', errorText: 'Required' }), { label: 'Find' });
+    const h = hostCore(typeaheadCore, inputs({ value: 'ab', errorText: 'Required' }), { models: ['value'], label: 'Find' });
     const { view } = h.props();
     expect(view.root['class']).toBe('mp-typeahead');
     expect(view.input).toMatchObject({ class: 'form-control', type: 'text', name: 'q' });
@@ -67,13 +67,13 @@ describe('typeaheadCore view', () => {
   });
 
   it('defaults the item text to item.text, else String(item)', () => {
-    const h = hostCore(typeaheadCore, inputs());
+    const h = hostCore(typeaheadCore, inputs(), { models: ['value'] });
     h.state().items = [{ text: 'A' }, 'b'];
     expect(h.props().view.options.map((o) => o.text)).toEqual(['A', 'b']);
   });
 
   it('starts from an empty term without a value', () => {
-    const h = hostCore(typeaheadCore, inputs({ value: undefined as never }));
+    const h = hostCore(typeaheadCore, inputs({ value: undefined as never }), { models: ['value'] });
     expect(h.state().value).toBe('');
   });
 });
@@ -87,7 +87,7 @@ describe('typeaheadCore attached', () => {
     await h.type('ab');
     expect(provider).toHaveBeenCalledWith('ab', expect.anything());
     expect(h.events('searchStart')).toEqual(['ab']);
-    expect(h.events('valueChange')).toEqual(['ab']);
+    expect(h.changes('value')).toEqual(['ab']);
     expect(h.state()).toMatchObject({ open: true, status: 'ready', items: ['ab1', 'ab2'] });
     expect(h.events('openChange')).toEqual([true]);
 
@@ -201,7 +201,7 @@ describe('typeaheadCore attached', () => {
     expect(h.input().value).toBe('set');
     expect(h.state().value).toBe('set');
     expect(provider).not.toHaveBeenCalled();
-    expect(h.events('valueChange')).toEqual([]);
+    expect(h.changes('value')).toEqual([]);
 
     await h.type('typed');
     h.setInputs({ value: 'typed' });

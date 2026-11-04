@@ -155,7 +155,7 @@
 <p>
   Two selection styles. In the default <code>multiple</code> mode a row click
   selects (<kbd>Ctrl</kbd>+click toggles, <kbd>Shift</kbd>+click selects a
-  range) and then emits <code>(rowclick)</code>, which is what the
+  range) and then emits <code>(rowClick)</code>, which is what the
   <em>Basic usage</em> table above does. In <code>checkbox</code> mode, below, a
   row click only <em>opens</em> the row: selecting happens in the checkbox cell
   alone, anywhere inside it.
@@ -187,7 +187,7 @@
   [rowKey]="rowKey"
   [rowLabel]="rowLabel"
   [(selectedIds)]="checkboxSelection"
-  (rowclick)="openedArtist.set($any($event.row))">
+  (rowClick)="openedArtist.set($any($event.row))">
 
   <ng-container *bsDatatableRow="let artist">
     <td class="text-nowrap">{{ $any(artist).name }}</td>
@@ -351,9 +351,9 @@
   Because the browser skips <code>fetch</code> for that first page, anything
   else your <code>fetch</code> reads off its response (the columns a server
   query decides, say) belongs in the response's <code>extra</code>, which must be
-  JSON. <code>(pageload)</code> hands it back for every page the table applies,
+  JSON. <code>(pageLoad)</code> hands it back for every page the table applies,
   with <code>seeded: true</code> for the page that came from the server. Record
-  it in <code>fetch</code> too: <code>(pageload)</code> fires in the browser only.
+  it in <code>fetch</code> too: <code>(pageLoad)</code> fires in the browser only.
 </p>
 <p class="text-muted small">
   <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each filter trigger;

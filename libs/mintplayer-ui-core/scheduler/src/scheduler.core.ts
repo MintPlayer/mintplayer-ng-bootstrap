@@ -118,10 +118,6 @@ export interface SchedulerEvents {
   groupCreate: SchedulerGroupCreateDetail;
   resourceUpdate: SchedulerResourceUpdateDetail;
   resourceDelete: SchedulerResourceDeleteDetail;
-  viewChange: ViewType;
-  dateChange: Date;
-  selectedEventChange: SchedulerEvent | null;
-  selectedRangeChange: TimeRange | null;
 }
 
 export interface SchedulerMethods {
@@ -313,7 +309,6 @@ function attachScheduler(api: Api): () => void {
   /* ----- publishing state to the template ----- */
 
   let prevView: ViewType = state().view;
-  let prevDate = state().date.getTime();
   let prevSelectedId: string | null = state().selectedEvent?.id ?? null;
   let prevRangeKey: string | null = '__init__';
   let prevLoading: boolean | null = null;
@@ -344,12 +339,8 @@ function attachScheduler(api: Api): () => void {
       if (prevLoading !== null) announce(msg(s.isLoading ? 'loadingEvents' : 'eventsLoaded'));
       prevLoading = s.isLoading;
     }
-    if (s.view !== prevView) api.emit('viewChange', s.view);
-    if (s.date.getTime() !== prevDate) api.emit('dateChange', s.date);
     const selectedId = s.selectedEvent?.id ?? null;
     const rangeKey = rangeKeyOf(s);
-    if (selectedId !== prevSelectedId) api.emit('selectedEventChange', s.selectedEvent);
-    if (rangeKey !== prevRangeKey && prevRangeKey !== '__init__') api.emit('selectedRangeChange', rangeOf(s));
     if (selectedId !== prevSelectedId || rangeKey !== prevRangeKey) {
       api.emit('selectionChanged', {
         selectedEvent: s.selectedEvent,
@@ -360,7 +351,6 @@ function attachScheduler(api: Api): () => void {
     }
     const viewSwitched = s.view !== prevView;
     prevView = s.view;
-    prevDate = s.date.getTime();
     prevSelectedId = selectedId;
     prevRangeKey = rangeKey;
     if (viewSwitched) onViewSwitched();

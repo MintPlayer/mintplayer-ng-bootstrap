@@ -111,6 +111,11 @@ export function componentModels({ group, entry, corePackage, template, extension
     });
     const clash = inputs.find((input) => RESERVED.has(input.name));
     if (clash) throw new Error(`${where}: input "${clash.name}" shadows an HTMLElement member; pick another name`);
+    // A model reports its own changes (`changes` below); an output of that name would be a second channel.
+    const shadowed = inputs.find((input) => input.model && Object.hasOwn(manifest.outputs ?? {}, `${input.name}Change`));
+    if (shadowed) {
+      throw new Error(`${where}: output "${shadowed.name}Change" duplicates the model "${shadowed.name}", which reports its own changes; remove the output`);
+    }
 
     const slots = src.slots.members.map((member) => ({ name: member.name, params: member.paramType }));
     // A slot is a prop in React and Vue: one named like an input replaces it, silently.
@@ -157,6 +162,19 @@ export function componentModels({ group, entry, corePackage, template, extension
       inputs,
       inputsType: manifest.inputs?.type ?? null,
       outputs: Object.entries(manifest.outputs ?? {}).map(([name, output]) => ({ name, lower: name.toLowerCase(), react: `on${name[0].toUpperCase()}${name.slice(1)}`, ...output })),
+      // Each model's change channel, derived from `model: true` alone: Angular's model() output, Vue's
+      // update:x, React's on<X>Change prop and Lit's <x>change event. Fired when the front writes the model back.
+      changes: inputs
+        .filter((input) => input.model)
+        .map((input) => ({
+          input: input.name,
+          name: `${input.name}Change`,
+          lower: `${input.name}change`.toLowerCase(),
+          react: `on${input.name[0].toUpperCase()}${input.name.slice(1)}Change`,
+          // What is written back is the core's state of that name (runtime `writeModel`), often
+          // narrower than the input (`filters: X | null` in, always an `X` out).
+          type: `ReturnType<NonNullable<(typeof ${manifest.core})['state']>>['${input.name}']`,
+        })),
       methods: Object.entries(manifest.methods?.fields ?? {}).map(([name, method]) => ({ name, ...method })),
       methodsType: manifest.methods?.type ?? null,
       slots,
@@ -231,6 +249,7 @@ function declarationModels({ group, entry, entryModule, literals }) {
       inputs,
       inputsType: manifest.inputs?.type ?? null,
       outputs: [],
+      changes: [],
       methods: [],
       methodsType: null,
       slots,

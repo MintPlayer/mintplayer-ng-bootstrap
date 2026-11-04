@@ -70,22 +70,22 @@ describe('checkbox views', () => {
 
 describe('checkboxCore', () => {
   it('reports a toggle, clearing the mixed state', () => {
-    const h = hostCore(checkboxCore, inputs({ indeterminate: true }), { markup, context: lone });
+    const h = hostCore(checkboxCore, inputs({ indeterminate: true }), { models: ['checked', 'indeterminate', 'value'], markup, context: lone });
     h.attach();
     const input = h.host.querySelector('input')!;
     input.checked = true;
     input.dispatchEvent(new Event('change'));
     expect(h.state()).toEqual({ checked: true, indeterminate: false });
-    expect(h.events('checkedChange')).toEqual([true]);
-    expect(h.events('indeterminateChange')).toEqual([false]);
+    expect(h.changes('checked')).toEqual([true]);
+    expect(h.changes('indeterminate')).toEqual([false]);
     input.checked = false;
     input.dispatchEvent(new Event('change'));
-    expect(h.events('indeterminateChange')).toEqual([false]);
+    expect(h.changes('indeterminate')).toEqual([false]);
     h.dispose();
   });
 
   it('follows the consumer’s checked and mixed state', () => {
-    const h = hostCore(checkboxCore, inputs(), { markup, context: lone });
+    const h = hostCore(checkboxCore, inputs(), { models: ['checked', 'indeterminate', 'value'], markup, context: lone });
     h.attach();
     h.setInputs({ checked: true });
     expect(h.state().checked).toBe(true);
@@ -98,9 +98,9 @@ describe('checkboxCore', () => {
 
   it('reads its checked state from the group, and attaches without an input', () => {
     const ctx = { grouped: true, name: 'g', value: ['a'], disabled: false };
-    expect(hostCore(checkboxCore, inputs(), { context: ctx }).props().view.checked).toBe(true);
-    expect(hostCore(checkboxCore, inputs({ value: null }), { context: ctx }).props().view.checked).toBe(false);
-    const bare = hostCore(checkboxCore, inputs(), { context: lone, markup: () => null });
+    expect(hostCore(checkboxCore, inputs(), { models: ['checked', 'indeterminate', 'value'], context: ctx }).props().view.checked).toBe(true);
+    expect(hostCore(checkboxCore, inputs({ value: null }), { models: ['checked', 'indeterminate', 'value'], context: ctx }).props().view.checked).toBe(false);
+    const bare = hostCore(checkboxCore, inputs(), { models: ['checked', 'indeterminate', 'value'], context: lone, markup: () => null });
     bare.attach();
     bare.dispose();
   });
@@ -109,7 +109,7 @@ describe('checkboxCore', () => {
 describe('toggleButtonCore', () => {
   it('is a checkbox of type toggle_button that is never mixed', () => {
     const { indeterminate: _, type: __, ...rest } = inputs();
-    const h = hostCore(toggleButtonCore, rest, { context: lone });
+    const h = hostCore(toggleButtonCore, rest, { models: ['checked', 'indeterminate', 'value'], context: lone });
     expect(h.props().view.root['class']).toBe('checkbox-toggle');
     expect(h.state().indeterminate).toBe(false);
     h.attach();
@@ -120,7 +120,7 @@ describe('toggleButtonCore', () => {
 
 describe('checkboxGroupCore', () => {
   function mount() {
-    const h = hostCore(checkboxGroupCore, { name: 'g', value: ['a'], disabled: true }, { markup: ({ root }, host) => (applyBag(host, root), undefined) });
+    const h = hostCore(checkboxGroupCore, { name: 'g', value: ['a'], disabled: true }, { models: ['checked', 'indeterminate', 'value'], markup: ({ root }, host) => (applyBag(host, root), undefined) });
     const boxes = ['a', 'b', 'c'].map((v) => h.host.appendChild(el('div', null, el('input', { type: 'checkbox', value: v }))).firstElementChild as HTMLInputElement);
     h.attach();
     return { ...h, boxes };
@@ -145,7 +145,7 @@ describe('checkboxGroupCore', () => {
     (nested.firstElementChild as HTMLInputElement).checked = true;
     nested.firstElementChild!.dispatchEvent(new Event('change', { bubbles: true }));
     h.host.appendChild(el('input', { type: 'text' })).dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('valueChange')).toEqual([['a', 'c']]);
+    expect(h.changes('value')).toEqual([['a', 'c']]);
     expect(ownsCheckbox(h.host, null)).toBe(false);
     h.setInputs({ value: undefined as never });
     expect(h.state().value).toEqual([]);

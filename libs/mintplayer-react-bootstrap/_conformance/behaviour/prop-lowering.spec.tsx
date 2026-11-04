@@ -94,9 +94,9 @@ describe('BsShell — lowering onto the shell markup', () => {
     expect(show.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.checked).toBe(true);
   });
 
-  it('routes a toggle flip to onStatechange as { open }', async () => {
+  it('routes a toggle flip to onStateChange as { open }', async () => {
     const seen: { open: boolean }[] = [];
-    const el = await renderEl(<BsShell onStatechange={(change) => seen.push(change)} />, 'div.shell');
+    const el = await renderEl(<BsShell onStateChange={(change) => seen.push(change)} />, 'div.shell');
 
     await act(async () => {
       el.querySelector<HTMLInputElement>('input.shell-toggle-wide')?.click();
@@ -145,7 +145,7 @@ describe('BsNavbar — markup from the headless core', () => {
       toggle(nav).click();
     });
 
-    expect(seen).toEqual([{ expanded: true }]);
+    expect(seen).toEqual([true]);
     expect(toggle(nav).getAttribute('aria-expanded')).toBe('true');
   });
 

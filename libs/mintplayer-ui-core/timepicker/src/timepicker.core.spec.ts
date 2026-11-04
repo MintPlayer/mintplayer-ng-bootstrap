@@ -24,7 +24,7 @@ describe('timeListCore', () => {
     ...o,
   });
   const mount = (o: Partial<TimeListInputs> = {}) => {
-    const h = hostCore(timeListCore, inputs(o), { markup: ({ view }, host) => (applyBag(host, view.root), [...list(view).childNodes] as HTMLElement[]) });
+    const h = hostCore(timeListCore, inputs(o), { models: ['selectedTime'], markup: ({ view }, host) => (applyBag(host, view.root), [...list(view).childNodes] as HTMLElement[]) });
     h.attach();
     const slot = (m: number) => h.host.querySelector<HTMLElement>(`[data-minutes="${m}"]`)!;
     return { ...h, slot };
@@ -35,12 +35,12 @@ describe('timeListCore', () => {
     h.slot(10 * 60).click();
     expect(minutes(h.state().selectedTime)).toBe(600);
     expect(h.state().selectedTime?.getDate()).toBe(2);
-    expect(h.events('selectedTimeChange')).toHaveLength(1);
+    expect(h.changes('selectedTime')).toHaveLength(1);
     h.slot(6 * 60).click();
     expect(h.state().focusedMinutes).toBe(360);
-    expect(h.events('selectedTimeChange')).toHaveLength(1);
+    expect(h.changes('selectedTime')).toHaveLength(1);
     h.host.click();
-    expect(h.events('selectedTimeChange')).toHaveLength(1);
+    expect(h.changes('selectedTime')).toHaveLength(1);
   });
 
   it('moves the roving slot with the keys and focuses it once rendered', async () => {
@@ -116,7 +116,7 @@ describe('timepickerCore', () => {
 
   const mount = (o: Partial<TimepickerInputs> = {}, typed?: string) => {
     // Rendered as hydrated up front: the spec prepares the DOM before attaching.
-    const h = hostCore(timepickerCore, inputs(o), { markup, hydrated: typed === undefined });
+    const h = hostCore(timepickerCore, inputs(o), { models: ['selectedTime'], markup, hydrated: typed === undefined });
     h.render();
     const field = () => h.host.querySelector<HTMLInputElement>('input.timepicker-input')!;
     if (typed !== undefined) field().value = typed;
@@ -126,9 +126,9 @@ describe('timepickerCore', () => {
   };
 
   it('server-renders a native time field, then turns it into a readonly display', () => {
-    const server = hostCore(timepickerCore, inputs({ selectedTime: null }), { hydrated: false });
+    const server = hostCore(timepickerCore, inputs({ selectedTime: null }), { models: ['selectedTime'], hydrated: false });
     expect(server.props().view.input['type']).toBe('time');
-    const h = hostCore(timepickerCore, inputs(), { markup });
+    const h = hostCore(timepickerCore, inputs(), { models: ['selectedTime'], markup });
     h.render();
     const attachHost = h.host;
     expect(attachHost.querySelector('input.timepicker-input')).not.toBeNull();
@@ -137,9 +137,9 @@ describe('timepickerCore', () => {
   it('adopts a time typed before hydration', () => {
     const h = mount({}, '10:30');
     expect(minutes(h.state().selectedTime)).toBe(630);
-    expect(h.events('selectedTimeChange')).toHaveLength(1);
+    expect(h.changes('selectedTime')).toHaveLength(1);
     const same = mount({}, '09:00');
-    expect(same.events('selectedTimeChange')).toHaveLength(0);
+    expect(same.changes('selectedTime')).toHaveLength(0);
   });
 
   it('opens on ArrowDown on the trigger, focusing the roving slot, and picks a slot', async () => {
@@ -194,7 +194,7 @@ describe('timepickerCore', () => {
   });
 
   it('attaches without a field or popup', () => {
-    const h = hostCore(timepickerCore, inputs(), { markup: () => null });
+    const h = hostCore(timepickerCore, inputs(), { models: ['selectedTime'], markup: () => null });
     h.attach();
     h.call('open');
     h.call('close');

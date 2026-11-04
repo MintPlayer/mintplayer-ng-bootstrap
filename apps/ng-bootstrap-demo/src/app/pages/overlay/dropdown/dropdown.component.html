@@ -21,7 +21,7 @@
   <button [color]="colors.primary">
     Actions
     <ng-container *bsDropdown>
-      <bs-dropdown-menu (itemselect)="chosen.set($any($event.value))">
+      <bs-dropdown-menu (itemSelect)="chosen.set($any($event.value))">
         <bs-dropdown-header>File</bs-dropdown-header>
         <bs-dropdown-item [value]="'new'">New</bs-dropdown-item>
         <bs-dropdown-item [value]="'open'">Open&hellip;</bs-dropdown-item>

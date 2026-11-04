@@ -33,8 +33,8 @@ const flush = async (fixture: ComponentFixture<unknown>) => {
       [minLength]="minLength()"
       [disabled]="disabled()"
       [(ngModel)]="value"
-      (itemselect)="selected.push($event.item)"
-      (termsubmit)="submitted.push($event)"
+      (itemSelect)="selected.push($event.item)"
+      (termSubmit)="submitted.push($event)"
     >
       @if (withTemplate()) {
         <ng-container *bsTypeaheadItem="let item = item; let term = term">

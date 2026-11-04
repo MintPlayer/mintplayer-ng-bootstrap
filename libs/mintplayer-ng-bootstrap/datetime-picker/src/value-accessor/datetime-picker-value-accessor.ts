@@ -46,7 +46,7 @@ export class BsDatetimePickerValueAccessor implements ControlValueAccessor, Vali
   ngOnInit(): void {
     // The component is created after its host directives, so it is looked up here.
     const component = (this.component = this.injector.get(BsDatetimePickerComponent));
-    const sub = component.valuechange.subscribe((value) => {
+    const sub = component.value.subscribe((value) => {
       if (!this.bound() || value?.getTime() === this.viewValue()?.getTime()) return;
       this.viewValue.set(value);
       this.onChange(value);

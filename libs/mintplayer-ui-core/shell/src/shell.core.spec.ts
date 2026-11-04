@@ -55,7 +55,7 @@ describe('shellCore', () => {
     narrow.dispatchEvent(new Event('change', { bubbles: true }));
     h.host.querySelector('nav .shell-toggle')!.dispatchEvent(new Event('change', { bubbles: true }));
     h.host.querySelector('nav')!.appendChild(el('select')).dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('statechange')).toEqual([{ open: true }]);
+    expect(h.events('stateChange')).toEqual([{ open: true }]);
   });
 
   it('focuses the content from the skip link', () => {
@@ -70,10 +70,10 @@ describe('shellCore', () => {
     h.click(h.host.querySelector('[data-no-dismiss] a')!);
     h.click(h.host.querySelector('nav span')!);
     h.click(h.host.querySelector('.content')!);
-    expect(h.events('statechange')).toEqual([]);
+    expect(h.events('stateChange')).toEqual([]);
     h.click(h.host.querySelector('nav > a')!);
     expect(h.toggle('narrow').checked).toBe(false);
-    expect(h.events('statechange')).toEqual([{ open: false }]);
+    expect(h.events('stateChange')).toEqual([{ open: false }]);
   });
 
   it('keeps the drawer when navigation does not dismiss it', () => {
@@ -87,13 +87,13 @@ describe('shellCore', () => {
     h.call('toggle');
     expect(h.toggle('narrow').checked).toBe(true);
     h.call('toggle', false);
-    expect(h.events('statechange')).toEqual([{ open: true }, { open: false }]);
+    expect(h.events('stateChange')).toEqual([{ open: true }, { open: false }]);
     h.setInputs({ state: 'show' as never });
     expect([h.toggle('narrow').checked, h.toggle('wide').checked]).toEqual([true, true]);
     h.setInputs({ size: '1px' });
     h.host.replaceChildren();
     h.call('toggle');
-    expect(h.events('statechange')).toHaveLength(2);
+    expect(h.events('stateChange')).toHaveLength(2);
     h.dispose();
   });
 });

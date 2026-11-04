@@ -23,9 +23,6 @@ export default {
           controls: { default: 'null', kind: 'string' },
         },
       },
-      outputs: {
-        openChange: { type: 'boolean', doc: 'The user toggled the button.' },
-      },
     },
   },
 } satisfies ComponentGroup;

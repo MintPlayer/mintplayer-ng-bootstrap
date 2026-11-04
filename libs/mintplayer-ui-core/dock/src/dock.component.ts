@@ -26,7 +26,6 @@ export default {
         },
       },
       outputs: {
-        layoutChange: { type: 'DockLayoutSnapshot', doc: 'The layout, after the user changed it.' },
         paneActivated: { type: 'DockPaneActivatedEventDetail', doc: 'A tab was activated.' },
       },
       methods: {

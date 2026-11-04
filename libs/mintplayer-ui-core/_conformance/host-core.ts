@@ -46,6 +46,8 @@ export interface HostedCore<I, S, P, E> {
   /** The details of every emit of `name`, in order. */
   events<K extends keyof E & string>(name: K): E[K][];
   readonly models: { name: string; value: unknown }[];
+  /** Every value written back to the model `name` (listed in `options.models`), in order. */
+  changes<K extends keyof I & string>(name: K): I[K][];
   state(): S;
   inputs(): I;
   props(): P;
@@ -100,7 +102,11 @@ export function hostCore<I, S, P, E, C, PC, M>(
     setState: (next) => (state = next),
     emit: (name, detail) => emitted.push({ name, detail }),
     models: options.models as never,
-    writeModel: (name, value) => models.push({ name, value }),
+    // Like a front: the value lands in the input too, so an unchanged repeat writes nothing.
+    writeModel: (name, value) => {
+      models.push({ name, value });
+      inputs = { ...inputs, [name]: value };
+    },
   });
   runtime.inputs(inputs);
 
@@ -109,6 +115,7 @@ export function hostCore<I, S, P, E, C, PC, M>(
     emitted,
     events: (name) => emitted.filter((e) => e.name === name).map((e) => e.detail) as never,
     models,
+    changes: (name) => models.filter((m) => m.name === name).map((m) => m.value) as never,
     state: () => state,
     inputs: () => inputs,
     props,

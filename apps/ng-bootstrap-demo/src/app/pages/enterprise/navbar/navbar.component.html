@@ -14,14 +14,14 @@
   <code>label</code> is the trigger text (the <code>*bsDropdownMenuLabelTemplate</code>
   template takes any HTML; give an icon-only label an <code>aria-label</code>).
   Without JavaScript a dropdown also opens while keyboard focus is inside it. A custom hamburger glyph is the
-  <code>*bsNavbarToggler</code> template. Toggling the collapse fires
-  <code>(expandedchange)</code>.
+  <code>*bsNavbarToggler</code> template. <code>expanded</code> is two-way:
+  <code>[(expanded)]</code> follows every toggle of the collapse.
 </p>
 
 <h2>Basic usage</h2>
 
 <div class="navbar-demo">
-  <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Demo navigation" (expandedchange)="onExpandedchange($event)">
+  <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Demo navigation" [(expanded)]="expanded">
     <a *bsNavbarBrand routerLink="/">MyApp</a>
 
     <bs-navbar-nav>

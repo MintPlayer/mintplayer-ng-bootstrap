@@ -66,7 +66,7 @@ function composedChild(ctx, { child, inputs, outputs, models, attrs, binds, bag,
     // A static input stays an attribute: Angular binds it as a string, through the input's transform.
     ...inputs.map((i) => (i.value !== undefined ? `${i.name}="${escapeAttr(i.value)}"` : `[${i.name}]="${escapeAttr(x(ctx, i.exp))}"`)),
     ...models.flatMap((m) => [`[${m.name}]="${escapeAttr(x(ctx, m.exp))}.value"`, `(${m.name}Change)="${escapeAttr(x(ctx, m.exp))}.set($event)"`]),
-    ...outputs.map((o) => `(${o.output.lower})="${escapeAttr(x(ctx, o.exp))}($event)"`),
+    ...outputs.map((o) => `(${o.output.name})="${escapeAttr(x(ctx, o.exp))}($event)"`),
   ];
   const named = slots.map((slot) => {
     used.slots.add(slot.name);

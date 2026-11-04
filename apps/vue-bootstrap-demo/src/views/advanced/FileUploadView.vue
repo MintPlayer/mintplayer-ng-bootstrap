@@ -30,9 +30,9 @@ function remove(item: FileUpload) {
   customFiles.value = customFiles.value.filter((u) => u !== item);
 }
 
-const SOURCE = `<BsFileUpload v-model:files="files" @filesdropped="upload" />`;
+const SOURCE = `<BsFileUpload v-model:files="files" @files-dropped="upload" />`;
 
-const CUSTOM_SOURCE = `<BsFileUpload v-model:files="files" @filesdropped="upload">
+const CUSTOM_SOURCE = `<BsFileUpload v-model:files="files" @files-dropped="upload">
   <template #fileTemplate="{ upload }">
     <span>{{ upload.file.name }}</span>
     <button type="button" @click="remove(upload)">Remove</button>
@@ -45,7 +45,7 @@ const CUSTOM_SOURCE = `<BsFileUpload v-model:files="files" @filesdropped="upload
     <h1>File upload</h1>
     <p class="text-body-secondary">
       <code>BsFileUpload</code> is a drop zone over a native file input: drop files on it, click it or use the browse
-      button. Each batch is added to <code>v-model:files</code>, reported through <code>@filesdropped</code> and
+      button. Each batch is added to <code>v-model:files</code>, reported through <code>@files-dropped</code> and
       announced to screen readers. Rows show the name, size and a progress bar you update; the
       <code>fileTemplate</code> slot replaces a row. With <code>name</code> the input submits its files with a form, no
       JavaScript needed.
@@ -53,13 +53,13 @@ const CUSTOM_SOURCE = `<BsFileUpload v-model:files="files" @filesdropped="upload
 
     <section>
       <h2>Basic usage</h2>
-      <BsFileUpload v-model:files="files" @filesdropped="(added: FileUpload[]) => upload('files', added)" />
+      <BsFileUpload v-model:files="files" @files-dropped="(added: FileUpload[]) => upload('files', added)" />
       <BsCodeSnippet :code="SOURCE" language="html" />
     </section>
 
     <section>
       <h2>Custom rows</h2>
-      <BsFileUpload v-model:files="customFiles" @filesdropped="(added: FileUpload[]) => upload('customFiles', added)">
+      <BsFileUpload v-model:files="customFiles" @files-dropped="(added: FileUpload[]) => upload('customFiles', added)">
         <template #fileTemplate="{ upload: item }">
           <div class="d-flex align-items-center gap-2">
             <span class="flex-grow-1 text-truncate">{{ item.file.name }}</span>

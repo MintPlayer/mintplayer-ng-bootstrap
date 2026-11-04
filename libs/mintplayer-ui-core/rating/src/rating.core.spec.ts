@@ -16,7 +16,7 @@ const inputs = (o: Partial<RatingInputs> = {}): RatingInputs => ({
 function mount(o: Partial<RatingInputs> = {}) {
   const markup = ({ view }: { view: RatingView }, host: HTMLElement) =>
     (applyBag(host, view.root), view.stars.map((s) => el('label', s.star, el('input', s.input), '★')));
-  const h = hostCore(ratingCore, inputs(o), { markup });
+  const h = hostCore(ratingCore, inputs(o), { models: ['value'], markup });
   h.attach();
   const input = (star: number) => h.host.querySelector<HTMLInputElement>(`[data-rating-value="${star}"]`)!;
   const pick = (star: number) => {
@@ -45,7 +45,7 @@ describe('ratingCore', () => {
     h.input(1).dispatchEvent(new Event('change', { bubbles: true }));
     const other = h.host.appendChild(el('input', { type: 'checkbox' }));
     other.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('valueChange')).toEqual([4]);
+    expect(h.changes('value')).toEqual([4]);
   });
 
   it('previews the star under the pointer, once each, and clears it on leave', () => {

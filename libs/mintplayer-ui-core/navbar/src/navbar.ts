@@ -57,11 +57,6 @@ export type NavbarBag = Record<string, string | boolean | null>;
 
 export const NAVBAR_SCOPE = 'navbar';
 
-/** `detail` of the `expandedchange` event a front fires when the collapse toggles. */
-export interface NavbarExpandedChangeEventDetail {
-  /** Whether the collapse is now expanded. */
-  expanded: boolean;
-}
 
 /** Bootstrap's grid breakpoints, the min-width at which the bar expands. */
 export const NAVBAR_BREAKPOINTS: Readonly<Record<NavbarBreakpoint, number>> = {

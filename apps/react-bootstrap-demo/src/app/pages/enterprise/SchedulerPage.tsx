@@ -87,8 +87,8 @@ const [range, setRange] = useState<TimeRange | null>(null);
 
 <BsScheduler
   events={events}
-  view={view} onViewChange={setView}
-  date={date} onDateChange={setDate}
+  view={view} onViewChange={(next) => next && setView(next)}
+  date={date} onDateChange={(next) => next && setDate(next)}
   selectedRange={range} onSelectedRangeChange={setRange}
   onEventCreate={e => {
     setEvents([...events, {
@@ -174,9 +174,9 @@ export function SchedulerPage() {
           options={OPTIONS}
           eventEditor={false}
           view={view}
-          onViewChange={setView}
+          onViewChange={(next) => next && setView(next)}
           date={date}
-          onDateChange={setDate}
+          onDateChange={(next) => next && setDate(next)}
           selectedRange={range}
           onSelectedRangeChange={setRange}
           onEventDblClick={(e) => openEditor(e.event)}

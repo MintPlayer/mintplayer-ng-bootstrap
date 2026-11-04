@@ -159,8 +159,6 @@ interface CheckboxState {
 }
 
 interface CheckboxEvents {
-  checkedChange: boolean;
-  indeterminateChange: boolean;
 }
 
 /** The checkbox core, or the toggle button's: the same control with its type fixed. */
@@ -178,10 +176,7 @@ function checkboxCoreOf<I extends ToggleButtonInputs>(resolve: (inputs: I) => Ch
       if (!input) return;
       const onChange = () => {
         // A user toggle always clears the mixed state, natively and here.
-        const wasMixed = api.state().indeterminate;
         api.setState({ checked: input.checked, indeterminate: false });
-        api.emit('checkedChange', input.checked);
-        if (wasMixed) api.emit('indeterminateChange', false);
       };
       input.addEventListener('change', onChange);
       return () => input.removeEventListener('change', onChange);
@@ -253,7 +248,6 @@ export const checkboxGroupCore = defineCore<
       if (!ownsCheckbox(api.host, event.target)) return;
       const value = groupSelection(api.host);
       api.setState({ value });
-      api.emit('valueChange', value);
     };
     api.host.addEventListener('change', onChange);
     return () => api.host.removeEventListener('change', onChange);

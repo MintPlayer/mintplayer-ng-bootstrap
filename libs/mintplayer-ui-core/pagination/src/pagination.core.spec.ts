@@ -20,7 +20,7 @@ function mount(o: Partial<PaginationInputs> = {}, label: string | null = null) {
     return el('nav', view.nav, el('ul', view.list, ...view.entries.map((e) =>
       el('li', e.item, el(e.gap ? 'span' : e.anchor ? 'a' : 'button', { ...e.link, href: e.href }, e.text)))));
   };
-  const h = hostCore(paginationCore, inputs(o), { markup, label });
+  const h = hostCore(paginationCore, inputs(o), { models: ['selectedPageNumber'], markup, label });
   h.attach();
   const link = (page: number) => h.host.querySelector<HTMLElement>(`.page-link[data-page="${page}"]:not([aria-label])`) ?? h.host.querySelector<HTMLElement>(`.page-link[data-page="${page}"]`)!;
   const click = (target: HTMLElement, init: MouseEventInit = {}) => {
@@ -45,7 +45,7 @@ describe('paginationCore', () => {
     expect(h.state().selectedPageNumber).toBe(2);
     h.click(two);
     h.click(h.host.querySelector('nav')!);
-    expect(h.events('selectedPageNumberChange')).toEqual([2]);
+    expect(h.changes('selectedPageNumber')).toEqual([2]);
   });
 
   it('leaves a modified click on a real link to the browser', () => {
@@ -54,7 +54,7 @@ describe('paginationCore', () => {
     expect(link.localName).toBe('a');
     expect(h.click(link, { ctrlKey: true }).defaultPrevented).toBe(false);
     expect(h.click(link).defaultPrevented).toBe(true);
-    expect(h.events('selectedPageNumberChange')).toEqual([2]);
+    expect(h.changes('selectedPageNumber')).toEqual([2]);
   });
 
   it('ignores a link naming no page, follows the consumer’s page and stops once disposed', () => {
@@ -67,6 +67,6 @@ describe('paginationCore', () => {
     const link = h.link(2);
     h.dispose();
     h.click(link);
-    expect(h.events('selectedPageNumberChange')).toEqual([]);
+    expect(h.changes('selectedPageNumber')).toEqual([]);
   });
 });

@@ -38,13 +38,13 @@ describe('radio views', () => {
 
 describe('radioCore', () => {
   it('reports becoming checked and follows the consumer', () => {
-    const h = hostCore(radioCore, inputs(), { markup, context: lone });
+    const h = hostCore(radioCore, inputs(), { models: ['checked', 'value'], markup, context: lone });
     h.attach();
     const input = h.host.querySelector('input')!;
     input.checked = true;
     input.dispatchEvent(new Event('change'));
     expect(h.state().checked).toBe(true);
-    expect(h.events('checkedChange')).toEqual([true]);
+    expect(h.changes('checked')).toEqual([true]);
     h.setInputs({ checked: true });
     h.setInputs({ checked: false });
     expect(h.state().checked).toBe(false);
@@ -53,9 +53,9 @@ describe('radioCore', () => {
   });
 
   it('reads its selection from the group, and attaches without an input', () => {
-    const grouped = hostCore(radioCore, inputs({ value: 'b' }), { context: { ...lone, grouped: true, value: 'b' } });
+    const grouped = hostCore(radioCore, inputs({ value: 'b' }), { models: ['checked', 'value'], context: { ...lone, grouped: true, value: 'b' } });
     expect(grouped.props().view.checked).toBe(true);
-    const bare = hostCore(radioCore, inputs(), { context: lone, markup: () => null });
+    const bare = hostCore(radioCore, inputs(), { models: ['checked', 'value'], context: lone, markup: () => null });
     bare.attach();
     bare.dispose();
   });
@@ -63,7 +63,7 @@ describe('radioCore', () => {
 
 describe('radioGroupCore', () => {
   function mount() {
-    const h = hostCore(radioGroupCore, { name: null, value: 'a', disabled: false, required: true }, { markup: ({ root }, host) => (applyBag(host, root), undefined) });
+    const h = hostCore(radioGroupCore, { name: null, value: 'a', disabled: false, required: true }, { models: ['checked', 'value'], markup: ({ root }, host) => (applyBag(host, root), undefined) });
     const radios = ['a', 'b'].map((v) => h.host.appendChild(el('div', null, el('input', { type: 'radio', value: v }))).firstElementChild as HTMLInputElement);
     h.attach();
     return { ...h, radios };
@@ -83,7 +83,7 @@ describe('radioGroupCore', () => {
     const nested = h.host.appendChild(el('div', { 'data-radio-group': '' }, el('input', { type: 'radio', value: 'x' })));
     nested.firstElementChild!.dispatchEvent(new Event('change', { bubbles: true }));
     h.host.appendChild(el('input', { type: 'text' })).dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('valueChange')).toEqual(['b']);
+    expect(h.changes('value')).toEqual(['b']);
     expect(ownsRadio(h.host, null)).toBe(false);
     h.setInputs({ value: undefined as never });
     expect(h.state().value).toBeNull();

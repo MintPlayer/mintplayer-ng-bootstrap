@@ -195,7 +195,15 @@ export interface CoreRuntimeHooks<I, S, E> {
    * front writes it back (a Lit property, an Angular model(), a Vue update: event).
    */
   readonly models?: readonly (keyof I & keyof S & string)[];
+  /** The component moved the model: write it back AND report it (the model's change channel). */
   writeModel?(name: keyof I & keyof S & string, value: unknown): void;
+  /**
+   * The core normalised the consumer's own write (see coreRuntime): a front whose value and
+   * change channel are separate (a Lit property and its event) may show the normalised value
+   * without reporting it. Fronts where writing IS reporting (Angular model(), Vue update:x,
+   * React on<X>Change) leave this out.
+   */
+  syncModel?(name: keyof I & keyof S & string, value: unknown): void;
 }
 
 export function coreRuntime<I, S, P, E, C, PC, M>(
@@ -205,6 +213,22 @@ export function coreRuntime<I, S, P, E, C, PC, M>(
   let api: CoreApi<I, S, E> | null = null;
   let dispose: (() => void) | void;
   let last: Readonly<I> | null = null;
+  // A model reports what the component did, never the consumer's own write: while the core
+  // reacts to a model's own input, normalising that value (undefined to [], a clamp, a sort)
+  // is not reported (syncModel at most). A model moved by ANOTHER input (a selection re-fit
+  // when the mode narrows) is reported: the consumer's copy is stale.
+  let quiet: ReadonlySet<string> = new Set();
+  const reacting = (names: ReadonlySet<string>, run: () => void) => {
+    const outer = quiet;
+    quiet = names;
+    try {
+      run();
+    } finally {
+      quiet = outer;
+    }
+  };
+  const movedModels = (prev: Readonly<I>, next: Readonly<I>) =>
+    new Set((hooks.models ?? []).filter((name) => !Object.is(prev[name], next[name])));
   return {
     get api() {
       return api;
@@ -221,7 +245,7 @@ export function coreRuntime<I, S, P, E, C, PC, M>(
           const inputs = hooks.inputs();
           hooks.models
             ?.filter((name) => name in patch && !Object.is(next[name], inputs[name]))
-            .forEach((name) => hooks.writeModel?.(name, next[name]));
+            .forEach((name) => (quiet.has(name) ? hooks.syncModel?.(name, next[name]) : hooks.writeModel?.(name, next[name])));
         },
         emit: (name, detail) => hooks.emit(name, detail),
       };
@@ -229,8 +253,10 @@ export function coreRuntime<I, S, P, E, C, PC, M>(
       // value during creation) are delivered now; the state was seeded before them.
       const seed = last;
       last = hooks.inputs();
-      dispose = core.attach?.(api);
-      if (seed && !sameInputs(seed, last)) core.inputsChanged?.(api, seed);
+      const live = api;
+      const current = last;
+      dispose = core.attach?.(live);
+      if (seed && !sameInputs(seed, current)) reacting(movedModels(seed, current), () => core.inputsChanged?.(live, seed));
     },
     inputs(inputs) {
       // Before attaching, keep the first inputs seen: they are what the state was seeded from.
@@ -240,7 +266,8 @@ export function coreRuntime<I, S, P, E, C, PC, M>(
       }
       const prev = last;
       last = inputs;
-      if (api && prev && !sameInputs(prev, inputs)) core.inputsChanged?.(api, prev);
+      const live = api;
+      if (prev && !sameInputs(prev, inputs)) reacting(movedModels(prev, inputs), () => core.inputsChanged?.(live, prev));
     },
     call(name, args) {
       const method = (core.methods as Record<string, unknown> | undefined)?.[name] as ((api: CoreApi<I, S, E>, ...rest: unknown[]) => unknown) | undefined;

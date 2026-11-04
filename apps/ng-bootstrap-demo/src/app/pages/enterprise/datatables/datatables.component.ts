@@ -277,12 +277,12 @@ export class DatatablesComponent {
 
   protected readonly snippetSelectionHtml = dedent`
     <!-- selectionMode = 'none' | 'single' | 'multiple' | 'checkbox'.
-         'checkbox': a row click only opens the row (rowclick); the checkbox
+         'checkbox': a row click only opens the row (rowClick); the checkbox
          cell alone selects. Enter opens, Space toggles.
 
          The selection is the row KEYS, from [rowKey], and survives paging,
          sorting and reload(). With [fetch] the key MUST be stable — taken from
-         the row, never from its position. (selectionchanged) also hands over
+         the row, never from its position. (selectionChanged) also hands over
          the selected rows. -->
     <button type="button" (click)="table.reload()">Reload</button>
 
@@ -294,7 +294,7 @@ export class DatatablesComponent {
       [rowKey]="rowKey"
       [rowLabel]="rowLabel"
       [(selectedIds)]="selection"
-      (rowclick)="opened.set($event.row)">
+      (rowClick)="opened.set($event.row)">
       <!-- row template as above -->
     </bs-datatable>
   `;

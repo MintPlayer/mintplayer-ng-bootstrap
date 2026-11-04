@@ -13,7 +13,7 @@ const SOURCE = `<BsDropdown>
     <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
   </template>
   <template #content>
-    <BsDropdownMenu @itemselect="({ value }) => (chosen = value)">
+    <BsDropdownMenu @item-select="({ value }) => (chosen = value)">
       <BsDropdownHeader>File</BsDropdownHeader>
       <BsDropdownItem value="new">New</BsDropdownItem>
       <BsDropdownItem value="save" disabled>Save</BsDropdownItem>
@@ -44,7 +44,7 @@ const SOURCE = `<BsDropdown>
             <button type="button" class="btn btn-primary" v-bind="props">Actions</button>
           </template>
           <template #content>
-            <BsDropdownMenu @itemselect="choose">
+            <BsDropdownMenu @item-select="choose">
               <BsDropdownHeader>File</BsDropdownHeader>
               <BsDropdownItem value="new">New</BsDropdownItem>
               <BsDropdownItem value="open">Open…</BsDropdownItem>

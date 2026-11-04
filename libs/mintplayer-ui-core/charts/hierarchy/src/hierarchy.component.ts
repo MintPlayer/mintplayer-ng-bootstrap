@@ -53,7 +53,6 @@ export default {
         },
       },
       outputs: {
-        rootIdChange: { type: 'string | null', doc: 'The focus node changed (null: the tree root).' },
         zoom: { type: 'HierarchyNodeEventDetail', doc: 'The chart re-rooted on a node; the detail has its path.' },
         nodeSelect: { type: 'HierarchyNodeEventDetail', doc: 'A leaf was clicked or activated with Enter.' },
         nodeHover: { type: 'HierarchyHoverEventDetail', doc: 'The hovered node changed (`node` null when the pointer leaves).' },

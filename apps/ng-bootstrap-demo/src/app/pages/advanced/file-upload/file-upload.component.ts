@@ -39,11 +39,11 @@ export class FileUploadComponent {
   }
 
   protected readonly snippetBasicHtml = dedent`
-    <bs-file-upload [(files)]="files" (filesdropped)="upload($event)"></bs-file-upload>
+    <bs-file-upload [(files)]="files" (filesDropped)="upload($event)"></bs-file-upload>
   `;
 
   protected readonly snippetCustomHtml = dedent`
-    <bs-file-upload [(files)]="files" (filesdropped)="upload($event)">
+    <bs-file-upload [(files)]="files" (filesDropped)="upload($event)">
       <ng-container *bsFileUploadFileTemplate="let upload">
         <span>{{ upload.file.name }}</span>
         <button type="button" (click)="remove(upload)">Remove</button>

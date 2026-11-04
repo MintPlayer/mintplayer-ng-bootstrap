@@ -19,7 +19,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   const inputs = model.inputs.filter((input) => !slotNames.has(input.name));
   const ext = model.extensions.react;
   const has = (name) => !!ext?.exports.has(name);
-  const own = [...new Set([...model.inputs.map((i) => i.name), ...model.outputs.map((o) => o.react), ...named.map((s) => s.name)])];
+  const own = [...new Set([...model.inputs.map((i) => i.name), ...model.outputs.map((o) => o.react), ...model.changes.map((c) => c.react), ...named.map((s) => s.name)])];
   const propsName = `${names.component}Props`;
 
   const lines = [
@@ -46,6 +46,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   lines.push(`export interface ${propsName} extends Omit<React.HTMLAttributes<${SVG_TAGS.has(model.attrsTag) ? 'SVGElementTagNameMap' : 'HTMLElementTagNameMap'}['${model.attrsTag}']>, ${own.map((n) => `'${n}'`).join(' | ') || 'never'}> {`);
   inputs.forEach((input) => lines.push(`${jsdoc(input.doc, '  ')}  ${input.name}?: ${model.inputsType}['${input.name}'];`));
   model.outputs.forEach((output) => lines.push(`${jsdoc(output.doc, '  ')}  ${output.react}?: (detail: ${output.type}) => void;`));
+  model.changes.forEach((change) => lines.push(`  /** \`${change.input}\` changed from inside (two-way: pass the value back as \`${change.input}\`). */`, `  ${change.react}?: (value: ${change.type}) => void;`));
   // A slot prop takes what the template's slot takes: a node, or a function of the slot's args.
   named.forEach((slot) => lines.push(`  ${slot.name}?: NonNullable<${model.templateName}TemplateProps['slots']>['${slot.name}'];`));
   lines.push(`  children?: React.ReactNode;`, `}`, '');
@@ -61,6 +62,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   const params = [
     ...inputs.map((input) => (input.default === undefined ? input.name : `${input.name} = ${literal(input) ? constName(input) : input.default}`)),
     ...model.outputs.map((o) => o.react),
+    ...model.changes.map((c) => c.react),
     ...named.map((s) => s.name),
     'className',
     'children',
@@ -73,6 +75,10 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
   const emit = model.outputs.length
     ? `(name, detail) => { ${model.outputs.map((o) => `if (name === '${o.name}') ${o.react}?.(detail as ${o.type});`).join(' ')} }`
     : `() => undefined`;
+  // The models' write-back: the runtime calls it when the core moves a model away from its prop.
+  const writeModel = model.changes.length
+    ? `(name, value) => { ${model.changes.map((c) => `if (name === '${c.input}') ${c.react}?.(value as ${c.type});`).join(' ')} }`
+    : null;
 
   lines.push(jsdoc(model.doc).trimEnd());
   lines.push(`export const ${names.component} = forwardRef<${element}, ${propsName}>(function ${names.component}(`);
@@ -91,6 +97,7 @@ export function emitReactComponent(model, { generator, runtime, extension, scope
     `    label: rest['aria-label'],`,
     `    rootRef,`,
     `    emit: ${emit},`,
+    ...(writeModel ? [`    models: [${model.changes.map((c) => `'${c.input}'`).join(', ')}],`, `    writeModel: ${writeModel},`] : []),
     `  });`,
   );
   const lent = model.content.filter((c) => c.lends);

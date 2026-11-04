@@ -85,7 +85,7 @@ describe('mp-navbar', () => {
     const nav = mount('<mp-navbar></mp-navbar>');
     await settle(nav);
     const events: boolean[] = [];
-    nav.addEventListener('expandedchange', (e) => events.push((e as CustomEvent<{ expanded: boolean }>).detail.expanded));
+    nav.addEventListener('expandedchange', (e) => events.push((e as CustomEvent<boolean>).detail));
     const toggle = nav.querySelector('input.navbar-toggle') as HTMLInputElement;
     expect(toggle.checked).toBe(false);
 

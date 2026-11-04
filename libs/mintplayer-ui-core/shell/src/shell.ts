@@ -31,7 +31,7 @@
  *
  * `state` only sets the checkboxes: `auto` is closed narrow and open wide,
  * `show` / `hide` check or clear both. The hamburger still flips the current
- * mode's checkbox, and a front reports it through its `statechange` event.
+ * mode's checkbox, and a front reports it through its `stateChange` event.
  */
 import { hydratedAttr } from '@mintplayer/ui-core/store';
 

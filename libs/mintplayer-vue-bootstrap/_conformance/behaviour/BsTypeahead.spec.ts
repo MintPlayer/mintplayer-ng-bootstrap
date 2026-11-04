@@ -111,7 +111,7 @@ describe('BsTypeahead (Vue front)', () => {
         debounceMs: 0,
         value: model.value,
         'onUpdate:value': (v: string) => (model.value = v),
-        onItemselect: onSelect,
+        onItemSelect: onSelect,
       }),
     );
     await type(wrapper, 'ker');

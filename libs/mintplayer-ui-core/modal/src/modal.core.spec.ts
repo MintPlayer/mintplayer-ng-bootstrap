@@ -34,7 +34,7 @@ function mount(o: Partial<ModalInputs> = {}) {
     overlay.querySelector('.modal')!.className = String(view.modal['class']);
     return undefined;
   };
-  const h = hostCore(modalCore, inputs(o), { markup: sync });
+  const h = hostCore(modalCore, inputs(o), { models: ['open'], markup: sync });
   h.attach();
   const update = async () => {
     h.render();
@@ -63,7 +63,7 @@ describe('modalCore', () => {
     h.modal().querySelector<HTMLElement>('.btn-close')!.click();
     await h.update();
     expect(h.state()).toEqual({ open: false, phase: 'closed' });
-    expect(h.events('openChange')).toEqual([false]);
+    expect(h.changes('open')).toEqual([false]);
   });
 
   it('closes on a backdrop click that started on the backdrop, not one that started inside', async () => {
@@ -87,7 +87,7 @@ describe('modalCore', () => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await h.update();
     expect(h.state().open).toBe(false);
-    expect(h.events('openChange')).toEqual([false]);
+    expect(h.changes('open')).toEqual([false]);
   });
 
   it('closes through its input, ignoring a repeat, and stops once disposed', async () => {
@@ -96,7 +96,7 @@ describe('modalCore', () => {
     h.setInputs({ open: false });
     await h.update();
     expect(h.state()).toEqual({ open: false, phase: 'closed' });
-    expect(h.events('openChange')).toEqual([]);
+    expect(h.changes('open')).toEqual([]);
     h.setInputs({ open: false, centered: true });
     h.setInputs({ open: true });
     expect(h.state().open).toBe(true);

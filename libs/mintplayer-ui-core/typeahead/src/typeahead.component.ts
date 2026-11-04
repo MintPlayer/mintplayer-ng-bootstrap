@@ -38,7 +38,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'string', doc: 'The term, after the user typed or picked.' },
         itemSelect: { type: 'TypeaheadItemSelectDetail', doc: 'A suggestion was picked, with the text it wrote.' },
         termSubmit: { type: 'string', doc: 'Enter with no suggestion highlighted.' },
         openChange: { type: 'boolean', doc: 'The list opened (true) or closed (false).' },

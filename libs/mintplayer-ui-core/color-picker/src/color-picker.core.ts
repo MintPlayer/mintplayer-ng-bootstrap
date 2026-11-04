@@ -273,9 +273,7 @@ export const colorPickerCore = defineCore<ColorPickerInputs, ColorPickerState, {
     const recolor = (patch: Partial<Pick<ColorPickerState, 'hue' | 'saturation' | 'brightness'>>) => {
       const next = { ...api.state(), ...patch };
       const value = colorPickerHex(next);
-      const changed = value !== normalizeHex(api.state().value);
       api.setState({ ...patch, value });
-      if (changed) api.emit('valueChange', value);
     };
 
     const onInput = (event: Event) => {
@@ -291,7 +289,6 @@ export const colorPickerCore = defineCore<ColorPickerInputs, ColorPickerState, {
           const alpha = clamp(amount / 100, 0, 1);
           if (alpha === api.state().alpha) return;
           api.setState({ alpha });
-          api.emit('alphaChange', alpha);
         }
       }
     };
@@ -300,7 +297,6 @@ export const colorPickerCore = defineCore<ColorPickerInputs, ColorPickerState, {
       const toggle = own(event.target, COLOR_PICKER_TOGGLE_ATTR) as HTMLInputElement | null;
       if (!toggle) return;
       api.setState({ channelSlidersVisible: toggle.checked });
-      api.emit('channelSlidersVisibleChange', toggle.checked);
     };
 
     /** The pointer dragging the wheel, if any. */

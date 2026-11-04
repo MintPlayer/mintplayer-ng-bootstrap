@@ -29,9 +29,6 @@ export default {
           tabsPosition: { default: "'top'", kind: 'string', reflect: true },
         },
       },
-      outputs: {
-        activeTabChange: { type: 'string', doc: 'The user picked a page: its `tabId`, or its position.' },
-      },
       content: {
         pages: { component: 'tab-page' },
       },

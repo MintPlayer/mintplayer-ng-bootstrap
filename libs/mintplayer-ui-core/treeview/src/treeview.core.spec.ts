@@ -31,7 +31,7 @@ const markup = ({ view }: { view: TreeviewView }, host: HTMLElement) => {
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 const mount = (o: Partial<TreeviewInputs> = {}) => {
-  const h = hostCore(treeviewCore, inputs(o), { markup });
+  const h = hostCore(treeviewCore, inputs(o), { models: ['selectedIds', 'expandedIds'], markup });
   h.attach();
   const row = (id: string) => h.host.querySelector<HTMLElement>(`[data-node-id="${id}"]`)!;
   const click = (id: string, init: MouseEventInit = {}) => {
@@ -45,15 +45,15 @@ afterEach(() => document.body.replaceChildren());
 
 describe('treeviewCore', () => {
   it('seeds its state, keeping one selection in single mode', () => {
-    const h = hostCore(treeviewCore, inputs({ selectedIds: ['a', 'c'], expandedIds: ['a'] }));
+    const h = hostCore(treeviewCore, inputs({ selectedIds: ['a', 'c'], expandedIds: ['a'] }), { models: ['selectedIds', 'expandedIds'] });
     expect(h.state()).toMatchObject({ selectedIds: ['a'], expandedIds: ['a'], focusedId: null });
-    const fallback = hostCore(treeviewCore, inputs({ selectedIds: undefined as never, expandedIds: undefined as never, items: undefined as never }));
+    const fallback = hostCore(treeviewCore, inputs({ selectedIds: undefined as never, expandedIds: undefined as never, items: undefined as never }), { models: ['selectedIds', 'expandedIds'] });
     expect(fallback.state()).toMatchObject({ selectedIds: [], expandedIds: [] });
     expect(fallback.props().view.rows).toEqual([]);
   });
 
   it('hands the tab stop back to the first row when the focused node left the tree', () => {
-    const h = hostCore(treeviewCore, inputs(), { label: 'Named' });
+    const h = hostCore(treeviewCore, inputs(), { models: ['selectedIds', 'expandedIds'], label: 'Named' });
     h.state().focusedId = 'gone';
     const { view } = h.props();
     expect(view.rows[0].item['tabindex']).toBe(0);
@@ -64,9 +64,9 @@ describe('treeviewCore', () => {
     const h = mount();
     h.click('a');
     expect(h.state().selectedIds).toEqual(['a']);
-    expect(h.events('selectedIdsChange')).toEqual([['a']]);
+    expect(h.changes('selectedIds')).toEqual([['a']]);
     expect(h.events('nodeSelect')).toEqual([{ node: ITEMS[0], selectedIds: ['a'] }]);
-    expect(h.events('expandedIdsChange')).toEqual([['a']]);
+    expect(h.changes('expandedIds')).toEqual([['a']]);
     expect(h.events('nodeExpand')).toEqual([{ node: ITEMS[0], expandedIds: ['a'] }]);
     h.click('a');
     expect(h.events('nodeCollapse')).toEqual([{ node: ITEMS[0], expandedIds: [] }]);
@@ -122,9 +122,9 @@ describe('treeviewCore', () => {
     h.setInputs({ selectedIds: ['a', 'c'] });
     h.setInputs({ selectionMode: 'single' });
     expect(h.state().selectedIds).toEqual(['a']);
-    expect(h.events('selectedIdsChange').at(-1)).toEqual(['a']);
+    expect(h.changes('selectedIds').at(-1)).toEqual(['a']);
     h.setInputs({ selectionMode: 'multiple' });
-    expect(h.events('selectedIdsChange')).toHaveLength(1);
+    expect(h.changes('selectedIds')).toHaveLength(1);
     h.setInputs({ hideBorders: true });
   });
 });

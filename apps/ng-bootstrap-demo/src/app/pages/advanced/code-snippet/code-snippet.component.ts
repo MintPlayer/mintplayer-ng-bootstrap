@@ -78,7 +78,7 @@ export class CodeSnippetComponent {
       [annotations]="coverage"
       [activeLine]="activeLine()"
       [lineHref]="lineHref"
-      (lineactivate)="onLineActivate($event)" />`;
+      (lineActivate)="onLineActivate($event)" />`;
 
   snippetAnnotationsTs = dedent`
     readonly coverage: CodeLineAnnotation[] = [

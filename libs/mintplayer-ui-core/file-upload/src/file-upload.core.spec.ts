@@ -41,7 +41,7 @@ function mount(o: Partial<FileUploadInputs> = {}) {
     applyBag(host, view.root);
     return [el('div', view.zone, el('input', view.input), el('span', view.caption, view.dropFilesCaption)), el('ul', view.list)];
   };
-  const h = hostCore(fileUploadCore, inputs(o), { markup });
+  const h = hostCore(fileUploadCore, inputs(o), { models: ['files'], markup });
   h.attach();
   const zone = () => h.host.querySelector<HTMLElement>('.dropzone')!;
   const input = () => h.host.querySelector<HTMLInputElement>('input')!;
@@ -86,7 +86,7 @@ describe('fileUploadCore', () => {
     const field = h.choose(list(file('a.txt')));
     expect(h.state().files.map((f) => f.file.name)).toEqual(['a.txt']);
     expect(h.events('filesDropped')).toHaveLength(1);
-    expect(h.events('filesChange')[0]).toHaveLength(1);
+    expect(h.changes('files')[0]).toHaveLength(1);
     vi.advanceTimersByTime(100);
     expect(announced()).toBe('a.txt added');
     expect(field.value).toBe('');
@@ -96,7 +96,7 @@ describe('fileUploadCore', () => {
     vi.advanceTimersByTime(100);
     expect(announced()).toBe('2 files added');
     h.choose(list());
-    expect(h.events('filesChange')).toHaveLength(2);
+    expect(h.changes('files')).toHaveLength(2);
   });
 
   it('keeps a named input’s files for the form, and ignores other inputs', () => {

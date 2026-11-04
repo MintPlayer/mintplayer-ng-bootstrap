@@ -57,7 +57,6 @@ export const rangeCore = defineCore<RangeInputs, { value: number }, { view: Rang
       const value = parseFloat(input.value);
       if (Number.isNaN(value) || value === api.state().value) return;
       api.setState({ value });
-      api.emit('valueChange', value);
     };
     api.host.addEventListener('input', onInput);
     return () => api.host.removeEventListener('input', onInput);

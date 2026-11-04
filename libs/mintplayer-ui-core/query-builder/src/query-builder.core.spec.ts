@@ -188,7 +188,7 @@ afterEach(() => {
 });
 
 function mount(over: Partial<QueryBuilderInputs> = {}) {
-  const h = hostCore(queryBuilderCore, inputs(over), { id: 'qb', markup: markup as never });
+  const h = hostCore(queryBuilderCore, inputs(over), { models: ['query', 'rootEntity', 'selectedFields', 'sortBy'], id: 'qb', markup: markup as never });
   h.attach();
   return h;
 }
@@ -225,7 +225,7 @@ describe('queryBuilderCore', () => {
     click(act(h, 'add-group', 'qb-root'));
     click(act(h, 'add-subquery', 'qb-root'));
     expect(tree(h).children.map((c) => c.kind)).toEqual(['condition', 'group', 'subquery']);
-    expect(h.events('queryChange')).toHaveLength(3);
+    expect(h.changes('query')).toHaveLength(3);
     h.dispose();
   });
 
@@ -240,7 +240,7 @@ describe('queryBuilderCore', () => {
   it('switches the logic, removes rows and refocuses their parent', () => {
     const h = mount();
     click(act(h, 'logic-and', 'g'));
-    expect(h.events('queryChange')).toHaveLength(0);
+    expect(h.changes('query')).toHaveLength(0);
     click(act(h, 'logic-or', 'g'));
     expect(tree(h).logic).toBe('or');
     h.render();
@@ -258,7 +258,7 @@ describe('queryBuilderCore', () => {
     const h = mount({ query: { kind: 'group', id: 'r', logic: 'and', children: [] } });
     h.host.append(el('button', { 'data-qb-act': 'remove', 'data-qb-id': 'r' }));
     click(q(h, '[data-qb-act="remove"][data-qb-id="r"]'));
-    expect(h.events('queryChange')).toHaveLength(0);
+    expect(h.changes('query')).toHaveLength(0);
     h.dispose();
   });
 
@@ -270,7 +270,7 @@ describe('queryBuilderCore', () => {
     expect((node(h, 'c1') as Condition).field).toBe('qty');
     field.value = 'nope';
     change(field);
-    expect(h.events('queryChange')).toHaveLength(1);
+    expect(h.changes('query')).toHaveLength(1);
     h.render();
     const operator = act(h, 'operator', 'c1') as HTMLSelectElement;
     operator.value = 'lt';
@@ -378,7 +378,7 @@ describe('queryBuilderCore', () => {
     key(q(h, '[data-row-id="s1"] .qb-subquery-header'), 'ArrowDown', { altKey: true });
     expect(tree(h).children.at(-1)!.id).toBe('s1');
     // Not on a field, not without Alt, not another key.
-    const count = h.events('queryChange').length;
+    const count = h.changes('query').length;
     key(act(h, 'field', 'c1'), 'ArrowDown', { altKey: true });
     key(box, 'ArrowDown');
     key(box, 'ArrowLeft', { altKey: true });
@@ -388,7 +388,7 @@ describe('queryBuilderCore', () => {
     const orphan = el('div', { 'data-row-id': 'nope' }, el('div', { class: 'qb-condition' }));
     h.host.append(orphan);
     key(q(h, '[data-row-id="nope"] .qb-condition'), 'ArrowDown', { altKey: true });
-    expect(h.events('queryChange')).toHaveLength(count);
+    expect(h.changes('query')).toHaveLength(count);
     h.dispose();
   });
 
@@ -396,10 +396,10 @@ describe('queryBuilderCore', () => {
     const h = mount({ sortBy: [{ field: 'total', direction: 'asc' }] });
     const entity = act(h, 'entity') as HTMLSelectElement;
     change(entity);
-    expect(h.events('rootEntityChange')).toHaveLength(0);
+    expect(h.changes('rootEntity')).toHaveLength(0);
     entity.value = 'lines';
     change(entity);
-    expect(h.events('rootEntityChange')).toEqual(['lines']);
+    expect(h.changes('rootEntity')).toEqual(['lines']);
     entity.value = 'orders';
     change(entity);
 
@@ -410,7 +410,7 @@ describe('queryBuilderCore', () => {
     expect(h.state().selectedFields).toEqual(['qty']);
     project.checked = false;
     change(project);
-    expect(h.events('selectedFieldsChange')).toEqual([['qty'], []]);
+    expect(h.changes('selectedFields')).toEqual([['qty'], []]);
 
     const field = act(h, 'sort-field') as HTMLSelectElement;
     field.value = 'qty';
@@ -431,7 +431,7 @@ describe('queryBuilderCore', () => {
     const h = mount({ rootEntity: 'nowhere' });
     h.host.append(el('button', { 'data-qb-act': 'sort-add' }));
     click(q(h, '[data-qb-act="sort-add"]'));
-    expect(h.events('sortByChange')).toHaveLength(0);
+    expect(h.changes('sortBy')).toHaveLength(0);
     h.dispose();
   });
 
@@ -460,7 +460,7 @@ describe('queryBuilderCore', () => {
     q(h, '[data-qb-act="drag"]').dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
     expect(h.state().dragging).toBe(false);
     click(act(h, 'load'));
-    expect(h.events('queryChange')).toHaveLength(0);
+    expect(h.changes('query')).toHaveLength(0);
     expect(h.events('loadQuery')).toHaveLength(1);
     // Clicks outside any command, or on a command outside the host, do nothing.
     click(h.host);
@@ -500,9 +500,9 @@ describe('queryBuilderCore', () => {
     drag('c2');
     pointer('pointercancel');
     expect(h.state().dragging).toBe(false);
-    const moves = h.events('queryChange').length;
+    const moves = h.changes('query').length;
     pointer('pointerup');
-    expect(h.events('queryChange')).toHaveLength(moves);
+    expect(h.changes('query')).toHaveLength(moves);
 
     // A handle whose node is gone starts nothing.
     h.host.append(el('div', { 'data-row-id': 'x' }, el('button', { 'data-qb-act': 'drag', 'data-qb-id': 'x' })));
@@ -541,7 +541,7 @@ describe('queryBuilderCore', () => {
   });
 
   it('renders the preview and defaults its inputs', () => {
-    const h = hostCore(queryBuilderCore, { showPreview: true } as QueryBuilderInputs, { id: 'qb', markup: markup as never });
+    const h = hostCore(queryBuilderCore, { showPreview: true } as QueryBuilderInputs, { models: ['query', 'rootEntity', 'selectedFields', 'sortBy'], id: 'qb', markup: markup as never });
     h.render();
     expect(q(h, '.qb-preview')).toBeTruthy();
     expect(h.state()).toMatchObject({ query: null, rootEntity: '', selectedFields: [], sortBy: [] });

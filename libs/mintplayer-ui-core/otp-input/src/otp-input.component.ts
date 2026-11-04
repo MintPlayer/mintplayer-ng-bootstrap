@@ -35,7 +35,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'string', doc: 'Every keystroke, paste and clear: the current, possibly partial, code.' },
         complete: { type: 'string', doc: 'The user filled the last box.' },
       },
       methods: {

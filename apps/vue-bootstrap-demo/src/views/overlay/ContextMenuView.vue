@@ -13,7 +13,7 @@ const SOURCE = `<BsContextMenu>
     <div tabindex="0" v-bind="props">Right-click here</div>
   </template>
   <template #content>
-    <BsDropdownMenu @itemselect="({ value }) => (chosen = value)">
+    <BsDropdownMenu @item-select="({ value }) => (chosen = value)">
       <BsDropdownItem value="cut">Cut</BsDropdownItem>
       <BsDropdownItem value="copy">Copy</BsDropdownItem>
       <BsDropdownItem value="paste">Paste</BsDropdownItem>
@@ -46,7 +46,7 @@ const SOURCE = `<BsContextMenu>
           </div>
         </template>
         <template #content>
-          <BsDropdownMenu @itemselect="choose">
+          <BsDropdownMenu @item-select="choose">
             <BsDropdownItem value="cut">Cut</BsDropdownItem>
             <BsDropdownItem value="copy">Copy</BsDropdownItem>
             <BsDropdownItem value="paste">Paste</BsDropdownItem>

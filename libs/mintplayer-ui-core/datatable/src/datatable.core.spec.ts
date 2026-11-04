@@ -214,7 +214,7 @@ afterEach(() => {
 });
 
 function mount(o: Partial<DatatableInputs> = {}) {
-  const h = hostCore(datatableCore, base(o), { id: 'dt', markup });
+  const h = hostCore(datatableCore, base(o), { models: ['selectedIds', 'page', 'sortColumns', 'perPage', 'expandedIds', 'filters'], id: 'dt', markup });
   h.attach();
   const q = <T extends Element = HTMLElement>(selector: string) => h.host.querySelector<T>(selector)!;
   const qa = <T extends Element = HTMLElement>(selector: string) => [...h.host.querySelectorAll<T>(selector)];
@@ -253,7 +253,7 @@ describe('datatableCore selection', () => {
     expect(h.state().selectedIds).toEqual(['1', '2', '3']);
     expect(h.events('selectionChanged').at(-1)!.selectedRows).toEqual([ROWS[0], ROWS[1], ROWS[2]]);
     h.click(h.row('2'));
-    expect(h.events('selectedIdsChange').at(-1)).toEqual(['2']);
+    expect(h.changes('selectedIds').at(-1)).toEqual(['2']);
   });
 
   it('selects one row in single mode, and nothing in none', () => {
@@ -322,7 +322,7 @@ describe('datatableCore selection', () => {
     h.click(h.q('[data-dt-deselect-all]'));
     expect(h.state().selectedIds).toEqual([]);
     h.click(h.q('[data-dt-deselect-all]'));
-    expect(h.events('selectedIdsChange')).toHaveLength(5);
+    expect(h.changes('selectedIds')).toHaveLength(5);
   });
 
   it('follows the consumer’s selection, expansion, focus and columns', () => {
@@ -343,9 +343,9 @@ describe('datatableCore sort and paging', () => {
     const h = mount({ pagination: true, perPage: 2, page: 2 });
     h.click(h.q('[data-dt-sort="name"]'));
     expect(h.state().sortColumns).toEqual([{ property: 'name', direction: 'ascending' }]);
-    expect(h.events('pageChange')).toEqual([1]);
+    expect(h.changes('page')).toEqual([1]);
     h.click(h.q('[data-dt-sort="name"]'), { shiftKey: true });
-    expect(h.events('sortColumnsChange')).toHaveLength(2);
+    expect(h.changes('sortColumns')).toHaveLength(2);
     h.setInputs({ sortColumns: [{ property: 'year', direction: 'descending' }] });
     expect(h.state().sortColumns).toEqual([{ property: 'year', direction: 'descending' }]);
     h.setInputs({ sortColumns: undefined as never });
@@ -363,7 +363,7 @@ describe('datatableCore sort and paging', () => {
     expect(h.state()).toMatchObject({ perPage: 20, page: 1 });
     h.refresh();
     h.click(h.qa('[data-dt-per-page]').find((e) => e.dataset['dtPerPage'] === '20')!);
-    expect(h.events('perPageChange')).toEqual([20]);
+    expect(h.changes('perPage')).toEqual([20]);
   });
 
   it('follows the consumer’s page and page size', () => {
@@ -514,7 +514,7 @@ describe('datatableCore fetch', () => {
     h.key(h.row('2'), 'ArrowRight');
     expect(h.state().expandedIds).toEqual([2]);
     await settle();
-    expect(h.events('expandedIdsChange')).toEqual([[1], [], [2]]);
+    expect(h.changes('expandedIds')).toEqual([[1], [], [2]]);
   });
 });
 
@@ -608,7 +608,7 @@ describe('datatableCore filters', () => {
     const box = panel(h, 'name').querySelector<HTMLInputElement>('[data-dt-filter-value]')!;
     box.checked = true;
     box.dispatchEvent(new Event('change', { bubbles: true }));
-    expect(h.events('filtersChange')).toHaveLength(1);
+    expect(h.changes('filters')).toHaveLength(1);
     const value = Object.values(h.state().filters)[0];
     expect(value).toMatchObject({ inverse: false });
     h.refresh();

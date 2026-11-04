@@ -40,8 +40,6 @@ export default {
         },
       },
       outputs: {
-        valueChange: { type: 'string | null', doc: 'The E.164 value changed (null while empty).' },
-        countryChange: { type: 'string', doc: 'The user picked a country, or typed a `+XX` that switched it.' },
         phoneChange: { type: 'PhoneChangeEventDetail', doc: 'Every edit, pick and rules load: the value with its parts and validity.' },
       },
       methods: {

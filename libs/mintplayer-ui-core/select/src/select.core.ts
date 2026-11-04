@@ -47,7 +47,6 @@ export interface SelectState {
 }
 
 export interface SelectEvents {
-  valueChange: SelectChangeEventDetail;
 }
 
 type Api = CoreApi<SelectInputs, SelectState, SelectEvents>;
@@ -83,7 +82,6 @@ export const selectCore = defineCore<SelectInputs, SelectState, { view: SelectVi
     const onChange = () => {
       const detail = readSelection(el);
       api.setState({ value: detail.value, values: detail.values });
-      api.emit('valueChange', detail);
     };
     // Options re-rendered, added late, or given their value after the first
     // render: re-apply the selection the core holds.

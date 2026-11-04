@@ -52,7 +52,7 @@ const snippet = `<BsTypeahead
   :debounce-ms="200"
   :min-length="2"
   input-label="Artist"
-  @itemselect="({ item }) => onSelect(item)"
+  @item-select="({ item }) => onSelect(item)"
 >
   <template #item="{ item, term }">
     <strong>{{ item.text }}</strong> <small>{{ item.genre }}</small>
@@ -75,7 +75,7 @@ const snippet = `<BsTypeahead
     :debounce-ms="200"
     :min-length="2"
     input-label="Artist"
-    @itemselect="({ item }) => (selected = item as Artist)"
+    @item-select="({ item }) => (selected = item as Artist)"
   />
   <p class="mt-2 small text-secondary">
     Aborted requests: <span data-testid="aborted">{{ aborted }}</span> · Selected:

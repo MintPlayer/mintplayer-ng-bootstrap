@@ -80,7 +80,6 @@ export const alertCore = defineCore<AlertInputs, { visible: boolean }, { view: A
       // Order matters: the rescue reads focus while the button is still shown.
       rescueFocus(api.host);
       api.setState({ visible: false });
-      api.emit('visibleChange', false);
     };
     api.host.addEventListener('click', onClick);
     return () => api.host.removeEventListener('click', onClick);

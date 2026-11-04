@@ -35,7 +35,7 @@ function mount(o: Partial<OffcanvasInputs> = {}) {
     overlay.querySelector('.offcanvas')!.className = String(view.panel['class']);
     return undefined;
   };
-  const h = hostCore(offcanvasCore, inputs(o), { markup: sync });
+  const h = hostCore(offcanvasCore, inputs(o), { models: ['open'], markup: sync });
   h.attach();
   const update = async () => {
     h.render();
@@ -71,7 +71,7 @@ describe('offcanvasCore', () => {
     h.panel().querySelector<HTMLElement>('.btn-close')!.click();
     await h.update();
     expect(h.state()).toEqual({ open: false, phase: 'closed' });
-    expect(h.events('openChange')).toEqual([false]);
+    expect(h.changes('open')).toEqual([false]);
   });
 
   it('closes on a backdrop click and on Escape, when allowed', async () => {

@@ -38,8 +38,6 @@ export default {
         nodeExpand: { type: 'TreeNodeExpandEventDetail', doc: 'A node expanded (after its lazy load, if any).' },
         nodeCollapse: { type: 'TreeNodeCollapseEventDetail', doc: 'A node collapsed.' },
         nodeLoadError: { type: 'TreeNodeLoadErrorEventDetail', doc: "A lazy node's loader rejected." },
-        selectedIdsChange: { type: 'TreeviewIds', doc: 'The ids of the selected nodes.' },
-        expandedIdsChange: { type: 'TreeviewIds', doc: 'The ids of the expanded nodes.' },
       },
     },
   },

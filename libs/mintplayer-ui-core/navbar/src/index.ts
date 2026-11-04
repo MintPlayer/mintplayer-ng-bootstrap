@@ -15,7 +15,6 @@ export type {
   AttachNavbarOptions,
   NavbarBag,
   NavbarBreakpoint,
-  NavbarExpandedChangeEventDetail,
   NavbarItemOptions,
   NavbarLabels,
   NavbarOptions,

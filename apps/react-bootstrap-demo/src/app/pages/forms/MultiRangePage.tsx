@@ -7,7 +7,8 @@ const SOURCE = `<BsMultiRange
   min={0}
   max={100}
   value={value}
-  onValueInput={setValue}
+  onValueChange={setValue}
+  onValueCommit={setCommitted}
   formatValue={(v) => '$' + v.toFixed(2)}
 />`;
 
@@ -24,8 +25,8 @@ export function MultiRangePage() {
       <p className="text-body-secondary">
         A slider with several thumbs; each thumb is a native range input, so the
         keyboard, RTL and form submission are the browser's own. Thumbs cannot
-        cross their neighbours. <code>onValueInput</code> fires while a thumb
-        moves, <code>onValueChange</code> when the move is committed.
+        cross their neighbours. <code>onValueChange</code> follows every move of a
+        thumb, <code>onValueCommit</code> fires when the move is committed.
       </p>
 
       <section>
@@ -35,8 +36,8 @@ export function MultiRangePage() {
           min={0}
           max={100}
           value={value}
-          onValueInput={setValue}
-          onValueChange={setCommitted}
+          onValueChange={setValue}
+          onValueCommit={setCommitted}
           formatValue={currency}
         />
         <p className="text-body-secondary mt-2">
@@ -46,7 +47,7 @@ export function MultiRangePage() {
 
       <section>
         <h2>Three thumbs, half steps, a minimum gap of 1</h2>
-        <BsMultiRange aria-label="Three thumbs" min={0} max={10} step={0.5} minDistance={1} value={three} onValueInput={setThree} />
+        <BsMultiRange aria-label="Three thumbs" min={0} max={10} step={0.5} minDistance={1} value={three} onValueChange={setThree} />
         <p className="text-body-secondary mt-2">
           Selected: <code>[{three.join(', ')}]</code>
         </p>

@@ -41,8 +41,6 @@ export default {
         },
       },
       outputs: {
-        selectedDateChange: { type: 'Date', doc: 'A day picked in the grid, or typed into the field before hydration.' },
-        currentMonthChange: { type: 'Date', doc: 'The grid moved to another month.' },
         openChange: { type: 'boolean', doc: 'The popup opened (true) or closed (false).' },
       },
       methods: {

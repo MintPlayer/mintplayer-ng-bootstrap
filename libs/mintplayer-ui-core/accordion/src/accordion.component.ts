@@ -43,9 +43,6 @@ export default {
           disabled: { default: 'false', reflect: true },
         },
       },
-      outputs: {
-        openChange: { type: 'boolean', doc: 'The user opened or closed the tab (or exclusivity closed it).' },
-      },
       methods: {
         type: 'AccordionTabMethods',
         fields: { setOpen: { doc: 'Open or close the tab through its `<details>`, so exclusivity and the nested collapse apply.' } },

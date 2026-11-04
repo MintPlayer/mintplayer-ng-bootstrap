@@ -48,19 +48,19 @@ describe('mp-multi-range', () => {
     expect(el.querySelectorAll('.multi-range-fill')).toHaveLength(1);
   });
 
-  it('reports valueinput while a thumb moves and valuechange on commit', async () => {
+  it('reports valuechange (the model) while a thumb moves and valuecommit on commit', async () => {
     const el = await mount('<mp-multi-range></mp-multi-range>');
     el.value = [20, 80];
     await settle(el);
     const seen: Array<[string, number[]]> = [];
-    el.addEventListener('valueinput', (e) => seen.push(['input', (e as CustomEvent<number[]>).detail]));
     el.addEventListener('valuechange', (e) => seen.push(['change', (e as CustomEvent<number[]>).detail]));
+    el.addEventListener('valuecommit', (e) => seen.push(['commit', (e as CustomEvent<number[]>).detail]));
     slide(thumbs(el)[1], 60);
     thumbs(el)[1].dispatchEvent(new Event('change', { bubbles: true }));
     await settle(el);
     expect(seen).toEqual([
-      ['input', [20, 60]],
       ['change', [20, 60]],
+      ['commit', [20, 60]],
     ]);
     expect(el.value).toEqual([20, 60]);
     expect(el.getValues()).toEqual([20, 60]);

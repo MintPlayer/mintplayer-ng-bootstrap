@@ -9,7 +9,6 @@ import {
   BsNavbarLinkDirective,
 } from '@mintplayer/ng-bootstrap/navbar';
 import { BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown';
-import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 import { dedent } from 'ts-dedent';
 
 @Component({
@@ -32,12 +31,8 @@ import { dedent } from 'ts-dedent';
 export class NavbarComponent {
   protected readonly expanded = signal(false);
 
-  protected onExpandedchange(detail: NavbarExpandedChangeEventDetail) {
-    this.expanded.set(detail.expanded);
-  }
-
   protected readonly snippetHtml = dedent`
-    <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Main navigation" (expandedchange)="onExpandedchange($event)">
+    <bs-navbar [breakpoint]="'lg'" [color]="'body-tertiary'" aria-label="Main navigation" [(expanded)]="expanded">
         <a *bsNavbarBrand routerLink="/">MyApp</a>
 
       <bs-navbar-nav>
@@ -74,7 +69,6 @@ export class NavbarComponent {
       BsNavbarLinkDirective,
     } from '@mintplayer/ng-bootstrap/navbar';
     import { BsDropdownItemComponent, BsDropdownMenuComponent } from '@mintplayer/ng-bootstrap/dropdown';
-    import type { NavbarExpandedChangeEventDetail } from '@mintplayer/ui-core/navbar';
 
     @Component({
       selector: 'my-navbar-demo',
@@ -92,10 +86,6 @@ export class NavbarComponent {
     })
     export class MyNavbarDemoComponent {
       readonly expanded = signal(false);
-
-      onExpandedchange(detail: NavbarExpandedChangeEventDetail) {
-        this.expanded.set(detail.expanded);
-      }
     }
   `;
 }

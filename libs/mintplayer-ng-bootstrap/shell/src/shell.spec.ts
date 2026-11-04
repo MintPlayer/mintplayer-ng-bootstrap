@@ -7,7 +7,7 @@ import { BsShellComponent, BsShellSidebarDirective, BsShellTopbarDirective } fro
 @Component({
   imports: [BsShellComponent, BsShellSidebarDirective, BsShellTopbarDirective],
   template: `
-    <bs-shell #shell [state]="state()" [externalToggle]="external()" [size]="size()" (statechange)="changes.push($event)">
+    <bs-shell #shell [state]="state()" [externalToggle]="external()" [size]="size()" (stateChange)="changes.push($event)">
       <span *bsShellTopbar class="brand">Brand</span>
       <nav *bsShellSidebar class="links">Links</nav>
       <main class="page">Content</main>

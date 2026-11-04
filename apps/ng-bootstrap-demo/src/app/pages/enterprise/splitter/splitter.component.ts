@@ -79,7 +79,7 @@ export class SplitterComponent {
 
   protected readonly snippetSizedHtml = dedent`
     <bs-splitter #splitter [minPanelSize]="120" [touchMode]="touchMode()"
-        (resizing)="onResizing($event)" (resizeend)="onResizeEnd($event)">
+        (resizing)="onResizing($event)" (resizeEnd)="onResizeEnd($event)">
       <bs-splitter-panel>Left</bs-splitter-panel>
       <bs-splitter-panel>Right</bs-splitter-panel>
     </bs-splitter>

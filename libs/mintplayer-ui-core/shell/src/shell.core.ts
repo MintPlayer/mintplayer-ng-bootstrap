@@ -13,12 +13,12 @@ import {
 
 /**
  * The shell as a D10 component (#458 M4). The markup contract stays in
- * `connectShell`; this core adds the inputs, the `statechange` output, the
+ * `connectShell`; this core adds the inputs, the `stateChange` output, the
  * `toggle()` method and the listeners (the hamburger checkboxes, the skip
  * link, `dismissOnNavigate`), all delegated from the root.
  */
 
-/** Payload of `statechange`: whether the sidebar is now open. */
+/** Payload of `stateChange`: whether the sidebar is now open. */
 export interface ShellStateChange {
   open: boolean;
 }
@@ -52,7 +52,7 @@ export const shellCore = defineCore<
   ShellInputs,
   object,
   { view: ShellComponentView },
-  { statechange: ShellStateChange },
+  { stateChange: ShellStateChange },
   undefined,
   undefined,
   ShellMethods
@@ -77,7 +77,7 @@ export const shellCore = defineCore<
       // Only this shell's own checkboxes (its direct children), never a nested shell's.
       if (!(target instanceof HTMLInputElement) || !target.classList.contains('shell-toggle')) return;
       if (target.parentElement !== root) return;
-      api.emit('statechange', { open: target.checked });
+      api.emit('stateChange', { open: target.checked });
     };
     const onClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
@@ -88,7 +88,7 @@ export const shellCore = defineCore<
       }
       if (api.inputs().dismissOnNavigate && shouldDismissShell(event, root)) {
         const open = toggleShell(root, false);
-        if (open !== null) api.emit('statechange', { open });
+        if (open !== null) api.emit('stateChange', { open });
       }
     };
     root.addEventListener('change', onChange);
@@ -106,7 +106,7 @@ export const shellCore = defineCore<
   methods: {
     toggle: (api, force) => {
       const open = toggleShell(api.host, force);
-      if (open !== null) api.emit('statechange', { open });
+      if (open !== null) api.emit('stateChange', { open });
     },
   },
 });

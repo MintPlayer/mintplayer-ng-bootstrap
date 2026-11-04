@@ -139,7 +139,6 @@ export const radioCore = defineCore<RadioInputs, { checked: boolean }, { view: R
     // A native radio fires change only when it becomes checked: by click, Space or an arrow key.
     const onChange = () => {
       api.setState({ checked: input.checked });
-      api.emit('checkedChange', input.checked);
     };
     input.addEventListener('change', onChange);
     return () => input.removeEventListener('change', onChange);
@@ -200,7 +199,6 @@ export const radioGroupCore = defineCore<
     const onChange = (event: Event) => {
       if (!ownsRadio(api.host, event.target)) return;
       api.setState({ value: event.target.value });
-      api.emit('valueChange', event.target.value);
     };
     api.host.addEventListener('change', onChange);
     return () => api.host.removeEventListener('change', onChange);

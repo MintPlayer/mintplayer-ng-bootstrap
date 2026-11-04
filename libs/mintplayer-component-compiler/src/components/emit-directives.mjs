@@ -40,13 +40,13 @@ export function emitAngularDirective(model, { generator, runtime = '@mintplayer/
     `@Directive({ selector: '${names.selector}' })`,
     `export class ${names.angular} {`,
     ...model.inputs.map((input) => inputLine(model, input)),
-    ...model.outputs.map((output) => `${jsdoc(output.doc, '  ')}  readonly ${output.lower} = output<${output.type}>();`),
+    ...model.outputs.map((output) => `${jsdoc(output.doc, '  ')}  readonly ${output.name} = output<${output.type}>();`),
     '',
   ];
   const options = [
     `inputs: () => ({ ${model.inputs.map((i) => `${i.name}: this.${i.name}()`).join(', ')} })`,
     `idPrefix: 'bs-${model.element}'`,
-    ...(model.outputs.length ? [`outputs: { ${model.outputs.map((o) => `${o.name}: this.${o.lower}`).join(', ')} }`] : []),
+    ...(model.outputs.length ? [`outputs: { ${model.outputs.map((o) => `${o.name}: this.${o.name}`).join(', ')} }`] : []),
     `hostBag: (props) => ${directiveBag(model, 'props')}`,
   ];
   lines.push(`  protected readonly core = useCore(${model.core}, { ${options.join(', ')} });`, '');
