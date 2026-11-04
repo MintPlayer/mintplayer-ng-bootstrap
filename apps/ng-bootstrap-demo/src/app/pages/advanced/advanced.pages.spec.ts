@@ -12,7 +12,7 @@ import { BsColorPickerComponent } from '@mintplayer/ng-bootstrap/color-picker';
 import { BsCopyDirective } from '@mintplayer/ng-bootstrap/copy';
 import {
   BsFileUploadComponent,
-  BsFileUploadTemplateDirective,
+  BsFileUploadFileTemplateDirective,
 } from '@mintplayer/ng-bootstrap/file-upload';
 import { BsFontColorPipe } from '@mintplayer/ng-bootstrap/font-color';
 import {
@@ -52,9 +52,8 @@ import {
 import { BsOrdinalNumberPipe } from '@mintplayer/ng-bootstrap/ordinal-number';
 import { BsParallaxComponent } from '@mintplayer/ng-bootstrap/parallax';
 import { BsPlaylistTogglerComponent } from '@mintplayer/ng-bootstrap/playlist-toggler';
-import { BsProgressBarComponent, BsProgressComponent } from '@mintplayer/ng-bootstrap/progress-bar';
-import { BsResizableComponent, BsResizeGlyphDirective } from '@mintplayer/ng-bootstrap/resizable';
-import { BsScrollspyComponent, BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
+import { BsResizableComponent } from '@mintplayer/ng-bootstrap/resizable';
+import { BsScrollspyComponent } from '@mintplayer/ng-bootstrap/scrollspy';
 import { BsSignaturePadComponent } from '@mintplayer/ng-bootstrap/signature-pad';
 import { BsSlugifyPipe } from '@mintplayer/ng-bootstrap/slugify';
 import { BsSplitStringPipe } from '@mintplayer/ng-bootstrap/split-string';
@@ -179,8 +178,7 @@ const pages: {
     component: FileUploadComponent,
     imports: () => [
       MockComponent(BsGridComponent), MockDirective(BsGridRowDirective), MockDirective(BsGridColumnDirective), MockDirective(BsColFormLabelDirective),
-      MockComponent(BsFileUploadComponent), MockDirective(BsFileUploadTemplateDirective),
-      MockComponent(BsProgressComponent), MockComponent(BsProgressBarComponent),
+      MockComponent(BsFileUploadComponent), MockDirective(BsFileUploadFileTemplateDirective),
       FileUploadComponent,
     ],
   },
@@ -313,7 +311,7 @@ const pages: {
     name: 'ResizableComponent',
     component: ResizableComponent,
     imports: () => [
-      MockComponent(BsResizableComponent), MockDirective(BsResizeGlyphDirective),
+      MockComponent(BsResizableComponent),
       ResizableComponent,
     ],
   },
@@ -321,7 +319,7 @@ const pages: {
     name: 'ScrollspyComponent',
     component: ScrollspyComponent,
     imports: () => [
-      MockComponent(BsScrollspyComponent), MockDirective(BsScrollspyDirective),
+      MockComponent(BsScrollspyComponent),
       ScrollspyComponent,
     ],
   },

@@ -45,6 +45,7 @@ const SelectPage       = lazyNamed(() => import('./pages/forms/SelectPage'),    
 const CodeSnippetPage  = lazyNamed(() => import('./pages/CodeSnippetPage'),  'CodeSnippetPage');
 const PaginationPage   = lazyNamed(() => import('./pages/PaginationPage'),   'PaginationPage');
 const RadioPage        = lazyNamed(() => import('./pages/RadioPage'),        'RadioPage');
+const RatingPage       = lazyNamed(() => import('./pages/RatingPage'),       'RatingPage');
 const TimepickerPage   = lazyNamed(() => import('./pages/forms/TimepickerPage'),     'TimepickerPage');
 const MultiRangePage   = lazyNamed(() => import('./pages/forms/MultiRangePage'),     'MultiRangePage');
 const OtpInputPage     = lazyNamed(() => import('./pages/advanced/OtpInputPage'),    'OtpInputPage');
@@ -74,6 +75,8 @@ const ContextMenuPage  = lazyNamed(() => import('./pages/overlay/ContextMenuPage
 const ToggleButtonsPage = lazyNamed(() => import('./pages/advanced/ToggleButtonsPage'), 'ToggleButtonsPage');
 const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage'),    'ParallaxPage');
 const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
+const ScrollspyPage    = lazyNamed(() => import('./pages/advanced/ScrollspyPage'),   'ScrollspyPage');
+const ResizablePage    = lazyNamed(() => import('./pages/advanced/ResizablePage'),   'ResizablePage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
@@ -130,6 +133,7 @@ export function App() {
           <Route path="/overlay/context-menu" element={<ContextMenuPage />} />
           <Route path="/basic/pagination" element={<PaginationPage />} />
           <Route path="/basic/radio" element={<RadioPage />} />
+          <Route path="/basic/rating" element={<RatingPage />} />
           <Route path="/basic/toggle-button" element={<ToggleButtonPage />} />
           <Route path="/basic/tab-control" element={<TabControlPage />} />
           <Route path="/basic/treeview" element={<TreeviewPage />} />
@@ -143,6 +147,8 @@ export function App() {
           <Route path="/advanced/toggle-buttons" element={<ToggleButtonsPage />} />
           <Route path="/advanced/parallax" element={<ParallaxPage />} />
           <Route path="/advanced/sticky-footer" element={<StickyFooterPage />} />
+          <Route path="/advanced/scrollspy" element={<ScrollspyPage />} />
+          <Route path="/advanced/resizable" element={<ResizablePage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/charts" element={<ChartsPage />} />

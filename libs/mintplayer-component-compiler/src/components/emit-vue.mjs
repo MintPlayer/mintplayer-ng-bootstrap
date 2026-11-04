@@ -15,8 +15,14 @@ export function propLine(model, input) {
   const typed = runtime
     ? `${runtime} as PropType<${type}>`
     : `null as unknown as PropType<unknown extends ${type} ? any : ${type}>`;
-  return `${jsdoc(input.doc, '  ')}  ${input.name}: { type: ${typed}, default: ${input.default ?? 'undefined'} },`;
+  // Vue CALLS a function default of a prop that is not typed `Function` (it is a factory),
+  // so a formatter default (`(n) => …`) is handed over through one.
+  const value = input.default ?? 'undefined';
+  const fallback = !runtime && FUNCTION_EXPRESSION.test(value.trim()) ? `() => ${value}` : value;
+  return `${jsdoc(input.doc, '  ')}  ${input.name}: { type: ${typed}, default: ${fallback} },`;
 }
+
+const FUNCTION_EXPRESSION = /^(?:async\s+)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/;
 
 /**
  * @returns {{ file: string, text: string, exports: string[] }}

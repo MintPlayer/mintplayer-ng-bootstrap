@@ -1,31 +1,30 @@
 <h1 class="text-center">File upload</h1>
 
 <p>
-    <code>bs-file-upload</code> exposes a drop zone plus a click-to-browse trigger and renders each pending file
-    through the <code>*bsFileUploadTemplate</code> directive. Combine with <code>bsFormatBytes</code> for human-readable sizes.
+    <code>bs-file-upload</code> is a drop zone over a native file input: drop files on it, click it or use the
+    browse button. Each batch is added to the two-way <code>[(files)]</code> list, reported through
+    <code>(filesdropped)</code> and announced to screen readers. Rows show the name, size and a progress bar you
+    update; an <code>ng-template bsFileUploadFileTemplate</code> replaces a row. With <code>name</code> the input
+    submits its files with a form, no JavaScript needed.
 </p>
 
 <h2>Basic usage</h2>
 
-<bs-grid>
-    <div bsRow>
-        <div [md]="12" class="text-center">
-            <bs-file-upload (filesDropped)="logFilesForUpload($event)">
-                <div *bsFileUploadTemplate="let upload of files()" class="d-flex flex-row mx-auto">
-                    <div class="file-img"></div>
-                    <div class="flex-grow-1 text-start px-2">
-                        <span class="d-block text-truncate text-secondary">{{ upload.file.name }}</span>
-                        <span class="d-block text-grey mb-0">{{ upload.file.size | bsFormatBytes }}</span>
-                        <bs-progress [height]="4">
-                            <bs-progress-bar [minimum]="0" [maximum]="upload.file.size" [value]="upload.progress" color="danger"></bs-progress-bar>
-                        </bs-progress>
-                    </div>
-                    <button class="btn file-remove" (click)="removeFile(upload)">Remove</button>
-                </div>
-            </bs-file-upload>
-        </div>
-    </div>
-</bs-grid>
+<bs-file-upload [(files)]="files" (filesdropped)="upload($event)"></bs-file-upload>
 
 <bs-code-snippet [code]="snippetBasicHtml" [language]="'html'"></bs-code-snippet>
-<bs-code-snippet [code]="snippetBasicTs" [language]="'ts'"></bs-code-snippet>
+
+<h2>Custom rows</h2>
+
+<bs-file-upload [(files)]="customFiles" (filesdropped)="upload($event, customFiles)">
+    <ng-template bsFileUploadFileTemplate let-upload="upload">
+        <div class="d-flex align-items-center gap-2">
+            <span class="flex-grow-1 text-truncate">{{ upload.file.name }}</span>
+            <span class="text-body-secondary">{{ upload.progress === upload.file.size ? 'Done' : 'Uploading…' }}</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(customFiles, upload)">Remove</button>
+        </div>
+    </ng-template>
+</bs-file-upload>
+
+<bs-code-snippet [code]="snippetCustomHtml" [language]="'html'"></bs-code-snippet>
+<bs-code-snippet [code]="snippetTs" [language]="'ts'"></bs-code-snippet>

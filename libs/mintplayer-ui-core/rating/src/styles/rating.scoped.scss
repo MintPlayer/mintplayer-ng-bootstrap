@@ -1,0 +1,39 @@
+// The rating (#458 M7): the stars fill up to the checked radio, and up to the
+// hovered star while the pointer is over the group. Pure CSS, so it holds with
+// JavaScript off. `--mp-rating-color` themes the filled stars.
+.rating {
+  display: inline-flex;
+  line-height: 1;
+}
+
+.rating-star {
+  color: var(--bs-secondary-color);
+  cursor: pointer;
+  border-radius: var(--bs-border-radius-sm);
+}
+
+// Filled: the checked star and every star before it.
+.rating-star:has(> .rating-input:checked),
+.rating-star:has(~ .rating-star > .rating-input:checked) {
+  color: var(--mp-rating-color, var(--bs-warning));
+}
+
+// Hover preview: the group empties, then fills up to the hovered star.
+.rating:not([aria-disabled]):hover > .rating-star {
+  color: var(--bs-secondary-color);
+}
+.rating:not([aria-disabled]) > .rating-star:hover,
+.rating:not([aria-disabled]) > .rating-star:has(~ .rating-star:hover) {
+  color: var(--mp-rating-color, var(--bs-warning));
+}
+
+.rating[aria-disabled] > .rating-star {
+  cursor: default;
+  opacity: 0.65;
+}
+
+// The radio is visually hidden; its star shows the keyboard focus.
+.rating-star:has(> .rating-input:focus-visible) {
+  outline: 2px solid var(--bs-focus-ring-color, currentColor);
+  outline-offset: 2px;
+}

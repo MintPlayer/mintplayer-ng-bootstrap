@@ -1,3 +1,2 @@
-export * from './component/scrollspy.component';
-export * from './directives/scrollspy.directive';
-export * from './services';
+// Generated from @mintplayer/ui-core/scrollspy (PRD #437 D10).
+export * from './generated';

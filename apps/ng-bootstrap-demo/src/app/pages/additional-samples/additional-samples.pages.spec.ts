@@ -25,7 +25,6 @@ import {
   BsModalFooterDirective,
   BsModalHeaderDirective,
 } from '@mintplayer/ng-bootstrap/modal';
-import { BsScrollspyDirective } from '@mintplayer/ng-bootstrap/scrollspy';
 import { QrCodeComponent as LibQrCodeComponent } from '@mintplayer/ng-qr-code';
 import { CollapseComponent } from './collapse/collapse.component';
 import { DragDropComponent } from './drag-drop/drag-drop.component';
@@ -62,7 +61,6 @@ const pages: {
       MockComponent(BsCodeSnippetComponent),
       // Unit to test (standalone)
       CollapseComponent,
-      MockDirective(BsScrollspyDirective),
     ],
   },
   {

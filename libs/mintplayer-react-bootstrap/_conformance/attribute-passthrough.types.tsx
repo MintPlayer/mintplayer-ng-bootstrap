@@ -19,6 +19,9 @@ import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
+import { BsRating } from '@mintplayer/react-bootstrap/rating';
+import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
 import { BsModal } from '@mintplayer/react-bootstrap/modal';
 import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsParallax } from '@mintplayer/react-bootstrap/parallax';
@@ -123,6 +126,9 @@ export const everyWrapperProbes = [
   <BsGrid role="none" id="x" tabIndex={-1} />,
   <BsNavbarToggler role="none" id="x" tabIndex={-1} />,
   <BsMarquee role="none" id="x" tabIndex={-1} />,
+  <BsScrollspy role="none" id="x" tabIndex={-1} />,
+  <BsRating role="none" id="x" tabIndex={-1} />,
+  <BsResizable role="none" id="x" tabIndex={-1} />,
   <BsModal role="none" id="x" tabIndex={-1} />,
   <BsOffcanvas role="none" id="x" tabIndex={-1} />,
   <BsParallax role="none" id="x" tabIndex={-1} />,

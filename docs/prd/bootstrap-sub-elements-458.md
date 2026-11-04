@@ -695,8 +695,36 @@ class only, and the navbar sheet's three link rules are `@mps-global`, anchored 
      `label`; Angular keeps a CVA (`range.angular.ts`).
 6. **#455 tier C:** the overlays on `overlay-stack`, the `[bsDropdown]` behaviour directives, and the
    unified dropdown with the navbar (§4.5).
+   - **Done.** Modal, offcanvas, tooltip, popover, toast, dropdown and context menu are D10 groups
+     on the overlay presence engine. The navbar's dropdowns are `bs-dropdown-menu` /
+     `bs-dropdown-item` in navigation mode (§4.5 "As built"): `bs-navbar-dropdown` is gone. Consumer
+     links get `.nav-link` without a scope stamp (§5.1, related finding).
 7. **#455 tier D and the calendar fold:** color-picker, rating, resizable, priority-nav, scrollspy,
    file-upload, calendar-month → calendar.
+   - **Calendar-month.** Deleted (S8).
+   - **Scrollspy.** Sections are marked with a plain `data-scrollspy` attribute; `bsScrollspy`
+     and `BsScrollOffsetService` are gone. The list is built from the content once hydrated
+     (tier 2: without JS the content shows, the list is empty). An `offset` input replaces the
+     service; Angular's extension defaults it from the router's `scrollOffset`. A scroll
+     container is resolved (the `scrollContainer` input, else the nearest overflowing ancestor,
+     else the window) and `data-contained` replaces `:host-context(bs-modal-content)`. A nested
+     scrollspy keeps its own sections.
+   - **Rating.** Native radios in a `radiogroup` (tier 1: picking, the fill and the submission
+     work without JS); the fill and the hover preview are CSS `:has()`. `starsChange` became
+     `previewChange` (the star under the pointer, null on leave), `ariaLabel` became `label`, a
+     `starLabel` formatter names the stars, `name` sets the form name, and the default value is
+     0 (none) instead of 3. Arrow keys follow native radio behaviour (they wrap). Angular keeps a
+     CVA (`rating.accessor.ts`).
+   - **Resizable.** The geometry math moved to ui-core unchanged; mouse and touch handlers became
+     pointer events with capture, and `touch-action: none` on the glyphs. The geometry is core
+     state written as an instance sheet (`<instance-style>`), because the root's `style` is the
+     consumer's; a preset position therefore server-renders. The glyphs render once hydrated
+     (tier 2), and their `start`/`end` resolve against the host's computed direction (the CDK
+     `Directionality` is gone). A preset on an inline box is ignored instead of throwing. New
+     `resized` output (a drag ended or a key moved an edge). The `[bsResizeGlyph]` directive and
+     the `RESIZABLE` token are gone.
+   - **Compiler.** A Vue prop with a function default on an opaque input is handed over through a
+     factory (Vue calls a function default of a prop not typed `Function`).
 8. **Cleanup.**
    - Delete `BsNoNoscript`, the Angular `a11y/overlay-*` services and every hand-written front.
    - Conformance import lists.

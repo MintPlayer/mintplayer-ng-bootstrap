@@ -77,6 +77,9 @@ import { BsTable } from '@mintplayer/react-bootstrap/table';
 import { BsGrid } from '@mintplayer/react-bootstrap/grid';
 import { BsNavbarToggler } from '@mintplayer/react-bootstrap/navbar-toggler';
 import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
+import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
+import { BsRating } from '@mintplayer/react-bootstrap/rating';
+import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
 import { BsModal } from '@mintplayer/react-bootstrap/modal';
 import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsPopoverPanel } from '@mintplayer/react-bootstrap/popover';
@@ -194,6 +197,9 @@ const CASES: Case[] = [
   bare('BsGrid', 'div.grid-host', BsGrid),
   bare('BsNavbarToggler', 'button.navbar-toggler', BsNavbarToggler),
   { ...bare('BsMarquee', 'span.marquee', BsMarquee), fixedRole: 'marquee' },
+  bare('BsScrollspy', 'nav.spy', BsScrollspy),
+  { ...bare('BsRating', 'div.rating', BsRating), fixedRole: 'radiogroup' },
+  bare('BsResizable', 'div.resizable', BsResizable),
   bare('BsParallax', 'div.parallax-host', BsParallax),
   bare('BsModal', 'div.modal-host', BsModal),
   bare('BsOffcanvas', 'div.offcanvas-host', BsOffcanvas),
