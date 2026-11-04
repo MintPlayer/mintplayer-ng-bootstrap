@@ -1,5 +1,5 @@
 import type { ReactiveController, ReactiveControllerHost } from 'lit';
-import { coreRuntime, type ComponentCore, type CoreBag, type CoreContext, type CoreRuntime, type ViewArgs } from '@mintplayer/ui-core/component';
+import { coreRuntime, scopedHost, type ComponentCore, type CoreBag, type CoreContext, type CoreRuntime, type ViewArgs } from '@mintplayer/ui-core/component';
 import { applyHostProps, EMPTY_HOST_PROPS } from './host-props';
 
 const symbols = new WeakMap<CoreContext<unknown>, symbol>();
@@ -49,6 +49,11 @@ export interface CoreControllerOptions<I, P> {
   readonly idPrefix: string;
   /** The host element's bag, where the template root is the host (`mp-host`). Default: `core.host`. */
   readonly hostBag?: (props: P) => CoreBag | null | undefined;
+  /**
+   * The group's scope, stamped as `data-mps` on the bag `core.host` writes where the template root is
+   * NOT the host (#460). Unlike `hostBag`, it does not make the host the core's root.
+   */
+  readonly hostScope?: string;
   /** Two-way inputs: properties written back when the core changes the state of the same name. */
   readonly models?: readonly string[];
 }
@@ -181,7 +186,7 @@ export class CoreController<I, S, P, E, C, PC, M> implements ReactiveController 
   /** The template's props; also applies the host bag. */
   props(): P {
     const props = this.#core.view(this.#args());
-    const hostBag = this.#options.hostBag ?? this.#core.host?.bind(this.#core);
+    const hostBag = this.#options.hostBag ?? scopedHost(this.#core.host?.bind(this.#core), this.#options.hostScope);
     if (hostBag) this.#applied = applyHostProps(this.#host, this.#applied, hostBag(props) ?? {});
     return props;
   }

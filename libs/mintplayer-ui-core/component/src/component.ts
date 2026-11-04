@@ -162,6 +162,16 @@ export function defineCore<I, S, P, E = Record<never, never>, C = undefined, PC 
   return core;
 }
 
+/**
+ * A core's `host` bag stamped with the group's scope (`data-mps`), for a front whose template root is
+ * NOT the host: the scoped sheet's host rules (`.progress-bar-host[data-mps=progress]`) only match a
+ * stamped host (#460). No `host`, no bag: a core that writes nothing on its host gets nothing.
+ */
+export function scopedHost<P>(host: ((props: P) => CoreBag) | undefined, scope: string | undefined): ((props: P) => CoreBag) | undefined {
+  if (!host || !scope) return host;
+  return (props) => ({ ...host(props), 'data-mps': scope });
+}
+
 /** Shallow equality of two input objects. */
 export function sameInputs(a: object, b: object): boolean {
   const ka = Object.keys(a);

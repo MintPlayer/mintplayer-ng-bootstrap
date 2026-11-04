@@ -29,6 +29,16 @@ describe('mp-progress', () => {
     expect(bar.hasAttribute('style')).toBe(false);
   });
 
+  // #460: the bar's host is not its template root, so only the runtime can stamp the scope that
+  // `.progress-bar-host[data-mps=progress] { display: contents }` needs; unstamped, the fill is 0px.
+  it('stamps the group scope on the bar host, beside the core host class', async () => {
+    const host = await mount('<mp-progress><mp-progress-bar value="82"></mp-progress-bar></mp-progress>');
+    const bar = host.querySelector('mp-progress-bar') as HTMLElement;
+    expect(bar.classList.contains('progress-bar-host')).toBe(true);
+    expect(bar.getAttribute('data-mps')).toBe('progress');
+    expect(bar.firstElementChild?.getAttribute('data-mps')).toBe('progress');
+  });
+
   it('an indeterminate track shows one valueless progressbar instead of its bars', async () => {
     const host = await mount('<mp-progress indeterminate label="Laden"><mp-progress-bar value="30"></mp-progress-bar></mp-progress>');
     const bars = host.querySelectorAll('[role=progressbar]');

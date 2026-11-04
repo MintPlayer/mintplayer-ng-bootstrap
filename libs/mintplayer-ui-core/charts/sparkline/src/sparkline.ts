@@ -66,8 +66,9 @@ const emptySvg: SparklineBag = { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 
 export function connectSparkline(points: SparklinePoints, options: SparklineOptions = {}): SparklineView {
   const values = points.filter((p): p is number => p !== null);
   if (!values.length) return { root, svg: emptySvg, fill: null, line: null, dot: null };
-  const lo = options.yMin ?? Math.min(...values);
-  const hi = options.yMax ?? Math.max(...values);
+  // A non-finite bound (NaN from an unset numeric attribute) is "automatic", like an absent one (#461).
+  const lo = Number.isFinite(options.yMin) ? (options.yMin as number) : Math.min(...values);
+  const hi = Number.isFinite(options.yMax) ? (options.yMax as number) : Math.max(...values);
   const x = linearScale([0, Math.max(1, points.length - 1)], [PAD, W - PAD]);
   const y = linearScale(lo === hi ? [lo - 1, hi + 1] : [lo, hi], [H - PAD, PAD]);
 
