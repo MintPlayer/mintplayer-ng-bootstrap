@@ -10,16 +10,18 @@ export interface AccordionSuiteOptions {
 
 const PATH = '/enterprise/accordion';
 
-// Every front renders the core's markup (#437): the root carries data-mps and
-// the rows are its direct children — the Angular host and the React/Vue div
-// alike. `:scope >` keeps a nested accordion's rows out of its parent's count.
+// Every front renders the core's markup (#437): the root carries data-mps. A row
+// is a direct child in React and Vue; in Angular and Lit it sits in its tab's host
+// (`.accordion-tab`, `display: contents`, #458 M4). `:scope >` keeps a nested
+// accordion's rows out of its parent's count.
 const ROOT = '[data-mps="accordion"]';
+const ROWS = ':scope > details.accordion-item, :scope > .accordion-tab > details.accordion-item';
 const single = (page: Page) => page.locator(`[data-demo="single"] ${ROOT}`).first();
 const multi = (page: Page) => page.locator(`[data-demo="multi"] ${ROOT}`).first();
 const nested = (page: Page) => page.locator(`[data-demo="nested"] ${ROOT}`).first();
 
 const item = (accordion: Locator, index: number) =>
-  accordion.locator(`:scope > details.accordion-item >> nth=${index}`);
+  accordion.locator(ROWS).nth(index);
 const summary = (accordion: Locator, index: number) =>
   item(accordion, index).locator(':scope > summary.accordion-button');
 const content = (accordion: Locator, index: number) =>
@@ -53,7 +55,7 @@ export function accordionJsSuite(test: Test, expect: Expect, options: AccordionS
     test('hydrates the server rows in place, once', async ({ page }) => {
       await goto(page);
       const accordion = single(page);
-      await expect(accordion.locator(':scope > details.accordion-item')).toHaveCount(3);
+      await expect(accordion.locator(ROWS)).toHaveCount(3);
       await expect(accordion.locator('summary.accordion-button')).toHaveCount(3);
       await expect(accordion.locator('button')).toHaveCount(0);
     });
@@ -161,7 +163,7 @@ export function accordionNojsSuite(test: Test, expect: Expect, options: Accordio
 
     test('the server renders native details rows', async ({ page }) => {
       const accordion = single(page);
-      await expect(accordion.locator(':scope > details.accordion-item')).toHaveCount(3);
+      await expect(accordion.locator(ROWS)).toHaveCount(3);
       await expect(accordion.locator('summary.accordion-button')).toHaveCount(3);
       // Everything starts collapsed, and collapsed means the content is not
       // rendered at all — no padding strip, no readable text.

@@ -19,7 +19,7 @@ describe('ToastComponent', () => {
   it('queues a toast and renders it in the toaster', () => {
     component.addToast('Saved');
     fixture.detectChanges();
-    expect(component.toasts.toasts.map((t) => t.data.message)).toEqual(['Saved']);
+    expect(component.toasts.toasts.map((t) => t.data)).toEqual(['Saved']);
     const toast = (fixture.nativeElement as HTMLElement).querySelector('bs-toaster .toast-body');
     expect(toast?.textContent?.trim()).toBe('Saved');
   });
