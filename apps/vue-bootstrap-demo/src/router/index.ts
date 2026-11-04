@@ -61,6 +61,7 @@ export function createAppRouter(ssr: boolean) {
     { path: '/advanced/sticky-footer', name: 'sticky-footer', component: () => import('../views/advanced/StickyFooterView.vue') },
     { path: '/advanced/scrollspy', name: 'scrollspy', component: () => import('../views/advanced/ScrollspyView.vue') },
     { path: '/advanced/resizable', name: 'resizable', component: () => import('../views/advanced/ResizableView.vue') },
+    { path: '/advanced/file-upload', name: 'file-upload', component: () => import('../views/advanced/FileUploadView.vue') },
     { path: '/basic/pagination',    name: 'pagination',    component: () => import('../views/PaginationView.vue') },
     { path: '/basic/radio',         name: 'radio',         component: () => import('../views/RadioView.vue') },
     { path: '/basic/rating',        name: 'rating',        component: () => import('../views/RatingView.vue') },

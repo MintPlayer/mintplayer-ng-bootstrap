@@ -55,6 +55,7 @@ const SECTIONS = [
     { path: '/advanced/sticky-footer', label: 'Sticky footer' },
     { path: '/advanced/scrollspy', label: 'Scrollspy' },
     { path: '/advanced/resizable', label: 'Resizable' },
+    { path: '/advanced/file-upload', label: 'File upload' },
     { path: '/advanced/otp-input', label: 'OTP input' },
     { path: '/advanced/signature-pad', label: 'Signature pad' },
   ]},

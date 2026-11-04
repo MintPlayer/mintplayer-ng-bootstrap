@@ -80,6 +80,7 @@ import { BsMarquee } from '@mintplayer/react-bootstrap/marquee';
 import { BsScrollspy } from '@mintplayer/react-bootstrap/scrollspy';
 import { BsRating } from '@mintplayer/react-bootstrap/rating';
 import { BsResizable } from '@mintplayer/react-bootstrap/resizable';
+import { BsFileUpload } from '@mintplayer/react-bootstrap/file-upload';
 import { BsModal } from '@mintplayer/react-bootstrap/modal';
 import { BsOffcanvas } from '@mintplayer/react-bootstrap/offcanvas';
 import { BsPopoverPanel } from '@mintplayer/react-bootstrap/popover';
@@ -200,6 +201,7 @@ const CASES: Case[] = [
   bare('BsScrollspy', 'nav.spy', BsScrollspy),
   { ...bare('BsRating', 'div.rating', BsRating), fixedRole: 'radiogroup' },
   bare('BsResizable', 'div.resizable', BsResizable),
+  { ...bare('BsFileUpload', 'div.dropzone', BsFileUpload), fixedRole: 'region' },
   bare('BsParallax', 'div.parallax-host', BsParallax),
   bare('BsModal', 'div.modal-host', BsModal),
   bare('BsOffcanvas', 'div.offcanvas-host', BsOffcanvas),

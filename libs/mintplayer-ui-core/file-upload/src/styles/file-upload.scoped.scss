@@ -1,0 +1,64 @@
+// The file upload (#458 M7). Bootstrap's list-group and progress parts style the list;
+// this sheet carries the zone: the stretched native input, the drag highlight and the
+// focus ring the clipped input cannot show itself.
+
+.file-upload {
+  display: block;
+}
+
+.dropzone {
+  z-index: 1;
+  text-align: center;
+
+  &[data-dragging] {
+    border: 4px solid var(--bs-danger) !important;
+    background: var(--bs-danger-bg-subtle);
+    margin: -3px -3px -4px;
+  }
+
+  &[data-disabled] {
+    opacity: 0.65;
+  }
+
+  // The keyboard reaches the zone through the input: show its focus on the browse button.
+  &:has(> .dropzone-input:focus-visible) > .btn {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+  }
+}
+
+// Stretched over the zone, transparent: a click or a drop anywhere reaches the native control.
+.dropzone-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 2;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.btn {
+  z-index: 5;
+}
+
+.files-list {
+  margin-top: -1px;
+}
+
+.file-upload-row {
+  max-width: 400px;
+  margin-inline: auto;
+}
+
+.progress {
+  height: 4px;
+}
+
+.progress-bar {
+  width: var(--mp-file-upload-progress, 0%);
+}

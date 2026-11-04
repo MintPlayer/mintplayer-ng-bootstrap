@@ -45,6 +45,7 @@ import '@mintplayer/web-components/marquee';
 import '@mintplayer/web-components/scrollspy';
 import '@mintplayer/web-components/rating';
 import '@mintplayer/web-components/resizable';
+import '@mintplayer/web-components/file-upload';
 import '@mintplayer/web-components/modal';
 import '@mintplayer/web-components/offcanvas';
 import '@mintplayer/web-components/popover';

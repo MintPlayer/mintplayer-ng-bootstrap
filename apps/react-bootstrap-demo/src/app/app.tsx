@@ -77,6 +77,7 @@ const ParallaxPage     = lazyNamed(() => import('./pages/advanced/ParallaxPage')
 const StickyFooterPage = lazyNamed(() => import('./pages/advanced/StickyFooterPage'), 'StickyFooterPage');
 const ScrollspyPage    = lazyNamed(() => import('./pages/advanced/ScrollspyPage'),   'ScrollspyPage');
 const ResizablePage    = lazyNamed(() => import('./pages/advanced/ResizablePage'),   'ResizablePage');
+const FileUploadPage   = lazyNamed(() => import('./pages/advanced/FileUploadPage'),  'FileUploadPage');
 const SchedulerPage    = lazyNamed(() => import('./pages/enterprise/SchedulerPage'), 'SchedulerPage');
 const TimelinePage     = lazyNamed(() => import('./pages/enterprise/TimelinePage'),  'TimelinePage');
 const ShellPage        = lazyNamed(() => import('./pages/enterprise/ShellPage'),     'ShellPage');
@@ -149,6 +150,7 @@ export function App() {
           <Route path="/advanced/sticky-footer" element={<StickyFooterPage />} />
           <Route path="/advanced/scrollspy" element={<ScrollspyPage />} />
           <Route path="/advanced/resizable" element={<ResizablePage />} />
+          <Route path="/advanced/file-upload" element={<FileUploadPage />} />
           {/* Enterprise */}
           <Route path="/enterprise/accordion" element={<AccordionPage />} />
           <Route path="/enterprise/charts" element={<ChartsPage />} />

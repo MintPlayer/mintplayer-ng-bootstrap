@@ -89,6 +89,7 @@ const TARGETS: Record<string, string> = {
   BsScrollspy: 'nav.spy',
   BsRating: 'div.rating',
   BsResizable: 'div.resizable',
+  BsFileUpload: 'div.dropzone',
   BsParallax: 'div.parallax-host',
   BsModal: 'div.modal-host',
   BsOffcanvas: 'div.offcanvas-host',
