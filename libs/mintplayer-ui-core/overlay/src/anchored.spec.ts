@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { anchorSide, besidePlacement } from './anchored';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { anchorSide, besidePlacement, placeAtPoint, placeBeside, trackBeside } from './anchored';
 
 const box = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height });
 const anchor = box(100, 100, 50, 20);
@@ -40,5 +40,27 @@ describe('besidePlacement', () => {
   it('falls back on an unknown side', () => {
     expect(anchorSide('left', 'top')).toBe('top');
     expect(anchorSide('end', 'top')).toBe('end');
+  });
+});
+
+describe('placeAtPoint', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('puts the panel below the point, or above it near the bottom of the viewport', () => {
+    const menu = document.createElement('div');
+    vi.spyOn(menu, 'getBoundingClientRect').mockReturnValue({ ...box(0, 0, 100, 200), x: 0, y: 0, toJSON: () => ({}) } as DOMRect);
+    placeAtPoint(document.body, menu, 50, 60);
+    expect(menu.style.getPropertyValue('--mp-anchored-top')).toBe('60px');
+    placeAtPoint(document.body, menu, 50, window.innerHeight - 20);
+    expect(menu.style.getPropertyValue('--mp-anchored-top')).toBe(`${window.innerHeight - 220}px`);
+  });
+
+  it('does nothing in a document without a window', () => {
+    const bare = document.implementation.createHTMLDocument('');
+    const panel = bare.createElement('div');
+    placeAtPoint(bare.body, panel, 1, 2);
+    expect(placeBeside(bare.body, panel, 'end', 4)).toBe('end');
+    trackBeside(panel, () => undefined)();
+    expect(panel.getAttribute('style')).toBeNull();
   });
 });
