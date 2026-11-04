@@ -8,6 +8,12 @@ import { ATTRS_MARKER, BODY_TARGET, GENERATOR, HOST_MARKER, NODE, PROP, Template
 /** The Vue slot-name prefix of one content query's lent slots; the component emitter names them alike. */
 export const contentSlotPrefix = (query) => `content:${query}:`;
 
+// `$attrs` values are `unknown`, which vue-tsc refuses for `class` and `style`: cast them to
+// the element's own attribute types (a type-only import, erased from the output).
+const ATTRS_TYPE_IMPORT = "import type { HTMLAttributes as MpHtmlAttributes } from 'vue';\n";
+const typedClass = (exp) => `(${exp}) as MpHtmlAttributes['class']`;
+const ATTRS_STYLE = "$attrs.style as MpHtmlAttributes['style']";
+
 const walk = (node, visit) => {
   visit(node);
   (node.children ?? []).forEach((child) => walk(child, visit));
@@ -139,8 +145,8 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
     if (bag) edits.push({ start: bag.loc.start.offset, end: bag.loc.end.offset, text: `v-bind="${merged}"` });
     else edits.push({ start: target.loc.start.offset + 1 + target.tag.length, end: target.loc.start.offset + 1 + target.tag.length, text: ` v-bind="${merged}"` });
     const at = root.loc.start.offset + 1 + root.tag.length;
-    edits.push({ start: at, end: at, text: ' :class="$attrs.class" :style="$attrs.style"' });
-    script += 'defineOptions({ inheritAttrs: false });\n';
+    edits.push({ start: at, end: at, text: ` :class="${typedClass('$attrs.class')}" :style="${ATTRS_STYLE}"` });
+    script += ATTRS_TYPE_IMPORT + 'defineOptions({ inheritAttrs: false });\n';
   } else if (host && root) {
     // The root takes the consumer's attributes itself. Vue's fallthrough would let a consumer
     // role replace the core's (#458: a role the core writes is its contract), so merge by hand.
@@ -150,9 +156,9 @@ export function emitVue(src, { generator = GENERATOR, runtime = '@mintplayer/vue
       edits.push({
         start: bag.loc.start.offset,
         end: bag.loc.end.offset,
-        text: `v-bind="{ ...${b}, ...$attrs, class: undefined, style: undefined, role: String(${b}['role'] ?? $attrs['role'] ?? '') || undefined }" :class="[${b}['class'], $attrs.class]" :style="$attrs.style"`,
+        text: `v-bind="{ ...${b}, ...$attrs, class: undefined, style: undefined, role: String(${b}['role'] ?? $attrs['role'] ?? '') || undefined }" :class="${typedClass(`[${b}['class'], $attrs.class]`)}" :style="${ATTRS_STYLE}"`,
       });
-      script += 'defineOptions({ inheritAttrs: false });\n';
+      script += ATTRS_TYPE_IMPORT + 'defineOptions({ inheritAttrs: false });\n';
     }
   }
 

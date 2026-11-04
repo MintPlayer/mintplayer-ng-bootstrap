@@ -46,7 +46,7 @@ describe('emitters', () => {
     const hosted = read('<div mp-host v-bind="bag"><slot /></div>');
     const text = emitVue(hosted);
     expect(text).toContain(
-      `<div v-bind="{ ...bag, ...$attrs, class: undefined, style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }" :class="[bag['class'], $attrs.class]" :style="$attrs.style">`,
+      `<div v-bind="{ ...bag, ...$attrs, class: undefined, style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }" :class="([bag['class'], $attrs.class]) as MpHtmlAttributes['class']" :style="$attrs.style as MpHtmlAttributes['style']">`,
     );
     expect(text).toContain('defineOptions({ inheritAttrs: false });');
     expect(text).not.toContain('mp-host');
@@ -269,7 +269,7 @@ describe('mp-attrs', () => {
     expect(text).toContain(
       `<select v-bind="{ ...bag, ...$attrs, class: String(bag['class'] ?? ''), style: undefined, role: String(bag['role'] ?? $attrs['role'] ?? '') || undefined }">`,
     );
-    expect(text).toContain('<div :class="$attrs.class" :style="$attrs.style" v-bind="bag">');
+    expect(text).toContain(`<div :class="($attrs.class) as MpHtmlAttributes['class']" :style="$attrs.style as MpHtmlAttributes['style']" v-bind="bag">`);
     expect(text).not.toContain('mp-attrs');
   });
 
