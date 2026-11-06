@@ -10,6 +10,13 @@
   top: var(--mp-anchored-top, 0);
 }
 
+// Bootstrap leaves the arrow's position to Popper (inline `position: absolute`);
+// without it the arrow is an in-flow row above the header (#463). The fixed
+// panel is its containing block, and Bootstrap's per-side offsets place it.
+.popover > .popover-arrow {
+  position: absolute;
+}
+
 .popover.bs-popover-top > .popover-arrow,
 .popover.bs-popover-bottom > .popover-arrow {
   left: 50%;
