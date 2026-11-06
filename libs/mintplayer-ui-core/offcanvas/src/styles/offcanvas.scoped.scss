@@ -4,3 +4,16 @@
 .offcanvas-host {
   display: contents;
 }
+
+// The panel clips on its cross axis, as it did before #458 (#463): the body
+// scrolls its own overflow, but a header wider than a side panel (or taller
+// than a top/bottom one) would otherwise paint over the page.
+.offcanvas.offcanvas-start,
+.offcanvas.offcanvas-end {
+  overflow-x: hidden;
+}
+
+.offcanvas.offcanvas-top,
+.offcanvas.offcanvas-bottom {
+  overflow-y: hidden;
+}

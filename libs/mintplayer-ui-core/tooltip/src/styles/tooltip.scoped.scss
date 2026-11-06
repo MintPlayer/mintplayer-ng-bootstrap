@@ -10,6 +10,13 @@
   top: var(--mp-anchored-top, 0);
 }
 
+// Bootstrap leaves the arrow's position to Popper (inline `position: absolute`);
+// without it the arrow is an in-flow row at the panel's top edge (#463). The
+// fixed panel is its containing block, and Bootstrap's per-side offsets place it.
+.tooltip .tooltip-arrow {
+  position: absolute;
+}
+
 .tooltip.bs-tooltip-top .tooltip-arrow,
 .tooltip.bs-tooltip-bottom .tooltip-arrow {
   left: 50%;
