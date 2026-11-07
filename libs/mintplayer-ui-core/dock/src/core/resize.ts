@@ -18,8 +18,8 @@ export interface FloatingResizeEdges {
 }
 
 /** Smallest usable floating window, in CSS pixels. */
-export const FLOATING_MIN_WIDTH = 192;
-export const FLOATING_MIN_HEIGHT = 128;
+export const FLOATING_MIN_WIDTH: number = 192;
+export const FLOATING_MIN_HEIGHT: number = 128;
 
 /**
  * The floor a floating window may shrink to, which is the nominal minimum

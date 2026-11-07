@@ -1,4 +1,4 @@
-import type { ComponentGroup } from '@mintplayer/ui-core/component';
+import type { ComponentGroup, InputField } from '@mintplayer/ui-core/component';
 
 /**
  * The checkbox group's manifest (#458 M4): `@mintplayer/nx-component-compiler`
@@ -10,7 +10,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  * group on a host it does not own (a `<tbody>`, a table cell).
  */
 
-const shared = {
+const shared: Readonly<Record<string, InputField>> = {
   color: { default: "'primary'", kind: 'string' },
   checked: { default: 'false', model: true },
   name: { default: 'null', kind: 'string' },
@@ -20,7 +20,7 @@ const shared = {
   invalid: { default: 'false' },
   errorText: { default: 'null', kind: 'string' },
   inputLabel: { default: 'null', kind: 'string' },
-} as const;
+};
 
 export default {
   group: 'checkbox',

@@ -4,7 +4,7 @@ import type { RibbonGroupSize, RibbonReduceStep } from './ribbon';
 export type RibbonItemSize = 'large' | 'medium' | 'small';
 
 /** Gap between adjacent groups in the active tab, in px. */
-export const RIBBON_GROUP_GAP = 8;
+export const RIBBON_GROUP_GAP: number = 8;
 
 /** One group of the active tab, as measured by the caller. */
 export interface ReduceGroup {
@@ -93,7 +93,7 @@ export function planReduceStep(model: ReduceModel): ReduceStep | null {
 }
 
 /** Width the Simplified layout keeps free for its overflow chevron, in px. */
-export const SIMPLIFIED_CHEVRON_RESERVATION = 40;
+export const SIMPLIFIED_CHEVRON_RESERVATION: number = 40;
 
 /**
  * Simplified layout (FR-39): the index of the first group that no longer fits

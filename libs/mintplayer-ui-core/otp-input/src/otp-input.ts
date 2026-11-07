@@ -21,10 +21,10 @@ export type OtpInputSize = 'sm' | 'md' | 'lg';
 
 export const OTP_INPUT_SCOPE = 'otp-input';
 export const OTP_DEFAULT_GROUPS: readonly number[] = [1, 1, 1, 1, 1, 1];
-export const OTP_MAX_GROUP_SIZE = 10;
-export const OTP_MAX_TOTAL = 40;
-export const OTP_REVEAL_MS = 700;
-export const OTP_MASK_CHAR = '•';
+export const OTP_MAX_GROUP_SIZE: number = 10;
+export const OTP_MAX_TOTAL: number = 40;
+export const OTP_REVEAL_MS: number = 700;
+export const OTP_MASK_CHAR: string = '•';
 
 export type OtpBag = Record<string, string | number | boolean | null>;
 

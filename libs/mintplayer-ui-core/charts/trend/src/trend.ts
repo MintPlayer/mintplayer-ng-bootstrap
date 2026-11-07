@@ -20,8 +20,8 @@ export type TrendBag = CoreBag;
 export const TREND_PALETTE = ['#0d6efd', '#21b577', '#fd7e14', '#6f42c1', '#d63384', '#20c997', '#dc3545', '#6c757d'];
 
 /** The viewBox, in logical units (16:9). */
-export const TREND_W = 1000;
-export const TREND_H = 562;
+export const TREND_W: number = 1000;
+export const TREND_H: number = 562;
 const MARGIN = { top: 20, right: 20, bottom: 48, left: 72 };
 
 export interface PlacedPoint {

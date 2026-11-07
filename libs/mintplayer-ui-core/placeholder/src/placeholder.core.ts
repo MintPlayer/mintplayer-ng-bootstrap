@@ -37,7 +37,7 @@ export interface PlaceholderView {
 export const PLACEHOLDER_FIELD_ATTR = 'data-placeholder-field';
 
 /** How long the status message stays before it clears, so a later one is spoken again. */
-export const PLACEHOLDER_CLEAR_MS = 1500;
+export const PLACEHOLDER_CLEAR_MS: number = 1500;
 
 export function connectPlaceholder({ loading }: PlaceholderInputs, message: string): PlaceholderView {
   return {

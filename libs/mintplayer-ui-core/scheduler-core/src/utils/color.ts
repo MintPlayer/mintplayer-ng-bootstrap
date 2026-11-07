@@ -165,7 +165,7 @@ export function addAlpha(color: string, alpha: number): string {
 }
 
 /** Fallback event colour when neither the event nor its resource specifies one. */
-export const DEFAULT_EVENT_COLOR = '#3788d8';
+export const DEFAULT_EVENT_COLOR: string = '#3788d8';
 
 /**
  * Resolve an event's fill colour.

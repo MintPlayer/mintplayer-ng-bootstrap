@@ -70,7 +70,7 @@ export interface TooltipPanelView {
 export const TOOLTIP_OF_ATTR = 'data-mp-tooltip';
 
 /** How long the pointer may travel from the trigger into the tooltip before it hides. */
-export const TOOLTIP_HIDE_DELAY_MS = 150;
+export const TOOLTIP_HIDE_DELAY_MS: number = 150;
 
 /** The gap between the trigger and the panel: Bootstrap's arrow height. */
 const GAP = 6;

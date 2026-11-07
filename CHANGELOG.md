@@ -8,6 +8,16 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ## [Unreleased]
 
+### Changed
+
+- **Style and tuning constants are declared `string` / `number` (issue #467).** The generated
+  `*ScopedStyles` sheets and Bootstrap part strings used to declare their whole CSS text as a literal
+  type, so a styles-only fix changed `@mintplayer/ui-core`'s declared API and released a minor. They,
+  the exported tuning numbers (`TOOLTIP_HIDE_DELAY_MS`, `OVERLAY_Z_BASE`, `MIN_COLUMN_WIDTH`, …),
+  `TYPEAHEAD_DEFAULTS`, the colour defaults and the checkbox/card manifests' input fields are now
+  typed by kind. Attribute, scope and selector names keep their literal types: renaming one is an
+  API change. This release counts as one API change; later CSS or timing tweaks are patches.
+
 ### Breaking
 
 - **The datatable owns its filter state; overlays keep their content (issue #465).** Ticks in a

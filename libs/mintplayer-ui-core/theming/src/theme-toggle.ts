@@ -5,7 +5,7 @@ import { BS_THEME_DEFAULT_MODES, type BsThemeToggleMode } from './toggle-modes';
 export const THEME_TOGGLE_SCOPE = 'theme-toggle';
 
 /** How long an announcement stays in the live region before it clears itself. */
-export const THEME_TOGGLE_ANNOUNCE_MS = 5000;
+export const THEME_TOGGLE_ANNOUNCE_MS: number = 5000;
 
 function isUsableEntry(entry: unknown): entry is BsThemeToggleMode {
   return !!entry && typeof entry === 'object' && isValidThemeMode((entry as BsThemeToggleMode).mode);

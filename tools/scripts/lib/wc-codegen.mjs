@@ -71,7 +71,9 @@ export function buildPlainStylesModule({ css, sourceScssRel, exportName }) {
     `// Source: ${sourceScssRel}`,
     '// Regenerate with the codegen Nx target of the owning library.',
     '',
-    `export const ${exportName} = \`${escapeForTemplateLiteral(css)}\`;`,
+    // Typed `string` (#467): an unannotated const declares the CSS text as a
+    // literal type, so every styles-only fix would change the published API.
+    `export const ${exportName}: string = \`${escapeForTemplateLiteral(css)}\`;`,
     `export default ${exportName};`,
     '',
   ].join('\n');
@@ -88,9 +90,9 @@ export function buildBootstrapPartModule({ scoped, page, sourceScssRel, scopedNa
     `// Source: ${sourceScssRel}`,
     '// Regenerate with the codegen Nx target of the owning library.',
     '',
-    `export const ${scopedName} = \`${escapeForTemplateLiteral(scoped)}\`;`,
+    `export const ${scopedName}: string = \`${escapeForTemplateLiteral(scoped)}\`;`,
     '',
-    `export const ${pageName} = \`${escapeForTemplateLiteral(page)}\`;`,
+    `export const ${pageName}: string = \`${escapeForTemplateLiteral(page)}\`;`,
     '',
   ].join('\n');
 }

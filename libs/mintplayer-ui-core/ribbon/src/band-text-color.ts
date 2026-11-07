@@ -1,7 +1,7 @@
 /** Text colour on a pastel band. */
-export const BAND_TEXT_DARK = '#262626';
+export const BAND_TEXT_DARK: string = '#262626';
 /** Text colour on a saturated band. */
-export const BAND_TEXT_LIGHT = '#FFFFFF';
+export const BAND_TEXT_LIGHT: string = '#FFFFFF';
 
 /**
  * Expand a CSS hex colour (3, 4, 6 or 8 digits, leading `#` optional) to its

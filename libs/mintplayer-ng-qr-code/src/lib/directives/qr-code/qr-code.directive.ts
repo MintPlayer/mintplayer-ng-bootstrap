@@ -23,7 +23,7 @@ export class QrCodeDirective {
 
   static readonly VALID_COLOR_REGEX = /^#(?:[0-9a-fA-F]{3,4}){1,2}$/;
   static readonly DEFAULT_ERROR_CORRECTION_LEVEL: QRCodeErrorCorrectionLevel = 'M';
-  static readonly DEFAULT_CENTER_IMAGE_SIZE = 40;
+  static readonly DEFAULT_CENTER_IMAGE_SIZE: number = 40;
 
   readonly value = input.required<string>({ alias: 'qrCode' });
 
