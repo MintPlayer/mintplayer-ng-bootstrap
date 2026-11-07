@@ -104,7 +104,7 @@ const options = (o: Partial<DatatableOptions> = {}): DatatableOptions => ({
   hrefFor: null,
   announcement: '',
   headerHeight: 0,
-  filter: { column: null, selections: {}, operandTexts: {}, values: null, loading: false, term: '', mounted: [], readonly: false, commands: noCommands },
+  filter: { column: null, selections: {}, operandTexts: {}, values: null, loading: false, term: '', mounted: [], readonly: false, keptValues: {}, commands: noCommands },
   ...o,
 });
 
@@ -176,6 +176,7 @@ describe('connectDatatable', () => {
           term: '',
           mounted: ['name'],
           readonly: false,
+          keptValues: {},
           commands: noCommands,
         },
       }),
@@ -205,6 +206,7 @@ describe('connectDatatable', () => {
           term: '',
           mounted: ['year'],
           readonly: false,
+          keptValues: {},
           commands: noCommands,
         },
       }),

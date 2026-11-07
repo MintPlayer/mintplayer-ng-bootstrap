@@ -784,6 +784,28 @@ describe('datatableCore filter state (#465)', () => {
     expect(valuesOf(h, 'name')).toEqual(['Muse', 'Blur']);
   });
 
+  it('T3b: a closed panel keeps its last full list, and a reopen shows it until the new load lands (rows and scroll survive)', async () => {
+    let answer: (v: ReturnType<typeof list>) => void = () => undefined;
+    const answers = [Promise.resolve(list('ABBA', 'Muse', 'Queen')), new Promise<ReturnType<typeof list>>((r) => (answer = r))];
+    const distincts = vi.fn(() => answers.shift()!);
+    const h = mountValues({ distincts: distincts as never });
+    open(h, 'name');
+    await settle();
+    h.refresh();
+    const texts = () => cell(h, 'name').body!.list?.options.map((o) => o.text);
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    close(h, 'name');
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    open(h, 'name');
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    answer(list('Muse', 'Oasis'));
+    await settle();
+    h.refresh();
+    expect(texts()).toEqual(['Muse', 'Oasis']);
+    close(h, 'name');
+    expect(texts()).toEqual(['Muse', 'Oasis']);
+  });
+
   it('T5: a click on an option resolves its own value, even when the list moved on before the render', () => {
     const h = mountValues();
     open(h, 'name');
@@ -844,7 +866,9 @@ describe('datatableCore filter state (#465)', () => {
     close(h, 'country');
     const closed = cell(h, 'country').body!;
     expect(closed).not.toBeNull();
-    expect(closed.ctx).toMatchObject({ values: null, loading: false, term: '' });
+    // The last full list stays while closed (the search 'B' never replaced it), so the rows survive.
+    expect(closed.ctx).toMatchObject({ loading: false, term: '' });
+    expect(closed.ctx.values?.matching.map((v) => v.value)).toEqual(['NL', 'BE']);
     expect(closed.ctx.selection.values.map((v) => v.value)).toEqual(['BE']);
     expect(cell(h, 'name').body).toBeNull();
     open(h, 'country');

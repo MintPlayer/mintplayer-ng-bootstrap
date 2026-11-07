@@ -183,6 +183,12 @@ export interface DatatableState {
   filterSnapshots: Readonly<Record<string, DistinctValue[]>>;
   /** The comparison operand's raw text, by column. */
   filterOperandTexts: Readonly<Record<string, string>>;
+  /**
+   * Each column's last full list (loaded for the empty term), by column (#465). A kept, closed panel
+   * shows it, and a reopened one shows it until the open's own load replaces it, so a consumer's
+   * rows (tracked by value) and the list's scroll position survive a close.
+   */
+  filterLists: Readonly<Record<string, DistinctValues>>;
   /** The open panel's list as loaded, never narrowed in place. */
   filterLoaded: DistinctValues | null;
   /** The term filterLoaded was loaded for; null when nothing loaded. */
@@ -421,6 +427,7 @@ export const datatableCore = defineCore<
       filterValueLabels: {},
       filterSnapshots: {},
       filterOperandTexts: {},
+      filterLists: {},
       filterLoaded: null,
       filterLoadedTerm: null,
       filterFromLocal: false,
@@ -513,6 +520,12 @@ export const datatableCore = defineCore<
             state.filterColumn === null
               ? null
               : bucketDistincts(state.filterLoaded, state.filterSnapshots[state.filterColumn] ?? null, state.filterTerm),
+          keptValues: Object.fromEntries(
+            state.filterMounted
+              .filter((name) => name !== state.filterColumn)
+              .map((name) => [name, bucketDistincts(state.filterLists[name] ?? null, state.filterSnapshots[name] ?? null, '')] as const)
+              .filter((entry): entry is readonly [string, DistinctValues] => entry[1] !== null),
+          ),
           loading: state.filterLoading,
           term: state.filterTerm,
           commands: commandsFor(id),
@@ -966,11 +979,19 @@ export const datatableCore = defineCore<
         );
         if (result.aborted || api.state().filterColumn !== name) return;
         if (result.value === null || result.value.response) {
-          api.setState({ filterLoading: false, filterLoaded: result.value?.response ?? null, filterLoadedTerm: term, filterFromLocal: false });
+          const list = result.value?.response ?? null;
+          api.setState({ filterLoading: false, filterLoaded: list, filterLoadedTerm: term, filterFromLocal: false, ...rememberList(name, list, term) });
           return;
         }
       }
-      api.setState({ filterLoading: false, filterLoaded: localList(name), filterLoadedTerm: '', filterFromLocal: true });
+      const list = localList(name);
+      api.setState({ filterLoading: false, filterLoaded: list, filterLoadedTerm: '', filterFromLocal: true, ...rememberList(name, list, '') });
+    };
+    /** A full list (the empty term's) is remembered for the closed panel and the next open (#465). */
+    const rememberList = (name: string, list: DistinctValues | null, term: string) => {
+      if (term !== '') return {};
+      const { [name]: _dropped, ...rest } = api.state().filterLists;
+      return { filterLists: list ? { ...rest, [name]: list } : rest };
     };
     const applyFilter = (name: string, values: DistinctValue[], inverse: boolean) => {
       const s = api.state();
@@ -1042,14 +1063,15 @@ export const datatableCore = defineCore<
       if (name === undefined) return;
       distinctsRequest.cancel();
       if ((ev as ToggleEvent).newState === 'open') {
-        // Loaded per open, never cached: the rows behind a list can change while it is closed.
+        // Loaded per open: the rows behind a list can change while it is closed. Until that load
+        // lands, the last full list stays (#465), so the consumer's rows and scroll position survive.
         // The body is kept from here on (#465 D5); focus moves in on every open, not only the first.
-        const mounted = api.state().filterMounted;
+        const { filterMounted: mounted, filterLists } = api.state();
         api.setState({
           filterColumn: name,
           filterMounted: mounted.includes(name) ? mounted : [...mounted, name],
           filterTerm: '',
-          filterLoaded: null,
+          filterLoaded: filterLists[name] ?? null,
           filterLoadedTerm: null,
           filterLoading: false,
           filterFromLocal: false,
@@ -1448,6 +1470,7 @@ export const datatableCore = defineCore<
             filterDrafts: pick(s.filterDrafts),
             filterSnapshots: pick(s.filterSnapshots),
             filterOperandTexts: pick(s.filterOperandTexts),
+            filterLists: pick(s.filterLists),
           });
         }
         if (inputs.filters !== prev.filters) {
@@ -1474,7 +1497,8 @@ export const datatableCore = defineCore<
         // A locally derived list follows the rows under it, or no value would ever move to "remaining".
         const open = api.state().filterColumn;
         if (inputs.data !== prev.data && open !== null && api.state().filterFromLocal) {
-          api.setState({ filterLoaded: localList(open) });
+          const list = localList(open);
+          api.setState({ filterLoaded: list, ...rememberList(open, list, '') });
         }
         if (inputs.fill !== prev.fill) requestAnimationFrame(bindScroller);
         scheduleReload();

@@ -470,6 +470,8 @@ export interface DatatableFilterView {
   readonly mounted: readonly string[];
   /** `filtersReadonly`: filters are set programmatically only; every editing control is disabled. */
   readonly readonly: boolean;
+  /** A kept, closed panel's last full list, by column (#465): its rows and scroll survive a close. */
+  readonly keptValues: Readonly<Record<string, DistinctValues>>;
   readonly selections: Readonly<Record<string, FilterSelection>>;
   readonly operandTexts: Readonly<Record<string, string>>;
   /** The open column's list, already bucketed and narrowed by `term`. */
@@ -870,13 +872,16 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
 
   const f = o.filter;
   const panelIdOf = (name: string) => datatableFilterPanelId(o.id, name);
-  /** A kept, closed panel shows its selection over no list: the list is loaded per open (#465 D6). */
+  /**
+   * A kept, closed panel shows its selection over its last full list (#465): hidden anyway, and
+   * keeping it keeps the consumer's rows and their scroll. The list is reloaded on every open.
+   */
   const filterPanel = (column: DatatableColumnDef, open: boolean): DatatableFilterPanel => {
     const name = column.name;
     const label = columnLabel(column);
     const selection = filterSelectionOf(column, f.selections);
     const locked = f.readonly;
-    const values = open ? f.values : null;
+    const values = open ? f.values : (f.keptValues[name] ?? null);
     const loading = open && f.loading;
     const term = open ? f.term : '';
     const ctx: FilterContext = {

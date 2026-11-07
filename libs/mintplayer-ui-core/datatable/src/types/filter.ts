@@ -156,7 +156,7 @@ export interface FilterSelection {
  * when the column stops being filterable, changes `filterMode` or is removed.
  */
 export interface FilterContext {
-  /** The current list, or `null` while nothing has loaded (or nothing can). `null` while the panel is closed. */
+  /** The current list, or `null` while nothing has loaded (or nothing can). While a kept panel is closed, its last full list (#465). */
   readonly values: DistinctValues | null;
   /** `true` while a source request for this column is in flight. */
   readonly loading: boolean;
