@@ -403,4 +403,42 @@ test.describe('bs-datatable filter panel', () => {
     await expect(page.locator(`${FILTER_TABLE} tbody tr[data-row-key]`)).toHaveCount(1);
     await expect(trigger(page, 'name')).toHaveAttribute('aria-label', new RegExp(`filtered by ${chosen}`));
   });
+
+  /** #465 T3/T10: the panel body is kept; the ticks and the focus move-in hold on every open. */
+  test('a reopened panel shows the same ticks and takes focus again', async ({ page }) => {
+    const inPanel = () => page.evaluate((sel) => !!document.activeElement?.closest(sel), PANEL);
+    await openPanel(page, 'name');
+    const options = page.locator(`${PANEL} .filter-option`);
+    const chosen = [(await options.nth(0).innerText()).trim(), (await options.nth(1).innerText()).trim()];
+    await options.nth(0).locator('input').check();
+    await options.nth(1).locator('input').check();
+    await page.keyboard.press('Escape');
+    await expect(page.locator(PANEL)).toHaveCount(0);
+
+    await openPanel(page, 'name');
+    await expect.poll(inPanel, { timeout: 1000 }).toBe(true);
+    const ticked = await page.locator(`${PANEL} .filter-option:has(input:checked)`).allInnerTexts();
+    expect(ticked.map((t) => t.trim())).toEqual(chosen);
+  });
+
+  /** #465 T12/D5: the custom panel is kept after a close, out of the tab order and the accessibility tree. */
+  test('a closed custom panel is kept, but hidden from focus and assistive technology', async ({ page }) => {
+    const custom = page.locator(`${FILTER_TABLE} .demo-filter-panel`);
+    await expect(custom).toHaveCount(0);
+    await trigger(page, 'country').click();
+    await expect(page.getByRole('button', { name: 'Benelux' })).toBeVisible();
+    const handle = await custom.elementHandle();
+    await page.keyboard.press('Escape');
+    await expect(page.locator(PANEL)).toHaveCount(0);
+
+    await expect(custom).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Benelux' })).toHaveCount(0);
+    await trigger(page, 'country').focus();
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.demo-filter-panel'))).toBe(false);
+
+    await trigger(page, 'country').click();
+    await expect(page.getByRole('button', { name: 'Benelux' })).toBeVisible();
+    expect(await custom.evaluate((node, kept) => node === kept, handle)).toBe(true);
+  });
 });

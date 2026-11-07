@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { h } from 'vue';
+import { defineComponent, h, nextTick, onMounted, ref, type PropType } from 'vue';
 
-import { BsDatatable, type DatatableColumnDef } from '@mintplayer/vue-bootstrap/datatable';
+import { BsDatatable, type DatatableColumnDef, type FilterContext } from '@mintplayer/vue-bootstrap/datatable';
 
 import { mountEl } from './harness';
 
@@ -66,6 +66,51 @@ describe('BsDatatable', () => {
     await settle();
     expect(el.querySelector('thead b')?.textContent).toBe('head:Name');
     expect([...el.querySelectorAll('tbody i')].map((i) => i.textContent)).toEqual(['cell:Alpha', 'cell:Beta']);
+    wrapper.unmount();
+  });
+
+  it('keeps a custom filter panel, and its own state, across close and reopen; ctx updates in place (#465 T1/T7)', async () => {
+    let mounts = 0;
+    const Panel = defineComponent({
+      props: { ctx: { type: Object as PropType<FilterContext>, required: true } },
+      setup(props) {
+        const bumps = ref(0);
+        onMounted(() => mounts++);
+        return () =>
+          h('div', { class: 'probe', 'data-term': props.ctx.term, 'data-selected': props.ctx.selection.values.map((v) => String(v.value)).join(',') }, [
+            h('button', { type: 'button', class: 'bump', onClick: () => bumps.value++ }, String(bumps.value)),
+          ]);
+      },
+    });
+    const { el, wrapper } = mountTable({
+      props: { columns: [{ name: 'name', label: 'Name', filterable: true, filterMode: 'custom' }], filters: {} },
+      slots: { filter: ({ ctx }: { ctx: FilterContext }) => h(Panel, { ctx }) },
+    });
+    await settle();
+    const panel = el.querySelector<HTMLElement>('[data-dt-filter-panel="name"]')!;
+    const toggle = async (newState: 'open' | 'closed') => {
+      const ev = new Event('toggle');
+      Object.defineProperty(ev, 'newState', { value: newState });
+      panel.dispatchEvent(ev);
+      await nextTick();
+      await settle();
+    };
+
+    await toggle('open');
+    const probe = panel.querySelector<HTMLElement>('.probe')!;
+    probe.querySelector<HTMLButtonElement>('.bump')!.click();
+    probe.querySelector<HTMLButtonElement>('.bump')!.click();
+    await wrapper.setProps({ filters: { name: { values: ['Alpha'], inverse: false } } });
+    await settle();
+    expect(panel.querySelector('.probe')).toBe(probe);
+    expect(probe.dataset['selected']).toBe('Alpha');
+    await toggle('closed');
+    await toggle('open');
+    expect(panel.querySelector('.probe')).toBe(probe);
+    expect(probe.querySelector('.bump')!.textContent).toBe('2');
+    expect(probe.dataset['selected']).toBe('Alpha');
+    expect(probe.dataset['term']).toBe('');
+    expect(mounts).toBe(1);
     wrapper.unmount();
   });
 });
