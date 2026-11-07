@@ -433,6 +433,12 @@ export class DatatablesComponent {
 
   /** Two-way with the table. Seeded, so the server render already filters. */
   customerFilters = signal<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
+  /** `filtersReadonly`: the page still sets filters, the user cannot change them (#465). */
+  lockFilters = signal(false);
+  /** An outside write: the open panel's ticks follow it, and a filter you never touched keeps its own. */
+  presetGermany() {
+    this.customerFilters.update((f) => ({ ...f, country: { values: ['DE'], inverse: false } }));
+  }
   customerSort = signal<SortColumn[]>([{ property: 'name', direction: 'ascending' }]);
   /** The page's own query context, next to the column filters: `fetchParams`. */
   customerSearch = signal('');
