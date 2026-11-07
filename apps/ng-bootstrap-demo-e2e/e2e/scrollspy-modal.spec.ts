@@ -146,10 +146,11 @@ test.describe('scrollspy inside a scrollable modal', () => {
       const closeBtn = document.querySelector('.modal[data-mps=modal] button.btn-close') as HTMLButtonElement | null;
       closeBtn?.click();
     });
-    // Wait for the modal to leave (no more modal in the DOM, or no running animations).
+    // Wait for the modal to finish closing. It stays in the DOM after its first open (#465), hidden
+    // and stamped data-mp-phase="closed", which presence writes only once the leave transition is done.
     await page.waitForFunction(() => {
       const host = document.querySelector('.modal[data-mps=modal]');
-      return host === null;
+      return host === null || host.getAttribute('data-mp-phase') === 'closed';
     });
 
     const afterClose = await page.evaluate(() => window.scrollY);
