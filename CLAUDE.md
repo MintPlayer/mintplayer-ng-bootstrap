@@ -206,7 +206,12 @@ heaviest examples. PRD: `docs/prd/headless-catalog-437.md`.
   into a body host, a `div` at the end of `<body>` (copying `data-bs-theme`, `dir`, `lang`), so no
   clipping ancestor can cut them. Angular renders a detached embedded view there (the client replaces the
   server's host), Vue `<Teleport>` and React `createPortal` only on the client, Lit `render()`. Without
-  JS a closed overlay cannot open, so nothing depends on its server copy.
+  JS a closed overlay cannot open, so nothing depends on its server copy. **An overlay is kept after
+  its first open** (#465): `OverlayPresence`'s `kept` latch (`isKept`) keeps the panel rendered while
+  closed, stamped `data-mp-phase="closed"` + `hidden` (`phaseBag`), so consumer content and its state
+  survive a close in every front. Never gate an overlay's render on `isRendered(phase)` — that destroys
+  the content; ARIA state (`aria-expanded`, `aria-controls`) still follows the phase. A panel core takes
+  `phase`, never a `shown` boolean.
 - **Fronts are transparent** to `aria-*`, `id`, `tabindex` — but never forward a consumer `role` onto a node
   whose role is part of the core's contract (the React passthrough guard has `fixedRole` for this). Where a
   host-rooted template's role lives on an inner `mp-attrs` node, Angular (`useHostAttrs` + `[mpHostAttrs]`)

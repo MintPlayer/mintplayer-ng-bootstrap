@@ -25,12 +25,32 @@ export function createBodyHost(doc: Document, id: string, from: Element | null):
   removeBodyHost(doc, id);
   const host = doc.createElement('div');
   host.setAttribute(BODY_HOST_ATTRIBUTE, id);
+  if (from) origins.set(host, from);
+  copyInherited(host, from);
+  doc.body.appendChild(host);
+  return host;
+}
+
+/** Each host's declaring position, so a host kept across a close can copy again (#465). */
+const origins = new WeakMap<Element, Element>();
+
+/**
+ * Copy the inherited attributes onto a host again, from the position it was
+ * created for. An overlay's host outlives a close (#465), and the page's colour
+ * mode, direction or language may change while it is hidden: presence calls
+ * this on every open. A host without a known origin is left as it is.
+ */
+export function refreshBodyHost(host: Element): void {
+  const from = origins.get(host);
+  if (from) copyInherited(host, from);
+}
+
+function copyInherited(host: Element, from: Element | null): void {
   INHERITED_ATTRIBUTES.forEach((name) => {
     const value = inherited(from, name);
     if (value) host.setAttribute(name, value);
+    else host.removeAttribute(name);
   });
-  doc.body.appendChild(host);
-  return host;
 }
 
 /** The closest value of `name` from `from` up; a walk, not `closest()`, which a server DOM may lack. */

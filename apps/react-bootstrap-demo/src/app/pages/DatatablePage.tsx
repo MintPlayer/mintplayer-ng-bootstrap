@@ -350,6 +350,8 @@ export function DatatablePage() {
   const [showFilters, setShowFilters] = useState(true);
   // Seeded, so the server render already filters.
   const [customerFilters, setCustomerFilters] = useState<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
+  // `filtersReadonly`: the page still sets filters, the user cannot change them (#465).
+  const [lockFilters, setLockFilters] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [customerTotal, setCustomerTotal] = useState<number | null>(null);
   const fetchCustomersCounted = useCallback<DatatableFetch<Customer, CustomerParams>>(
@@ -368,7 +370,8 @@ export function DatatablePage() {
   // The classes below are the PAGE's (see DatatablePage.css). Bootstrap's
   // `.form-control` is only styled inside `bs-*` components in this workspace.
   const filterPanel = ({ ctx }: { column: DatatableColumnDef; ctx: FilterContext }): ReactNode => (
-    <div className="demo-filter-panel">
+    // ctx.readonly: filtersReadonly is set, so the panel shows but does not edit.
+    <fieldset className="demo-filter-panel" disabled={ctx.readonly}>
       <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => ctx.apply(BENELUX, false)}>Benelux</button>
       {COUNTRIES.map((country) => (
         <button key={String(country.value)} type="button" className="btn btn-sm btn-outline-secondary" onClick={() => ctx.apply([country], false)}>
@@ -376,7 +379,7 @@ export function DatatablePage() {
         </button>
       ))}
       <button type="button" className="btn btn-sm btn-link" onClick={() => ctx.clear()}>Everywhere</button>
-    </div>
+    </fieldset>
   );
 
   const customerColumns: DatatableColumnDef[] = [
@@ -644,6 +647,17 @@ export function DatatablePage() {
           <code>fetch</code> too: <code>onPageLoad</code> fires in the browser
           only.
         </p>
+        <p>
+          <strong>The table owns the filter state.</strong> A panel is created
+          on its first open and kept after that, so what you ticked, typed or
+          scrolled to is still there when you reopen it &mdash; also when new
+          rows arrive, because the value list is keyed by value. A write to{' '}
+          <code>filters</code> from outside updates the ticks in place (and
+          re-lists an open panel&apos;s values). Pass it without{' '}
+          <code>onFiltersChange</code> and set <code>filtersReadonly</code>, and
+          the page can still set filters while the panels open with their
+          controls disabled.
+        </p>
         <p className="text-body-secondary small">
           <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,{' '}
           <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to
@@ -660,6 +674,21 @@ export function DatatablePage() {
           />{' '}
           Show the filter row
         </label>
+        <label className="d-block mb-3">
+          <input
+            type="checkbox"
+            checked={lockFilters}
+            onChange={(e) => setLockFilters(e.target.checked)}
+          />{' '}
+          Lock the filters (<code>filtersReadonly</code>)
+        </label>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary mb-3"
+          onClick={() => setCustomerFilters((f) => ({ ...f, country: { values: ['DE'], inverse: false } }))}
+        >
+          Filter on Germany from the page
+        </button>
 
         <label className="form-label" htmlFor="react-customer-search">
           Name contains (sent as <code>fetchParams</code>)
@@ -681,6 +710,7 @@ export function DatatablePage() {
           distincts={distinctsCustomers}
           filters={customerFilters}
           onFiltersChange={setCustomerFilters}
+          filtersReadonly={lockFilters}
           fetchParams={{ search: customerSearch }}
           rowKey={(row: unknown) => String((row as Customer).id)}
           filter={filterPanel}

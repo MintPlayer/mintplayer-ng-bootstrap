@@ -388,9 +388,23 @@
   </div>
 </bs-grid>
 
+<p>
+  <strong>The table owns the filter state.</strong> A panel is created on its
+  first open and kept after that, so what you ticked, typed or scrolled to is
+  still there when you reopen it &mdash; also when new rows arrive, because the
+  value list is keyed by value. A write to <code>filters</code> from outside
+  updates the ticks in place (and re-lists an open panel's values). Bind it
+  one-way and set <code>filtersReadonly</code>, and the page can still set
+  filters while the panels open with their controls disabled.
+</p>
+
 <bs-checkbox [type]="'checkbox'" [(ngModel)]="showFilters" class="mb-3 d-block">
   Show the filter row
 </bs-checkbox>
+<bs-checkbox [type]="'checkbox'" [(ngModel)]="lockFilters" class="mb-3 d-block">
+  Lock the filters (<code>filtersReadonly</code>)
+</bs-checkbox>
+<button type="button" class="btn btn-sm btn-outline-secondary mb-3" (click)="presetGermany()">Filter on Germany from the page</button>
 
 <label class="form-label" for="customer-search">Name contains (sent as <code>fetchParams</code>)</label>
 <input id="customer-search" class="form-control mb-3" type="search"
@@ -404,6 +418,7 @@
   [fetch]="fetchCustomers"
   [distincts]="distinctsCustomers"
   [(filters)]="customerFilters"
+  [filtersReadonly]="lockFilters()"
   [fetchParams]="customerParams()"
   [(sortColumns)]="customerSort"
   [rowKey]="customerKey">
@@ -413,13 +428,14 @@
        page styles it (see the .demo-filter-* rules); its commands write the
        same filters model the built-in panels do. -->
   <ng-container *bsDatatableFilter="let ctx = ctx">
-    <div class="demo-filter-panel">
+    <!-- ctx.readonly: filtersReadonly is set, so the panel shows but does not edit. -->
+    <fieldset class="demo-filter-panel" [disabled]="ctx.readonly">
       <button type="button" class="btn btn-sm btn-outline-primary" (click)="ctx.apply(benelux, false)">Benelux</button>
       @for (country of countries; track country.value) {
         <button type="button" class="btn btn-sm btn-outline-secondary" (click)="ctx.apply([country], false)">{{ country.label }}</button>
       }
       <button type="button" class="btn btn-sm btn-link" (click)="ctx.clear()">Everywhere</button>
-    </div>
+    </fieldset>
   </ng-container>
 </bs-datatable>
 

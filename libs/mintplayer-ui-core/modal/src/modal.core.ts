@@ -1,5 +1,5 @@
 import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { findByAttribute, isRendered, isShown, OverlayPresence, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import { findByAttribute, isKept, isShown, OverlayPresence, phaseBag, phaseState, type PresenceState } from '@mintplayer/ui-core/overlay';
 
 /**
  * Bootstrap's modal dialog (#458 M6), rendered into a body host so no
@@ -44,14 +44,13 @@ export interface ModalInputs {
   closeLabel: string;
 }
 
-export interface ModalState {
+export interface ModalState extends PresenceState {
   open: boolean;
-  phase: OverlayPhase;
 }
 
 export interface ModalView {
   readonly root: CoreBag;
-  /** Whether the overlay's markup renders (open, or still transitioning out). */
+  /** Whether the overlay's markup renders: from the first open on, hidden while closed (#465). */
   readonly rendered: boolean;
   readonly modal: CoreBag;
   readonly dialog: CoreBag;
@@ -72,13 +71,15 @@ export const MODAL_DISMISS_SELECTOR = '[data-bs-dismiss="modal"]';
 
 const SIZES: readonly string[] = ['sm', 'lg', 'xl'];
 
-export function connectModal(inputs: ModalInputs, phase: OverlayPhase, id: string, label: string | null): ModalView {
+export function connectModal(inputs: ModalInputs, state: PresenceState, id: string, label: string | null): ModalView {
+  const { phase } = state;
   const show = isShown(phase) ? ' show' : '';
   const titleId = `${id}-title`;
   return {
     root: { class: 'modal-host', [MODAL_ROOT_ATTR]: id },
-    rendered: isRendered(phase),
+    rendered: isKept(state),
     modal: {
+      ...phaseBag(phase),
       class: `modal fade${show}`,
       role: 'dialog',
       'aria-modal': 'true',
@@ -103,7 +104,7 @@ export function connectModal(inputs: ModalInputs, phase: OverlayPhase, id: strin
     close: inputs.closeButton ? { class: 'btn-close', type: 'button', 'aria-label': inputs.closeLabel, 'data-bs-dismiss': 'modal' } : null,
     body: { class: 'modal-body' },
     footer: { class: 'modal-footer' },
-    backdrop: { class: `modal-backdrop fade${show}`, 'aria-hidden': 'true' },
+    backdrop: { ...phaseBag(phase), class: `modal-backdrop fade${show}`, 'aria-hidden': 'true' },
   };
 }
 
@@ -119,8 +120,8 @@ function close(api: Api): void {
 }
 
 export const modalCore = defineCore<ModalInputs, ModalState, { view: ModalView }, { openChange: boolean }>({
-  state: (inputs) => ({ open: !!inputs.open, phase: inputs.open ? 'shown' : 'closed' }),
-  view: ({ inputs, state, id, label }) => ({ view: connectModal(inputs, state.phase, id, label) }),
+  state: (inputs) => ({ open: !!inputs.open, phase: inputs.open ? 'shown' : 'closed', kept: !!inputs.open }),
+  view: ({ inputs, state, id, label }) => ({ view: connectModal(inputs, state, id, label) }),
   attach: (api) => {
     const doc = api.host.ownerDocument;
     const find = () => findByAttribute(doc, MODAL_OF_ATTR, api.host.getAttribute(MODAL_ROOT_ATTR));
@@ -128,7 +129,7 @@ export const modalCore = defineCore<ModalInputs, ModalState, { view: ModalView }
       {
         doc,
         find,
-        setPhase: (phase) => api.setState({ phase }),
+        setPhase: (phase) => api.setState(phaseState(phase)),
         overlay: () => ({
           modal: true,
           onDismiss: (reason) => {

@@ -1,4 +1,4 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import { connectPopoverPanel, popoverCore, popoverPanelCore, type PopoverInputs, type PopoverProps } from './popover.core';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -30,7 +30,7 @@ function mount(o: Partial<PopoverInputs> = {}, trigger: HTMLElement = el('span',
     }
     const view = connectPopoverPanel(overlay);
     panel ??= document.body.appendChild(el('div', view.root, el('div', view.body, el('button', null, 'Inside'))));
-    panel.className = String(view.root['class']);
+    patchBag(panel, view.root);
     return undefined;
   };
   const host = document.body.appendChild(trigger);
@@ -52,10 +52,10 @@ function mount(o: Partial<PopoverInputs> = {}, trigger: HTMLElement = el('span',
 
 describe('popover views', () => {
   it('names the panel from its title, else from the trigger, and falls back to the bottom side', () => {
-    const titled = connectPopoverPanel({ overlayId: 'p', side: 'nowhere' as never, shown: true, heading: 'Tip', triggerId: null });
+    const titled = connectPopoverPanel({ overlayId: 'p', side: 'nowhere' as never, phase: 'shown', heading: 'Tip', triggerId: null });
     expect(titled.root).toMatchObject({ class: 'popover bs-popover-bottom fade show', 'aria-labelledby': 'p-title' });
     expect(titled.header).toEqual({ class: 'popover-header', id: 'p-title' });
-    const plain = hostCore(popoverPanelCore, { overlayId: '', side: 'top', shown: false, heading: null, triggerId: 't' }).props().view;
+    const plain = hostCore(popoverPanelCore, { overlayId: '', side: 'top', phase: 'closed', heading: null, triggerId: 't' }).props().view;
     expect(plain).toMatchObject({ header: null, title: '', root: { id: null, 'aria-labelledby': 't' } });
   });
 });

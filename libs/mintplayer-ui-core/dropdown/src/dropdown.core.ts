@@ -1,5 +1,17 @@
 import { defineContext, defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { isRendered, isShown, OverlayPresence, placeBeside, trackBeside, type AnchorAlign, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import {
+  isKept,
+  isRendered,
+  isShown,
+  OverlayPresence,
+  phaseBag,
+  phaseState,
+  placeBeside,
+  trackBeside,
+  type AnchorAlign,
+  type OverlayPhase,
+  type PresenceState,
+} from '@mintplayer/ui-core/overlay';
 import {
   activatedItem,
   attachDropdownMenu,
@@ -65,8 +77,7 @@ export interface DropdownInputs {
   hasPopup: DropdownPopup;
 }
 
-export interface DropdownState {
-  phase: OverlayPhase;
+export interface DropdownState extends PresenceState {
   /** The side it landed on (the opposite of the placement's when that did not fit). */
   side: 'top' | 'bottom';
   /** The trigger is not natively focusable: the core makes it a focusable button. */
@@ -80,7 +91,8 @@ export interface DropdownPanelInputs {
   /** The panel's id, which the trigger's `aria-controls` names. */
   overlayId: string;
   side: string;
-  shown: boolean;
+  /** The overlay phase: `.show` while `shown`, `hidden` while `closed` (#465). */
+  phase: OverlayPhase;
   /** `dialog` makes the panel itself a non-modal dialog. */
   hasPopup: string;
   /** The trigger's id, naming a dialog panel. */
@@ -90,7 +102,7 @@ export interface DropdownPanelInputs {
 export interface DropdownProps {
   /** The trigger's bag. */
   readonly anchor: CoreBag;
-  /** The panel's inputs while it renders; null while closed. */
+  /** The panel's inputs from its first open on (kept while closed, #465); null before. */
   readonly overlay: DropdownPanelInputs | null;
 }
 
@@ -173,16 +185,18 @@ export function connectDropdown(inputs: DropdownInputs, state: DropdownState, id
       role: state.promote ? 'button' : null,
       tabindex: state.promote ? 0 : null,
     },
-    overlay: rendered
-      ? { overlayId, side: state.side, shown: isShown(state.phase), hasPopup: dialog ? 'dialog' : 'menu', triggerId: state.triggerId }
+    overlay: isKept(state)
+      ? { overlayId, side: state.side, phase: state.phase, hasPopup: dialog ? 'dialog' : 'menu', triggerId: state.triggerId }
       : null,
   };
 }
 
 export function connectDropdownPanel(inputs: DropdownPanelInputs): CoreBag {
   const dialog = inputs.hasPopup === 'dialog';
+  const phase = inputs.phase ?? 'closed';
   return {
-    class: `dropdown-panel${inputs.shown ? ' show' : ''}`,
+    ...phaseBag(phase),
+    class: `dropdown-panel${isShown(phase) ? ' show' : ''}`,
     id: inputs.overlayId || null,
     'data-side': inputs.side === 'top' ? 'top' : 'bottom',
     role: dialog ? 'dialog' : null,
@@ -244,7 +258,7 @@ export function connectDropdownDisclosure(options: DropdownDisclosureOptions): D
 type Api = CoreApi<DropdownInputs, DropdownState, Record<never, never>>;
 
 export const dropdownCore = defineCore<DropdownInputs, DropdownState, DropdownProps>({
-  state: (inputs) => ({ phase: 'closed', side: placementOf(inputs.placement).side, promote: false, triggerId: null }),
+  state: (inputs) => ({ phase: 'closed', kept: false, side: placementOf(inputs.placement).side, promote: false, triggerId: null }),
   view: ({ inputs, state, id }) => connectDropdown(inputs, state, id),
   attach: (api: Api) => {
     const host = api.host;
@@ -277,7 +291,7 @@ export const dropdownCore = defineCore<DropdownInputs, DropdownState, DropdownPr
     const presence = new OverlayPresence({
       doc,
       find,
-      setPhase: (phase) => api.setState({ phase }),
+      setPhase: (phase) => api.setState(phaseState(phase)),
       overlay: () => ({
         inside: () => [host],
         onDismiss: (reason) => set(false, reason === 'escape'),

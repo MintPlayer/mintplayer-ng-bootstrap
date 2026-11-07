@@ -1,5 +1,5 @@
 import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { findByAttribute, isRendered, OverlayPresence, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import { findByAttribute, isKept, OverlayPresence, phaseBag, phaseState, type OverlayPhase, type PresenceState } from '@mintplayer/ui-core/overlay';
 
 /**
  * Bootstrap's offcanvas (#458 M6): a panel that slides in from a viewport
@@ -46,9 +46,8 @@ export interface OffcanvasInputs {
   noPadding: boolean;
 }
 
-export interface OffcanvasState {
+export interface OffcanvasState extends PresenceState {
   open: boolean;
-  phase: OverlayPhase;
 }
 
 export interface OffcanvasView {
@@ -78,15 +77,17 @@ function phaseClass(phase: OverlayPhase): string | null {
   return phase === 'shown' ? 'show' : phase === 'leaving' ? 'hiding' : null;
 }
 
-export function connectOffcanvas(inputs: OffcanvasInputs, phase: OverlayPhase, id: string, label: string | null): OffcanvasView {
+export function connectOffcanvas(inputs: OffcanvasInputs, state: PresenceState, id: string, label: string | null): OffcanvasView {
+  const { phase } = state;
   const position = positionOf(inputs.position);
   const titleId = `${id}-title`;
   const horizontal = position === 'start' || position === 'end';
   const size = typeof inputs.size === 'number' && inputs.size > 0 ? `${inputs.size}px` : null;
   return {
     root: { class: 'offcanvas-host', [OFFCANVAS_ROOT_ATTR]: id },
-    rendered: isRendered(phase),
+    rendered: isKept(state),
     panel: {
+      ...phaseBag(phase),
       class: ['offcanvas', `offcanvas-${position}`, phaseClass(phase)].filter(Boolean).join(' '),
       role: 'dialog',
       'aria-modal': inputs.backdrop ? 'true' : null,
@@ -100,7 +101,7 @@ export function connectOffcanvas(inputs: OffcanvasInputs, phase: OverlayPhase, i
     title: { class: 'offcanvas-title h5', id: titleId },
     close: inputs.closeButton ? { class: 'btn-close', type: 'button', 'aria-label': inputs.closeLabel, 'data-bs-dismiss': 'offcanvas' } : null,
     body: { class: inputs.noPadding ? 'offcanvas-body p-0' : 'offcanvas-body' },
-    backdrop: inputs.backdrop ? { class: `offcanvas-backdrop fade${phase === 'shown' ? ' show' : ''}`, 'aria-hidden': 'true' } : null,
+    backdrop: inputs.backdrop ? { ...phaseBag(phase), class: `offcanvas-backdrop fade${phase === 'shown' ? ' show' : ''}`, 'aria-hidden': 'true' } : null,
   };
 }
 
@@ -119,15 +120,15 @@ const backdropOf = (panel: HTMLElement): HTMLElement | null =>
   (Array.from(panel.parentElement?.children ?? []).find((el) => el.classList.contains('offcanvas-backdrop')) as HTMLElement | undefined) ?? null;
 
 export const offcanvasCore = defineCore<OffcanvasInputs, OffcanvasState, { view: OffcanvasView }, { openChange: boolean }>({
-  state: (inputs) => ({ open: !!inputs.open, phase: inputs.open ? 'shown' : 'closed' }),
-  view: ({ inputs, state, id, label }) => ({ view: connectOffcanvas(inputs, state.phase, id, label) }),
+  state: (inputs) => ({ open: !!inputs.open, phase: inputs.open ? 'shown' : 'closed', kept: !!inputs.open }),
+  view: ({ inputs, state, id, label }) => ({ view: connectOffcanvas(inputs, state, id, label) }),
   attach: (api) => {
     const doc = api.host.ownerDocument;
     const presence = new OverlayPresence(
       {
         doc,
         find: () => findByAttribute(doc, OFFCANVAS_OF_ATTR, api.host.getAttribute(OFFCANVAS_ROOT_ATTR)),
-        setPhase: (phase) => api.setState({ phase }),
+        setPhase: (phase) => api.setState(phaseState(phase)),
         overlay: () => ({
           modal: !!api.inputs().backdrop,
           onDismiss: (reason) => {

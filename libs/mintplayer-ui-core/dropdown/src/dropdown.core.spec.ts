@@ -1,4 +1,4 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import {
   connectDropdownDisclosure,
   connectDropdownItem,
@@ -41,7 +41,7 @@ function mount(o: Partial<DropdownInputs> = {}, trigger: HTMLElement = el('butto
           : el('input'));
       document.body.append(panel);
     }
-    applyBag(panel, connectDropdownPanel(overlay));
+    patchBag(panel, connectDropdownPanel(overlay));
     return undefined;
   };
   const h = hostCore(dropdownCore, { placement: 'bottom-start', sameWidth: false, hasPopup: 'menu', ...o }, { host: trigger, markup: sync });
@@ -65,10 +65,10 @@ describe('dropdown views', () => {
     const closed = hostCore(dropdownCore, { placement: 'nowhere' as never, sameWidth: false, hasPopup: 'dialog' }).props();
     expect(closed.anchor).toMatchObject({ 'aria-haspopup': 'dialog', 'aria-expanded': 'false', 'aria-controls': null, role: null });
     expect(closed.overlay).toBeNull();
-    expect(connectDropdownPanel({ overlayId: '', side: 'top', shown: true, hasPopup: 'dialog', triggerId: 't' }))
-      .toEqual({ class: 'dropdown-panel show', id: null, 'data-side': 'top', role: 'dialog', tabindex: -1, 'aria-labelledby': 't' });
-    expect(hostCore(dropdownPanelCore, { overlayId: 'p', side: 'bottom', shown: false, hasPopup: 'menu', triggerId: null }).props().root)
-      .toMatchObject({ class: 'dropdown-panel', role: null, 'aria-labelledby': null });
+    expect(connectDropdownPanel({ overlayId: '', side: 'top', phase: 'shown', hasPopup: 'dialog', triggerId: 't' }))
+      .toEqual({ 'data-mp-phase': 'shown', hidden: false, class: 'dropdown-panel show', id: null, 'data-side': 'top', role: 'dialog', tabindex: -1, 'aria-labelledby': 't' });
+    expect(hostCore(dropdownPanelCore, { overlayId: 'p', side: 'bottom', phase: 'closed', hasPopup: 'menu', triggerId: null }).props().root)
+      .toMatchObject({ class: 'dropdown-panel', role: null, 'aria-labelledby': null, hidden: true });
     expect(dropdownPanelCore.provide?.({} as never)).toEqual({ mode: 'menu', depth: -1 });
   });
 
@@ -139,7 +139,9 @@ describe('dropdownCore attached', () => {
     h.host.click();
     await h.update();
     expect(h.state().phase).toBe('closed');
-    expect(h.panel()).toBeNull();
+    // Kept after the first open (#465), hidden.
+    expect(h.panel()?.hasAttribute('hidden')).toBe(true);
+    expect(h.host.getAttribute('aria-expanded')).toBe('false');
   });
 
   it('names a trigger without an id after its panel, and promotes a non-focusable one to a button', async () => {

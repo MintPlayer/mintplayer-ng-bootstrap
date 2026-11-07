@@ -33,6 +33,7 @@ const base = (o: Partial<DatatableInputs> = {}): DatatableInputs => ({
   data: ROWS,
   fetch: null,
   filters: null,
+  filtersReadonly: false,
   fetchParams: null,
   stateKey: null,
   caption: null,
@@ -136,7 +137,7 @@ function markup({ view }: { view: DatatableView }, host: HTMLElement): Node[] {
             'th',
             b(fc.th),
             fc.trigger && el('button', b(fc.trigger), fc.summary && el('span', b(fc.summary), fc.summaryText)),
-            fc.panel && el('div', b(fc.panel), fc.open && panelBody(fc.open)),
+            fc.panel && el('div', b(fc.panel), fc.body && panelBody(fc.body)),
           ),
         ),
       ),
@@ -693,11 +694,287 @@ describe('datatableCore filters', () => {
     h.refresh();
     const hide = vi.fn();
     panel(h, 'name').hidePopover = hide;
-    const commands = (h.props().view.filterCells[0].open!.ctx as unknown as { close(): void }).close;
+    const commands = (h.props().view.filterCells[0].body!.ctx as unknown as { close(): void }).close;
     commands();
     h.q('thead').dispatchEvent(new Event('change', { bubbles: true }));
     h.q('thead').dispatchEvent(new Event('input', { bubbles: true }));
     h.click(h.q('[data-dt-filter="name"]'));
     expect(h.state().filterColumn).toBe('name');
+  });
+});
+
+/**
+ * #465: the core owns the filter state. Ticks survive a close, new data and
+ * outside writes; a column's panel body is kept after its first open; an open
+ * panel re-queries when the other columns' filters change from outside (and
+ * never on its own echo); `filtersReadonly` locks every editing control.
+ */
+describe('datatableCore filter state (#465)', () => {
+  const VALUE_COLUMNS: DatatableColumnDef[] = [
+    { name: 'name', label: 'Name', filterable: true },
+    { name: 'year', label: 'Year', filterable: true },
+    { name: 'country', label: 'Country', filterable: true, filterMode: 'custom' },
+    { name: 'id', label: 'Id', filterable: true, filterMode: 'comparison', filterInputType: 'number' },
+  ];
+  const mountValues = (o: Partial<DatatableInputs> = {}) => mount({ columns: VALUE_COLUMNS, ...o });
+  type Harness = ReturnType<typeof mount>;
+  const panel = (h: Harness, name: string) => h.qa('[data-dt-filter-panel]').find((p) => p.dataset['dtFilterPanel'] === name)!;
+  const cell = (h: Harness, name: string) => h.props().view.filterCells.find((fc) => fc.key === name)!;
+  const open = (h: Harness, name: string) => {
+    toggle(panel(h, name), 'open');
+    h.refresh();
+    flushFrames();
+  };
+  const close = (h: Harness, name: string) => {
+    toggle(panel(h, name), 'closed');
+    h.refresh();
+  };
+  const boxes = (h: Harness, name: string) => [...panel(h, name).querySelectorAll<HTMLInputElement>('[data-dt-filter-value]')];
+  const labelOf = (box: HTMLInputElement) => box.closest('label')!.textContent!.trim();
+  const listed = (h: Harness, name: string) => boxes(h, name).map(labelOf);
+  const ticked = (h: Harness, name: string) => boxes(h, name).filter((x) => x.checked).map(labelOf);
+  const change = (box: HTMLInputElement, checked: boolean) => {
+    box.checked = checked;
+    box.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  const tick = (h: Harness, name: string, label: string) => {
+    change(boxes(h, name).find((x) => labelOf(x) === label)!, true);
+    h.refresh();
+  };
+  const valuesOf = (h: Harness, name: string) => (h.state().filters[name]?.values ?? []) as unknown[];
+  const list = (...names: string[]) => ({ matching: names.map((n) => ({ value: n, label: n, count: 1 })), remaining: [], hasMore: false });
+
+  it('T3: keeps the ticked values ticked across close and reopen', () => {
+    const h = mountValues();
+    open(h, 'name');
+    tick(h, 'name', 'Queen');
+    tick(h, 'name', 'ABBA');
+    close(h, 'name');
+    open(h, 'name');
+    expect(ticked(h, 'name')).toEqual(['Queen', 'ABBA']);
+  });
+
+  it('T4: keeps a ticked value ticked, and listed first, when the rows change under it', () => {
+    const h = mountValues();
+    open(h, 'name');
+    tick(h, 'name', 'Muse');
+    h.setInputs({ data: [{ id: 9, name: 'Oasis', year: 1991 }, ...ROWS.filter((r) => r.name !== 'Muse')] });
+    h.refresh();
+    expect(ticked(h, 'name')).toEqual(['Muse']);
+    expect(listed(h, 'name')[0]).toBe('Muse');
+    tick(h, 'name', 'Oasis');
+    expect(valuesOf(h, 'name')).toEqual(['Muse', 'Oasis']);
+  });
+
+  it('T4: keeps a ticked value ticked when the server answers with a different list on reopen', async () => {
+    const answers = [list('ABBA', 'Blur', 'Muse', 'Queen'), list('Queen', 'Oasis', 'Blur')];
+    const distincts = vi.fn(async () => answers.shift() ?? list());
+    const h = mountValues({ distincts: distincts as never });
+    open(h, 'name');
+    await settle();
+    h.refresh();
+    tick(h, 'name', 'Muse');
+    close(h, 'name');
+    open(h, 'name');
+    await settle();
+    h.refresh();
+    expect(ticked(h, 'name')).toEqual(['Muse']);
+    expect(listed(h, 'name')[0]).toBe('Muse');
+    tick(h, 'name', 'Blur');
+    expect(valuesOf(h, 'name')).toEqual(['Muse', 'Blur']);
+  });
+
+  it('T3b: a closed panel keeps its last full list, and a reopen shows it until the new load lands (rows and scroll survive)', async () => {
+    let answer: (v: ReturnType<typeof list>) => void = () => undefined;
+    const answers = [Promise.resolve(list('ABBA', 'Muse', 'Queen')), new Promise<ReturnType<typeof list>>((r) => (answer = r))];
+    const distincts = vi.fn(() => answers.shift()!);
+    const h = mountValues({ distincts: distincts as never });
+    open(h, 'name');
+    await settle();
+    h.refresh();
+    const texts = () => cell(h, 'name').body!.list?.options.map((o) => o.text);
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    close(h, 'name');
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    open(h, 'name');
+    expect(texts()).toEqual(['ABBA', 'Muse', 'Queen']);
+    answer(list('Muse', 'Oasis'));
+    await settle();
+    h.refresh();
+    expect(texts()).toEqual(['Muse', 'Oasis']);
+    close(h, 'name');
+    expect(texts()).toEqual(['Muse', 'Oasis']);
+  });
+
+  it('T5: a click on an option resolves its own value, even when the list moved on before the render', () => {
+    const h = mountValues();
+    open(h, 'name');
+    const muse = boxes(h, 'name').find((x) => labelOf(x) === 'Muse')!;
+    // The list changes (new rows) but the DOM has not re-rendered yet: the click lands on the stale node.
+    h.setInputs({ data: [{ id: 7, name: 'Air', year: 1995 }, { id: 8, name: 'Beck', year: 1993 }, ...ROWS] });
+    change(muse, true);
+    expect(valuesOf(h, 'name')).toEqual(['Muse']);
+  });
+
+  it('T5: option keys are the value, not the position', () => {
+    const h = mountValues();
+    open(h, 'name');
+    const before = Object.fromEntries(boxes(h, 'name').map((x) => [labelOf(x), x.getAttribute('data-dt-filter-value')]));
+    h.setInputs({ data: [{ id: 7, name: 'Air', year: 1995 }, ...ROWS] });
+    h.refresh();
+    const after = Object.fromEntries(boxes(h, 'name').map((x) => [labelOf(x), x.getAttribute('data-dt-filter-value')]));
+    expect(after['Queen']).toBe(before['Queen']);
+    expect(after['Muse']).toBe(before['Muse']);
+    expect(new Set(Object.values(after)).size).toBe(Object.keys(after).length);
+  });
+
+  it('T6: filters written from outside while closed show ticked on open, custom ctx included', () => {
+    const h = mountValues();
+    h.setInputs({ filters: { name: { values: ['Muse', 'Nirvana'], inverse: false }, country: { values: ['BE'], inverse: true } } as never });
+    open(h, 'name');
+    expect(ticked(h, 'name')).toEqual(['Muse', 'Nirvana']);
+    close(h, 'name');
+    open(h, 'country');
+    const ctx = cell(h, 'country').body!.ctx;
+    expect(ctx.selection.values.map((v) => v.value)).toEqual(['BE']);
+    expect(ctx.selection.inverse).toBe(true);
+    expect(h.changes('filters')).toHaveLength(0);
+  });
+
+  it('T7: filters written from outside while open update the ticks in place', () => {
+    const h = mountValues();
+    open(h, 'name');
+    tick(h, 'name', 'Queen');
+    h.setInputs({ filters: { name: { values: ['Blur'], inverse: false } } as never });
+    h.refresh();
+    expect(ticked(h, 'name')).toEqual(['Blur']);
+    expect(h.state().filterColumn).toBe('name');
+  });
+
+  it('T2/T11: keeps an opened column’s body, with a closed-panel ctx, and builds none for unopened columns', async () => {
+    const answers = [list('NL', 'BE'), list('FR', 'BE', 'DE')];
+    const distincts = vi.fn(async () => answers.shift() ?? list());
+    const h = mountValues({ distincts: distincts as never });
+    expect(cell(h, 'country').body).toBeNull();
+    expect(cell(h, 'name').body).toBeNull();
+    open(h, 'country');
+    await settle();
+    const first = cell(h, 'country').body!;
+    expect(first.custom).toBe(true);
+    first.ctx.search('B');
+    first.ctx.apply([{ value: 'BE', label: 'BE' }], false);
+    close(h, 'country');
+    const closed = cell(h, 'country').body!;
+    expect(closed).not.toBeNull();
+    // The last full list stays while closed (the search 'B' never replaced it), so the rows survive.
+    expect(closed.ctx).toMatchObject({ loading: false, term: '' });
+    expect(closed.ctx.values?.matching.map((v) => v.value)).toEqual(['NL', 'BE']);
+    expect(closed.ctx.selection.values.map((v) => v.value)).toEqual(['BE']);
+    expect(cell(h, 'name').body).toBeNull();
+    open(h, 'country');
+    await settle();
+    const again = cell(h, 'country').body!.ctx;
+    expect(again.term).toBe('');
+    // D7b: the snapshot taken at the first apply is the universe, so its values keep their place
+    // and the source's new ones follow; NL is no longer present and is not listed as matching.
+    expect(again.values?.matching.map((v) => v.value)).toEqual(['BE', 'FR', 'DE']);
+    expect(again.selection.values.map((v) => v.value)).toEqual(['BE']);
+    expect(distincts).toHaveBeenCalledTimes(2);
+  });
+
+  it('T11: drops a kept body when its column stops being filterable, changes mode or leaves the columns', () => {
+    const h = mountValues();
+    open(h, 'name');
+    close(h, 'name');
+    open(h, 'year');
+    close(h, 'year');
+    expect(cell(h, 'name').body).not.toBeNull();
+    expect(cell(h, 'year').body).not.toBeNull();
+    h.setInputs({
+      columns: [
+        { ...VALUE_COLUMNS[0], filterable: false },
+        { ...VALUE_COLUMNS[1], filterMode: 'comparison' },
+        VALUE_COLUMNS[2],
+      ],
+    });
+    h.refresh();
+    expect(cell(h, 'name').body).toBeNull();
+    expect(cell(h, 'year').body).toBeNull();
+    expect(h.state().filterMounted).toEqual([]);
+    h.setInputs({ columns: VALUE_COLUMNS });
+    h.refresh();
+    expect(cell(h, 'name').body).toBeNull();
+  });
+
+  it('T8a: an open panel re-queries once when another column’s filter changes from outside, never for its own', async () => {
+    const distincts = vi.fn(async () => list('Queen', 'ABBA'));
+    const h = mountValues({ distincts: distincts as never });
+    open(h, 'name');
+    await settle();
+    expect(distincts).toHaveBeenCalledTimes(1);
+    h.setInputs({ filters: { year: { values: [1970], inverse: false } } as never });
+    await settle();
+    expect(distincts).toHaveBeenCalledTimes(2);
+    expect((distincts.mock.calls[1] as unknown[])[0]).toMatchObject({ column: 'name', filters: { year: { values: [1970], inverse: false } } });
+    // The same filters again, as a new object: nothing changed, nothing is asked.
+    h.setInputs({ filters: { year: { values: [1970], inverse: false } } as never });
+    await settle();
+    // Only the open column's own filter changes: the facet ignores it.
+    h.setInputs({ filters: { year: { values: [1970], inverse: false }, name: { values: ['Queen'], inverse: false } } as never });
+    await settle();
+    expect(distincts).toHaveBeenCalledTimes(2);
+    expect(h.changes('filters')).toHaveLength(0);
+  });
+
+  it('T8b: the echo of its own filters change re-queries nothing and reports nothing twice', async () => {
+    const distincts = vi.fn(async () => list('Queen', 'ABBA'));
+    const h = mountValues({ distincts: distincts as never });
+    open(h, 'name');
+    await settle();
+    h.refresh();
+    tick(h, 'name', 'Queen');
+    expect(h.changes('filters')).toHaveLength(1);
+    // A two-way binding hands the reported value straight back.
+    h.setInputs({ filters: structuredClone(h.changes('filters').at(-1)) as never });
+    await settle();
+    h.refresh();
+    expect(distincts).toHaveBeenCalledTimes(1);
+    expect(h.changes('filters')).toHaveLength(1);
+    expect(ticked(h, 'name')).toEqual(['Queen']);
+  });
+
+  it('T9: filtersReadonly shows the applied filters, locks every editing control and still takes programmatic filters', () => {
+    const h = mountValues({ filtersReadonly: true, filters: { name: { values: ['Queen'], inverse: false } } as never });
+    open(h, 'name');
+    expect(ticked(h, 'name')).toEqual(['Queen']);
+    expect(boxes(h, 'name').every((x) => x.disabled)).toBe(true);
+    const p = panel(h, 'name');
+    expect(p.querySelector<HTMLButtonElement>('[data-dt-filter-invert]')!.disabled).toBe(true);
+    expect(p.querySelector<HTMLButtonElement>('[data-dt-filter-clear]')!.disabled).toBe(true);
+    expect(p.querySelector<HTMLInputElement>('[data-dt-filter-search]')!.disabled).toBe(false);
+    change(boxes(h, 'name').find((x) => labelOf(x) === 'ABBA')!, true);
+    h.click(p.querySelector('[data-dt-filter-invert]')!);
+    expect(h.changes('filters')).toHaveLength(0);
+    close(h, 'name');
+    open(h, 'id');
+    const operand = panel(h, 'id').querySelector<HTMLInputElement>('[data-dt-filter-operand]')!;
+    expect(operand.disabled).toBe(true);
+    expect(panel(h, 'id').querySelector<HTMLSelectElement>('[data-dt-filter-operator]')!.disabled).toBe(true);
+    close(h, 'id');
+    open(h, 'country');
+    const ctx = cell(h, 'country').body!.ctx;
+    expect(ctx.readonly).toBe(true);
+    ctx.apply([{ value: 'BE', label: 'BE' }], false);
+    ctx.compare('gt', '1');
+    ctx.clear();
+    expect(h.changes('filters')).toHaveLength(0);
+    expect(h.state().filters).toEqual({ name: { values: ['Queen'], inverse: false } });
+    // Programmatic writes still land (the table never filters rows itself: `fetch` or the consumer does).
+    h.setInputs({ filters: { name: { values: ['Muse'], inverse: false } } as never });
+    h.refresh();
+    expect(h.state().filters).toEqual({ name: { values: ['Muse'], inverse: false } });
+    close(h, 'country');
+    open(h, 'name');
+    expect(ticked(h, 'name')).toEqual(['Muse']);
   });
 });

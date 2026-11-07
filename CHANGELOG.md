@@ -10,6 +10,29 @@ breaking change is a major. (2.20.0 and 2.21.0 broke `^2.x` consumers in a minor
 
 ### Breaking
 
+- **The datatable owns its filter state; overlays keep their content (issue #465).** Ticks in a
+  column filter panel used to vanish on reopen when the consumer's panel kept its own state, because
+  the panel was destroyed on close.
+  - **Datatable:** a filter panel (built-in or `filterMode: 'custom'`) is created on its first open
+    and kept after that. Its value list is keyed by value, so ticks survive new rows, and an outside
+    write to `filters` updates them in place (and re-lists an open panel's values; the echo of the
+    table's own change is ignored, so this cannot loop). Render a custom panel from `ctx.selection`,
+    not from local state.
+  - **New `filtersReadonly` input:** bind `filters` one-way and set it, and the page can still set
+    filters while every panel opens with its controls disabled (the search box stays enabled).
+    Custom panels read it as `ctx.readonly`.
+  - **`DatatableFilterCell` shape (ui-core):** `open` is now a boolean (this column's panel is the
+    open one) and the panel content moved to `body` (non-null from the first open on).
+    `DatatableFilterView` gains `mounted` and `readonly`.
+  - **Overlays (modal, offcanvas, tooltip, popover, dropdown, context menu)** stay rendered after
+    their first open, hidden and stamped `data-mp-phase="closed"`, so a form in a modal or a
+    component in a tooltip keeps its state. A test asserting a closed overlay is removed from the DOM
+    must assert it is hidden instead.
+  - **ui-core:** the panel cores of tooltip, popover, dropdown and context menu take `phase:
+    OverlayPhase` instead of `shown: boolean`; `connectModal` / `connectOffcanvas` take a
+    `PresenceState` (`{ phase, kept }`) instead of a phase. New exports from `ui-core/overlay`:
+    `isKept`, `phaseBag`, `phaseState`, `PHASE_ATTR`, `PresenceState`, `refreshBodyHost`.
+
 - **A two-way model is its own change channel (issue #458).** Every `model: true` input reports its
   changes through the framework's native mechanism only, and the separate `<model>Change` outputs are
   gone:

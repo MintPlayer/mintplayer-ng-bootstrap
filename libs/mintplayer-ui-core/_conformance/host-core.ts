@@ -18,6 +18,18 @@ export function applyBag(el: Element, bag: Bag | null | undefined): Element {
   return el;
 }
 
+/**
+ * Rewrites an element's attributes from a bag, keeping the node: what a front's
+ * re-render does to markup it keeps (an overlay kept after a close, #465).
+ * Like a front's diffing setter it touches only the bag's own keys (a null /
+ * false value removes one), never what the core wrote imperatively (`style`).
+ */
+export function patchBag(el: Element, bag: Bag | null | undefined): Element {
+  Object.entries(bag ?? {}).filter(([, v]) => v === null || v === undefined || v === false)
+    .map(([k]) => el.removeAttribute(k));
+  return applyBag(el, bag);
+}
+
 /** `<tag>` with the bag applied and the given children. */
 export function el(tag: string, bag?: Bag | null, ...children: (Node | string | null | undefined)[]): HTMLElement {
   const node = document.createElement(tag);

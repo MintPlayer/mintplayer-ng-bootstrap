@@ -21,7 +21,7 @@ export default {
         fields: {
           overlayId: { default: "''", kind: 'string', doc: "The panel's id, which the trigger's `aria-describedby` names." },
           side: { default: "'top'", kind: 'string' },
-          shown: { default: 'false' },
+          phase: { default: "'closed'", kind: 'string', doc: 'The overlay phase: `.show` while shown, `hidden` while closed (#465).' },
         },
       },
     },

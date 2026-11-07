@@ -25,7 +25,7 @@ export default {
         fields: {
           overlayId: { default: "''", kind: 'string', doc: "The panel's id, which the trigger's `aria-controls` names." },
           side: { default: "'bottom'", kind: 'string' },
-          shown: { default: 'false' },
+          phase: { default: "'closed'", kind: 'string', doc: 'The overlay phase: `.show` while shown, `hidden` while closed (#465).' },
           hasPopup: { default: "'menu'", kind: 'string' },
           triggerId: { default: 'null', kind: 'string', doc: "The trigger's id, naming a dialog panel." },
         },

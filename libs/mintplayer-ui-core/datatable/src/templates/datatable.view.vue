@@ -49,29 +49,29 @@ defineSlots<{
                   <span v-if="fc.summary" v-bind="fc.summary">{{ fc.summaryText }}</span>
                 </button>
                 <div v-if="fc.panel" v-bind="fc.panel">
-                  <div v-if="fc.open && fc.open.custom" v-bind="fc.open.body">
-                    <slot name="filter" :column="fc.open.column" :ctx="fc.open.ctx"></slot>
+                  <div v-if="fc.body && fc.body.custom" v-bind="fc.body.body">
+                    <slot name="filter" :column="fc.body.column" :ctx="fc.body.ctx"></slot>
                   </div>
-                  <div v-else-if="fc.open" v-bind="fc.open.body">
-                      <button v-bind="fc.open.clear">{{ fc.open.clearText }}</button>
-                      <div v-if="fc.open.comparison" v-bind="fc.open.comparison.wrap">
-                        <select v-bind="fc.open.comparison.operator" :value.prop="fc.open.comparison.operatorValue">
-                          <option v-for="op in fc.open.comparison.operators" :key="op.key" v-bind="op.option">{{ op.text }}</option>
+                  <div v-else-if="fc.body" v-bind="fc.body.body">
+                      <button v-bind="fc.body.clear">{{ fc.body.clearText }}</button>
+                      <div v-if="fc.body.comparison" v-bind="fc.body.comparison.wrap">
+                        <select v-bind="fc.body.comparison.operator" :value.prop="fc.body.comparison.operatorValue">
+                          <option v-for="op in fc.body.comparison.operators" :key="op.key" v-bind="op.option">{{ op.text }}</option>
                         </select>
-                        <input v-bind="fc.open.comparison.operand" :value.prop="fc.open.comparison.operandText" />
+                        <input v-bind="fc.body.comparison.operand" :value.prop="fc.body.comparison.operandText" />
                       </div>
-                      <small v-if="fc.open.comparison && fc.open.comparison.applied" v-bind="fc.open.comparison.applied">{{ fc.open.comparison.appliedText }}</small>
-                      <input v-if="fc.open.list" v-bind="fc.open.list.search" :value.prop="fc.open.list.term" />
-                      <button v-if="fc.open.list" v-bind="fc.open.list.invert">{{ fc.open.list.invertText }}</button>
-                      <div v-if="fc.open.list" v-bind="fc.open.list.group">
-                        <span v-if="fc.open.list.loading" v-bind="fc.open.list.loading">{{ fc.open.list.loadingText }}</span>
-                        <label v-for="opt in fc.open.list.options" :key="opt.key" v-bind="opt.label">
+                      <small v-if="fc.body.comparison && fc.body.comparison.applied" v-bind="fc.body.comparison.applied">{{ fc.body.comparison.appliedText }}</small>
+                      <input v-if="fc.body.list" v-bind="fc.body.list.search" :value.prop="fc.body.list.term" />
+                      <button v-if="fc.body.list" v-bind="fc.body.list.invert">{{ fc.body.list.invertText }}</button>
+                      <div v-if="fc.body.list" v-bind="fc.body.list.group">
+                        <span v-if="fc.body.list.loading" v-bind="fc.body.list.loading">{{ fc.body.list.loadingText }}</span>
+                        <label v-for="opt in fc.body.list.options" :key="opt.key" v-bind="opt.label">
                           <input v-bind="opt.input" :checked.prop="opt.checked" />
                           <span>{{ opt.text }}</span>
                         </label>
-                        <span v-if="fc.open.list.noValues" v-bind="fc.open.list.noValues">{{ fc.open.list.noValuesText }}</span>
+                        <span v-if="fc.body.list.noValues" v-bind="fc.body.list.noValues">{{ fc.body.list.noValuesText }}</span>
                       </div>
-                      <span v-if="fc.open.list && fc.open.list.hasMore" v-bind="fc.open.list.hasMore">{{ fc.open.list.hasMoreText }}</span>
+                      <span v-if="fc.body.list && fc.body.list.hasMore" v-bind="fc.body.list.hasMore">{{ fc.body.list.hasMoreText }}</span>
                   </div>
                 </div>
               </th>

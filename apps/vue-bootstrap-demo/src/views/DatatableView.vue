@@ -128,6 +128,12 @@ const postJson = async <T,>(path: string, body: unknown, signal: AbortSignal): P
 const showFilters = ref(true);
 // Seeded, so the server render already filters.
 const customerFilters = ref<DatatableFilters>({ country: { values: ['BE', 'NL'], inverse: false } });
+// `filtersReadonly`: the page still sets filters, the user cannot change them (#465).
+const lockFilters = ref(false);
+// An outside write: the open panel's ticks follow it.
+const presetGermany = () => {
+  customerFilters.value = { ...customerFilters.value, country: { values: ['DE'], inverse: false } };
+};
 const customerSearch = ref('');
 const customerTotal = ref<number | null>(null);
 const customerParams = computed<CustomerParams>(() => ({ search: customerSearch.value }));
@@ -599,6 +605,17 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         from the server. Record it in <code>fetch</code> too:
         <code>@page-load</code> fires in the browser only.
       </p>
+      <p>
+        <strong>The table owns the filter state.</strong> A panel is created on
+        its first open and kept after that, so what you ticked, typed or
+        scrolled to is still there when you reopen it &mdash; also when new rows
+        arrive, because the value list is keyed by value. A write to
+        <code>filters</code> from outside updates the ticks in place (and
+        re-lists an open panel's values). Bind it one-way with
+        <code>:filters</code> and set <code>filtersReadonly</code>, and the page
+        can still set filters while the panels open with their controls
+        disabled.
+      </p>
       <p class="text-body-secondary small">
         <strong>Keyboard:</strong> <kbd>Tab</kbd> reaches each trigger,
         <kbd>Enter</kbd>/<kbd>Space</kbd> opens the panel and moves focus to its
@@ -611,6 +628,11 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         <input type="checkbox" v-model="showFilters" />
         Show the filter row
       </label>
+      <label class="d-block mb-3">
+        <input type="checkbox" v-model="lockFilters" />
+        Lock the filters (<code>filtersReadonly</code>)
+      </label>
+      <button type="button" class="btn btn-sm btn-outline-secondary mb-3" @click="presetGermany">Filter on Germany from the page</button>
 
       <label class="form-label" for="vue-customer-search">
         Name contains (sent as <code>fetchParams</code>)
@@ -625,11 +647,13 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
         :fetch="fetchCustomers"
         :distincts="distinctsCustomers"
         v-model:filters="customerFilters"
+        :filtersReadonly="lockFilters"
         :fetchParams="customerParams"
         :rowKey="customerRowKey"
       >
         <template #filter="{ ctx }">
-          <div class="demo-filter-panel">
+          <!-- ctx.readonly: filtersReadonly is set, so the panel shows but does not edit. -->
+          <fieldset class="demo-filter-panel" :disabled="ctx.readonly">
             <button type="button" class="btn btn-sm btn-outline-primary" @click="ctx.apply(BENELUX, false)">Benelux</button>
             <button
               v-for="country in COUNTRIES"
@@ -641,7 +665,7 @@ const TREE_SOURCE = `<!-- The same callback, branching on req.parentId for roots
               {{ country.label }}
             </button>
             <button type="button" class="btn btn-sm btn-link" @click="ctx.clear()">Everywhere</button>
-          </div>
+          </fieldset>
         </template>
       </BsDatatable>
       <small class="text-body-secondary">

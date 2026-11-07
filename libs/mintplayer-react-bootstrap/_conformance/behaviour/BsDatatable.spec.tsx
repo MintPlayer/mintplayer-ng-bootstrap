@@ -2,7 +2,14 @@ import * as React from 'react';
 import { act } from 'react';
 import { describe, expect, it } from 'vitest';
 
-import { BsDatatable, type DatatableColumnDef, type SelectionChangeEventDetail, type SortColumn } from '@mintplayer/react-bootstrap/datatable';
+import {
+  BsDatatable,
+  type DatatableColumnDef,
+  type DatatableFilters,
+  type FilterContext,
+  type SelectionChangeEventDetail,
+  type SortColumn,
+} from '@mintplayer/react-bootstrap/datatable';
 
 import { renderEl } from './harness';
 
@@ -79,5 +86,52 @@ describe('BsDatatable', () => {
     );
     expect(root.querySelector('thead b')?.textContent).toBe('head:Name');
     expect([...root.querySelectorAll('tbody i')].map((i) => i.textContent)).toEqual(['cell:Alpha', 'cell:Bravo']);
+  });
+
+  it('keeps a custom filter panel, and its own state, across close and reopen; ctx updates in place (#465 T1/T7)', async () => {
+    let mounts = 0;
+    function Panel({ ctx }: { ctx: FilterContext }) {
+      const [bumps, setBumps] = React.useState(0);
+      React.useEffect(() => {
+        mounts++;
+      }, []);
+      return (
+        <div className="probe" data-term={ctx.term} data-selected={ctx.selection.values.map((v) => String(v.value)).join(',')}>
+          <button type="button" className="bump" onClick={() => setBumps((n) => n + 1)}>
+            {bumps}
+          </button>
+        </div>
+      );
+    }
+    const columns: DatatableColumnDef[] = [{ name: 'name', label: 'Name', filterable: true, filterMode: 'custom' }];
+    let setFilters: (f: DatatableFilters) => void = () => undefined;
+    function Host() {
+      const [filters, set] = React.useState<DatatableFilters>({});
+      setFilters = set;
+      return <BsDatatable columns={columns} data={DATA} filters={filters} onFiltersChange={set} filter={({ ctx }) => <Panel ctx={ctx} />} />;
+    }
+    const root = await renderEl(<Host />, 'div.datatable');
+    const panel = root.querySelector<HTMLElement>('[data-dt-filter-panel="name"]')!;
+    const toggle = (newState: 'open' | 'closed') =>
+      act(async () => {
+        const ev = new Event('toggle');
+        Object.defineProperty(ev, 'newState', { value: newState });
+        panel.dispatchEvent(ev);
+      });
+
+    await toggle('open');
+    const probe = panel.querySelector<HTMLElement>('.probe')!;
+    await click(probe.querySelector('.bump')!);
+    await click(probe.querySelector('.bump')!);
+    await act(async () => setFilters({ name: { values: ['Alpha'], inverse: false } }));
+    expect(panel.querySelector('.probe')).toBe(probe);
+    expect(probe.dataset['selected']).toBe('Alpha');
+    await toggle('closed');
+    await toggle('open');
+    expect(panel.querySelector('.probe')).toBe(probe);
+    expect(probe.querySelector('.bump')!.textContent).toBe('2');
+    expect(probe.dataset['selected']).toBe('Alpha');
+    expect(probe.dataset['term']).toBe('');
+    expect(mounts).toBe(1);
   });
 });

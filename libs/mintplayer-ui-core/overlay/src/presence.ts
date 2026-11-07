@@ -1,4 +1,4 @@
-import { BODY_HOST_ATTRIBUTE } from './body-host';
+import { BODY_HOST_ATTRIBUTE, refreshBodyHost } from './body-host';
 import { openOverlay, type OverlayHandle, type OverlayOptions } from './overlay-stack';
 
 /**
@@ -19,14 +19,40 @@ import { openOverlay, type OverlayHandle, type OverlayOptions } from './overlay-
  * The overlay renders into a body host in every front, after a framework
  * render this engine cannot see, so it waits for the markup (`whenRendered`)
  * rather than a frame.
+ *
+ * **Kept after the first open (#465).** The markup is created on the first
+ * open and kept while closed, so consumer content (a form, a scroll position,
+ * a component's own state) survives a close. A core keeps `kept` in its state
+ * (`phaseState`) and renders while `isKept`; every body-hosted root carries
+ * `phaseBag(phase)`: the phase, which `whenRendered` waits on, and `hidden`
+ * while closed (out of sight, the tab order and the accessibility tree).
  */
 export type OverlayPhase = 'closed' | 'entering' | 'shown' | 'leaving';
 
-/** Whether a phase renders the overlay's markup. */
+/** Whether a phase is open or transitioning (the overlay is in use). */
 export const isRendered = (phase: OverlayPhase): boolean => phase !== 'closed';
 
 /** Whether a phase carries Bootstrap's `.show`. */
 export const isShown = (phase: OverlayPhase): boolean => phase === 'shown';
+
+/** The phase, stamped on each body-hosted root in the render that shows it. */
+export const PHASE_ATTR = 'data-mp-phase';
+
+/** The part of an overlay core's state presence writes. */
+export interface PresenceState {
+  phase: OverlayPhase;
+  /** Opened at least once: the markup stays rendered (hidden) while closed. */
+  kept: boolean;
+}
+
+/** The state patch for a phase change: a phase other than `closed` latches `kept`. */
+export const phaseState = (phase: OverlayPhase): Partial<PresenceState> => (phase === 'closed' ? { phase } : { phase, kept: true });
+
+/** Whether the overlay's markup renders: in use now, or opened before. */
+export const isKept = (state: PresenceState): boolean => state.kept || isRendered(state.phase);
+
+/** The attributes every body-hosted root of an overlay carries. */
+export const phaseBag = (phase: OverlayPhase): { [PHASE_ATTR]: OverlayPhase; hidden: boolean } => ({ [PHASE_ATTR]: phase, hidden: phase === 'closed' });
 
 export interface PresenceOptions {
   readonly doc: Document;
@@ -69,9 +95,18 @@ export class OverlayPresence {
       this.#cancelPending();
       const shownAlready = this.#phase === 'shown';
       if (!shownAlready) this.#go('entering');
-      this.#cancel = whenRendered(this.options.doc, () => this.options.find(), (el) => {
+      // Wait for the render of THIS phase, not just the root: a kept root is already there in
+      // its closed form (#465), and opening that would trap focus in hidden markup and start
+      // the transition from `display: none`.
+      const ready = () => {
+        const el = this.options.find();
+        const phase = el?.getAttribute(PHASE_ATTR);
+        return phase === 'entering' || phase === 'shown' ? el : null;
+      };
+      this.#cancel = whenRendered(this.options.doc, ready, (el) => {
         this.#cancel = null;
         const host = (el.closest(`[${BODY_HOST_ATTRIBUTE}]`) as HTMLElement | null) ?? el;
+        refreshBodyHost(host);
         this.#handle = openOverlay(host, this.options.overlay(el));
         this.#unwire = this.options.wire?.(el) ?? null;
         // Flush the entering styles, so the change to `.show` transitions from them.
@@ -122,7 +157,8 @@ export class OverlayPresence {
 
 /**
  * Call `found` with what `find` returns, now if it exists, else after the body
- * mutation that adds it. Returns a cancel.
+ * mutation that adds it (or, for a kept root, the `data-mp-phase` change that
+ * makes `find` accept it). Returns a cancel.
  */
 export function whenRendered(doc: Document, find: () => HTMLElement | null, found: (el: HTMLElement) => void): () => void {
   const now = find();
@@ -138,7 +174,7 @@ export function whenRendered(doc: Document, find: () => HTMLElement | null, foun
     observer.disconnect();
     found(el);
   });
-  observer.observe(doc.body, { childList: true, subtree: true });
+  observer.observe(doc.body, { childList: true, subtree: true, attributes: true, attributeFilter: [PHASE_ATTR] });
   return () => observer.disconnect();
 }
 
