@@ -3,6 +3,7 @@
 Status: **Spikes complete, gate cleared** (2026-09-22) — branch `feat/datatable-filter-row`, no PR yet.
 S1–S5 **PASS** in Chromium 151.0.7922.34 / Firefox 153.0 / WebKit 26.5 (Playwright 1.62.1). **S6 FAILED and `<colgroup>` is dropped** — see §5.2, which is kept as a rejection with evidence rather than deleted. S7 fell with it.
 Plan: [datatable-filter-row-plan.md](./datatable-filter-row-plan.md)
+**Superseded in part by #465** ([filter-state-keep-alive-465.md](./filter-state-keep-alive-465.md)): the table now owns the filter state, a panel body is kept after its first open (no longer destroyed on close), options are keyed by value, and `filtersReadonly` locks the panels.
 Related: issue **#414** (open), driven by [MintPlayer.Spark#431](https://github.com/MintPlayer/MintPlayer.Spark/issues/431); builds on #408 / PR #410 (light tier) and [overlay-controller-positioning.md](./overlay-controller-positioning.md).
 
 ---

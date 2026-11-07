@@ -2,8 +2,19 @@
 
 PRD: [filter-state-keep-alive-465.md](./filter-state-keep-alive-465.md)
 
-Status: **Draft** (2026-11-07). Proposed branch `fix/465-filter-state-keep-alive` from `master` (not yet
-created — needs the owner's go). One PR here; one PR in MintPlayer.Spark (M10).
+Status: **In progress** (2026-11-07). Branch `fix/465-filter-state-keep-alive` from `master`. One PR
+here; one PR in MintPlayer.Spark (M10).
+
+**As built (M1–M9).**
+- M6 made keep-alive a core latch (`PresenceState.kept`, `isKept`, `phaseBag`), so every front follows
+  `view.rendered` / `props.overlay` unchanged. **M7 was a no-op**: the generated panels only switched
+  from `shown` to `phase` through their manifests.
+- The front O1 specs (`overlay-keep-alive.spec.*`, one per lib) cover the modal and the tooltip. The
+  other four overlays are covered at core level by the table in `ui-core/overlay/src/keep-alive.spec.ts`
+  (hidden roots, `overlay.phase` closed, never-opened renders nothing).
+- M8 shipped the `filtersReadonly` toggle, an outside write, and a custom panel that honours
+  `ctx.readonly` in the three demos. The long-list and stateful-modal demos were dropped: the specs
+  cover them, and the demos stay lean.
 
 Spike notes go in `docs/prd/spikes/issue-465/`, one short `S<n>-*.md` each: what was measured, where,
 and what it settles. Browser checks use the `playwright_node` MCP against the running demos.
