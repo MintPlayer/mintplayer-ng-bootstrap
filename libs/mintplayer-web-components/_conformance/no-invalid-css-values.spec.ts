@@ -17,10 +17,12 @@ import { describe, expect, it } from 'vitest';
  * Bootstrap's own rule for every `.text-bg-*` on the page.
  *
  * Scanned:
- *  - every generated `*.styles.ts` / `*.light.styles.ts`, plus every
- *    `*.element.template.ts` whose `.element.scss` source still exists — for a
- *    hex colour inside `rgb()`/`rgba()`/`hsl()`/`hsla()`, and for leftover Sass
- *    (`#{` interpolation, `$variable`). Comments are stripped first.
+ *  - every generated `*.styles.ts` whose `.scss` source still exists (a sheet
+ *    with no source is a stale, unimported build leftover) — for a hex colour
+ *    inside `rgb()`/`rgba()`/`hsl()`/`hsla()`, and for leftover Sass (`#{`
+ *    interpolation, `$variable`). Comments are stripped first. Since #458 every
+ *    sheet the Lit elements install is generated in ui-core (the scoped sheets
+ *    and the Bootstrap parts), so that is where they are scanned.
  *  - every built `dist/libs/mintplayer-web-components/**\/*.mjs` — for a hex
  *    colour inside a colour function (Sass syntax checks would false-positive
  *    on JavaScript), and every built `*.css` for all of the sheet checks. This
@@ -37,15 +39,14 @@ const LIB_ROOT = existsSync(join(process.cwd(), 'light-dom'))
 const DIST_ROOT = join(LIB_ROOT, '..', '..', 'dist', 'libs', 'mintplayer-web-components');
 // The page-level dark-mode stylesheet ships from ui-core (theming/color-mode.css).
 const UI_CORE_THEMING_DIST = join(LIB_ROOT, '..', '..', 'dist', 'libs', 'mintplayer-ui-core', 'theming');
+const UI_CORE_ROOT = join(LIB_ROOT, '..', 'mintplayer-ui-core');
 
 const HEX_IN_COLOR_FUNCTION = /\b(?:rgba?|hsla?)\(\s*#[0-9a-f]{3,8}\b[^)]*\)?/gi;
 const SASS_INTERPOLATION = /#\{[^}]*\}?/g;
 const SASS_VARIABLE = /\$(?!\{)[a-z_][\w-]*/gi;
 
 const isGeneratedSheet = (dir: string, name: string): boolean =>
-  name.endsWith('.styles.ts') ||
-  (name.endsWith('.element.template.ts') &&
-    existsSync(join(dir, name.replace(/\.template\.ts$/, '.scss'))));
+  name.endsWith('.styles.ts') && existsSync(join(dir, name.replace(/\.styles\.ts$/, '.scss')));
 
 const walk = (dir: string, keep: (dir: string, name: string) => boolean): string[] =>
   readdirSync(dir, { withFileTypes: true })
@@ -60,8 +61,8 @@ const stripComments = (css: string): string => css.replace(/\/\*[\s\S]*?\*\//g, 
 
 const relative = (root: string, abs: string): string => abs.slice(root.length + 1).replace(/\\/g, '/');
 
-const sheets = walk(LIB_ROOT, isGeneratedSheet).map((abs) => ({
-  file: relative(LIB_ROOT, abs),
+const sheets = walk(UI_CORE_ROOT, isGeneratedSheet).map((abs) => ({
+  file: 'ui-core/' + relative(UI_CORE_ROOT, abs),
   css: stripComments(readFileSync(abs, 'utf8')),
 }));
 

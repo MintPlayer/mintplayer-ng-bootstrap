@@ -44,13 +44,13 @@ import {
 export const HIERARCHY_CHART_SCOPE = 'hierarchy-chart';
 
 /** Logical viewBox size: all geometry is in these units. */
-export const HIERARCHY_VIEW = 1000;
+export const HIERARCHY_VIEW: number = 1000;
 
 /**
  * Device px per viewBox unit before the chart is measured: a representative
  * 420px host (PRD S6). The server renders at it, and so does jsdom.
  */
-export const FALLBACK_HOST_SCALE = 0.42;
+export const FALLBACK_HOST_SCALE: number = 0.42;
 
 const TAU = 2 * Math.PI;
 

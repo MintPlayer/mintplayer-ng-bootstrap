@@ -2,7 +2,7 @@ import type { ComponentCore } from '@mintplayer/ui-core/component';
 import { canonicalValue, type JsonValue } from './canonical';
 
 /** How long a server render waits for one component's prefetch, ms (#448 D6). */
-export const DEFAULT_PREFETCH_TIMEOUT = 3000;
+export const DEFAULT_PREFETCH_TIMEOUT: number = 3000;
 
 export interface PrefetchOptions {
   /** ms; the app-level setting every bridge exposes. */

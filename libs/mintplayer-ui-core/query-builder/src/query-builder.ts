@@ -21,7 +21,7 @@ import { renderExpression } from './preview/render-expression';
 /** The scope of the query builder's sheet: `[data-mps=query-builder]`. */
 export const QUERY_BUILDER_SCOPE = 'query-builder';
 
-export const DEFAULT_MAX_DEPTH = 32;
+export const DEFAULT_MAX_DEPTH: number = 32;
 
 export type QueryBuilderBag = CoreBag;
 

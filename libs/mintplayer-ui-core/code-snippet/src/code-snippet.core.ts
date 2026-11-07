@@ -76,7 +76,7 @@ export interface CodeSnippetMethods {
   whenHighlighted(): Promise<void>;
 }
 
-export const CODE_SNIPPET_TOAST_MS = 3000;
+export const CODE_SNIPPET_TOAST_MS: number = 3000;
 
 type Api = CoreApi<CodeSnippetInputs, CodeSnippetState, CodeSnippetEvents>;
 

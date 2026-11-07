@@ -120,12 +120,12 @@ export interface TileManagerOptions {
   vibrate?: (ms: number) => void;
 }
 
-export const TOUCH_LONG_PRESS_MS = 600;
-export const TOUCH_LONG_PRESS_SLOP_PX = 10;
-export const TOUCH_PRESS_FEEDBACK_DELAY_MS = 150;
-export const POINTER_DRAG_THRESHOLD_PX = 5;
-export const DEFAULT_MIN_COLUMN_WIDTH = 200;
-export const DEFAULT_GAP = 8;
+export const TOUCH_LONG_PRESS_MS: number = 600;
+export const TOUCH_LONG_PRESS_SLOP_PX: number = 10;
+export const TOUCH_PRESS_FEEDBACK_DELAY_MS: number = 150;
+export const POINTER_DRAG_THRESHOLD_PX: number = 5;
+export const DEFAULT_MIN_COLUMN_WIDTH: number = 200;
+export const DEFAULT_GAP: number = 8;
 
 type ArrowKey = 'ArrowUp' | 'ArrowDown' | 'ArrowLeft' | 'ArrowRight';
 type Capability = 'move' | 'resize';

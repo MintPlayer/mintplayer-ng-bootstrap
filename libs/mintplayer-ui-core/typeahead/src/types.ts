@@ -98,11 +98,12 @@ export interface TypeaheadOptions<T> extends TypeaheadCallbacks<T> {
   announcementClearMs?: number;
 }
 
-export const TYPEAHEAD_DEFAULTS = {
+/** Typed, not `as const` (#467): a tuned default must not change the declared API. */
+export const TYPEAHEAD_DEFAULTS: Readonly<{ debounceMs: number; minLength: number; announcementClearMs: number }> = {
   debounceMs: 200,
   minLength: 1,
   announcementClearMs: 1500,
-} as const;
+};
 
 export function defaultItemText(item: unknown): string {
   if (typeof item === 'object' && item !== null && 'text' in item) {

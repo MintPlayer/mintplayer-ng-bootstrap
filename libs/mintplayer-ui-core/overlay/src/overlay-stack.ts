@@ -26,8 +26,8 @@ import { dismissStack } from './dismiss-stack';
  * Opening an overlay also dismisses nothing by itself: the pickers' top-layer
  * popups stay where they are and close through their own dismiss frames.
  */
-export const OVERLAY_Z_BASE = 1050;
-export const OVERLAY_Z_STEP = 10;
+export const OVERLAY_Z_BASE: number = 1050;
+export const OVERLAY_Z_STEP: number = 10;
 
 export type OverlayDismissReason = 'escape' | 'outside';
 

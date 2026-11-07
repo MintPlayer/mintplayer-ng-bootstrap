@@ -1,4 +1,4 @@
-import type { ComponentGroup } from '@mintplayer/ui-core/component';
+import type { ComponentGroup, InputField } from '@mintplayer/ui-core/component';
 
 /**
  * The card group's manifest (#458 M4): `@mintplayer/nx-component-compiler`
@@ -9,7 +9,7 @@ import type { ComponentGroup } from '@mintplayer/ui-core/component';
  */
 const PART = 'card-part.view.vue';
 
-const color = { default: 'null', kind: 'string' } as const;
+const color: InputField = { default: 'null', kind: 'string' };
 
 export default {
   group: 'card',

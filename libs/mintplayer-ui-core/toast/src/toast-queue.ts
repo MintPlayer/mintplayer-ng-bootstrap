@@ -43,7 +43,7 @@ export interface ToastQueueState<T> {
 }
 
 /** Bootstrap's toast fade (0.15s), plus a margin: when a closed toast leaves the queue. */
-export const TOAST_REMOVE_MS = 200;
+export const TOAST_REMOVE_MS: number = 200;
 /** How long a pushed toast stays hidden first, so it renders once before it shows. */
 const ENTER_DELAY_MS = 20;
 const DEFAULT_AUTOHIDE_MS = 5000;

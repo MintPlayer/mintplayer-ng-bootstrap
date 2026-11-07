@@ -27,7 +27,7 @@ export interface ResizeAction {
 }
 
 /** Smallest size, in px, a drag or a key press can shrink the box to. */
-export const MIN_RESIZE_SIZE = 10;
+export const MIN_RESIZE_SIZE: number = 10;
 
 /** The box's written geometry, in px. Absent keys are left unchanged. */
 export interface ResizeUpdate {

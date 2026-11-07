@@ -52,7 +52,7 @@ export interface ToasterView {
 }
 
 /** Bootstrap's toast fade, 0.15s, plus a margin. */
-export const TOAST_FADE_MS = 180;
+export const TOAST_FADE_MS: number = 180;
 export const TOAST_DISMISS_ATTR = 'data-toast-dismiss';
 
 export function toastClasses(phase: ToastPhase): string {

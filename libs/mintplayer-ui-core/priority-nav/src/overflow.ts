@@ -32,7 +32,7 @@ export function computeOverflowOrder<T extends { priority: number | null }>(item
  * own width can measure a hair wider than itself. Half a pixel is above every such rounding error
  * and below one device pixel at a DPR of 2. Issue #428.
  */
-export const SUBPIXEL_TOLERANCE = 0.5;
+export const SUBPIXEL_TOLERANCE: number = 0.5;
 
 export interface OverflowLayout<K = string> {
   /** Width of the visible strip. 0 means not measured yet. */

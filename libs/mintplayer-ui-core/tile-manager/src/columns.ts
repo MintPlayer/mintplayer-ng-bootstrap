@@ -1,6 +1,6 @@
 import type { TileBreakpoint, TileLayouts } from './types';
 
-export const DEFAULT_MAX_COLUMNS = 6;
+export const DEFAULT_MAX_COLUMNS: number = 6;
 
 export interface ColumnOptions {
   /** Explicit map (D1). Wins over `stackBelow` and over the generated map. */

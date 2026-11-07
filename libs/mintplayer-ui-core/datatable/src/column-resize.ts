@@ -1,8 +1,8 @@
 /** Narrowest width, in px, a column can be resized to — by pointer or by keyboard. */
-export const MIN_COLUMN_WIDTH = 40;
+export const MIN_COLUMN_WIDTH: number = 40;
 
 /** Width change, in px, of one ArrowLeft/ArrowRight press on a resize handle. */
-export const KEYBOARD_RESIZE_STEP = 10;
+export const KEYBOARD_RESIZE_STEP: number = 10;
 
 /**
  * The width a column takes after being resized by `delta` px from
@@ -21,14 +21,14 @@ export function resizedColumnWidth(startWidth: number, delta: number): number {
  * 254px clamps to 40px columns and still overflows), with every cell an
  * ellipsis on the way there.
  */
-export const MIN_REFIT_SCALE = 0.75;
+export const MIN_REFIT_SCALE: number = 0.75;
 
 /**
  * Movement, in px, below which a press on a resize handle is a TAP: it opens
  * the resize options instead of resizing. Without it a finger, which never
  * lands perfectly still, would nudge the column on every tap.
  */
-export const RESIZE_TAP_SLOP = 4;
+export const RESIZE_TAP_SLOP: number = 4;
 
 /**
  * The width that shows the widest of `contentWidths` (each already including
