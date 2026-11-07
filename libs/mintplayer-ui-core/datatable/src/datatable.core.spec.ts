@@ -33,6 +33,7 @@ const base = (o: Partial<DatatableInputs> = {}): DatatableInputs => ({
   data: ROWS,
   fetch: null,
   filters: null,
+  filtersReadonly: false,
   fetchParams: null,
   stateKey: null,
   caption: null,
@@ -850,7 +851,9 @@ describe('datatableCore filter state (#465)', () => {
     await settle();
     const again = cell(h, 'country').body!.ctx;
     expect(again.term).toBe('');
-    expect(again.values?.matching.map((v) => v.value)).toEqual(['FR', 'BE', 'DE']);
+    // D7b: the snapshot taken at the first apply is the universe, so its values keep their place
+    // and the source's new ones follow; NL is no longer present and is not listed as matching.
+    expect(again.values?.matching.map((v) => v.value)).toEqual(['BE', 'FR', 'DE']);
     expect(again.selection.values.map((v) => v.value)).toEqual(['BE']);
     expect(distincts).toHaveBeenCalledTimes(2);
   });
@@ -888,7 +891,7 @@ describe('datatableCore filter state (#465)', () => {
     h.setInputs({ filters: { year: { values: [1970], inverse: false } } as never });
     await settle();
     expect(distincts).toHaveBeenCalledTimes(2);
-    expect(distincts.mock.calls[1][0]).toMatchObject({ column: 'name', filters: { year: { values: [1970], inverse: false } } });
+    expect((distincts.mock.calls[1] as unknown[])[0]).toMatchObject({ column: 'name', filters: { year: { values: [1970], inverse: false } } });
     // The same filters again, as a new object: nothing changed, nothing is asked.
     h.setInputs({ filters: { year: { values: [1970], inverse: false } } as never });
     await settle();
@@ -942,8 +945,12 @@ describe('datatableCore filter state (#465)', () => {
     ctx.clear();
     expect(h.changes('filters')).toHaveLength(0);
     expect(h.state().filters).toEqual({ name: { values: ['Queen'], inverse: false } });
+    // Programmatic writes still land (the table never filters rows itself: `fetch` or the consumer does).
     h.setInputs({ filters: { name: { values: ['Muse'], inverse: false } } as never });
     h.refresh();
-    expect(h.qa('tbody > tr[data-row-key]').map((tr) => tr.dataset['rowKey'])).toEqual(['3']);
+    expect(h.state().filters).toEqual({ name: { values: ['Muse'], inverse: false } });
+    close(h, 'country');
+    open(h, 'name');
+    expect(ticked(h, 'name')).toEqual(['Muse']);
   });
 });

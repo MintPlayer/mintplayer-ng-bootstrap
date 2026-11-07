@@ -18,6 +18,7 @@ import {
   columnLabel,
   connectDatatable,
   activeFilter,
+  distinctKey,
   EMPTY_SELECTION,
   filterOptionsOf,
   localDistincts,
@@ -78,6 +79,11 @@ export interface DatatableInputs {
    * never filters; `fetch` (or the consumer filtering `data`) applies them.
    */
   filters: DatatableFilters | null;
+  /**
+   * For a one-way bound `filters` (#465 D3): the filters are set from outside
+   * only. Panels still open and show them, with every editing control disabled.
+   */
+  filtersReadonly: boolean;
   /** The consumer's own query context, sent verbatim as `params`. Must be JSON (#448 D2). */
   fetchParams: JsonValue | null;
   /**
@@ -162,6 +168,11 @@ export interface DatatableState {
   headerHeight: number;
   /** The column whose filter panel is open. */
   filterColumn: string | null;
+  /**
+   * The columns whose panel body exists (#465 D5): added on a column's first
+   * open, dropped when it leaves the columns, stops being filterable or changes mode.
+   */
+  filterMounted: string[];
   /** The `filters` model: only active filters, in canonical form. */
   filters: DatatableFilters;
   /** What a panel shows but does not filter by yet: an operator picked, "exclude" pressed with nothing ticked. */
@@ -405,6 +416,7 @@ export const datatableCore = defineCore<
       announcement: '',
       headerHeight: 0,
       filterColumn: null,
+      filterMounted: [],
       filterDrafts: {},
       filterValueLabels: {},
       filterSnapshots: {},
@@ -493,6 +505,8 @@ export const datatableCore = defineCore<
         headerHeight: state.headerHeight,
         filter: {
           column: state.filterColumn,
+          mounted: state.filterMounted,
+          readonly: inputs.filtersReadonly === true,
           selections: selectionsOf(inputs, state),
           operandTexts: state.filterOperandTexts,
           values:
@@ -1029,7 +1043,17 @@ export const datatableCore = defineCore<
       distinctsRequest.cancel();
       if ((ev as ToggleEvent).newState === 'open') {
         // Loaded per open, never cached: the rows behind a list can change while it is closed.
-        api.setState({ filterColumn: name, filterTerm: '', filterLoaded: null, filterLoadedTerm: null, filterLoading: false, filterFromLocal: false });
+        // The body is kept from here on (#465 D5); focus moves in on every open, not only the first.
+        const mounted = api.state().filterMounted;
+        api.setState({
+          filterColumn: name,
+          filterMounted: mounted.includes(name) ? mounted : [...mounted, name],
+          filterTerm: '',
+          filterLoaded: null,
+          filterLoadedTerm: null,
+          filterLoading: false,
+          filterFromLocal: false,
+        });
         if ((columnOf(name)?.filterMode ?? 'values') !== 'comparison') void loadDistincts(name, '', false);
         focusFilter = name;
         schedule();
@@ -1038,11 +1062,13 @@ export const datatableCore = defineCore<
         api.setState({ filterColumn: null, filterTerm: '', filterLoading: false });
       }
     };
+    /** `filtersReadonly` (#465 D4): the filters change from outside only, never from a panel. */
+    const editable = () => api.inputs().filtersReadonly !== true;
     const filterCommands: DatatableFilterCommands = {
       search: searchFilter,
-      apply: applyFilter,
-      compare: compareFilter,
-      clear: clearFilter,
+      apply: (name, values, inverse) => editable() && applyFilter(name, values, inverse),
+      compare: (name, operator, operand) => editable() && compareFilter(name, operator, operand),
+      clear: (name) => editable() && clearFilter(name),
       close: closeFilter,
     };
     const instanceId = host.getAttribute('data-dt-id');
@@ -1056,12 +1082,12 @@ export const datatableCore = defineCore<
       const name = panelColumn(target);
       if (name === null) return;
       if (target.matches('[data-dt-filter-search]')) searchFilter(name, target.value);
-      else if (target.matches('[data-dt-filter-operand]')) compareFilter(name, operatorOf(filterPanelOf(name), name), target.value, true);
+      else if (target.matches('[data-dt-filter-operand]') && editable()) compareFilter(name, operatorOf(filterPanelOf(name), name), target.value, true);
     };
     const onChange = (ev: Event) => {
       const target = ev.target as HTMLInputElement;
       const name = panelColumn(target);
-      if (name === null) return;
+      if (name === null || !editable()) return;
       if (target.matches('[data-dt-filter-operator]')) {
         compareFilter(name, target.value as FilterOperator, operandOf(filterPanelOf(name)));
         return;
@@ -1069,7 +1095,11 @@ export const datatableCore = defineCore<
       if (!target.matches('[data-dt-filter-value]')) return;
       const s = api.state();
       const selection = selectionOf(name);
-      const value = filterOptionsOf(selection, bucketDistincts(s.filterLoaded, s.filterSnapshots[name] ?? null, s.filterTerm))[Number(target.dataset['dtFilterValue'])];
+      // By value, never by position (#465 D7): the list may have moved on since this option rendered.
+      const key = target.getAttribute('data-dt-filter-value');
+      const value = filterOptionsOf(selection, bucketDistincts(s.filterLoaded, s.filterSnapshots[name] ?? null, s.filterTerm)).find(
+        (v) => distinctKey(v.value) === key,
+      );
       if (!value) return;
       applyFilter(
         name,
@@ -1141,6 +1171,8 @@ export const datatableCore = defineCore<
       const target = ev.target as Element;
       const filtered = panelColumn(target);
       if (filtered !== null) {
+        // The buttons are disabled then, but a dispatched click still reaches a disabled button.
+        if (!editable()) return;
         if (target.closest('[data-dt-filter-clear]')) {
           clearFilter(filtered);
           // React only seeds the operand (defaultValue): empty the box itself.
@@ -1397,15 +1429,46 @@ export const datatableCore = defineCore<
           measuredWidths = new Map();
           userWidths.clear();
           frozenExtra = null;
-          // The filters are the model's and survive; panel leftovers of the old columns do not.
-          api.setState({ columnWidths: {}, measured: false, tableWidth: null, filterDrafts: {}, filterSnapshots: {}, filterOperandTexts: {} });
+          // The filters are the model's and survive. Panel leftovers (the kept body, drafts, snapshot,
+          // operand text) survive for a column that is still there, still filterable, in the same mode:
+          // a consumer recomputing `columns` (say for `filterSummary`) must not reset its panels (#465).
+          const modeOf = (c: DatatableColumnDef | undefined) => (c?.filterable ? (c.filterMode ?? 'values') : null);
+          const before = new Map((prev.columns ?? []).map((c) => [c.name, modeOf(c)]));
+          const kept = (name: string) => {
+            const now = modeOf((inputs.columns ?? []).find((c) => c.name === name));
+            return now !== null && before.get(name) === now;
+          };
+          const pick = <T,>(record: Readonly<Record<string, T>>) => Object.fromEntries(Object.entries(record).filter(([name]) => kept(name)));
+          const s = api.state();
+          api.setState({
+            columnWidths: {},
+            measured: false,
+            tableWidth: null,
+            filterMounted: s.filterMounted.filter(kept),
+            filterDrafts: pick(s.filterDrafts),
+            filterSnapshots: pick(s.filterSnapshots),
+            filterOperandTexts: pick(s.filterOperandTexts),
+          });
         }
         if (inputs.filters !== prev.filters) {
           const next = requestFilters(inputs.filters);
+          const current = api.state().filters;
           // Compared canonically: an echo of our own filtersChange is a new object with the same filters.
-          if (canonicalJson(next, 'filters') !== canonicalJson(api.state().filters, 'filters')) {
+          if (canonicalJson(next, 'filters') !== canonicalJson(current, 'filters')) {
             // Set from outside: the typed operand texts no longer describe it.
             api.setState({ filters: next, filterOperandTexts: {} });
+            // An open, source-listed panel is faceted over the OTHER columns' filters: ask again when
+            // those change (#465 D8). Only here, past the echo check, and it never writes `filters`,
+            // so it cannot loop.
+            const open = api.state().filterColumn;
+            if (
+              open !== null &&
+              api.inputs().distincts &&
+              (columnOf(open)?.filterMode ?? 'values') !== 'comparison' &&
+              canonicalJson(withFilter(current, open, null), 'filters') !== canonicalJson(withFilter(next, open, null), 'filters')
+            ) {
+              void loadDistincts(open, api.state().filterTerm, false);
+            }
           }
         }
         // A locally derived list follows the rows under it, or no value would ever move to "remaining".

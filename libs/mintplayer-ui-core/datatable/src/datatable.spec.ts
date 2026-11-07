@@ -104,7 +104,7 @@ const options = (o: Partial<DatatableOptions> = {}): DatatableOptions => ({
   hrefFor: null,
   announcement: '',
   headerHeight: 0,
-  filter: { column: null, selections: {}, operandTexts: {}, values: null, loading: false, term: '', commands: noCommands },
+  filter: { column: null, selections: {}, operandTexts: {}, values: null, loading: false, term: '', mounted: [], readonly: false, commands: noCommands },
   ...o,
 });
 
@@ -156,7 +156,8 @@ describe('connectDatatable', () => {
     expect(name.trigger?.['popovertarget']).toBe('dt-filter-name');
     expect(name.trigger?.['aria-expanded']).toBe('false');
     expect(name.panel?.['role']).toBe('dialog');
-    expect(name.open).toBeNull();
+    expect(name.open).toBe(false);
+    expect(name.body).toBeNull();
     expect(year.trigger).toBeNull();
   });
 
@@ -173,11 +174,13 @@ describe('connectDatatable', () => {
           values,
           loading: false,
           term: '',
+          mounted: ['name'],
+          readonly: false,
           commands: noCommands,
         },
       }),
     );
-    const open = view.filterCells[0].open!;
+    const open = view.filterCells[0].body!;
     expect(view.filterCells[0].trigger?.['aria-expanded']).toBe('true');
     expect(open.list?.options.map((o) => [o.text, o.checked])).toEqual([
       ['Muse', true],
@@ -200,15 +203,17 @@ describe('connectDatatable', () => {
           values: null,
           loading: false,
           term: '',
+          mounted: ['year'],
+          readonly: false,
           commands: noCommands,
         },
       }),
     );
-    const comparison = view.filterCells[0].open!.comparison!;
+    const comparison = view.filterCells[0].body!.comparison!;
     expect(comparison.operatorValue).toBe('lt');
     expect(comparison.operators.map((o) => o.option['selected'])).toEqual([false, true]);
     expect(comparison.operandText).toBe('-');
-    expect(view.filterCells[0].open!.clear['disabled']).toBe(true);
+    expect(view.filterCells[0].body!.clear['disabled']).toBe(true);
   });
 });
 

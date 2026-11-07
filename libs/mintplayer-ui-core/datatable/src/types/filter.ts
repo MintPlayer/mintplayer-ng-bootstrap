@@ -90,8 +90,9 @@ export type FilterOperator = 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte';
  * Quantities only, and deliberately no `'text'`. A comparison against a string
  * is either exact-match — which `'values'` already does better, with a list —
  * or a lexicographic `>`, which is almost never what someone means by
- * "filter this column". **A free-text filter is a nest-your-own case**: supply a
- * `filterRenderer` (Angular: `*bsDatatableFilterPanel`) and drive it from the
+ * "filter this column". **A free-text filter is a nest-your-own case**: use
+ * `filterMode: 'custom'` and the table's `filter` slot (Angular
+ * `*bsDatatableFilter`, React `filter`, Vue `#filter`, Lit `filterRenderer`) and drive it from the
  * same `FilterContext` the built-in panels use. There is no `contains` operator
  * for the same reason.
  */
@@ -142,19 +143,32 @@ export interface FilterSelection {
 }
 
 /**
- * The `filter` slot's `ctx`: a snapshot of the open panel plus the commands the
- * built-in panels use, so a consumer's own panel drives the same machinery — the
- * value list, the search re-query and the change event stay the component's.
- * The slot re-renders with a fresh snapshot on every change.
+ * The `filter` slot's `ctx`: a snapshot of the column's panel plus the commands
+ * the built-in panels use, so a consumer's own panel drives the same machinery —
+ * the value list, the search re-query and the change event stay the component's.
+ *
+ * **The datatable owns the filter state; a panel renders from `ctx`** (#465). The
+ * slot is created on the column's first open and kept while the panel is closed,
+ * so the consumer's component (and its scroll position, unapplied text, focus)
+ * survives a close; it receives a fresh `ctx` on every change, in place. A panel
+ * must not keep its own copy of the selection: `selection` also changes from
+ * outside (the `filters` model, Clear, a URL restore). The slot is destroyed
+ * when the column stops being filterable, changes `filterMode` or is removed.
  */
 export interface FilterContext {
-  /** The current list, or `null` while nothing has loaded (or nothing can). */
+  /** The current list, or `null` while nothing has loaded (or nothing can). `null` while the panel is closed. */
   readonly values: DistinctValues | null;
   /** `true` while a source request for this column is in flight. */
   readonly loading: boolean;
   readonly selection: FilterSelection;
-  /** The search box's term. */
+  /** The search box's term. Reset to `''` when the panel closes. */
   readonly term: string;
+  /**
+   * `filtersReadonly`: the filters are set programmatically only. Show the
+   * selection, disable every editing control; `apply`, `compare` and `clear`
+   * do nothing.
+   */
+  readonly readonly: boolean;
   /** Set the search term. Debounced; re-queries the source only when needed. */
   search(term: string): void;
   /** Replace the selection; the `filters` model and, with `fetch`, the rows follow. */

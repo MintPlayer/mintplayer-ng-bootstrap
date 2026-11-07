@@ -5,7 +5,7 @@ import { virtualWindow } from '@mintplayer/ui-core/virtual-window';
 import { MIN_COLUMN_WIDTH } from './column-resize';
 import { computeNextSort, sortRows, type SortColumn } from './sort';
 import type { DatatableColumnDef, RowKey, RowRenderContext } from './types/column-def';
-import type { JsonValue } from '@mintplayer/ui-core/transfer-state';
+import { canonicalJson, type JsonValue } from '@mintplayer/ui-core/transfer-state';
 import type {
   DatatableFilter,
   DatatableFilters,
@@ -443,7 +443,14 @@ export interface DatatableFilterCell {
   readonly summary: DatatableBag | null;
   readonly summaryText: string;
   readonly panel: DatatableBag | null;
-  readonly open: DatatableFilterPanel | null;
+  /** Whether this column's panel is the open one. */
+  readonly open: boolean;
+  /**
+   * The panel's content, from the column's first open on (#465): kept while the
+   * panel is closed (the native popover hides it), so a consumer panel and its
+   * own state survive a close. Null for a column never opened.
+   */
+  readonly body: DatatableFilterPanel | null;
 }
 
 /** What a filter panel's controls call; the core implements it per instance. */
@@ -459,6 +466,10 @@ export interface DatatableFilterCommands {
 export interface DatatableFilterView {
   /** The column whose panel is open. */
   readonly column: string | null;
+  /** The columns whose panel body exists: opened at least once, still filterable in the same mode (#465). */
+  readonly mounted: readonly string[];
+  /** `filtersReadonly`: filters are set programmatically only; every editing control is disabled. */
+  readonly readonly: boolean;
   readonly selections: Readonly<Record<string, FilterSelection>>;
   readonly operandTexts: Readonly<Record<string, string>>;
   /** The open column's list, already bucketed and narrowed by `term`. */
@@ -473,6 +484,16 @@ export const sameValue = (a: unknown, b: unknown): boolean => a === b || (a !== 
 
 export const includesValue = (values: readonly DistinctValue[], value: unknown): boolean =>
   values.some((v) => sameValue(v.value, value));
+
+/**
+ * A distinct value's identity as a string (#465 D7): the built-in panel's option
+ * key and its `data-dt-filter-value`, so an option is matched by its value and
+ * never by its position in a list that new data can reorder. Two keys are equal
+ * exactly when `sameValue` says the values are: `1` and `"1"` differ, `NaN`
+ * equals `NaN`, `null` and `undefined` differ.
+ */
+export const distinctKey = (value: unknown): string =>
+  value === undefined ? 'u' : typeof value === 'number' && !Number.isFinite(value) ? `n:${value}` : `j:${canonicalJson(value)}`;
 
 export const EMPTY_SELECTION: FilterSelection = { values: [], inverse: false };
 
@@ -576,17 +597,19 @@ export function localDistincts(rows: readonly unknown[], name: string, labels: D
 /**
  * Re-derives `matching` / `remaining` from the snapshot and narrows both by
  * the search term. The snapshot (the list when the selection first became
- * non-empty) is the universe of listed values, so a selection can be widened
- * after the data it filters has shrunk; the loaded list only decides which
- * bucket each value falls into.
+ * non-empty) joins the loaded list as the universe of listed values, so a
+ * selection can be widened after the data it filters has shrunk, and a value
+ * that arrives with new data is listed too (#465 D7b); the loaded list decides
+ * which bucket each value falls into.
  */
 export function bucketDistincts(loaded: DistinctValues | null, snapshot: readonly DistinctValue[] | null, term: string): DistinctValues | null {
   if (!loaded) return null;
   const needle = term.trim().toLowerCase();
   const matches = (v: DistinctValue) => needle === '' || v.label.toLowerCase().includes(needle);
   const present = [...loaded.matching, ...loaded.remaining];
-  const matching = snapshot ? snapshot.filter((v) => includesValue(present, v.value)) : loaded.matching;
-  const remaining = snapshot ? snapshot.filter((v) => !includesValue(present, v.value)) : loaded.remaining;
+  const universe = snapshot ? [...snapshot, ...present.filter((v) => !includesValue(snapshot, v.value))] : null;
+  const matching = universe ? universe.filter((v) => includesValue(present, v.value)) : loaded.matching;
+  const remaining = universe ? universe.filter((v) => !includesValue(present, v.value)) : loaded.remaining;
   return { matching: matching.filter(matches), remaining: remaining.filter(matches), hasMore: loaded.hasMore };
 }
 
@@ -847,17 +870,23 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
 
   const f = o.filter;
   const panelIdOf = (name: string) => datatableFilterPanelId(o.id, name);
-  const filterPanel = (column: DatatableColumnDef): DatatableFilterPanel => {
+  /** A kept, closed panel shows its selection over no list: the list is loaded per open (#465 D6). */
+  const filterPanel = (column: DatatableColumnDef, open: boolean): DatatableFilterPanel => {
     const name = column.name;
     const label = columnLabel(column);
     const selection = filterSelectionOf(column, f.selections);
+    const locked = f.readonly;
+    const values = open ? f.values : null;
+    const loading = open && f.loading;
+    const term = open ? f.term : '';
     const ctx: FilterContext = {
-      values: f.values,
-      loading: f.loading,
+      values,
+      loading,
       selection,
-      term: f.term,
-      search: (term) => f.commands.search(name, term),
-      apply: (values, inverse) => f.commands.apply(name, values, inverse),
+      term,
+      readonly: locked,
+      search: (t) => f.commands.search(name, t),
+      apply: (v, inverse) => f.commands.apply(name, v, inverse),
       compare: (operator, operand) => f.commands.compare(name, operator, operand),
       clear: () => f.commands.clear(name),
       close: () => f.commands.close(),
@@ -868,7 +897,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
     const operators = column.filterOperators?.length ? column.filterOperators : DEFAULT_FILTER_OPERATORS;
     const operator = selection.operator ?? operators[0];
     const picked = selection.values;
-    const listed = filterOptionsOf(selection, f.values);
+    const listed = filterOptionsOf(selection, values);
     const datetimeApplied = comparing && column.filterInputType === 'datetime' && selection.operand != null;
     return {
       column,
@@ -877,7 +906,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
       clear: {
         class: 'filter-clear',
         type: 'button',
-        disabled: comparing ? selection.operand == null : picked.length === 0 && !selection.inverse,
+        disabled: locked || (comparing ? selection.operand == null : picked.length === 0 && !selection.inverse),
         'data-dt-filter-clear': '',
       },
       clearText: labels.filterClear(label),
@@ -886,28 +915,37 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
         ? null
         : {
             search: { class: 'filter-search', type: 'search', 'aria-label': labels.filterSearch, 'data-dt-filter-search': '' },
-            term: f.term,
-            invert: { class: 'filter-invert', type: 'button', 'aria-pressed': selection.inverse ? 'true' : 'false', 'data-dt-filter-invert': '' },
+            term,
+            invert: {
+              class: 'filter-invert',
+              type: 'button',
+              'aria-pressed': selection.inverse ? 'true' : 'false',
+              disabled: locked,
+              'data-dt-filter-invert': '',
+            },
             invertText: labels.filterInvert,
             group: { class: 'filter-options', role: 'group', 'aria-label': labels.filterGroup(label) },
-            loading: f.loading ? { class: 'filter-loading' } : null,
+            loading: loading ? { class: 'filter-loading' } : null,
             loadingText: labels.loading,
-            options: listed.map((v, i) => ({
-              key: `${i}:${v.label}`,
-              label: { class: f.values && includesValue(f.values.remaining, v.value) ? 'filter-option filter-remaining' : 'filter-option' },
-              input: { type: 'checkbox', 'data-dt-filter-value': i },
-              checked: includesValue(picked, v.value),
-              text: v.label,
-            })),
-            noValues: listed.length === 0 && !f.loading ? { class: 'filter-no-values' } : null,
+            options: listed.map((v) => {
+              const key = distinctKey(v.value);
+              return {
+                key,
+                label: { class: values && includesValue(values.remaining, v.value) ? 'filter-option filter-remaining' : 'filter-option' },
+                input: { type: 'checkbox', disabled: locked, 'data-dt-filter-value': key },
+                checked: includesValue(picked, v.value),
+                text: v.label,
+              };
+            }),
+            noValues: listed.length === 0 && !loading ? { class: 'filter-no-values' } : null,
             noValuesText: labels.filterNoValues,
-            hasMore: f.values?.hasMore ? { class: 'filter-has-more' } : null,
+            hasMore: values?.hasMore ? { class: 'filter-has-more' } : null,
             hasMoreText: labels.filterHasMore,
           },
       comparison: comparing
         ? {
             wrap: { class: 'filter-comparison' },
-            operator: { class: 'filter-operator', 'aria-label': labels.filterOperator, 'data-dt-filter-operator': '' },
+            operator: { class: 'filter-operator', 'aria-label': labels.filterOperator, disabled: locked, 'data-dt-filter-operator': '' },
             operatorValue: operator,
             operators: operators.map((op) => ({
               key: op,
@@ -920,6 +958,7 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
               'aria-label': labels.filterOperand,
               // The read-back says which instant a typed local time resolved to (a DST gap moves it).
               'aria-describedby': datetimeApplied ? `${panelIdOf(name)}-applied` : null,
+              disabled: locked,
               'data-dt-filter-operand': '',
             },
             operandText: f.operandTexts[name] ?? operandText(selection.operand, column.filterInputType),
@@ -967,7 +1006,8 @@ export function connectDatatable(o: DatatableOptions): DatatableView {
                 'data-dt-filter-panel': column.name,
               }
             : null,
-          open: column.filterable && open ? filterPanel(column) : null,
+          open: !!column.filterable && open,
+          body: column.filterable && (open || f.mounted.includes(column.name)) ? filterPanel(column, open) : null,
         };
       })
     : [];
