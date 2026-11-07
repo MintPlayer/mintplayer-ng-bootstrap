@@ -7,8 +7,10 @@ here; one PR in MintPlayer.Spark (M10).
 
 **As built (M1–M9).**
 - M6 made keep-alive a core latch (`PresenceState.kept`, `isKept`, `phaseBag`), so every front follows
-  `view.rendered` / `props.overlay` unchanged. **M7 was a no-op**: the generated panels only switched
-  from `shown` to `phase` through their manifests.
+  `view.rendered` / `props.overlay` unchanged. **M7 was one compiler change**: the Lit overlay
+  directive emitter passes its content as `.defaultRenderer`, not as light children. A kept panel is
+  re-rendered on close, and the panel's LightChildren capture had ejected the content part's markers,
+  so lit threw. The panels otherwise only switched from `shown` to `phase` through their manifests.
 - The front O1 specs (`overlay-keep-alive.spec.*`, one per lib) cover the modal and the tooltip. The
   other four overlays are covered at core level by the table in `ui-core/overlay/src/keep-alive.spec.ts`
   (hidden roots, `overlay.phase` closed, never-opened renders nothing).
