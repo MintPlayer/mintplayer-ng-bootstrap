@@ -1,5 +1,5 @@
 import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { isRendered, isShown, OverlayPresence, placeAtPoint, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import { isKept, isShown, OverlayPresence, phaseBag, phaseState, placeAtPoint, type OverlayPhase, type PresenceState } from '@mintplayer/ui-core/overlay';
 import { activatedItem, dropdownItemControl, dropdownItemDisabled, dropdownMenuItems } from '@mintplayer/ui-core/dropdown-menu';
 
 /**
@@ -26,13 +26,12 @@ export interface ContextMenuInputs {
   disabled: boolean;
 }
 
-export interface ContextMenuState {
-  phase: OverlayPhase;
-}
+export type ContextMenuState = PresenceState;
 
 export interface ContextMenuPanelInputs {
   overlayId: string;
-  shown: boolean;
+  /** The overlay phase: `.show` while `shown`, `hidden` while `closed` (#465). */
+  phase: OverlayPhase;
 }
 
 export interface ContextMenuProps {
@@ -50,19 +49,21 @@ export function connectContextMenu(state: ContextMenuState, id: string): Context
   const overlayId = `${id}-context-menu`;
   return {
     anchor: { [CONTEXT_MENU_OF_ATTR]: overlayId },
-    overlay: isRendered(state.phase) ? { overlayId, shown: isShown(state.phase) } : null,
+    // Kept from the first open on, hidden while closed (#465).
+    overlay: isKept(state) ? { overlayId, phase: state.phase } : null,
   };
 }
 
 export function connectContextMenuPanel(inputs: ContextMenuPanelInputs): CoreBag {
+  const phase = inputs.phase ?? 'closed';
   // tabindex: focus lands on the panel itself when it holds no item.
-  return { class: `context-menu-panel${inputs.shown ? ' show' : ''}`, id: inputs.overlayId || null, tabindex: -1 };
+  return { ...phaseBag(phase), class: `context-menu-panel${isShown(phase) ? ' show' : ''}`, id: inputs.overlayId || null, tabindex: -1 };
 }
 
 type Api = CoreApi<ContextMenuInputs, ContextMenuState, Record<never, never>>;
 
 export const contextMenuCore = defineCore<ContextMenuInputs, ContextMenuState, ContextMenuProps>({
-  state: () => ({ phase: 'closed' }),
+  state: () => ({ phase: 'closed', kept: false }),
   view: ({ state, id }) => connectContextMenu(state, id),
   attach: (api: Api) => {
     const host = api.host;
@@ -87,7 +88,7 @@ export const contextMenuCore = defineCore<ContextMenuInputs, ContextMenuState, C
     const presence = new OverlayPresence({
       doc,
       find,
-      setPhase: (phase) => api.setState({ phase }),
+      setPhase: (phase) => api.setState(phaseState(phase)),
       overlay: () => ({
         inside: () => [],
         onDismiss: (reason) => set(false, reason === 'escape'),

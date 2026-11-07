@@ -1,5 +1,8 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import type { OverlayPhase } from '@mintplayer/ui-core/overlay';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import { connectOffcanvas, offcanvasCore, type OffcanvasInputs, type OffcanvasView } from './offcanvas.core';
+
+const st = (phase: OverlayPhase, kept = phase !== 'closed') => ({ phase, kept });
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 const inputs = (o: Partial<OffcanvasInputs> = {}): OffcanvasInputs => ({
@@ -32,7 +35,9 @@ function mount(o: Partial<OffcanvasInputs> = {}) {
         el('div', view.header, el('h5', view.title, 'Menu'), view.close && el('button', view.close)),
         el('div', view.body, 'Body')),
       view.backdrop && el('div', view.backdrop)));
-    overlay.querySelector('.offcanvas')!.className = String(view.panel['class']);
+    patchBag(overlay.querySelector('.offcanvas')!, view.panel);
+    const backdrop = overlay.querySelector('.offcanvas-backdrop');
+    if (backdrop && view.backdrop) patchBag(backdrop, view.backdrop);
     return undefined;
   };
   const h = hostCore(offcanvasCore, inputs(o), { models: ['open'], markup: sync });
@@ -49,12 +54,12 @@ function mount(o: Partial<OffcanvasInputs> = {}) {
 
 describe('offcanvas view', () => {
   it('sizes the panel along its axis and falls back to the start edge', () => {
-    expect(connectOffcanvas(inputs({ size: 300 }), 'shown', 'o', null).panelStyle).toEqual({ '--bs-offcanvas-width': '300px' });
-    expect(connectOffcanvas(inputs({ size: 120, position: 'top' }), 'leaving', 'o', null)).toMatchObject({
+    expect(connectOffcanvas(inputs({ size: 300 }), st('shown'), 'o', null).panelStyle).toEqual({ '--bs-offcanvas-width': '300px' });
+    expect(connectOffcanvas(inputs({ size: 120, position: 'top' }), st('leaving'), 'o', null)).toMatchObject({
       panelStyle: { '--bs-offcanvas-height': '120px' },
       panel: { class: 'offcanvas offcanvas-top hiding' },
     });
-    const plain = connectOffcanvas(inputs({ position: 'left' as never, size: 0, backdrop: false, closeButton: false, noPadding: true }), 'closed', 'o', 'Nav');
+    const plain = connectOffcanvas(inputs({ position: 'left' as never, size: 0, backdrop: false, closeButton: false, noPadding: true }), st('closed'), 'o', 'Nav');
     expect(plain).toMatchObject({ panelStyle: {}, close: null, backdrop: null, body: { class: 'offcanvas-body p-0' } });
     expect(plain.panel).toMatchObject({ class: 'offcanvas offcanvas-start', 'aria-modal': null, 'aria-label': 'Nav', 'aria-labelledby': null });
   });
@@ -65,12 +70,12 @@ describe('offcanvasCore', () => {
     const h = mount();
     h.setInputs({ open: true });
     await h.update();
-    expect(h.state()).toEqual({ open: true, phase: 'shown' });
+    expect(h.state()).toEqual({ open: true, phase: 'shown', kept: true });
     h.panel().querySelector<HTMLElement>('.offcanvas-title')!.click();
     expect(h.state().open).toBe(true);
     h.panel().querySelector<HTMLElement>('.btn-close')!.click();
     await h.update();
-    expect(h.state()).toEqual({ open: false, phase: 'closed' });
+    expect(h.state()).toEqual({ open: false, phase: 'closed', kept: true });
     expect(h.changes('open')).toEqual([false]);
   });
 
@@ -98,7 +103,7 @@ describe('offcanvasCore', () => {
     expect(h.backdrop()).toBeNull();
     h.setInputs({ open: false });
     await h.update();
-    expect(h.state()).toEqual({ open: false, phase: 'closed' });
+    expect(h.state()).toEqual({ open: false, phase: 'closed', kept: true });
     h.setInputs({ open: false, size: 10 });
     h.setInputs({ open: true });
     expect(h.state().open).toBe(true);

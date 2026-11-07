@@ -1,4 +1,4 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import { connectContextMenuPanel, contextMenuCore, contextMenuPanelCore, type ContextMenuInputs, type ContextMenuProps } from './context-menu.core';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -27,7 +27,7 @@ function mount(o: Partial<ContextMenuInputs> = {}, menu = true) {
             el('div', { class: 'dropdown-item' }, el('button', { type: 'button' }, 'Copy')))
           : el('p', null, 'Nothing here')),
     );
-    applyBag(panel, connectContextMenuPanel(overlay));
+    patchBag(panel, connectContextMenuPanel(overlay));
     return undefined;
   };
   const host = document.body.appendChild(el('div', { tabindex: '0' }, 'Target'));
@@ -50,7 +50,13 @@ function mount(o: Partial<ContextMenuInputs> = {}, menu = true) {
 describe('context menu views', () => {
   it('connects the anchor and the panel', () => {
     expect(hostCore(contextMenuCore, { label: 'x', disabled: false }).props()).toEqual({ anchor: { 'data-mp-context-menu': 'mp-test-context-menu' }, overlay: null });
-    expect(hostCore(contextMenuPanelCore, { overlayId: '', shown: true }).props().root).toEqual({ class: 'context-menu-panel show', id: null, tabindex: -1 });
+    expect(hostCore(contextMenuPanelCore, { overlayId: '', phase: 'shown' }).props().root).toEqual({
+      'data-mp-phase': 'shown',
+      hidden: false,
+      class: 'context-menu-panel show',
+      id: null,
+      tabindex: -1,
+    });
   });
 });
 

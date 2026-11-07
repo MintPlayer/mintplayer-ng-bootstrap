@@ -40,7 +40,7 @@ describe('mp-datatable custom filter panel keep-alive (#465)', () => {
   it('keeps the panel element and its state across close and reopen, with a live ctx', async () => {
     constructed = 0;
     document.body.innerHTML = '<mp-datatable></mp-datatable>';
-    const el = document.querySelector('mp-datatable') as HTMLElement & Record<string, unknown>;
+    const el = document.querySelector('mp-datatable') as unknown as HTMLElement & { columns: unknown; data: unknown; filterRenderer: unknown; filters: unknown };
     el.columns = [{ name: 'name', label: 'Name', filterable: true, filterMode: 'custom' }];
     el.data = [
       { id: 1, name: 'Alpha' },

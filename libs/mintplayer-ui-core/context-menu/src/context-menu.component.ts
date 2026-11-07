@@ -21,7 +21,7 @@ export default {
         type: 'ContextMenuPanelInputs',
         fields: {
           overlayId: { default: "''", kind: 'string', doc: "The panel's id." },
-          shown: { default: 'false' },
+          phase: { default: "'closed'", kind: 'string', doc: 'The overlay phase: `.show` while shown, `hidden` while closed (#465).' },
         },
       },
     },

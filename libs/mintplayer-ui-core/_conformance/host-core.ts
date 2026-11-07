@@ -18,6 +18,15 @@ export function applyBag(el: Element, bag: Bag | null | undefined): Element {
   return el;
 }
 
+/**
+ * Rewrites an element's attributes from a bag, keeping the node: what a front's
+ * re-render does to markup it keeps (an overlay kept after a close, #465).
+ */
+export function patchBag(el: Element, bag: Bag | null | undefined): Element {
+  Array.from(el.attributes).map((a) => el.removeAttribute(a.name));
+  return applyBag(el, bag);
+}
+
 /** `<tag>` with the bag applied and the given children. */
 export function el(tag: string, bag?: Bag | null, ...children: (Node | string | null | undefined)[]): HTMLElement {
   const node = document.createElement(tag);

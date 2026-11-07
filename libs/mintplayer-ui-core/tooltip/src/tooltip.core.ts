@@ -1,12 +1,25 @@
 import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { anchorSide, isRendered, isShown, OverlayPresence, placeBeside, trackBeside, type AnchorSide, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import {
+  anchorSide,
+  isKept,
+  isRendered,
+  isShown,
+  OverlayPresence,
+  phaseBag,
+  phaseState,
+  placeBeside,
+  trackBeside,
+  type AnchorSide,
+  type OverlayPhase,
+  type PresenceState,
+} from '@mintplayer/ui-core/overlay';
 
 /**
  * Bootstrap's tooltip (#458 M6): a directive on the trigger, and a panel the
  * front renders into a body host while it shows.
  *
  *   <button aria-describedby=<tip>>…</button>          (the consumer's element; the directive)
- *   <div data-mp-overlay>                               (end of <body>, while shown)
+ *   <div data-mp-overlay>                               (end of <body>, from the first show; hidden while closed)
  *     <div class="tooltip bs-tooltip-<side> fade [show]" role="tooltip" id=<tip>>
  *       <div class="tooltip-arrow"></div>
  *       <div class="tooltip-inner">…the content…</div>
@@ -24,8 +37,7 @@ export interface TooltipInputs {
   position: AnchorSide;
 }
 
-export interface TooltipState {
-  phase: OverlayPhase;
+export interface TooltipState extends PresenceState {
   /** The side it landed on (the opposite of `position` when that did not fit). */
   side: AnchorSide;
   /** The trigger's own `aria-describedby`, read when the directive attached. */
@@ -37,14 +49,14 @@ export interface TooltipPanelInputs {
   /** The panel's id, which the trigger's `aria-describedby` names. */
   overlayId: string;
   side: AnchorSide;
-  /** Faded in (`.show`). */
-  shown: boolean;
+  /** The overlay phase: `.show` while `shown`, `hidden` while `closed` (#465). */
+  phase: OverlayPhase;
 }
 
 export interface TooltipProps {
   /** The trigger's bag. */
   readonly anchor: CoreBag;
-  /** The panel's inputs while it renders; null while hidden. */
+  /** The panel's inputs from its first show on (kept while closed, #465); null before. */
   readonly overlay: TooltipPanelInputs | null;
 }
 
@@ -72,14 +84,15 @@ export function connectTooltip(inputs: TooltipInputs, state: TooltipState, id: s
   const describedBy = rendered ? [...own, overlayId] : own;
   return {
     anchor: { 'aria-describedby': describedBy.length ? describedBy.join(' ') : null, [TOOLTIP_OF_ATTR]: overlayId },
-    overlay: rendered ? { overlayId, side: state.side, shown: isShown(state.phase) } : null,
+    overlay: isKept(state) ? { overlayId, side: state.side, phase: state.phase } : null,
   };
 }
 
 export function connectTooltipPanel(inputs: TooltipPanelInputs): TooltipPanelView {
   const side = anchorSide(inputs.side, 'top');
+  const phase = inputs.phase ?? 'closed';
   return {
-    root: { class: `tooltip bs-tooltip-${side} fade${inputs.shown ? ' show' : ''}`, role: 'tooltip', id: inputs.overlayId || null },
+    root: { ...phaseBag(phase), class: `tooltip bs-tooltip-${side} fade${isShown(phase) ? ' show' : ''}`, role: 'tooltip', id: inputs.overlayId || null },
     arrow: { class: 'tooltip-arrow' },
     inner: { class: 'tooltip-inner' },
   };
@@ -88,7 +101,7 @@ export function connectTooltipPanel(inputs: TooltipPanelInputs): TooltipPanelVie
 type Api = CoreApi<TooltipInputs, TooltipState, Record<never, never>>;
 
 export const tooltipCore = defineCore<TooltipInputs, TooltipState, TooltipProps>({
-  state: (inputs) => ({ phase: 'closed', side: anchorSide(inputs.position, 'top'), describedBy: null }),
+  state: (inputs) => ({ phase: 'closed', kept: false, side: anchorSide(inputs.position, 'top'), describedBy: null }),
   view: ({ inputs, state, id }) => connectTooltip(inputs, state, id),
   attach: (api: Api) => {
     const host = api.host;
@@ -125,7 +138,7 @@ export const tooltipCore = defineCore<TooltipInputs, TooltipState, TooltipProps>
     const presence = new OverlayPresence({
       doc,
       find,
-      setPhase: (phase) => api.setState({ phase }),
+      setPhase: (phase) => api.setState(phaseState(phase)),
       // Escape hides it and leaves focus where it is (1.4.13 "dismissible").
       overlay: () => ({ onDismiss: (reason) => reason === 'escape' && hide() }),
       wire: (panel) => {

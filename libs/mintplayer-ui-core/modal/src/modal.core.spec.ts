@@ -1,4 +1,4 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import { modalCore, type ModalInputs, type ModalView } from './modal.core';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -31,7 +31,8 @@ function mount(o: Partial<ModalInputs> = {}) {
         el('div', view.header, el('h5', view.title, 'Title'), view.close && el('button', view.close)),
         el('div', view.body, el('input'))))),
       el('div', view.backdrop)));
-    overlay.querySelector('.modal')!.className = String(view.modal['class']);
+    patchBag(overlay.querySelector('.modal')!, view.modal);
+    patchBag(overlay.querySelector('.modal-backdrop')!, view.backdrop);
     return undefined;
   };
   const h = hostCore(modalCore, inputs(o), { models: ['open'], markup: sync });
@@ -56,13 +57,13 @@ describe('modalCore', () => {
     expect(h.props().view.rendered).toBe(false);
     h.setInputs({ open: true });
     await h.update();
-    expect(h.state()).toEqual({ open: true, phase: 'shown' });
+    expect(h.state()).toEqual({ open: true, phase: 'shown', kept: true });
     expect(h.modal().className).toContain('show');
     h.modal().querySelector<HTMLElement>('.modal-title')!.click();
     expect(h.state().open).toBe(true);
     h.modal().querySelector<HTMLElement>('.btn-close')!.click();
     await h.update();
-    expect(h.state()).toEqual({ open: false, phase: 'closed' });
+    expect(h.state()).toEqual({ open: false, phase: 'closed', kept: true });
     expect(h.changes('open')).toEqual([false]);
   });
 
@@ -95,7 +96,7 @@ describe('modalCore', () => {
     await h.update();
     h.setInputs({ open: false });
     await h.update();
-    expect(h.state()).toEqual({ open: false, phase: 'closed' });
+    expect(h.state()).toEqual({ open: false, phase: 'closed', kept: true });
     expect(h.changes('open')).toEqual([]);
     h.setInputs({ open: false, centered: true });
     h.setInputs({ open: true });

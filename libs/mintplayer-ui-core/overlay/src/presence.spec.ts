@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { BODY_HOST_ATTRIBUTE } from './body-host';
 import { resetOverlayStackForTesting } from './overlay-stack';
-import { afterTransition, findByAttribute, OverlayPresence, transitionMs, whenRendered, type OverlayPhase } from './presence';
+import { afterTransition, findByAttribute, OverlayPresence, PHASE_ATTR, transitionMs, whenRendered, type OverlayPhase } from './presence';
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -26,6 +26,7 @@ function harness(initial: OverlayPhase = 'closed') {
       setTimeout(() => host && document.body.appendChild(host));
     }
     host.firstElementChild!.className = phase === 'shown' ? 'show' : '';
+    host.firstElementChild!.setAttribute(PHASE_ATTR, phase);
   };
   const presence = new OverlayPresence(
     {

@@ -1,4 +1,4 @@
-import { applyBag, el, hostCore } from '../../_conformance/host-core';
+import { applyBag, el, hostCore, patchBag } from '../../_conformance/host-core';
 import { connectTooltipPanel, TOOLTIP_HIDE_DELAY_MS, tooltipCore, tooltipPanelCore, type TooltipProps } from './tooltip.core';
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -32,7 +32,7 @@ function mount() {
     }
     const view = connectTooltipPanel(overlay);
     panel ??= document.body.appendChild(el('div', view.root, el('div', view.inner, 'Tip')));
-    panel.className = String(view.root['class']);
+    patchBag(panel, view.root);
     return undefined;
   };
   const host = document.body.appendChild(el('button', { 'aria-describedby': 'hint' }, 'Save'));
@@ -49,8 +49,14 @@ function mount() {
 
 describe('tooltip views', () => {
   it('renders the panel on its side, top for an unknown one', () => {
-    expect(connectTooltipPanel({ overlayId: 't', side: 'bogus' as never, shown: true }).root).toEqual({ class: 'tooltip bs-tooltip-top fade show', role: 'tooltip', id: 't' });
-    expect(hostCore(tooltipPanelCore, { overlayId: '', side: 'end', shown: false }).props().view.root['id']).toBeNull();
+    expect(connectTooltipPanel({ overlayId: 't', side: 'bogus' as never, phase: 'shown' }).root).toEqual({
+      'data-mp-phase': 'shown',
+      hidden: false,
+      class: 'tooltip bs-tooltip-top fade show',
+      role: 'tooltip',
+      id: 't',
+    });
+    expect(hostCore(tooltipPanelCore, { overlayId: '', side: 'end', phase: 'closed' }).props().view.root['id']).toBeNull();
   });
 });
 

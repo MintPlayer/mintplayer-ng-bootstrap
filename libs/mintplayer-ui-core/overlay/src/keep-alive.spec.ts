@@ -6,7 +6,7 @@
  * consumer-content identity (O1) and the owner's teardown (O7).
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyBag, hostCore } from '../../_conformance/host-core';
+import { hostCore, patchBag as patch } from '../../_conformance/host-core';
 import { contextMenuCore, connectContextMenuPanel } from '@mintplayer/ui-core/context-menu';
 import { connectDropdownPanel, dropdownCore } from '@mintplayer/ui-core/dropdown';
 import { modalCore, type ModalInputs } from '@mintplayer/ui-core/modal';
@@ -20,12 +20,6 @@ import { PHASE_ATTR } from './presence';
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 type Bag = Record<string, string | number | boolean | null | undefined>;
-
-/** Rewrites an element's attributes from a bag, keeping the node (a front patches, it does not recreate). */
-const patch = (node: Element, bag: Bag | null | undefined) => {
-  Array.from(node.attributes).map((a) => node.removeAttribute(a.name));
-  applyBag(node, bag);
-};
 
 const MODAL: ModalInputs = {
   open: false,

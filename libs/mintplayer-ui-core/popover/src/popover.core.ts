@@ -1,12 +1,25 @@
 import { defineCore, type CoreApi, type CoreBag } from '@mintplayer/ui-core/component';
-import { anchorSide, isRendered, isShown, OverlayPresence, placeBeside, trackBeside, type AnchorSide, type OverlayPhase } from '@mintplayer/ui-core/overlay';
+import {
+  anchorSide,
+  isKept,
+  isRendered,
+  isShown,
+  OverlayPresence,
+  phaseBag,
+  phaseState,
+  placeBeside,
+  trackBeside,
+  type AnchorSide,
+  type OverlayPhase,
+  type PresenceState,
+} from '@mintplayer/ui-core/overlay';
 
 /**
  * Bootstrap's popover (#458 M6): a directive on the trigger, and a non-modal
  * dialog the front renders into a body host while it is open.
  *
  *   <button aria-haspopup="dialog" aria-expanded aria-controls=<pop>>…</button>   (the consumer's element)
- *   <div data-mp-overlay>                                                         (end of <body>, while open)
+ *   <div data-mp-overlay>                                                         (end of <body>, from the first open; hidden while closed)
  *     <div class="popover bs-popover-<side> fade [show]" role="dialog" tabindex="-1" id=<pop> aria-labelledby=<title>>
  *       <div class="popover-arrow"></div>
  *       <h3 class="popover-header" id=<title>>…title…</h3>
@@ -29,8 +42,7 @@ export interface PopoverInputs {
   title: string | null;
 }
 
-export interface PopoverState {
-  phase: OverlayPhase;
+export interface PopoverState extends PresenceState {
   /** The side it landed on (the opposite of `position` when that did not fit). */
   side: AnchorSide;
   /** The trigger is not natively focusable: the core makes it a focusable button. */
@@ -44,7 +56,8 @@ export interface PopoverPanelInputs {
   /** The panel's id, which the trigger's `aria-controls` names. */
   overlayId: string;
   side: AnchorSide;
-  shown: boolean;
+  /** The overlay phase: `.show` while `shown`, `hidden` while `closed` (#465). */
+  phase: OverlayPhase;
   /** The heading (the directive's `title`). */
   heading: string | null;
   /** The trigger's id, naming the dialog when there is no title. */
@@ -54,7 +67,7 @@ export interface PopoverPanelInputs {
 export interface PopoverProps {
   /** The trigger's bag. */
   readonly anchor: CoreBag;
-  /** The panel's inputs while it renders; null while closed. */
+  /** The panel's inputs from its first open on (kept while closed, #465); null before. */
   readonly overlay: PopoverPanelInputs | null;
 }
 
@@ -87,8 +100,8 @@ export function connectPopover(inputs: PopoverInputs, state: PopoverState, id: s
       role: state.promote ? 'button' : null,
       tabindex: state.promote ? 0 : null,
     },
-    overlay: rendered
-      ? { overlayId, side: state.side, shown: isShown(state.phase), heading: inputs.title || null, triggerId: inputs.title ? null : state.triggerId }
+    overlay: isKept(state)
+      ? { overlayId, side: state.side, phase: state.phase, heading: inputs.title || null, triggerId: inputs.title ? null : state.triggerId }
       : null,
   };
 }
@@ -96,9 +109,11 @@ export function connectPopover(inputs: PopoverInputs, state: PopoverState, id: s
 export function connectPopoverPanel(inputs: PopoverPanelInputs): PopoverPanelView {
   const side = anchorSide(inputs.side, 'bottom');
   const titleId = `${inputs.overlayId}-title`;
+  const phase = inputs.phase ?? 'closed';
   return {
     root: {
-      class: `popover bs-popover-${side} fade${inputs.shown ? ' show' : ''}`,
+      ...phaseBag(phase),
+      class: `popover bs-popover-${side} fade${isShown(phase) ? ' show' : ''}`,
       role: 'dialog',
       tabindex: -1,
       id: inputs.overlayId || null,
@@ -114,7 +129,7 @@ export function connectPopoverPanel(inputs: PopoverPanelInputs): PopoverPanelVie
 type Api = CoreApi<PopoverInputs, PopoverState, Record<never, never>>;
 
 export const popoverCore = defineCore<PopoverInputs, PopoverState, PopoverProps>({
-  state: (inputs) => ({ phase: 'closed', side: anchorSide(inputs.position, 'bottom'), promote: false, triggerId: null }),
+  state: (inputs) => ({ phase: 'closed', kept: false, side: anchorSide(inputs.position, 'bottom'), promote: false, triggerId: null }),
   view: ({ inputs, state, id }) => connectPopover(inputs, state, id),
   attach: (api: Api) => {
     const host = api.host;
@@ -141,7 +156,7 @@ export const popoverCore = defineCore<PopoverInputs, PopoverState, PopoverProps>
     const presence = new OverlayPresence({
       doc,
       find,
-      setPhase: (phase) => api.setState({ phase }),
+      setPhase: (phase) => api.setState(phaseState(phase)),
       overlay: () => ({
         inside: () => [host],
         onDismiss: (reason) => set(false, reason === 'escape'),
