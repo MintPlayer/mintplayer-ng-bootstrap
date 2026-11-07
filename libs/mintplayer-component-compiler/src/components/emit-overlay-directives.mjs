@@ -196,7 +196,10 @@ export function emitLitOverlay(model, { generator, runtime, scopedStyles }) {
     [
       `overlay: (props, content) => {`,
       `    const panel = props.overlay;`,
-      `    return panel ? html\`<${overlay.names.tag} ${properties}>\${content?.()}</${overlay.names.tag}>\` : null;`,
+      // The content goes in as the panel's default slot renderer, never as light children: the panel
+      // captures those into its own template, ejecting this part's markers, so the re-render a kept
+      // panel gets on close (#465) would throw. Nested components pass content the same way.
+      `    return panel ? html\`<${overlay.names.tag} ${properties} .defaultRenderer=\${content ?? null}></${overlay.names.tag}>\` : null;`,
       `  }`,
     ].join('\n'),
   ];

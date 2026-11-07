@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { html, render } from 'lit';
 
 import '@mintplayer/web-components/modal';
@@ -74,7 +74,8 @@ describe('Lit overlay keep-alive (#465)', () => {
     trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
     await settle();
     expect(probes()[0]).toBe(first);
-    expect(first.closest('.tooltip')?.hasAttribute('hidden')).toBe(true);
+    // Closed after the fade: jsdom computes the part's `.fade` transition, so presence waits it out.
+    await vi.waitFor(() => expect(first.closest('.tooltip')?.hasAttribute('hidden')).toBe(true));
     trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     await settle();
     expect(probes()[0]).toBe(first);

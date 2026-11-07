@@ -90,14 +90,16 @@ describe('Angular overlay keep-alive (#465)', () => {
     await settle();
     const first = probes()[0];
     expect(first).toBeDefined();
+    // The modal's projected probe is constructed eagerly (Angular creates <ng-content> once), so count from here.
+    const before = constructed;
     trigger.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
     await settle();
     expect(probes()[0]).toBe(first);
-    expect(first.closest('.tooltip')?.hasAttribute('hidden')).toBe(true);
+    await vi.waitFor(() => expect(first.closest('.tooltip')?.hasAttribute('hidden')).toBe(true));
     trigger.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     await settle();
     expect(probes()[0]).toBe(first);
-    expect(constructed).toBe(1);
+    expect(constructed).toBe(before);
     fixture.componentInstance.alive.set(false);
     await settle();
     expect(probes()).toEqual([]);

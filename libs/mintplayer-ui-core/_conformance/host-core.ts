@@ -21,9 +21,12 @@ export function applyBag(el: Element, bag: Bag | null | undefined): Element {
 /**
  * Rewrites an element's attributes from a bag, keeping the node: what a front's
  * re-render does to markup it keeps (an overlay kept after a close, #465).
+ * Like a front's diffing setter it touches only the bag's own keys (a null /
+ * false value removes one), never what the core wrote imperatively (`style`).
  */
 export function patchBag(el: Element, bag: Bag | null | undefined): Element {
-  Array.from(el.attributes).map((a) => el.removeAttribute(a.name));
+  Object.entries(bag ?? {}).filter(([, v]) => v === null || v === undefined || v === false)
+    .map(([k]) => el.removeAttribute(k));
   return applyBag(el, bag);
 }
 
